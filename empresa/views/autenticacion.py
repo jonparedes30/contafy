@@ -81,6 +81,8 @@ def logout_usuario(request):
     messages.success(request, 'Has cerrado sesión correctamente')
     return redirect('empresa:login')
 
+from django.db import transaction
+
 def registrar_usuario(request):
     if request.method == 'POST':
         codigo_invitacion = request.POST.get('codigo_invitacion')
@@ -96,16 +98,17 @@ def registrar_usuario(request):
         form = RegistroForm(request.POST)
         if form.is_valid():
             try:
-                user = form.save()  # El formulario ya maneja el orden correcto
-                logger.info(f"Usuario creado: {user.username}, Empresa: {user.empresa}")
-                
-                # Marcar código como usado
-                codigo.usado = True
-                codigo.usado_por = user
-                codigo.save()
-                
-                messages.success(request, 'Cuenta y empresa creadas exitosamente.')
-                return redirect('empresa:login')
+                with transaction.atomic():
+                    user = form.save()  # El formulario ya maneja el orden correcto
+                    logger.info(f"Usuario creado: {user.username}, Empresa: {user.empresa}")
+                    
+                    # Marcar código como usado
+                    codigo.usado = True
+                    codigo.usado_por = user
+                    codigo.save()
+                    
+                    messages.success(request, 'Cuenta y empresa creadas exitosamente.')
+                    return redirect('empresa:login')
             except Exception as e:
                 logger.error(f"Error al crear usuario: {str(e)}")
                 messages.error(request, f'Error al crear la cuenta: {str(e)}')
