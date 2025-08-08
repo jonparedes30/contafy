@@ -566,8 +566,8 @@ class RegistroForm(UserCreationForm):
         return ruc
 
     def save(self, commit=True):
-        # 1) Creo primero la empresa
-        empresa = Empresa(
+        # 1) Crear y guardar empresa SIEMPRE
+        empresa = Empresa.objects.create(
             nombre=self.cleaned_data['nombre_empresa'],
             ruc=self.cleaned_data['ruc'],
             direccion=self.cleaned_data['direccion'],
@@ -579,14 +579,15 @@ class RegistroForm(UserCreationForm):
             categoria=self.cleaned_data['categoria'],
             tipo_negocio=self.cleaned_data['tipo_negocio']
         )
-        if commit:
-            empresa.save()
 
-        # 2) Creo el usuario y le asigno la empresa
+        # 2) Crear usuario con empresa ya guardada
         usuario = super().save(commit=False)
         usuario.empresa = empresa
+        usuario.is_active = True
+        
         if commit:
             usuario.save()
+            
         return usuario
 
 

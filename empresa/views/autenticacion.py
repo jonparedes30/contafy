@@ -28,6 +28,14 @@ def login_usuario(request):
             messages.error(request, 'Por favor ingresa usuario y contraseña')
             return render(request, 'empresa/login.html')
         
+        # Debug: Buscar usuario específicamente
+        try:
+            from empresa.models import Usuario
+            usuario_obj = Usuario.objects.get(username=username)
+            logger.info(f"Usuario encontrado: {usuario_obj.username}, Empresa: {usuario_obj.empresa}, Activo: {usuario_obj.is_active}")
+        except Usuario.DoesNotExist:
+            logger.error(f"Usuario no encontrado: {username}")
+        
         user = authenticate(
             request,
             username=username,
@@ -40,6 +48,7 @@ def login_usuario(request):
                 LoginAttemptTracker.reset_attempts(username, ip)
                 login(request, user)
                 log_security_event("LOGIN_SUCCESS", username, ip)
+                logger.info(f"Login exitoso para: {username}")
                 
                 if user.empresa:
                     return redirect('empresa:home')
@@ -49,10 +58,12 @@ def login_usuario(request):
             else:
                 messages.error(request, 'Tu cuenta está desactivada. Contacta al administrador.')
                 log_security_event("LOGIN_INACTIVE", username, ip)
+                logger.error(f"Usuario inactivo: {username}")
         else:
             # Login fallido - registrar intento
             attempts = LoginAttemptTracker.record_failed_attempt(username, ip)
             remaining = 5 - attempts
+            logger.error(f"Autenticación fallida para: {username}")
             if remaining > 0:
                 messages.error(request, f'Usuario o contraseña incorrectos. {remaining} intentos restantes.')
             else:
@@ -84,15 +95,26 @@ def registrar_usuario(request):
         
         form = RegistroForm(request.POST)
         if form.is_valid():
-            user = form.save()  # El formulario ya maneja el orden correcto
-            # Marcar código como usado
-            codigo.usado = True
-            codigo.usado_por = user
-            codigo.save()
-            
-            messages.success(request, 'Cuenta y empresa creadas exitosamente.')
-            return redirect('empresa:login')
-        messages.error(request, 'Corrige los errores del formulario.')
+            try:
+                user = form.save()  # El formulario ya maneja el orden correcto
+                logger.info(f"Usuario creado: {user.username}, Empresa: {user.empresa}")
+                
+                # Marcar código como usado
+                codigo.usado = True
+                codigo.usado_por = user
+                codigo.save()
+                
+                messages.success(request, 'Cuenta y empresa creadas exitosamente.')
+                return redirect('empresa:login')
+            except Exception as e:
+                logger.error(f"Error al crear usuario: {str(e)}")
+                messages.error(request, f'Error al crear la cuenta: {str(e)}')
+        else:
+            logger.error(f"Errores del formulario: {form.errors}")
+            messages.error(request, 'Corrige los errores del formulario.')
+            for field, errors in form.errors.items():
+                for error in errors:
+                    messages.error(request, f'{field}: {error}')
     else:
         form = RegistroForm()
     return render(request, 'empresa/registro.html', {
