@@ -142,7 +142,7 @@ AUTH_USER_MODEL = 'empresa.Usuario'
 
 # URLs de login y logout
 LOGIN_URL = '/app-beta-2024/login/'
-LOGIN_REDIRECT_URL = '/app-beta-2024/'
+LOGIN_REDIRECT_URL = '/app-beta-2024/home/'
 LOGOUT_REDIRECT_URL = '/app-beta-2024/login/'
 
 # --- CSRF para desarrollo local ---

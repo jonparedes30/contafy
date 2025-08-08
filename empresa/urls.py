@@ -10,6 +10,7 @@ from .views.api_comercio import (
 # Importar vistas específicas
 from .views.autenticacion import login_usuario, logout_usuario, registrar_usuario
 from .views.empresa import crear_empresa, listar_empresas, gestion_poderes_empleado, crear_empleado, home, eliminar_empleado
+from .views.entrada_beta import entrada_beta
 from .views.productos import crear_producto, listar_productos, editar_producto, eliminar_producto
 from .views.ventas import crear_venta, listar_ventas
 from .views.compras import crear_compra, listar_compras
@@ -54,8 +55,9 @@ router = DefaultRouter()
 router.register(r'productos', ProductoViewSet, basename='producto')
 
 urlpatterns = [
-    # URL principal - Dashboard rol-centrado
-    path('', home, name='home'),
+    # URL principal - Entrada beta
+    path('', entrada_beta, name='entrada_beta'),
+    path('home/', home, name='home'),
     
     # URLs de la API REST
     path('api/', include(router.urls)),
