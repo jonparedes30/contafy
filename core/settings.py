@@ -202,25 +202,28 @@ if not IS_HEROKU:
         # Si por cualquier razón no se puede crear, caeremos a consola más abajo
         pass
 
-# Handlers comunes
-console_handler = {
-    "class": "logging.StreamHandler",
-    "stream": sys.stdout,
-    "formatter": "verbose",
+# Configurar handlers dinámicamente
+handlers_config = {
+    "console": {
+        "class": "logging.StreamHandler",
+        "stream": sys.stdout,
+        "formatter": "verbose",
+    }
 }
 
-# Handler de archivo solo si no estamos en Heroku y el directorio existe
-file_handler = {
-    "class": "logging.handlers.RotatingFileHandler",
-    "filename": str(LOGS_DIR / "contafy.log"),
-    "maxBytes": 5 * 1024 * 1024,  # 5MB
-    "backupCount": 3,
-    "encoding": "utf-8",
-    "formatter": "verbose",
-}
-
-# Elegir handlers activos según entorno
-active_handlers = ["console"] if IS_HEROKU or not LOGS_DIR.exists() else ["file", "console"]
+# Solo agregar file handler si no estamos en Heroku y el directorio existe
+if not IS_HEROKU and LOGS_DIR.exists():
+    handlers_config["file"] = {
+        "class": "logging.handlers.RotatingFileHandler",
+        "filename": str(LOGS_DIR / "contafy.log"),
+        "maxBytes": 5 * 1024 * 1024,  # 5MB
+        "backupCount": 3,
+        "encoding": "utf-8",
+        "formatter": "verbose",
+    }
+    active_handlers = ["console", "file"]
+else:
+    active_handlers = ["console"]
 
 LOGGING = {
     "version": 1,
@@ -233,10 +236,7 @@ LOGGING = {
             "format": "%(levelname)s %(message)s"
         },
     },
-    "handlers": {
-        "console": console_handler,
-        "file": file_handler,
-    },
+    "handlers": handlers_config,
     "root": {
         "level": "INFO",
         "handlers": active_handlers,
