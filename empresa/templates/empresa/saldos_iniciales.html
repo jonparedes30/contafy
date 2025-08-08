@@ -1,0 +1,165 @@
+{% extends 'empresa/base.html' %}
+
+{% block title %}Digitalizar Saldos Iniciales{% endblock %}
+
+{% block content %}
+<div class="container mt-5" style="max-width: 700px;">
+    <h2 class="mb-4 text-success text-center">
+        <i class="bi bi-coin"></i> Digitalizar Saldos Iniciales
+    </h2>
+    
+    {% if exito %}
+        <div class="alert alert-success">
+            <h4><i class="bi bi-check-circle"></i> ¡Saldos iniciales registrados correctamente!</h4>
+            <hr>
+            <div class="row">
+                <div class="col-md-4">
+                    <strong>Caja/Banco:</strong><br>
+                    <span class="text-success">${{ caja|floatformat:2 }}</span>
+                </div>
+                <div class="col-md-4">
+                    <strong>Inventario:</strong><br>
+                    <span class="text-success">${{ inventario|floatformat:2 }}</span>
+                </div>
+                <div class="col-md-4">
+                    <strong>Capital Social:</strong><br>
+                    <span class="text-success">${{ capital|floatformat:2 }}</span>
+                </div>
+            </div>
+            {% if usar_inventario_detallado %}
+                <hr>
+                <div class="alert alert-info">
+                    <i class="bi bi-info-circle"></i>
+                    <strong>Inventario Detallado:</strong> Se ha habilitado el registro de inventario por producto individual.
+                    <a href="{% url 'empresa:inventario_detallado_inicial' %}" class="btn btn-sm btn-primary ms-2">
+                        Continuar con Inventario Detallado
+                    </a>
+                </div>
+            {% endif %}
+        </div>
+        <div class="text-center">
+            <a href="{% url 'empresa:balance_general' %}" class="btn btn-success">
+                <i class="bi bi-graph-up"></i> Ver Balance General
+            </a>
+            <a href="{% url 'empresa:dashboard' %}" class="btn btn-primary">
+                <i class="bi bi-house"></i> Ir al Dashboard
+            </a>
+        </div>
+    {% else %}
+        <div class="card shadow">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">
+                    <i class="bi bi-gear"></i> Configuración de Saldos Iniciales
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-info">
+                    <i class="bi bi-info-circle"></i>
+                    <strong>Importante:</strong> Los saldos iniciales se registrarán usando partida doble. 
+                    El capital social se calculará automáticamente como contrapartida.
+                </div>
+                
+                <form method="post" class="needs-validation" novalidate>
+                    {% csrf_token %}
+                    
+                    <!-- Caja/Banco -->
+                    <div class="mb-4">
+                        <label for="{{ form.caja_banco.id_for_label }}" class="form-label">
+                            {{ form.caja_banco.label }}
+                        </label>
+                        {{ form.caja_banco }}
+                        {% if form.caja_banco.help_text %}
+                            <div class="form-text">{{ form.caja_banco.help_text }}</div>
+                        {% endif %}
+                        {% if form.caja_banco.errors %}
+                            <div class="invalid-feedback d-block">
+                                {% for error in form.caja_banco.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- Opciones de Inventario -->
+                    <div class="mb-4">
+                        <h6 class="text-primary">
+                            <i class="bi bi-box-seam"></i> Opciones de Inventario Inicial
+                        </h6>
+                        
+                        <!-- Inventario Global -->
+                        <div class="card mb-3">
+                            <div class="card-body">
+                                <div class="form-check">
+                                    <input type="checkbox" class="form-check-input" id="usar_inventario_global" checked>
+                                    <label class="form-check-label" for="usar_inventario_global">
+                                        <strong>📦 Inventario Global</strong>
+                                    </label>
+                                </div>
+                                <div class="mt-2">
+                                    <label for="{{ form.inventario_global.id_for_label }}" class="form-label">
+                                        {{ form.inventario_global.label }}
+                                    </label>
+                                    {{ form.inventario_global }}
+                                    {% if form.inventario_global.help_text %}
+                                        <div class="form-text">{{ form.inventario_global.help_text }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Inventario Detallado -->
+                        <div class="card">
+                            <div class="card-body">
+                                <div class="form-check">
+                                    {{ form.usar_inventario_detallado }}
+                                    <label class="form-check-label" for="{{ form.usar_inventario_detallado.id_for_label }}">
+                                        <strong>{{ form.usar_inventario_detallado.label }}</strong>
+                                    </label>
+                                </div>
+                                {% if form.usar_inventario_detallado.help_text %}
+                                    <div class="form-text mt-1">{{ form.usar_inventario_detallado.help_text }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Errores generales del formulario -->
+                    {% if form.non_field_errors %}
+                        <div class="alert alert-danger">
+                            {% for error in form.non_field_errors %}
+                                {{ error }}
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                    
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-success btn-lg">
+                            <i class="bi bi-check-circle"></i> Registrar Saldos Iniciales
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    {% endif %}
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Toggle inventario global
+    const checkboxGlobal = document.getElementById('usar_inventario_global');
+    const inputGlobal = document.getElementById('{{ form.inventario_global.id_for_label }}');
+    
+    if (checkboxGlobal && inputGlobal) {
+        checkboxGlobal.addEventListener('change', function() {
+            inputGlobal.disabled = !this.checked;
+            if (!this.checked) {
+                inputGlobal.value = '0';
+            }
+        });
+        
+        // Estado inicial
+        inputGlobal.disabled = !checkboxGlobal.checked;
+    }
+});
+</script>
+{% endblock %} 

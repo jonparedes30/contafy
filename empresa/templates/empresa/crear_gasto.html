@@ -1,0 +1,124 @@
+{% extends 'empresa/base.html' %}
+
+{% block title %}Registrar Gasto{% endblock %}
+
+{% block content %}
+<div class="container mt-5" style="max-width: 600px;">
+    <h2 class="mb-4 text-danger text-center"><i class="bi bi-receipt me-2"></i>Registrar nuevo gasto</h2>
+
+    <form method="post" class="border p-4 rounded bg-white shadow-sm">
+        {% csrf_token %}
+        {% if form.errors %}
+            <div class="alert alert-danger"><ul class="mb-0">
+                {% for field in form %}
+                    {% for error in field.errors %}
+                        <li>{{ error }}</li>
+                    {% endfor %}
+                {% endfor %}
+                {% for error in form.non_field_errors %}
+                    <li>{{ error }}</li>
+                {% endfor %}
+            </ul></div>
+        {% endif %}
+
+        <!-- Descripción -->
+        <div class="mb-3">
+            <label for="id_descripcion" class="form-label"><i class="bi bi-card-text me-2"></i>Descripción del gasto</label>
+            {{ form.descripcion }}
+            <div class="form-text">Describe brevemente en qué se gastó el dinero</div>
+        </div>
+
+        <!-- Monto -->
+        <div class="mb-3">
+            <label for="id_monto" class="form-label"><i class="bi bi-currency-dollar me-2"></i>Monto</label>
+            <div class="input-group">
+                <span class="input-group-text">$</span>
+                {{ form.monto }}
+            </div>
+            <div class="form-text">Ingresa el valor exacto del gasto</div>
+        </div>
+
+        <!-- Categoría -->
+        <div class="mb-3">
+            <label for="id_categoria" class="form-label"><i class="bi bi-tags me-2"></i>Categoría</label>
+            {{ form.categoria }}
+            <div class="form-text">
+                <strong>Fijo:</strong> Gastos que se repiten mensualmente (alquiler, servicios básicos)<br>
+                <strong>Variable:</strong> Gastos ocasionales o que varían (compras, mantenimiento)
+            </div>
+        </div>
+
+        <!-- Tipo de Pago -->
+        <div class="mb-3">
+            <label for="id_tipo_pago" class="form-label"><i class="bi bi-credit-card me-2"></i>Tipo de Pago</label>
+            {{ form.tipo_pago }}
+            <div class="form-text">
+                <strong>Contado:</strong> Se paga inmediatamente<br>
+                <strong>Crédito:</strong> Se pagará después (genera cuenta por pagar)
+            </div>
+        </div>
+
+        <!-- Resumen visual -->
+        <div class="card bg-light mb-3" id="resumen-gasto" style="display: none;">
+            <div class="card-body text-center">
+                <h5 class="card-title text-danger">Resumen del Gasto</h5>
+                <p class="card-text">
+                    <strong id="resumen-descripcion"></strong><br>
+                    <span class="fs-4 text-danger" id="resumen-monto">$0.00</span><br>
+                    <small class="text-muted" id="resumen-categoria"></small>
+                </p>
+            </div>
+        </div>
+
+        <button type="submit" class="btn btn-danger w-100" id="btn-guardar-gasto">
+            <i class="bi bi-save me-2"></i>Guardar Gasto
+        </button>
+    </form>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const btnGuardar = document.getElementById('btn-guardar-gasto');
+    const form = btnGuardar.closest('form');
+    const inputDescripcion = document.getElementById('id_descripcion');
+    const inputMonto = document.getElementById('id_monto');
+    const selectCategoria = document.getElementById('id_categoria');
+    const resumenGasto = document.getElementById('resumen-gasto');
+    const resumenDescripcion = document.getElementById('resumen-descripcion');
+    const resumenMonto = document.getElementById('resumen-monto');
+    const resumenCategoria = document.getElementById('resumen-categoria');
+    
+    // Función para actualizar resumen
+    function actualizarResumen() {
+        const descripcion = inputDescripcion.value.trim();
+        const monto = parseFloat(inputMonto.value) || 0;
+        const categoria = selectCategoria.options[selectCategoria.selectedIndex]?.text || '';
+        
+        if (descripcion && monto > 0) {
+            resumenDescripcion.textContent = descripcion;
+            resumenMonto.textContent = `$${monto.toFixed(2)}`;
+            resumenCategoria.textContent = `Categoría: ${categoria}`;
+            resumenGasto.style.display = 'block';
+        } else {
+            resumenGasto.style.display = 'none';
+        }
+    }
+    
+    // Eventos para actualizar resumen
+    inputDescripcion.addEventListener('input', actualizarResumen);
+    inputMonto.addEventListener('input', actualizarResumen);
+    selectCategoria.addEventListener('change', actualizarResumen);
+    
+    // Evento de envío del formulario
+    if (form && btnGuardar) {
+        form.addEventListener('submit', function () {
+            btnGuardar.disabled = true;
+            btnGuardar.innerHTML = '<i class="bi bi-hourglass-split me-2"></i>Guardando...';
+        });
+    }
+    
+    // Inicializar resumen
+    actualizarResumen();
+});
+</script>
+{% endblock %}

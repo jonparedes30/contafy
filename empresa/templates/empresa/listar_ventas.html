@@ -1,0 +1,182 @@
+{% extends 'empresa/base.html' %}
+{% load empresa_filters %}
+
+{% block title %}Ventas Registradas{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="animated-header mb-4 d-flex flex-wrap align-items-center">
+        <div>
+            <h1 class="h2 mb-1">
+                <i class="bi bi-cart-check"></i> Historial de Ventas
+            </h1>
+            <p class="mb-0">Aquí puedes ver todas tus ventas registradas. Usa los filtros para encontrar ventas específicas.</p>
+        </div>
+    </div>
+    
+    <!-- Estadísticas -->
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card text-center" style="background:linear-gradient(135deg, #4caf50, #45a049); color:white; border:none; border-radius:10px; box-shadow:0 4px 15px rgba(0,0,0,0.1);">
+                <div class="card-body">
+                    <h5 class="card-title" style="font-size:1.1rem; margin-bottom:0.5rem;">Total Ventas</h5>
+                    <h3 class="card-text" style="font-size:2rem; font-weight:700; margin:0;">${{ total_ventas|floatformat:2 }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card text-center" style="background:linear-gradient(135deg, #2196f3, #1976d2); color:white; border:none; border-radius:10px; box-shadow:0 4px 15px rgba(0,0,0,0.1);">
+                <div class="card-body">
+                    <h5 class="card-title" style="font-size:1.1rem; margin-bottom:0.5rem;">Transacciones</h5>
+                    <h3 class="card-text" style="font-size:2rem; font-weight:700; margin:0;">{{ total_transacciones }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card text-center" style="background:linear-gradient(135deg, #ff9800, #f57c00); color:white; border:none; border-radius:10px; box-shadow:0 4px 15px rgba(0,0,0,0.1);">
+                <div class="card-body">
+                    <h5 class="card-title" style="font-size:1.1rem; margin-bottom:0.5rem;">Promedio</h5>
+                    <h3 class="card-text" style="font-size:2rem; font-weight:700; margin:0;">${{ promedio_venta|floatformat:2 }}</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+    <form method="get" class="mb-3" style="display:flex; gap:0.7rem; align-items:flex-end; flex-wrap:wrap;">
+        <div>
+            <label for="buscar" style="font-size:0.97rem; color:#333; font-weight:500;">Buscar</label>
+            <input type="text" name="buscar" id="buscar" value="{{ request.GET.buscar }}" placeholder="Producto, cliente o código" style="border:1.5px solid #bdbdbd; border-radius:5px; padding:0.35rem 0.7rem; font-size:1rem; background:#fff; color:#222; min-width:140px;">
+        </div>
+        <div>
+            <label for="fecha_desde" style="font-size:0.97rem; color:#333; font-weight:500;">Desde</label>
+            <input type="date" name="fecha_desde" id="fecha_desde" value="{{ request.GET.fecha_desde }}" style="border:1.5px solid #bdbdbd; border-radius:5px; padding:0.35rem 0.7rem; font-size:1rem; background:#fff; color:#222; min-width:120px;">
+        </div>
+        <div>
+            <label for="fecha_hasta" style="font-size:0.97rem; color:#333; font-weight:500;">Hasta</label>
+            <input type="date" name="fecha_hasta" id="fecha_hasta" value="{{ request.GET.fecha_hasta }}" style="border:1.5px solid #bdbdbd; border-radius:5px; padding:0.35rem 0.7rem; font-size:1rem; background:#fff; color:#222; min-width:120px;">
+        </div>
+        <div>
+            <label for="monto" style="font-size:0.97rem; color:#333; font-weight:500;">Monto</label>
+            <select name="monto" id="monto" style="border:1.5px solid #bdbdbd; border-radius:5px; padding:0.35rem 0.7rem; font-size:1rem; background:#fff; color:#222; min-width:110px;">
+                <option value="">Todos</option>
+                <option value="0-100" {% if request.GET.monto == '0-100' %}selected{% endif %}>0 - 100</option>
+                <option value="100-500" {% if request.GET.monto == '100-500' %}selected{% endif %}>100 - 500</option>
+                <option value="500-1000" {% if request.GET.monto == '500-1000' %}selected{% endif %}>500 - 1000</option>
+                <option value="1000+" {% if request.GET.monto == '1000+' %}selected{% endif %}>1000+</option>
+            </select>
+        </div>
+        <div>
+            <button type="submit" class="btn btn-sm btn-primary" style="padding:0.35rem 1.1rem; font-size:1rem; border-radius:5px;">Filtrar</button>
+        </div>
+        <div class="ms-auto d-flex gap-2">
+            <button type="button" class="btn btn-outline-secondary btn-sm" onclick="window.print()"><i class="bi bi-printer"></i> Imprimir</button>
+        </div>
+    </form>
+    
+    <!-- Widget Clientes que me deben -->
+    <div class="card border-0 shadow-sm mb-4" style="border-radius:1rem;">
+        <div class="card-header bg-warning text-dark d-flex justify-content-between align-items-center">
+            <h6 class="mb-0"><i class="bi bi-people"></i> Clientes que me deben</h6>
+            <small class="text-muted">Créditos pendientes</small>
+        </div>
+        <div class="card-body p-2">
+            <div id="clientesDeudores" style="max-height: 120px; overflow-y: auto;">
+                <!-- Se carga dinámicamente -->
+            </div>
+        </div>
+    </div>
+    
+    <table class="table" style="width:100%; border-collapse:collapse;">
+        <thead style="background:#1976d2; color:#fff;">
+            <tr>
+                <th>Fecha</th>
+                <th>Producto</th>
+                <th>Cantidad</th>
+                <th>Precio Unit.</th>
+                <th>Neto</th>
+                <th>IVA</th>
+                <th>Total</th>
+                <th>Tipo Pago</th>
+                <th>Cliente</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for venta in ventas %}
+            <tr style="border-bottom:1px solid #e0e0e0;">
+                <td>{{ venta.fecha|date:'d/m/Y H:i' }}</td>
+                <td>{{ venta.producto.nombre }}</td>
+                <td>{{ venta.cantidad }}</td>
+                <td>${{ venta.precio_unitario|floatformat:2 }}</td>
+                <td>${{ venta.monto_neto|floatformat:2 }}</td>
+                <td>${{ venta.iva|floatformat:2 }}</td>
+                <td>${{ venta.monto|floatformat:2 }}</td>
+                <td>
+                    {% if venta.tipo_pago == 'contado' %}
+                        <span class="badge bg-success">{{ venta.get_tipo_pago_display }}</span>
+                    {% else %}
+                        <span class="badge bg-warning">{{ venta.get_tipo_pago_display }}</span>
+                    {% endif %}
+                </td>
+                <td>{{ venta.cliente_display }}</td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="9" style="text-align:center; color:#888;">No hay ventas registradas o no hay resultados para los filtros seleccionados.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<script>
+function exportarExcel() {
+    // Construir URL con los filtros actuales
+    const url = new URL('{% url "empresa:exportar_excel_ventas" %}', window.location.origin);
+    const params = new URLSearchParams(window.location.search);
+    
+    // Agregar todos los parámetros de filtro a la URL de exportación
+    for (const [key, value] of params) {
+        url.searchParams.append(key, value);
+    }
+    
+    // Descargar el archivo
+    const link = document.createElement('a');
+    link.href = url.toString();
+    link.download = 'ventas_filtradas.xlsx';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+}
+
+// Cargar clientes deudores
+document.addEventListener('DOMContentLoaded', function() {
+    fetch('/empresa/api/cuentas-cobrar/')
+        .then(response => response.json())
+        .then(data => {
+            const container = document.getElementById('clientesDeudores');
+            if (data.length === 0) {
+                container.innerHTML = '<p class="text-muted mb-0 p-2">No hay clientes con deudas pendientes</p>';
+            } else {
+                let html = '';
+                data.slice(0, 8).forEach(cuenta => {
+                    const diasVencido = cuenta.dias_vencido > 0 ? `<span class="badge bg-danger ms-2">${cuenta.dias_vencido} días vencido</span>` : '';
+                    html += `
+                        <div class="d-flex justify-content-between align-items-center border-bottom py-2 px-2">
+                            <div>
+                                <span class="fw-bold">${cuenta.cliente_nombre}</span>
+                                ${diasVencido}
+                            </div>
+                            <span class="fw-bold text-warning">$${cuenta.monto_pendiente}</span>
+                        </div>
+                    `;
+                });
+                if (data.length > 8) {
+                    html += `<div class="text-center p-2"><small class="text-muted">+${data.length - 8} clientes más con deudas</small></div>`;
+                }
+                container.innerHTML = html;
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            document.getElementById('clientesDeudores').innerHTML = '<p class="text-danger mb-0 p-2">Error cargando datos</p>';
+        });
+});
+</script>
+{% endblock %}

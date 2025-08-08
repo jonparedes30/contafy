@@ -1,0 +1,71 @@
+{% extends 'empresa/mobile_base.html' %}
+
+{% block title %}Materias Primas - {{ user.empresa.nombre }}{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h5 class="mb-0">📦 Materias Primas</h5>
+    <a href="{% url 'empresa:crear_materia_prima' %}" class="btn btn-primary btn-sm">
+        <i class="bi bi-plus"></i>
+    </a>
+</div>
+
+{% if materias_primas %}
+    {% for materia in materias_primas %}
+    <div class="card mobile-card">
+        <div class="card-body">
+            <div class="d-flex justify-content-between align-items-start mb-2">
+                <div>
+                    <h6 class="card-title mb-1">{{ materia.nombre }}</h6>
+                    <small class="text-muted">{{ materia.codigo }}</small>
+                </div>
+                <div class="text-end">
+                    {% if materia.necesita_restock %}
+                        <span class="badge bg-danger">{{ materia.stock_actual }}</span>
+                    {% else %}
+                        <span class="badge bg-success">{{ materia.stock_actual }}</span>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <div class="row text-center mb-2">
+                <div class="col-4">
+                    <small class="text-muted d-block">Precio</small>
+                    <strong>${{ materia.precio_unitario }}</strong>
+                </div>
+                <div class="col-4">
+                    <small class="text-muted d-block">Unidad</small>
+                    <strong>{{ materia.get_unidad_medida_display }}</strong>
+                </div>
+                <div class="col-4">
+                    <small class="text-muted d-block">Mín.</small>
+                    <strong>{{ materia.stock_minimo }}</strong>
+                </div>
+            </div>
+            
+            {% if materia.proveedor_principal %}
+                <small class="text-muted">
+                    <i class="bi bi-truck"></i> {{ materia.proveedor_principal.nombre }}
+                </small>
+            {% endif %}
+            
+            <div class="mt-2">
+                <a href="/empresa/manufactura/materias-primas/{{ materia.id }}/editar/" 
+                   class="btn btn-outline-primary btn-sm">
+                    <i class="bi bi-pencil"></i> Editar
+                </a>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+{% else %}
+    <div class="text-center py-5">
+        <i class="bi bi-boxes" style="font-size: 3rem; color: #ccc;"></i>
+        <h5 class="mt-3">No hay materias primas</h5>
+        <p class="text-muted">Agrega tu primera materia prima</p>
+        <a href="{% url 'empresa:crear_materia_prima' %}" class="btn btn-primary">
+            <i class="bi bi-plus"></i> Crear primera materia prima
+        </a>
+    </div>
+{% endif %}
+{% endblock %}

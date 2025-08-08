@@ -1,0 +1,353 @@
+{% extends 'empresa/base.html' %}
+
+{% block title %}Reporte Financiero Profesional - {{ empresa.nombre }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <!-- Encabezado Profesional -->
+            <div class="card mb-4">
+                <div class="card-header bg-dark text-white">
+                    <div class="row align-items-center">
+                        <div class="col-md-8">
+                            <h2 class="mb-0">
+                                <i class="fas fa-building"></i>
+                                {{ empresa.nombre }}
+                            </h2>
+                            <p class="mb-0">Reporte Financiero Profesional</p>
+                        </div>
+                        <div class="col-md-4 text-end">
+                            <h5>Fecha: {{ fecha_reporte }}</h5>
+                            <small>RUC: {{ empresa.ruc|default:"N/A" }}</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Indicadores Financieros Principales -->
+            <div class="row mb-4">
+                <div class="col-md-3">
+                    <div class="card border-primary">
+                        <div class="card-body text-center">
+                            <h6 class="text-primary">INGRESOS TOTALES</h6>
+                            <h3 class="text-success">${{ total_ventas|floatformat:2 }}</h3>
+                            <small class="text-muted">Ventas Netas</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card border-danger">
+                        <div class="card-body text-center">
+                            <h6 class="text-danger">COSTOS Y GASTOS</h6>
+                            <h3 class="text-danger">${{ total_gastos|floatformat:2 }}</h3>
+                            <small class="text-muted">Gastos Operativos</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card border-success">
+                        <div class="card-body text-center">
+                            <h6 class="text-success">UTILIDAD NETA</h6>
+                            <h3 class="{% if utilidad >= 0 %}text-success{% else %}text-danger{% endif %}">
+                                ${{ utilidad|floatformat:2 }}
+                            </h3>
+                            <small class="text-muted">Resultado del Período</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card border-info">
+                        <div class="card-body text-center">
+                            <h6 class="text-info">MARGEN DE UTILIDAD</h6>
+                            <h3 class="text-info">{{ margen_utilidad|floatformat:1 }}%</h3>
+                            <small class="text-muted">Rentabilidad</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Análisis de Rentabilidad -->
+            <div class="row mb-4">
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header bg-primary text-white">
+                            <h5><i class="fas fa-chart-pie"></i> Análisis de Rentabilidad</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-6">
+                                    <h6>Rotación de Inventario</h6>
+                                    <h4 class="text-primary">{{ rotacion_inventario|floatformat:2 }}</h4>
+                                    <small class="text-muted">Veces por año</small>
+                                </div>
+                                <div class="col-6">
+                                    <h6>Rentabilidad de Activos</h6>
+                                    <h4 class="text-success">{{ rentabilidad_activos|floatformat:2 }}</h4>
+                                    <small class="text-muted">ROA</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header bg-success text-white">
+                            <h5><i class="fas fa-chart-line"></i> Tendencias de Ventas</h5>
+                        </div>
+                        <div class="card-body">
+                            {% if ventas_mensuales %}
+                            <div class="table-responsive">
+                                <table class="table table-sm">
+                                    <thead>
+                                        <tr>
+                                            <th>Mes</th>
+                                            <th>Ventas</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for venta_mes in ventas_mensuales %}
+                                        <tr>
+                                            <td>{{ venta_mes.mes|date:"M Y" }}</td>
+                                            <td>${{ venta_mes.total_mes|floatformat:2 }}</td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                            {% else %}
+                            <p class="text-muted">No hay datos de ventas mensuales disponibles.</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Estado de Resultados Detallado -->
+            <div class="card mb-4">
+                <div class="card-header bg-dark text-white">
+                    <h5><i class="fas fa-file-invoice-dollar"></i> Estado de Resultados</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-bordered">
+                            <tbody>
+                                <tr class="table-light">
+                                    <td><strong>INGRESOS</strong></td>
+                                    <td class="text-end"><strong>${{ total_ventas|floatformat:2 }}</strong></td>
+                                </tr>
+                                <tr>
+                                    <td>&nbsp;&nbsp;&nbsp;&nbsp;Ventas Netas</td>
+                                    <td class="text-end">${{ total_ventas|floatformat:2 }}</td>
+                                </tr>
+                                <tr class="table-light">
+                                    <td><strong>COSTOS Y GASTOS</strong></td>
+                                    <td class="text-end"><strong>${{ total_gastos|floatformat:2 }}</strong></td>
+                                </tr>
+                                <tr>
+                                    <td>&nbsp;&nbsp;&nbsp;&nbsp;Gastos Operativos</td>
+                                    <td class="text-end">${{ total_gastos|floatformat:2 }}</td>
+                                </tr>
+                                <tr class="table-warning">
+                                    <td><strong>UTILIDAD NETA</strong></td>
+                                    <td class="text-end"><strong>${{ utilidad|floatformat:2 }}</strong></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Detalle de Operaciones -->
+            <div class="row mb-4">
+                <!-- Ventas Recientes -->
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <h6><i class="fas fa-shopping-cart"></i> Ventas Recientes (Últimas 20)</h6>
+                        </div>
+                        <div class="card-body">
+                            {% if ventas %}
+                            <div class="table-responsive">
+                                <table class="table table-sm">
+                                    <thead>
+                                        <tr>
+                                            <th>Fecha</th>
+                                            <th>Producto</th>
+                                            <th>Total</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for venta in ventas %}
+                                        <tr>
+                                            <td>{{ venta.fecha|date:"d/m/Y" }}</td>
+                                            <td>{{ venta.producto.nombre|truncatechars:20 }}</td>
+                                            <td>${{ venta.total|floatformat:2 }}</td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                            {% else %}
+                            <p class="text-muted">No hay ventas registradas.</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Gastos Recientes -->
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <h6><i class="fas fa-receipt"></i> Gastos Recientes (Últimos 20)</h6>
+                        </div>
+                        <div class="card-body">
+                            {% if gastos %}
+                            <div class="table-responsive">
+                                <table class="table table-sm">
+                                    <thead>
+                                        <tr>
+                                            <th>Fecha</th>
+                                            <th>Descripción</th>
+                                            <th>Monto</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for gasto in gastos %}
+                                        <tr>
+                                            <td>{{ gasto.fecha|date:"d/m/Y" }}</td>
+                                            <td>{{ gasto.descripcion|truncatechars:20 }}</td>
+                                            <td>${{ gasto.monto|floatformat:2 }}</td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                            {% else %}
+                            <p class="text-muted">No hay gastos registrados.</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Inventario -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5><i class="fas fa-boxes"></i> Estado del Inventario</h5>
+                </div>
+                <div class="card-body">
+                    {% if productos %}
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Código</th>
+                                    <th>Producto</th>
+                                    <th>Stock</th>
+                                    <th>Precio Unit.</th>
+                                    <th>Valor Total</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for producto in productos %}
+                                <tr>
+                                    <td>{{ producto.codigo }}</td>
+                                    <td>{{ producto.nombre }}</td>
+                                    <td>
+                                        {% if producto.stock < 10 %}
+                                        <span class="badge bg-warning">{{ producto.stock }}</span>
+                                        {% else %}
+                                        <span class="badge bg-success">{{ producto.stock }}</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>${{ producto.precio_unitario|floatformat:2 }}</td>
+                                    <td>${{ producto.valor_total|floatformat:2 }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <p class="text-muted">No hay productos registrados.</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Compras Recientes -->
+            {% if compras %}
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5><i class="fas fa-truck"></i> Compras Recientes</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Fecha</th>
+                                    <th>Producto</th>
+                                    <th>Cantidad</th>
+                                    <th>Precio Unit.</th>
+                                    <th>Total</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for compra in compras %}
+                                <tr>
+                                    <td>{{ compra.fecha|date:"d/m/Y" }}</td>
+                                    <td>{{ compra.producto.nombre }}</td>
+                                    <td>{{ compra.cantidad }}</td>
+                                    <td>${{ compra.precio_unitario|floatformat:2 }}</td>
+                                    <td>${{ compra.total|floatformat:2 }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Certificación -->
+            <div class="card">
+                <div class="card-header bg-dark text-white">
+                    <h5><i class="fas fa-certificate"></i> Certificación</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-8">
+                            <p class="mb-2">
+                                <strong>Certifico que la información contenida en este reporte es verdadera y correcta, 
+                                y refleja la situación financiera real de la empresa {{ empresa.nombre }}.</strong>
+                            </p>
+                            <p class="text-muted mb-0">
+                                Este reporte ha sido generado automáticamente por el sistema CONTAFY 
+                                y está destinado para uso profesional y bancario.
+                            </p>
+                        </div>
+                        <div class="col-md-4 text-end">
+                            <p class="mb-1"><strong>Fecha:</strong> {{ fecha_reporte }}</p>
+                            <p class="mb-1"><strong>Sistema:</strong> CONTAFY</p>
+                            <p class="mb-0"><strong>Versión:</strong> 1.0</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Botones de Navegación -->
+<div class="mt-4 text-center">
+    <a href="{% url 'empresa:dashboard' %}" class="btn btn-primary">
+        <i class="fas fa-home"></i> Volver al Dashboard
+    </a>
+    <a href="{% url 'empresa:exportar_pdf' %}" class="btn btn-secondary">
+        <i class="fas fa-arrow-left"></i> Volver a Exportar
+    </a>
+    <button onclick="window.print()" class="btn btn-success">
+        <i class="fas fa-print"></i> Imprimir Reporte
+    </button>
+</div>
+{% endblock %} 

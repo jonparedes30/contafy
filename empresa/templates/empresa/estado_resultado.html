@@ -1,0 +1,173 @@
+{% extends 'empresa/base.html' %}
+
+{% block title %}Estado de Resultados{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="animated-header mb-4 d-flex flex-wrap align-items-center justify-content-between">
+        <div>
+            <h1 class="h2 mb-1">
+                <i class="bi bi-cash-stack"></i> Estado de Resultados
+            </h1>
+            <p class="mb-0">Tu resumen de ingresos, costos, gastos y utilidad neta.</p>
+        </div>
+        
+        <!-- Filtro de fechas -->
+        <div class="card border-0 shadow-sm" style="border-radius:0.8rem;">
+            <div class="card-body p-3">
+                <form method="GET" class="d-flex align-items-center gap-2">
+                    <label class="form-label mb-0 text-muted" style="font-size:0.9rem;">📅 Período:</label>
+                    <input type="date" name="fecha_inicio" value="{{ fecha_inicio|date:'Y-m-d' }}" class="form-control form-control-sm" style="width:140px;">
+                    <span class="text-muted">a</span>
+                    <input type="date" name="fecha_fin" value="{{ fecha_fin|date:'Y-m-d' }}" class="form-control form-control-sm" style="width:140px;">
+                    <button type="submit" class="btn btn-primary btn-sm">
+                        <i class="bi bi-funnel"></i> Filtrar
+                    </button>
+                    <button type="button" class="btn btn-outline-secondary btn-sm" onclick="window.print()">
+                        <i class="bi bi-printer"></i> Imprimir
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Información del período -->
+    <div class="alert alert-info mb-4" style="border-radius:0.8rem;">
+        <i class="bi bi-calendar-range"></i> 
+        <strong>Período analizado:</strong> {{ fecha_inicio|date:'d/m/Y' }} - {{ fecha_fin|date:'d/m/Y' }}
+        ({{ fecha_inicio|timesince:fecha_fin|cut:' ago' }})
+    </div>
+
+    <!-- Bloque destacado de utilidad neta -->
+    <div class="card shadow-sm mb-4 border-0" style="border-radius:1rem;">
+        <div class="card-body text-center">
+            <div class="mb-2" style="font-size:1.1rem;">Utilidad Neta</div>
+            <div class="fw-bold" style="font-size:2.2rem; color: {% if utilidad_neta >= 0 %}#198754{% else %}#dc3545{% endif %};">
+                ${{ utilidad_neta|floatformat:2 }}
+            </div>
+            <div class="mt-2">
+                {% if utilidad_neta >= 0 %}
+                    <span class="badge bg-success px-3 py-2" style="font-size:1rem;"><i class="bi bi-emoji-smile"></i> ¡Vas bien!</span>
+                {% else %}
+                    <span class="badge bg-danger px-3 py-2" style="font-size:1rem;"><i class="bi bi-emoji-frown"></i> Atención: revisa tus gastos</span>
+                {% endif %}
+            </div>
+            <div class="text-muted mt-2" style="font-size:0.97rem;">
+                La utilidad neta es lo que realmente ganas después de todos los gastos en el período seleccionado.
+            </div>
+        </div>
+    </div>
+
+    <!-- Tabla visual mejorada -->
+    <div class="card shadow-sm border-0" style="border-radius:1rem;">
+        <div class="card-body p-0">
+            <table class="table mb-0" style="font-size:1.13rem;">
+                <tbody>
+                    <tr>
+                        <td class="align-middle text-muted">Ingresos por Ventas</td>
+                        <td class="align-middle text-end fw-bold text-primary">
+                            ${{ ventas|floatformat:2 }}
+                            <span class="badge bg-success ms-2">Ingreso</span>
+                        </td>
+                    </tr>
+                    <tr style="border-top:1.5px solid #e9ecef;">
+                        <td class="align-middle text-muted">
+                            {% if user.empresa.categoria == 'manufactura' %}
+                                Costos de Producción
+                            {% else %}
+                                Costos (Compras)
+                            {% endif %}
+                        </td>
+                        <td class="align-middle text-end fw-bold" style="color:#0dcaf0;">
+                            ${{ costos|floatformat:2 }}
+                            <span class="badge bg-info ms-2">Costo</span>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="align-middle text-muted">Gastos Operativos</td>
+                        <td class="align-middle text-end fw-bold" style="color:#dc3545;">
+                            ${{ gastos|floatformat:2 }}
+                            <span class="badge bg-danger ms-2">Gasto</span>
+                        </td>
+                    </tr>
+                    <tr class="table-light">
+                        <td class="align-middle text-muted">Utilidad Operativa</td>
+                        <td class="align-middle text-end fw-bold" style="font-size:1.18rem;">
+                            ${{ utilidad_operativa|floatformat:2 }}
+                            <span class="badge bg-primary ms-2">Resultado</span>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<style>
+@media print {
+    /* Ocultar elementos innecesarios en impresión */
+    .btn, .navbar, .sidebar {
+        display: none !important;
+    }
+    
+    /* Estilos para cards en impresión */
+    .card {
+        border: 1px solid #ddd !important;
+        box-shadow: none !important;
+        margin-bottom: 15px !important;
+    }
+    
+    /* Ajustar contenedor principal */
+    .container {
+        max-width: 100% !important;
+        padding: 10px !important;
+    }
+    
+    /* Ajustar tamaños de texto */
+    h2 {
+        font-size: 1.5em !important;
+        margin-bottom: 10px !important;
+    }
+    
+    /* Ajustar tabla */
+    .table {
+        font-size: 0.9em !important;
+    }
+    
+    .table td {
+        padding: 8px !important;
+    }
+    
+    /* Ajustar cards de resumen */
+    .card-body {
+        padding: 15px !important;
+    }
+    
+    /* Asegurar que los colores se vean bien en impresión */
+    .text-primary {
+        color: #000 !important;
+        font-weight: bold !important;
+    }
+    
+    .text-muted {
+        color: #666 !important;
+    }
+    
+    /* Ajustar badges */
+    .badge {
+        font-size: 0.8em !important;
+        padding: 4px 8px !important;
+    }
+    
+    /* Ajustar utilidad neta destacada */
+    .fw-bold {
+        font-weight: bold !important;
+    }
+    
+    /* Ajustar iconos */
+    .bi {
+        font-size: 1.2em !important;
+    }
+}
+</style>
+{% endblock %}

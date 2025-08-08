@@ -1,0 +1,140 @@
+{% extends 'empresa/base.html' %}
+{% load empresa_filters %}
+
+{% block title %}Compras Registradas{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="animated-header mb-4 d-flex flex-wrap align-items-center">
+        <div>
+            <h1 class="h2 mb-1">
+                <i class="bi bi-bag-check"></i> Historial de Compras
+            </h1>
+            <p class="mb-0">Aquí puedes ver todas tus compras registradas. Usa los filtros para encontrar compras específicas.</p>
+        </div>
+    </div>
+    
+    <!-- Estadísticas -->
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card text-center" style="background:linear-gradient(135deg, #e91e63, #c2185b); color:white; border:none; border-radius:10px; box-shadow:0 4px 15px rgba(0,0,0,0.1);">
+                <div class="card-body">
+                    <h5 class="card-title" style="font-size:1.1rem; margin-bottom:0.5rem;">Total Compras</h5>
+                    <h3 class="card-text" style="font-size:2rem; font-weight:700; margin:0;">${{ total_compras|floatformat:2 }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card text-center" style="background:linear-gradient(135deg, #9c27b0, #7b1fa2); color:white; border:none; border-radius:10px; box-shadow:0 4px 15px rgba(0,0,0,0.1);">
+                <div class="card-body">
+                    <h5 class="card-title" style="font-size:1.1rem; margin-bottom:0.5rem;">Transacciones</h5>
+                    <h3 class="card-text" style="font-size:2rem; font-weight:700; margin:0;">{{ total_transacciones }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card text-center" style="background:linear-gradient(135deg, #607d8b, #455a64); color:white; border:none; border-radius:10px; box-shadow:0 4px 15px rgba(0,0,0,0.1);">
+                <div class="card-body">
+                    <h5 class="card-title" style="font-size:1.1rem; margin-bottom:0.5rem;">Promedio</h5>
+                    <h3 class="card-text" style="font-size:2rem; font-weight:700; margin:0;">${{ promedio_compra|floatformat:2 }}</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+    <form method="get" class="mb-3" style="display:flex; gap:0.7rem; align-items:flex-end; flex-wrap:wrap;">
+        <div>
+            <label for="buscar" style="font-size:0.97rem; color:#333; font-weight:500;">Buscar</label>
+            <input type="text" name="buscar" id="buscar" value="{{ request.GET.buscar }}" placeholder="Producto, código o proveedor" style="border:1.5px solid #bdbdbd; border-radius:5px; padding:0.35rem 0.7rem; font-size:1rem; background:#fff; color:#222; min-width:140px;">
+        </div>
+        <div>
+            <label for="fecha_desde" style="font-size:0.97rem; color:#333; font-weight:500;">Desde</label>
+            <input type="date" name="fecha_desde" id="fecha_desde" value="{{ request.GET.fecha_desde }}" style="border:1.5px solid #bdbdbd; border-radius:5px; padding:0.35rem 0.7rem; font-size:1rem; background:#fff; color:#222; min-width:120px;">
+        </div>
+        <div>
+            <label for="fecha_hasta" style="font-size:0.97rem; color:#333; font-weight:500;">Hasta</label>
+            <input type="date" name="fecha_hasta" id="fecha_hasta" value="{{ request.GET.fecha_hasta }}" style="border:1.5px solid #bdbdbd; border-radius:5px; padding:0.35rem 0.7rem; font-size:1rem; background:#fff; color:#222; min-width:120px;">
+        </div>
+        <div>
+            <label for="monto" style="font-size:0.97rem; color:#333; font-weight:500;">Monto</label>
+            <select name="monto" id="monto" style="border:1.5px solid #bdbdbd; border-radius:5px; padding:0.35rem 0.7rem; font-size:1rem; background:#fff; color:#222; min-width:110px;">
+                <option value="">Todos</option>
+                <option value="0-100" {% if request.GET.monto == '0-100' %}selected{% endif %}>0 - 100</option>
+                <option value="100-500" {% if request.GET.monto == '100-500' %}selected{% endif %}>100 - 500</option>
+                <option value="500-1000" {% if request.GET.monto == '500-1000' %}selected{% endif %}>500 - 1000</option>
+                <option value="1000+" {% if request.GET.monto == '1000+' %}selected{% endif %}>1000+</option>
+            </select>
+        </div>
+        <div>
+            <button type="submit" class="btn btn-sm btn-primary" style="padding:0.35rem 1.1rem; font-size:1rem; border-radius:5px;">Filtrar</button>
+        </div>
+        <div class="ms-auto d-flex gap-2">
+            <button type="button" class="btn btn-outline-secondary btn-sm" onclick="window.print()"><i class="bi bi-printer"></i> Imprimir</button>
+        </div>
+    </form>
+    <table class="table" style="width:100%; border-collapse:collapse;">
+        <thead style="background:#1976d2; color:#fff;">
+            <tr>
+                <th>Fecha</th>
+                <th>Producto</th>
+                <th>Proveedor</th>
+                <th>Cantidad</th>
+                <th>Precio Unit.</th>
+                <th>Neto</th>
+                <th>IVA</th>
+                <th>Total</th>
+                <th>Tipo Pago</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for compra in compras %}
+            <tr style="border-bottom:1px solid #e0e0e0;">
+                <td>{{ compra.fecha|date:'d/m/Y H:i' }}</td>
+                <td>{{ compra.producto.nombre }}</td>
+                <td>{{ compra.proveedor_display }}</td>
+                <td>{{ compra.cantidad }}</td>
+                <td>
+                    {% if compra.cantidad > 0 %}
+                        ${{ compra.monto_neto|div:compra.cantidad|floatformat:2 }}
+                    {% else %}
+                        -
+                    {% endif %}
+                </td>
+                <td>${{ compra.monto_neto|floatformat:2 }}</td>
+                <td>${{ compra.iva|floatformat:2 }}</td>
+                <td>${{ compra.monto|floatformat:2 }}</td>
+                <td>
+                    {% if compra.tipo_pago == 'contado' %}
+                        <span class="badge bg-success">{{ compra.get_tipo_pago_display }}</span>
+                    {% else %}
+                        <span class="badge bg-warning">{{ compra.get_tipo_pago_display }}</span>
+                    {% endif %}
+                </td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="9" style="text-align:center; color:#888;">No hay compras registradas o no hay resultados para los filtros seleccionados.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<script>
+function exportarExcel() {
+    // Construir URL con los filtros actuales
+    const url = new URL('{% url "empresa:exportar_excel_compras" %}', window.location.origin);
+    const params = new URLSearchParams(window.location.search);
+    
+    // Agregar todos los parámetros de filtro a la URL de exportación
+    for (const [key, value] of params) {
+        url.searchParams.append(key, value);
+    }
+    
+    // Descargar el archivo
+    const link = document.createElement('a');
+    link.href = url.toString();
+    link.download = 'compras_filtradas.xlsx';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+}
+</script>
+{% endblock %}

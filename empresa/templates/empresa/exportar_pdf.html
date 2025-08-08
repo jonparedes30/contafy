@@ -1,0 +1,121 @@
+{% extends 'empresa/base.html' %}
+
+{% block title %}Exportar Reporte PDF{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="animated-header mb-4 d-flex flex-wrap align-items-center">
+        <div>
+            <h1 class="h2 mb-1">
+                <i class="bi bi-file-earmark-pdf"></i> Exportar Reporte PDF
+            </h1>
+            <p class="mb-0">Selecciona el tipo de reporte que necesitas.</p>
+        </div>
+    </div>
+</div>
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <!-- Encabezado -->
+
+            <!-- Opciones de Reporte -->
+            <div class="row">
+                <!-- Reporte para Usuario -->
+                <div class="col-md-6 mb-4">
+                    <div class="card h-100 border-success">
+                        <div class="card-body text-center">
+                            <div class="mb-3">
+                                <i class="fas fa-user fa-3x text-success"></i>
+                            </div>
+                            <h4 class="card-title text-success">Reporte para Usuario</h4>
+                            <p class="card-text">
+                                Reporte visual y fácil de entender con gráficas, 
+                                estadísticas simples y alertas de inventario.
+                            </p>
+                            <ul class="list-unstyled text-start">
+                                <li><i class="fas fa-check text-success"></i> Resumen ejecutivo visual</li>
+                                <li><i class="fas fa-check text-success"></i> Últimas ventas y gastos</li>
+                                <li><i class="fas fa-check text-success"></i> Alertas de stock bajo</li>
+                                <li><i class="fas fa-check text-success"></i> Gráficas de rendimiento</li>
+                            </ul>
+                        </div>
+                        <div class="card-footer bg-success text-white text-center">
+                            <a href="{% url 'empresa:exportar_pdf_usuario' %}" class="btn btn-light btn-lg w-100">
+                                <i class="fas fa-download"></i>
+                                Generar Reporte Usuario
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Reporte Profesional -->
+                <div class="col-md-6 mb-4">
+                    <div class="card h-100 border-primary">
+                        <div class="card-body text-center">
+                            <div class="mb-3">
+                                <i class="fas fa-building fa-3x text-primary"></i>
+                            </div>
+                            <h4 class="card-title text-primary">Reporte Profesional</h4>
+                            <p class="card-text">
+                                Reporte detallado con indicadores financieros avanzados, 
+                                análisis de rentabilidad y certificación profesional.
+                            </p>
+                            <ul class="list-unstyled text-start">
+                                <li><i class="fas fa-check text-primary"></i> Estado de resultados completo</li>
+                                <li><i class="fas fa-check text-primary"></i> Indicadores financieros (ROA, rotación)</li>
+                                <li><i class="fas fa-check text-primary"></i> Tendencias mensuales</li>
+                                <li><i class="fas fa-check text-primary"></i> Certificación profesional</li>
+                            </ul>
+                        </div>
+                        <div class="card-footer bg-primary text-white text-center">
+                            <a href="{% url 'empresa:exportar_pdf_profesional' %}" class="btn btn-light btn-lg w-100">
+                                <i class="fas fa-download"></i>
+                                Generar Reporte Profesional
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Información Adicional -->
+            <div class="card">
+                <div class="card-header bg-info text-white">
+                    <h5><i class="fas fa-info-circle"></i> Información Importante</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6><i class="fas fa-user text-success"></i> Reporte para Usuario</h6>
+                            <ul class="small">
+                                <li>Ideal para análisis interno</li>
+                                <li>Fácil de entender</li>
+                                <li>Incluye alertas y recomendaciones</li>
+                                <li>Perfecto para reuniones de equipo</li>
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <h6><i class="fas fa-building text-primary"></i> Reporte Profesional</h6>
+                            <ul class="small">
+                                <li>Aceptado por bancos e instituciones</li>
+                                <li>Indicadores financieros estándar</li>
+                                <li>Certificación incluida</li>
+                                <li>Formato profesional</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Botones de Navegación -->
+            <div class="text-center mt-4">
+                <a href="{% url 'empresa:dashboard' %}" class="btn btn-secondary">
+                    <i class="fas fa-home"></i> Volver al Dashboard
+                </a>
+                <a href="{% url 'empresa:exportar_excel_ventas' %}" class="btn btn-success">
+                    <i class="fas fa-file-excel"></i> Exportar Excel
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

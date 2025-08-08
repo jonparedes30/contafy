@@ -1,0 +1,269 @@
+{% extends 'empresa/base.html' %}
+
+{% block title %}Historial de Actividades - {{ empresa.nombre }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <!-- Header -->
+    <div class="d-flex align-items-center justify-content-between mb-4">
+        <div>
+            <h1 class="h2 mb-1">
+                <i class="bi bi-clock-history text-primary"></i> Historial de Actividades
+            </h1>
+            <p class="mb-0 text-muted">Rastrea todas las acciones realizadas en el sistema</p>
+        </div>
+
+    </div>
+
+    <!-- Filtros -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-body">
+            <form method="GET" class="row g-3">
+                <div class="col-md-3">
+                    <label for="dias" class="form-label">Período</label>
+                    <select name="dias" id="dias" class="form-select">
+                        <option value="1" {% if dias_filtro == 1 %}selected{% endif %}>Último día</option>
+                        <option value="7" {% if dias_filtro == 7 %}selected{% endif %}>Últimos 7 días</option>
+                        <option value="30" {% if dias_filtro == 30 %}selected{% endif %}>Últimos 30 días</option>
+                        <option value="90" {% if dias_filtro == 90 %}selected{% endif %}>Últimos 90 días</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label for="tipo" class="form-label">Tipo de actividad</label>
+                    <select name="tipo" id="tipo" class="form-select">
+                        <option value="">Todos los tipos</option>
+                        <option value="ventas" {% if tipo_filtro == 'ventas' %}selected{% endif %}>Ventas</option>
+                        <option value="compras" {% if tipo_filtro == 'compras' %}selected{% endif %}>Compras</option>
+                        <option value="gastos" {% if tipo_filtro == 'gastos' %}selected{% endif %}>Gastos</option>
+                        <option value="productos" {% if tipo_filtro == 'productos' %}selected{% endif %}>Productos</option>
+                        <option value="capital" {% if tipo_filtro == 'capital' %}selected{% endif %}>Capital</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label for="usuario" class="form-label">Usuario</label>
+                    <input type="text" name="usuario" id="usuario" class="form-control" 
+                           placeholder="Buscar por usuario" value="{{ usuario_filtro }}">
+                </div>
+                <div class="col-md-3 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary me-2">
+                        <i class="bi bi-search"></i> Filtrar
+                    </button>
+                    <a href="{% url 'empresa:actividad_reciente' %}" class="btn btn-outline-secondary">
+                        <i class="bi bi-arrow-clockwise"></i> Limpiar
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Estadísticas -->
+    <div class="row g-4 mb-4">
+        <div class="col-md-4">
+            <div class="card shadow-sm h-100">
+                <div class="card-body text-center">
+                    <div class="display-4 text-primary mb-2">
+                        <i class="bi bi-activity"></i>
+                    </div>
+                    <h3 class="card-title text-primary">{{ total_actividades }}</h3>
+                    <p class="card-text text-muted">Actividades Totales</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card shadow-sm h-100">
+                <div class="card-body text-center">
+                    <div class="display-4 text-success mb-2">
+                        <i class="bi bi-people"></i>
+                    </div>
+                    <h3 class="card-title text-success">{{ usuarios_activos }}</h3>
+                    <p class="card-text text-muted">Usuarios Activos</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card shadow-sm h-100">
+                <div class="card-body text-center">
+                    <div class="display-4 text-info mb-2">
+                        <i class="bi bi-calendar-check"></i>
+                    </div>
+                    <h3 class="card-title text-info">{{ dias_filtro }}</h3>
+                    <p class="card-text text-muted">Días de Período</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Lista de Actividades -->
+    <div class="card shadow-sm">
+        <div class="card-header bg-light">
+            <h5 class="card-title mb-0">
+                <i class="bi bi-list-ul text-primary"></i> Actividades Recientes
+            </h5>
+        </div>
+        <div class="card-body">
+            {% if actividades %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Fecha y Hora</th>
+                                <th>Tipo</th>
+                                <th>Descripción</th>
+                                <th>Usuario</th>
+                                <th>Detalles</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for actividad in actividades %}
+                            <tr>
+                                <td>
+                                    <small class="text-muted">
+                                        {{ actividad.fecha|date:"d/m/Y H:i" }}
+                                    </small>
+                                </td>
+                                <td>
+                                    {% if actividad.tipo == 'Venta' %}
+                                        <span class="badge bg-success">{{ actividad.tipo }}</span>
+                                    {% elif actividad.tipo == 'Compra' %}
+                                        <span class="badge bg-primary">{{ actividad.tipo }}</span>
+                                    {% elif actividad.tipo == 'Gasto' %}
+                                        <span class="badge bg-danger">{{ actividad.tipo }}</span>
+                                    {% elif actividad.tipo == 'Producto' %}
+                                        <span class="badge bg-info">{{ actividad.tipo }}</span>
+                                    {% elif actividad.tipo == 'Capital' %}
+                                        <span class="badge bg-secondary">{{ actividad.tipo }}</span>
+                                    {% else %}
+                                        <span class="badge bg-dark">{{ actividad.tipo }}</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <strong>{{ actividad.descripcion }}</strong>
+                                    {% if actividad.cliente %}
+                                        <br><small class="text-muted">Cliente: {{ actividad.cliente }}</small>
+                                    {% endif %}
+                                    {% if actividad.proveedor %}
+                                        <br><small class="text-muted">Proveedor: {{ actividad.proveedor }}</small>
+                                    {% endif %}
+                                    {% if actividad.categoria %}
+                                        <br><small class="text-muted">Categoría: {{ actividad.categoria }}</small>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <div class="avatar-sm bg-primary text-white rounded-circle d-flex align-items-center justify-content-center me-2">
+                                            {{ actividad.usuario_nombre|first|upper }}
+                                        </div>
+                                        <div>
+                                            <strong>{{ actividad.usuario_nombre }}</strong>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <button class="btn btn-sm btn-outline-secondary" 
+                                            data-bs-toggle="modal" 
+                                            data-bs-target="#modalDetalle{{ actividad.objeto.id }}">
+                                        <i class="bi bi-eye"></i> Ver
+                                    </button>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="text-center py-5">
+                    <i class="bi bi-inbox display-4 text-muted"></i>
+                    <h5 class="mt-3 text-muted">No hay actividades registradas</h5>
+                    <p class="text-muted">No se encontraron actividades en el período seleccionado</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Modales de Detalle -->
+{% for actividad in actividades %}
+<div class="modal fade" id="modalDetalle{{ actividad.objeto.id }}" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="bi bi-info-circle text-primary"></i> 
+                    Detalle de {{ actividad.tipo }}
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6>Información General</h6>
+                        <ul class="list-unstyled">
+                            <li><strong>Fecha:</strong> {{ actividad.fecha|date:"d/m/Y H:i:s" }}</li>
+                            <li><strong>Tipo:</strong> {{ actividad.tipo }}</li>
+                            <li><strong>Usuario:</strong> {{ actividad.usuario_nombre }}</li>
+                            {% if actividad.objeto.creado_en %}
+                                <li><strong>Creado:</strong> {{ actividad.objeto.creado_en|date:"d/m/Y H:i" }}</li>
+                            {% endif %}
+                            {% if actividad.objeto.modificado_en %}
+                                <li><strong>Modificado:</strong> {{ actividad.objeto.modificado_en|date:"d/m/Y H:i" }}</li>
+                            {% endif %}
+                        </ul>
+                    </div>
+                    <div class="col-md-6">
+                        <h6>Detalles Específicos</h6>
+                        <ul class="list-unstyled">
+                            {% if actividad.tipo == 'Venta' %}
+                                <li><strong>Producto:</strong> {{ actividad.objeto.producto.nombre }}</li>
+                                <li><strong>Cantidad:</strong> {{ actividad.objeto.cantidad }}</li>
+                                <li><strong>Precio Unitario:</strong> ${{ actividad.objeto.precio_unitario }}</li>
+                                <li><strong>Total:</strong> ${{ actividad.objeto.total }}</li>
+                                {% if actividad.objeto.cliente %}
+                                    <li><strong>Cliente:</strong> {{ actividad.objeto.cliente }}</li>
+                                {% endif %}
+                            {% elif actividad.tipo == 'Compra' %}
+                                <li><strong>Producto:</strong> {{ actividad.objeto.producto.nombre }}</li>
+                                <li><strong>Cantidad:</strong> {{ actividad.objeto.cantidad }}</li>
+                                <li><strong>Total:</strong> ${{ actividad.objeto.total }}</li>
+                                {% if actividad.objeto.proveedor %}
+                                    <li><strong>Proveedor:</strong> {{ actividad.objeto.proveedor }}</li>
+                                {% endif %}
+                            {% elif actividad.tipo == 'Gasto' %}
+                                <li><strong>Descripción:</strong> {{ actividad.objeto.descripcion }}</li>
+                                <li><strong>Monto:</strong> ${{ actividad.objeto.monto }}</li>
+                                <li><strong>Categoría:</strong> {{ actividad.objeto.categoria }}</li>
+                            {% elif actividad.tipo == 'Producto' %}
+                                <li><strong>Nombre:</strong> {{ actividad.objeto.nombre }}</li>
+                                <li><strong>Código:</strong> {{ actividad.objeto.codigo }}</li>
+                                <li><strong>Precio:</strong> ${{ actividad.objeto.precio_unitario }}</li>
+                                <li><strong>Stock:</strong> {{ actividad.objeto.stock }}</li>
+                            {% endif %}
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endfor %}
+
+<style>
+.avatar-sm {
+    width: 32px;
+    height: 32px;
+    font-size: 14px;
+    font-weight: bold;
+}
+
+.table tbody tr:hover {
+    background-color: rgba(0,0,0,0.02);
+}
+
+.badge {
+    font-size: 0.75rem;
+    padding: 0.375rem 0.75rem;
+}
+</style>
+{% endblock %} 

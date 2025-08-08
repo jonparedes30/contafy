@@ -1,0 +1,398 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Asistente IA - CONTAFY{% endblock %}
+
+{% block extra_css %}
+<style>
+.ai-container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+.ai-chat {
+    background: #f8f9fa;
+    border-radius: 15px;
+    padding: 20px;
+    margin-bottom: 20px;
+    min-height: 400px;
+    max-height: 500px;
+    overflow-y: auto;
+}
+
+.ai-message {
+    margin-bottom: 15px;
+    padding: 10px 15px;
+    border-radius: 10px;
+    max-width: 80%;
+}
+
+.user-message {
+    background: #007bff;
+    color: white;
+    margin-left: auto;
+    text-align: right;
+}
+
+.ai-response {
+    background: white;
+    border: 1px solid #dee2e6;
+    margin-right: auto;
+}
+
+.ai-response.success {
+    border-left: 4px solid #28a745;
+}
+
+.ai-response.error {
+    border-left: 4px solid #dc3545;
+}
+
+.ai-input-container {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.ai-input {
+    flex: 1;
+    padding: 12px;
+    border: 2px solid #dee2e6;
+    border-radius: 25px;
+    font-size: 16px;
+}
+
+.ai-input:focus {
+    border-color: #007bff;
+    outline: none;
+}
+
+.ai-send-btn {
+    padding: 12px 25px;
+    background: #007bff;
+    color: white;
+    border: none;
+    border-radius: 25px;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+.ai-send-btn:hover {
+    background: #0056b3;
+}
+
+.ai-send-btn:disabled {
+    background: #6c757d;
+    cursor: not-allowed;
+}
+
+.ejemplos-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 15px;
+    margin-top: 20px;
+}
+
+.ejemplo-card {
+    background: white;
+    border: 1px solid #dee2e6;
+    border-radius: 10px;
+    padding: 15px;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.ejemplo-card:hover {
+    border-color: #007bff;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.ejemplo-comando {
+    font-family: 'Courier New', monospace;
+    background: #f8f9fa;
+    padding: 8px;
+    border-radius: 5px;
+    font-size: 14px;
+    margin-bottom: 8px;
+}
+
+.loading {
+    display: none;
+    text-align: center;
+    padding: 20px;
+}
+
+.typing-indicator {
+    display: none;
+    padding: 10px 15px;
+    background: white;
+    border-radius: 10px;
+    margin-right: auto;
+    max-width: 80px;
+}
+
+.typing-dots {
+    display: flex;
+    gap: 4px;
+}
+
+.typing-dots span {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #007bff;
+    animation: typing 1.4s infinite;
+}
+
+.typing-dots span:nth-child(2) { animation-delay: 0.2s; }
+.typing-dots span:nth-child(3) { animation-delay: 0.4s; }
+
+@keyframes typing {
+    0%, 60%, 100% { transform: translateY(0); }
+    30% { transform: translateY(-10px); }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="ai-container">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">🤖 Asistente IA - CONTAFY</h4>
+                    <small>Escribe comandos en lenguaje natural para gestionar tu negocio</small>
+                </div>
+                <div class="card-body">
+                    <!-- Chat de IA -->
+                    <div id="ai-chat" class="ai-chat">
+                        <div class="ai-message ai-response">
+                            <strong>🤖 Asistente CONTAFY:</strong><br>
+                            ¡Hola! Soy tu asistente inteligente. Puedo ayudarte a:
+                            <ul>
+                                <li>Crear productos, categorías y clientes</li>
+                                <li>Registrar ventas y gastos</li>
+                                <li>Generar reportes</li>
+                                <li>Establecer metas</li>
+                                <li>Automatizar procesos</li>
+                            </ul>
+                            Escribe algo como: <code>"crear producto camiseta precio $15"</code>
+                        </div>
+                    </div>
+
+                    <!-- Indicador de escritura -->
+                    <div id="typing-indicator" class="ai-message typing-indicator">
+                        <div class="typing-dots">
+                            <span></span>
+                            <span></span>
+                            <span></span>
+                        </div>
+                    </div>
+
+                    <!-- Input de comandos -->
+                    <div class="ai-input-container">
+                        <input 
+                            type="text" 
+                            id="ai-input" 
+                            class="ai-input" 
+                            placeholder="Escribe tu comando aquí... ej: 'crear producto laptop precio $800'"
+                            autocomplete="off"
+                        >
+                        <button id="ai-send-btn" class="ai-send-btn">Enviar</button>
+                    </div>
+
+                    <!-- Botones de ayuda -->
+                    <div class="text-center mb-3">
+                        <button class="btn btn-outline-info btn-sm me-2" onclick="mostrarEjemplos()">
+                            💡 Ver Ejemplos
+                        </button>
+                        <button class="btn btn-outline-secondary btn-sm" onclick="mostrarAyuda()">
+                            ❓ Ayuda
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Ejemplos de comandos -->
+    <div id="ejemplos-section" style="display: none;">
+        <div class="card mt-4">
+            <div class="card-header">
+                <h5>💡 Ejemplos de Comandos</h5>
+            </div>
+            <div class="card-body">
+                <div id="ejemplos-grid" class="ejemplos-grid">
+                    <!-- Se llenan dinámicamente -->
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const aiInput = document.getElementById('ai-input');
+    const aiSendBtn = document.getElementById('ai-send-btn');
+    const aiChat = document.getElementById('ai-chat');
+    const typingIndicator = document.getElementById('typing-indicator');
+
+    // Enviar comando al presionar Enter
+    aiInput.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            enviarComando();
+        }
+    });
+
+    // Enviar comando al hacer clic
+    aiSendBtn.addEventListener('click', enviarComando);
+
+    function enviarComando() {
+        const comando = aiInput.value.trim();
+        if (!comando) return;
+
+        // Mostrar mensaje del usuario
+        agregarMensaje(comando, 'user');
+        
+        // Limpiar input y deshabilitar botón
+        aiInput.value = '';
+        aiSendBtn.disabled = true;
+        
+        // Mostrar indicador de escritura
+        mostrarTyping();
+
+        // Enviar comando al servidor
+        fetch('{% url "ai_comandos" %}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            body: JSON.stringify({ comando: comando })
+        })
+        .then(response => response.json())
+        .then(data => {
+            ocultarTyping();
+            
+            if (data.success) {
+                agregarMensaje(data.mensaje, 'ai-success');
+                
+                // Mostrar datos adicionales si existen
+                if (data.datos) {
+                    const datosHtml = Object.entries(data.datos)
+                        .map(([key, value]) => `<strong>${key}:</strong> ${value}`)
+                        .join('<br>');
+                    agregarMensaje(datosHtml, 'ai-success');
+                }
+            } else {
+                agregarMensaje(data.error || 'Error procesando comando', 'ai-error');
+            }
+        })
+        .catch(error => {
+            ocultarTyping();
+            agregarMensaje('Error de conexión: ' + error.message, 'ai-error');
+        })
+        .finally(() => {
+            aiSendBtn.disabled = false;
+            aiInput.focus();
+        });
+    }
+
+    function agregarMensaje(mensaje, tipo) {
+        const messageDiv = document.createElement('div');
+        messageDiv.className = `ai-message ${tipo === 'user' ? 'user-message' : 'ai-response'}`;
+        
+        if (tipo === 'ai-success') {
+            messageDiv.classList.add('success');
+            messageDiv.innerHTML = `<strong>🤖 Asistente:</strong><br>${mensaje}`;
+        } else if (tipo === 'ai-error') {
+            messageDiv.classList.add('error');
+            messageDiv.innerHTML = `<strong>❌ Error:</strong><br>${mensaje}`;
+        } else {
+            messageDiv.innerHTML = mensaje;
+        }
+        
+        aiChat.appendChild(messageDiv);
+        aiChat.scrollTop = aiChat.scrollHeight;
+    }
+
+    function mostrarTyping() {
+        typingIndicator.style.display = 'block';
+        aiChat.scrollTop = aiChat.scrollHeight;
+    }
+
+    function ocultarTyping() {
+        typingIndicator.style.display = 'none';
+    }
+
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+
+    // Funciones globales para botones
+    window.mostrarEjemplos = function() {
+        const ejemplosSection = document.getElementById('ejemplos-section');
+        const ejemplosGrid = document.getElementById('ejemplos-grid');
+        
+        if (ejemplosSection.style.display === 'none') {
+            // Cargar ejemplos
+            fetch('{% url "ejemplos_comandos" %}')
+            .then(response => response.json())
+            .then(data => {
+                ejemplosGrid.innerHTML = '';
+                data.ejemplos.forEach(ejemplo => {
+                    const card = document.createElement('div');
+                    card.className = 'ejemplo-card';
+                    card.innerHTML = `
+                        <div class="ejemplo-comando">${ejemplo.comando}</div>
+                        <small class="text-muted">${ejemplo.descripcion}</small>
+                    `;
+                    card.onclick = () => {
+                        aiInput.value = ejemplo.comando;
+                        aiInput.focus();
+                    };
+                    ejemplosGrid.appendChild(card);
+                });
+                ejemplosSection.style.display = 'block';
+            });
+        } else {
+            ejemplosSection.style.display = 'none';
+        }
+    };
+
+    window.mostrarAyuda = function() {
+        fetch('{% url "ayuda_comandos" %}')
+        .then(response => response.json())
+        .then(data => {
+            let ayudaHtml = '<strong>📚 Comandos disponibles:</strong><br><br>';
+            
+            Object.entries(data.comandos).forEach(([categoria, comandos]) => {
+                ayudaHtml += `<strong>${categoria.toUpperCase()}:</strong><br>`;
+                comandos.forEach(cmd => {
+                    ayudaHtml += `• ${cmd}<br>`;
+                });
+                ayudaHtml += '<br>';
+            });
+            
+            agregarMensaje(ayudaHtml, 'ai-success');
+        });
+    };
+
+    // Focus inicial
+    aiInput.focus();
+});
+</script>
+{% endblock %}

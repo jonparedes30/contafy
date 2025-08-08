@@ -1,0 +1,194 @@
+{% extends 'empresa/base.html' %}
+
+{% block title %}Materias Primas - {{ user.empresa.nombre }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2>📦 Materias Primas</h2>
+                <div>
+                    <a href="/empresa/manufactura/proveedores/" class="btn btn-outline-info me-2">
+                        <i class="fas fa-truck"></i> Gestionar Proveedores
+                    </a>
+                    <button type="button" class="btn btn-outline-secondary me-2" data-bs-toggle="modal" data-bs-target="#modalProveedor">
+                        <i class="fas fa-plus"></i> Nuevo Proveedor
+                    </button>
+                    <a href="{% url 'empresa:exportar_excel_materias_primas' %}" class="btn btn-success me-2">
+                        <i class="bi bi-file-earmark-excel"></i> Excel
+                    </a>
+                    <a href="{% url 'empresa:crear_materia_prima' %}" class="btn btn-primary">
+                        <i class="fas fa-plus"></i> Nueva Materia Prima
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    {% if materias_primas %}
+                        <div class="table-responsive">
+                            <table class="table table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>Código</th>
+                                        <th>Nombre</th>
+                                        <th>Unidad</th>
+                                        <th>Precio Unitario</th>
+                                        <th>Stock Actual</th>
+                                        <th>Stock Mínimo</th>
+                                        <th>Estado</th>
+                                        <th>Proveedor</th>
+                                        <th>Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for materia in materias_primas %}
+                                    <tr>
+                                        <td><strong>{{ materia.codigo }}</strong></td>
+                                        <td>{{ materia.nombre }}</td>
+                                        <td>{{ materia.get_unidad_medida_display }}</td>
+                                        <td>${{ materia.precio_unitario }}</td>
+                                        <td>
+                                            {% if materia.necesita_restock %}
+                                                <span class="badge bg-danger">
+                                                    {{ materia.stock_actual }}
+                                                </span>
+                                            {% else %}
+                                                <span class="badge bg-success">
+                                                    {{ materia.stock_actual }}
+                                                </span>
+                                            {% endif %}
+                                        </td>
+                                        <td>{{ materia.stock_minimo }}</td>
+                                        <td>
+                                            {% if materia.necesita_restock %}
+                                                <span class="badge bg-warning">⚠️ Restock</span>
+                                            {% else %}
+                                                <span class="badge bg-success">✅ OK</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if materia.proveedor_principal %}
+                                                {{ materia.proveedor_principal.nombre }}
+                                            {% else %}
+                                                <span class="text-muted">Sin proveedor</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <a href="/empresa/manufactura/materias-primas/{{ materia.id }}/editar/" 
+                                               class="btn btn-sm btn-primary me-1">
+                                                <i class="fas fa-edit"></i> Editar
+                                            </a>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-5">
+                            <i class="fas fa-boxes fa-3x text-muted mb-3"></i>
+                            <h4>No hay materias primas registradas</h4>
+                            <p class="text-muted">Comienza agregando las materias primas que utilizas en tu producción</p>
+                            <a href="{% url 'empresa:crear_materia_prima' %}" class="btn btn-primary">
+                                <i class="fas fa-plus"></i> Crear primera materia prima
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para crear proveedor -->
+<div class="modal fade" id="modalProveedor" tabindex="-1" aria-labelledby="modalProveedorLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalProveedorLabel">Nuevo Proveedor</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="formProveedor">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label for="nombre_proveedor" class="form-label">Nombre <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="nombre_proveedor" name="nombre" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="ruc_proveedor" class="form-label">RUC <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="ruc_proveedor" name="ruc" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="telefono_proveedor" class="form-label">Teléfono</label>
+                        <input type="text" class="form-control" id="telefono_proveedor" name="telefono">
+                    </div>
+                    <div class="mb-3">
+                        <label for="email_proveedor" class="form-label">Email</label>
+                        <input type="email" class="form-control" id="email_proveedor" name="email">
+                    </div>
+                    <div class="mb-3">
+                        <label for="dias_credito_proveedor" class="form-label">Días de Crédito</label>
+                        <input type="number" class="form-control" id="dias_credito_proveedor" name="dias_credito" value="0">
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" id="btnGuardarProveedor">
+                    <i class="fas fa-save"></i> Guardar Proveedor
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const btnGuardarProveedor = document.getElementById('btnGuardarProveedor');
+    const formProveedor = document.getElementById('formProveedor');
+    const modalProveedor = new bootstrap.Modal(document.getElementById('modalProveedor'));
+    
+    btnGuardarProveedor.addEventListener('click', function() {
+        const formData = new FormData(formProveedor);
+        
+        fetch('{% url "empresa:crear_proveedor_ajax" %}', {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Cerrar modal y limpiar formulario
+                modalProveedor.hide();
+                formProveedor.reset();
+                
+                // Mostrar mensaje de éxito y recargar página
+                alert('Proveedor creado exitosamente');
+                location.reload();
+            } else {
+                // Mostrar errores
+                let errorMsg = 'Error al crear proveedor:\n';
+                for (let field in data.errors) {
+                    errorMsg += field + ': ' + data.errors[field].join(', ') + '\n';
+                }
+                alert(errorMsg);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error al crear proveedor');
+        });
+    });
+});
+</script>
+{% endblock %}

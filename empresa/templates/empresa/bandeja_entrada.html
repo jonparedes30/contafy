@@ -1,0 +1,85 @@
+{% extends 'empresa/base.html' %}
+
+{% block title %}Bandeja de Entrada - CONTAFY{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="animated-header mb-4">
+        <h1 class="h2 mb-1">
+            <i class="bi bi-inbox"></i> Bandeja de Entrada
+        </h1>
+        <p class="mb-0">Conversaciones con el equipo de soporte</p>
+    </div>
+
+    <div class="row">
+        <div class="col-12">
+            {% if conversaciones %}
+                {% for conversacion in conversaciones %}
+                <div class="card mb-3">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <h5 class="card-title">
+                                    <i class="bi bi-chat-dots"></i> 
+                                    {{ conversacion.solicitud_ayuda.asunto }}
+                                </h5>
+                                <p class="text-muted mb-2">
+                                    <small>
+                                        <i class="bi bi-tag"></i> {{ conversacion.solicitud_ayuda.get_tipo_display }} |
+                                        <i class="bi bi-calendar"></i> {{ conversacion.fecha_creacion|date:"d/m/Y H:i" }}
+                                    </small>
+                                </p>
+                                
+                                {% with ultimo_mensaje=conversacion.mensajes.last %}
+                                {% if ultimo_mensaje %}
+                                <p class="card-text">
+                                    <strong>
+                                        {% if ultimo_mensaje.tipo == 'soporte' %}
+                                            <i class="bi bi-person-badge text-primary"></i> Soporte:
+                                        {% else %}
+                                            <i class="bi bi-person text-secondary"></i> Tú:
+                                        {% endif %}
+                                    </strong>
+                                    {{ ultimo_mensaje.mensaje|truncatewords:15 }}
+                                </p>
+                                {% endif %}
+                                {% endwith %}
+                            </div>
+                            
+                            <div class="text-end">
+                                {% if conversacion.cerrada %}
+                                    <span class="badge bg-secondary">Cerrada</span>
+                                {% else %}
+                                    <span class="badge bg-success">Activa</span>
+                                {% endif %}
+                                
+                                {% with mensajes_no_leidos=conversacion.mensajes.all|length %}
+                                {% if mensajes_no_leidos > 0 %}
+                                    <span class="badge bg-primary">{{ conversacion.mensajes.count }} mensajes</span>
+                                {% endif %}
+                                {% endwith %}
+                                
+                                <div class="mt-2">
+                                    <a href="{% url 'empresa:ver_conversacion' conversacion.id %}" class="btn btn-primary btn-sm">
+                                        <i class="bi bi-eye"></i> Ver Conversación
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="text-center py-5">
+                    <i class="bi bi-inbox display-1 text-muted"></i>
+                    <h4 class="text-muted mt-3">No tienes conversaciones</h4>
+                    <p class="text-muted">Cuando envíes una solicitud de ayuda, aparecerá aquí.</p>
+                    <a href="{% url 'empresa:asistente_ayuda' %}" class="btn btn-primary">
+                        <i class="bi bi-plus-circle"></i> Solicitar Ayuda
+                    </a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

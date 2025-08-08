@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Filtros de Fecha - Contafy</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .container { max-width: 1200px; margin: 0 auto; }
+        .form-group { margin: 10px 0; }
+        .form-group label { display: inline-block; width: 120px; }
+        .form-group input { padding: 5px; }
+        .btn { padding: 8px 16px; background: #007bff; color: white; border: none; cursor: pointer; }
+        .btn:hover { background: #0056b3; }
+        .result-section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; }
+        .success { background: #d4edda; border-color: #c3e6cb; }
+        .warning { background: #fff3cd; border-color: #ffeaa7; }
+        .error { background: #f8d7da; border-color: #f5c6cb; }
+        table { width: 100%; border-collapse: collapse; margin: 10px 0; }
+        th, td { padding: 8px; text-align: left; border-bottom: 1px solid #ddd; }
+        th { background: #f8f9fa; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 Test de Filtros de Fecha</h1>
+        
+        <form method="GET">
+            <div class="form-group">
+                <label>Fecha Inicio:</label>
+                <input type="date" name="fecha_inicio" value="{{ fecha_inicio|date:'Y-m-d' }}">
+            </div>
+            <div class="form-group">
+                <label>Fecha Fin:</label>
+                <input type="date" name="fecha_fin" value="{{ fecha_fin|date:'Y-m-d' }}">
+            </div>
+            <div class="form-group">
+                <button type="submit" class="btn">🔍 Aplicar Filtros</button>
+                <button type="submit" name="format" value="json" class="btn">📊 Ver JSON</button>
+            </div>
+        </form>
+
+        <div class="result-section {% if resultado.verificacion.filtros_funcionando %}success{% else %}error{% endif %}">
+            <h3>📋 Resumen del Período</h3>
+            <p><strong>Rango:</strong> {{ resultado.filtros_aplicados.fecha_inicio }} a {{ resultado.filtros_aplicados.fecha_fin }}</p>
+            <p><strong>Días:</strong> {{ resultado.filtros_aplicados.dias_rango }}</p>
+            
+            <table>
+                <tr>
+                    <th>Tipo</th>
+                    <th>Total ($)</th>
+                    <th>Registros</th>
+                    <th>Estado</th>
+                </tr>
+                <tr>
+                    <td>💰 Ventas</td>
+                    <td>${{ resultado.resumen_periodo.ventas_total|floatformat:2 }}</td>
+                    <td>{{ resultado.resumen_periodo.ventas_registros }}</td>
+                    <td>{% if resultado.resumen_periodo.ventas_registros > 0 %}✅{% else %}❌{% endif %}</td>
+                </tr>
+                <tr>
+                    <td>💸 Gastos</td>
+                    <td>${{ resultado.resumen_periodo.gastos_total|floatformat:2 }}</td>
+                    <td>{{ resultado.resumen_periodo.gastos_registros }}</td>
+                    <td>{% if resultado.resumen_periodo.gastos_registros > 0 %}✅{% else %}❌{% endif %}</td>
+                </tr>
+                <tr>
+                    <td>🛒 Compras</td>
+                    <td>${{ resultado.resumen_periodo.compras_total|floatformat:2 }}</td>
+                    <td>{{ resultado.resumen_periodo.compras_registros }}</td>
+                    <td>{% if resultado.resumen_periodo.compras_registros > 0 %}✅{% else %}❌{% endif %}</td>
+                </tr>
+            </table>
+        </div>
+
+        {% if resultado.datos_mensuales %}
+        <div class="result-section">
+            <h3>📈 Datos Mensuales</h3>
+            <table>
+                <tr>
+                    <th>Mes</th>
+                    <th>Ventas</th>
+                    <th>Gastos</th>
+                    <th>Compras</th>
+                    <th>Utilidad</th>
+                </tr>
+                {% for mes in resultado.datos_mensuales %}
+                <tr>
+                    <td>{{ mes.mes }}</td>
+                    <td>${{ mes.ventas|floatformat:2 }}</td>
+                    <td>${{ mes.gastos|floatformat:2 }}</td>
+                    <td>${{ mes.compras|floatformat:2 }}</td>
+                    <td style="color: {% if mes.utilidad >= 0 %}green{% else %}red{% endif %}">
+                        ${{ mes.utilidad|floatformat:2 }}
+                    </td>
+                </tr>
+                {% endfor %}
+            </table>
+        </div>
+        {% endif %}
+
+        <div class="result-section {% if resultado.verificacion.datos_encontrados %}success{% else %}warning{% endif %}">
+            <h3>🔍 Verificación</h3>
+            <p><strong>Filtros funcionando:</strong> 
+                {% if resultado.verificacion.filtros_funcionando %}✅ SÍ{% else %}❌ NO{% endif %}
+            </p>
+            <p><strong>Datos encontrados:</strong> 
+                {% if resultado.verificacion.datos_encontrados %}✅ SÍ{% else %}⚠️ NO{% endif %}
+            </p>
+            
+            {% if not resultado.verificacion.datos_encontrados %}
+            <p style="color: orange;">
+                <strong>Nota:</strong> No se encontraron datos en el período seleccionado. 
+                Esto puede ser normal si no hay registros en esas fechas.
+            </p>
+            {% endif %}
+        </div>
+
+        <div class="result-section">
+            <h3>🔗 Enlaces de Prueba</h3>
+            <p>
+                <a href="?fecha_inicio=2024-01-01&fecha_fin=2024-12-31" class="btn">📅 Todo 2024</a>
+                <a href="?fecha_inicio={{ fecha_inicio|date:'Y-m-01' }}&fecha_fin={{ fecha_fin|date:'Y-m-d' }}" class="btn">📅 Este Mes</a>
+                <a href="?format=json" class="btn">📊 Ver JSON</a>
+            </p>
+        </div>
+    </div>
+</body>
+</html>

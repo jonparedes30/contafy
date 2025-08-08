@@ -1,0 +1,143 @@
+{% extends 'empresa/base.html' %}
+
+{% block title %}Cuentas Contables - CONTAFY{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="animated-header mb-4 d-flex flex-wrap align-items-center justify-content-between">
+        <div>
+            <h1 class="h2 mb-1">
+                <i class="bi bi-journal-text"></i> Cuentas Contables
+            </h1>
+            <p class="mb-0">Administra y consulta todas las cuentas contables de tu empresa.</p>
+        </div>
+        <div>
+            <a href="{% url 'empresa:crear_cuenta_contable' %}" class="btn btn-success">
+                <i class="bi bi-plus-circle"></i> Nueva Cuenta
+            </a>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-12">
+        {% if cuentas %}
+        <div class="card shadow">
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover">
+                        <thead class="table-dark">
+                            <tr>
+                                <th><i class="bi bi-hash"></i> ID</th>
+                                <th><i class="bi bi-tag"></i> Nombre</th>
+                                <th><i class="bi bi-list-ul"></i> Tipo</th>
+                                <th><i class="bi bi-currency-dollar"></i> Saldo</th>
+                                <th><i class="bi bi-gear"></i> Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for cuenta in cuentas %}
+                            <tr>
+                                <td>{{ cuenta.id }}</td>
+                                <td>
+                                    <strong>{{ cuenta.nombre }}</strong>
+                                </td>
+                                <td>
+                                    {% if cuenta.tipo == 'activo' %}
+                                        <span class="badge bg-primary">Activo</span>
+                                    {% elif cuenta.tipo == 'pasivo' %}
+                                        <span class="badge bg-warning text-dark">Pasivo</span>
+                                    {% elif cuenta.tipo == 'patrimonio' %}
+                                        <span class="badge bg-info">Patrimonio</span>
+                                    {% elif cuenta.tipo == 'ingreso' %}
+                                        <span class="badge bg-success">Ingreso</span>
+                                    {% elif cuenta.tipo == 'gasto' %}
+                                        <span class="badge bg-danger">Gasto</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">{{ cuenta.tipo|title }}</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if cuenta.valor %}
+                                        <span class="fw-bold">${{ cuenta.valor|floatformat:2 }}</span>
+                                    {% else %}
+                                        <span class="text-muted">$0.00</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <div class="btn-group" role="group">
+                                        <button type="button" class="btn btn-sm btn-outline-primary" 
+                                                data-bs-toggle="tooltip" title="Ver detalles">
+                                            <i class="bi bi-eye"></i>
+                                        </button>
+                                        <button type="button" class="btn btn-sm btn-outline-warning" 
+                                                data-bs-toggle="tooltip" title="Editar">
+                                            <i class="bi bi-pencil"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Resumen -->
+        <div class="row mt-4">
+            <div class="col-md-3">
+                <div class="card bg-primary text-white">
+                    <div class="card-body text-center">
+                        <h5><i class="bi bi-list-ul"></i> Total Cuentas</h5>
+                        <h3>{{ cuentas.count }}</h3>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card bg-success text-white">
+                    <div class="card-body text-center">
+                        <h5><i class="bi bi-arrow-up-circle"></i> Activos</h5>
+                        <h3>{{ cuentas|dictsort:"tipo"|length }}</h3>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card bg-warning text-dark">
+                    <div class="card-body text-center">
+                        <h5><i class="bi bi-arrow-down-circle"></i> Pasivos</h5>
+                        <h3>{{ cuentas|dictsort:"tipo"|length }}</h3>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card bg-info text-white">
+                    <div class="card-body text-center">
+                        <h5><i class="bi bi-graph-up"></i> Patrimonio</h5>
+                        <h3>{{ cuentas|dictsort:"tipo"|length }}</h3>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {% else %}
+        <div class="alert alert-info text-center">
+            <i class="bi bi-info-circle fs-1"></i>
+            <h4>No hay cuentas contables registradas</h4>
+            <p>Comienza creando tu primera cuenta contable para organizar tu contabilidad.</p>
+            <a href="{% url 'empresa:crear_cuenta_contable' %}" class="btn btn-primary">
+                <i class="bi bi-plus-circle"></i> Crear Primera Cuenta
+            </a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+// Inicializar tooltips
+var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+    return new bootstrap.Tooltip(tooltipTriggerEl)
+})
+</script>
+{% endblock %}

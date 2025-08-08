@@ -1,0 +1,229 @@
+{% extends 'empresa/base.html' %}
+
+{% block title %}Reporte Financiero - {{ empresa.nombre }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <!-- Encabezado del Reporte -->
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h2 class="mb-0">
+                        <i class="fas fa-chart-line"></i>
+                        Reporte Financiero - {{ empresa.nombre }}
+                    </h2>
+                    <p class="mb-0">Generado el {{ fecha_reporte }}</p>
+                </div>
+            </div>
+
+            <!-- Resumen Ejecutivo -->
+            <div class="row mb-4">
+                <div class="col-md-3">
+                    <div class="card bg-success text-white">
+                        <div class="card-body text-center">
+                            <h4><i class="fas fa-dollar-sign"></i></h4>
+                            <h5>Total Ventas</h5>
+                            <h3>${{ total_ventas|floatformat:2 }}</h3>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-danger text-white">
+                        <div class="card-body text-center">
+                            <h4><i class="fas fa-credit-card"></i></h4>
+                            <h5>Total Gastos</h5>
+                            <h3>${{ total_gastos|floatformat:2 }}</h3>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card {% if utilidad >= 0 %}bg-info{% else %}bg-warning{% endif %} text-white">
+                        <div class="card-body text-center">
+                            <h4><i class="fas fa-chart-pie"></i></h4>
+                            <h5>Utilidad</h5>
+                            <h3>${{ utilidad|floatformat:2 }}</h3>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-secondary text-white">
+                        <div class="card-body text-center">
+                            <h4><i class="fas fa-percentage"></i></h4>
+                            <h5>Margen</h5>
+                            <h3>{{ margen_utilidad|floatformat:1 }}%</h3>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Estadísticas del Negocio -->
+            <div class="row mb-4">
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5><i class="fas fa-boxes"></i> Inventario</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-6">
+                                    <h6>Total Productos</h6>
+                                    <h4 class="text-primary">{{ total_productos }}</h4>
+                                </div>
+                                <div class="col-6">
+                                    <h6>Stock Bajo</h6>
+                                    <h4 class="text-warning">{{ productos_stock_bajo }}</h4>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5><i class="fas fa-chart-bar"></i> Rendimiento</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="progress mb-3">
+                                <div class="progress-bar bg-success" style="width: {{ margen_utilidad }}%">
+                                    {{ margen_utilidad|floatformat:1 }}%
+                                </div>
+                            </div>
+                            <small class="text-muted">Margen de Utilidad</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Últimas Ventas -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5><i class="fas fa-shopping-cart"></i> Últimas Ventas</h5>
+                </div>
+                <div class="card-body">
+                    {% if ventas %}
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Fecha</th>
+                                    <th>Producto</th>
+                                    <th>Cantidad</th>
+                                    <th>Precio Unit.</th>
+                                    <th>Total</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for venta in ventas %}
+                                <tr>
+                                    <td>{{ venta.fecha|date:"d/m/Y" }}</td>
+                                    <td>{{ venta.producto.nombre }}</td>
+                                    <td>{{ venta.cantidad }}</td>
+                                    <td>${{ venta.precio_unitario|floatformat:2 }}</td>
+                                    <td>${{ venta.total|floatformat:2 }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <p class="text-muted">No hay ventas registradas.</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Últimos Gastos -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5><i class="fas fa-receipt"></i> Últimos Gastos</h5>
+                </div>
+                <div class="card-body">
+                    {% if gastos %}
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Fecha</th>
+                                    <th>Descripción</th>
+                                    <th>Monto</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for gasto in gastos %}
+                                <tr>
+                                    <td>{{ gasto.fecha|date:"d/m/Y" }}</td>
+                                    <td>{{ gasto.descripcion }}</td>
+                                    <td>${{ gasto.monto|floatformat:2 }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <p class="text-muted">No hay gastos registrados.</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Productos con Stock Bajo -->
+            {% if productos_stock_bajo > 0 %}
+            <div class="card mb-4">
+                <div class="card-header bg-warning text-dark">
+                    <h5><i class="fas fa-exclamation-triangle"></i> Productos con Stock Bajo</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Código</th>
+                                    <th>Producto</th>
+                                    <th>Stock Actual</th>
+                                    <th>Precio</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for producto in productos %}
+                                {% if producto.stock < 10 %}
+                                <tr>
+                                    <td>{{ producto.codigo }}</td>
+                                    <td>{{ producto.nombre }}</td>
+                                    <td><span class="badge bg-warning">{{ producto.stock }}</span></td>
+                                    <td>${{ producto.precio_unitario|floatformat:2 }}</td>
+                                </tr>
+                                {% endif %}
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Pie de Página -->
+            <div class="card">
+                <div class="card-footer text-center text-muted">
+                    <p class="mb-0">
+                        <i class="fas fa-info-circle"></i>
+                        Reporte generado por CONTAFY - Sistema de Contabilidad para PYMES
+                    </p>
+                    <small>Este es un reporte de usuario para análisis interno</small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Botones de Navegación -->
+<div class="mt-4 text-center">
+    <a href="{% url 'empresa:dashboard' %}" class="btn btn-primary">
+        <i class="fas fa-home"></i> Volver al Dashboard
+    </a>
+    <a href="{% url 'empresa:exportar_pdf' %}" class="btn btn-secondary">
+        <i class="fas fa-arrow-left"></i> Volver a Exportar
+    </a>
+    <button onclick="window.print()" class="btn btn-success">
+        <i class="fas fa-print"></i> Imprimir Reporte
+    </button>
+</div>
+{% endblock %} 

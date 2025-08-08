@@ -1,0 +1,440 @@
+{% extends 'empresa/base.html' %}
+{% load empresa_filters %}
+
+{% block title %}Mi Empresa{% endblock %}
+
+{% block content %}
+{% csrf_token %}
+<div class="container-fluid mt-4">
+    <!-- Header empresarial -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-0 shadow-lg" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                <div class="card-body text-white p-4">
+                    <div class="row align-items-center">
+                        <div class="col-md-8">
+                            <div class="d-flex align-items-center mb-2">
+                                <div class="bg-white bg-opacity-20 rounded-circle p-3 me-3">
+                                    <i class="bi bi-building fs-2"></i>
+                                </div>
+                                <div>
+                                    <h2 class="mb-0 fw-bold">{{ empresa.nombre }}</h2>
+                                    <p class="mb-0 opacity-75">{{ empresa.get_categoria_display }} • {{ empresa.tipo_negocio|default:"Empresa" }}</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4 text-end">
+                            <div class="bg-white bg-opacity-20 rounded p-3">
+                                <h5 class="mb-1">RUC/ID</h5>
+                                <h4 class="mb-0 fw-bold">{{ empresa.ruc }}</h4>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Información detallada -->
+        <div class="col-lg-8">
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-light border-0">
+                    <h5 class="mb-0 text-dark"><i class="bi bi-info-circle me-2"></i>Información Empresarial</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row g-4">
+                        <div class="col-md-6">
+                            <div class="info-item">
+                                <div class="d-flex align-items-center mb-2">
+                                    <i class="bi bi-geo-alt text-primary me-2"></i>
+                                    <strong>Dirección</strong>
+                                </div>
+                                <p class="text-muted mb-0">{{ empresa.direccion }}</p>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="info-item">
+                                <div class="d-flex align-items-center mb-2">
+                                    <i class="bi bi-pin-map text-success me-2"></i>
+                                    <strong>Ubicación</strong>
+                                </div>
+                                <p class="text-muted mb-0">
+                                    {% if empresa.ciudad %}{{ empresa.ciudad }}{% endif %}
+                                    {% if empresa.provincia %}, {{ empresa.provincia }}{% endif %}
+                                    {% if not empresa.ciudad and not empresa.provincia %}No especificada{% endif %}
+                                </p>
+                            </div>
+                        </div>
+                        {% if empresa.telefono_whatsapp %}
+                        <div class="col-md-6">
+                            <div class="info-item">
+                                <div class="d-flex align-items-center mb-2">
+                                    <i class="bi bi-whatsapp text-success me-2"></i>
+                                    <strong>WhatsApp</strong>
+                                </div>
+                                <p class="text-muted mb-0">{{ empresa.telefono_whatsapp }}</p>
+                            </div>
+                        </div>
+                        {% endif %}
+                        {% if empresa.tiene_gps %}
+                        <div class="col-md-6">
+                            <div class="info-item">
+                                <div class="d-flex align-items-center mb-2">
+                                    <i class="bi bi-compass text-info me-2"></i>
+                                    <strong>Coordenadas GPS</strong>
+                                </div>
+                                <p class="text-muted mb-0">{{ empresa.latitud }}, {{ empresa.longitud }}</p>
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Estadísticas del mes -->
+            <div class="card shadow-sm">
+                <div class="card-header bg-light border-0">
+                    <h5 class="mb-0 text-dark"><i class="bi bi-bar-chart me-2"></i>Resumen del Mes</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-3">
+                            <div class="stat-card bg-success bg-opacity-10 p-3 rounded">
+                                <div class="d-flex align-items-center">
+                                    <i class="bi bi-currency-dollar text-success fs-4 me-2"></i>
+                                    <div>
+                                        <h6 class="mb-0 text-success">Ventas</h6>
+                                        <h5 class="mb-0 fw-bold">${{ stats.ventas_mes|floatformat:2 }}</h5>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="stat-card bg-danger bg-opacity-10 p-3 rounded">
+                                <div class="d-flex align-items-center">
+                                    <i class="bi bi-arrow-down-circle text-danger fs-4 me-2"></i>
+                                    <div>
+                                        <h6 class="mb-0 text-danger">Gastos</h6>
+                                        <h5 class="mb-0 fw-bold">${{ stats.gastos_mes|floatformat:2 }}</h5>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="stat-card bg-primary bg-opacity-10 p-3 rounded">
+                                <div class="d-flex align-items-center">
+                                    <i class="bi bi-box text-primary fs-4 me-2"></i>
+                                    <div>
+                                        <h6 class="mb-0 text-primary">Productos</h6>
+                                        <h5 class="mb-0 fw-bold">{{ stats.total_productos }}</h5>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="stat-card bg-info bg-opacity-10 p-3 rounded">
+                                <div class="d-flex align-items-center">
+                                    <i class="bi bi-people text-info fs-4 me-2"></i>
+                                    <div>
+                                        <h6 class="mb-0 text-info">Equipo</h6>
+                                        <h5 class="mb-0 fw-bold">{{ stats.total_empleados }}</h5>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Panel lateral -->
+        <div class="col-lg-4">
+            <!-- Equipo de trabajo -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-light border-0 d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0 text-dark"><i class="bi bi-people me-2"></i>Equipo de Trabajo</h5>
+                    <a href="{% url 'empresa:crear_empleado' %}" class="btn btn-sm btn-primary">
+                        <i class="bi bi-plus"></i> Agregar
+                    </a>
+                </div>
+                <div class="card-body">
+                    {% for empleado in empleados %}
+                    <div class="d-flex align-items-center mb-3 p-2 rounded" style="background-color: #f8f9fa;">
+                        <div class="position-relative me-3">
+                            <div class="bg-gradient rounded-circle d-flex align-items-center justify-content-center" 
+                                 style="width: 45px; height: 45px; background: linear-gradient(45deg, #007bff, #0056b3);">
+                                <i class="bi bi-person text-white fs-5"></i>
+                            </div>
+                            {% if forloop.first %}
+                            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-warning">
+                                <i class="bi bi-crown" style="font-size: 10px;"></i>
+                            </span>
+                            {% endif %}
+                        </div>
+                        <div class="flex-grow-1">
+                            <div class="fw-bold text-dark">{{ empleado.get_full_name|default:empleado.username }}</div>
+                            <small class="text-muted">{{ empleado.email|default:"Sin email" }}</small>
+                            {% if forloop.first %}
+                            <div><span class="badge bg-warning text-dark">Propietario</span></div>
+                            {% else %}
+                            <div class="mt-1">
+                                <button class="btn btn-sm btn-outline-primary me-1" onclick="gestionarPoderes({{ empleado.id }}, '{{ empleado.get_full_name|default:empleado.username }}')">                                    <i class="bi bi-gear"></i> Poderes
+                                </button>
+                                <button class="btn btn-sm btn-outline-danger" onclick="eliminarEmpleado({{ empleado.id }}, '{{ empleado.get_full_name|default:empleado.username }}')">                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% empty %}
+                    <div class="text-center py-4">
+                        <i class="bi bi-people text-muted" style="font-size: 3rem;"></i>
+                        <p class="text-muted mt-2">No hay empleados registrados</p>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- Asistente de ayuda -->
+            <div class="card shadow-sm">
+                <div class="card-header bg-gradient text-white" style="background: linear-gradient(45deg, #28a745, #20c997);">
+                    <h5 class="mb-0"><i class="bi bi-headset me-2"></i>Asistente de Ayuda</h5>
+                </div>
+                <div class="card-body text-center">
+                    <i class="bi bi-robot text-success" style="font-size: 3rem;"></i>
+                    <h6 class="mt-2 mb-3">¿Necesitas ayuda?</h6>
+                    <p class="text-muted small mb-3">Nuestro asistente automatizado está disponible 24/7 para resolver tus dudas.</p>
+                    <a href="{% url 'empresa:asistente_ayuda' %}" class="btn btn-success btn-sm w-100">
+                        <i class="bi bi-chat-dots me-1"></i> Solicitar Ayuda
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Gestión de Poderes -->
+<div class="modal fade" id="poderesModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Gestionar Poderes - <span id="empleadoNombre"></span></h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6 class="text-primary mb-3"><i class="bi bi-eye me-2"></i>Visualización</h6>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="checkbox" id="puede_ver_reportes">
+                            <label class="form-check-label" for="puede_ver_reportes">
+                                Ver reportes financieros
+                            </label>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <h6 class="text-success mb-3"><i class="bi bi-cash me-2"></i>Ventas</h6>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="checkbox" id="puede_registrar_ventas">
+                            <label class="form-check-label" for="puede_registrar_ventas">
+                                Registrar ventas
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                
+                {% if empresa.categoria == 'manufactura' %}
+                <!-- Poderes específicos para MANUFACTURA -->
+                <div class="row mt-3">
+                    <div class="col-md-6">
+                        <h6 class="text-info mb-3"><i class="bi bi-gear me-2"></i>Producción</h6>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="checkbox" id="puede_editar_productos">
+                            <label class="form-check-label" for="puede_editar_productos">
+                                Gestionar productos manufacturados
+                            </label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="checkbox" id="puede_gestionar_inventario">
+                            <label class="form-check-label" for="puede_gestionar_inventario">
+                                Gestionar materias primas
+                            </label>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <h6 class="text-warning mb-3"><i class="bi bi-calculator me-2"></i>Finanzas</h6>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="checkbox" id="puede_registrar_gastos">
+                            <label class="form-check-label" for="puede_registrar_gastos">
+                                Registrar gastos de producción
+                            </label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="checkbox" id="puede_gestionar_cuentas">
+                            <label class="form-check-label" for="puede_gestionar_cuentas">
+                                Gestionar cuentas contables
+                            </label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="checkbox" id="puede_gestionar_metas">
+                            <label class="form-check-label" for="puede_gestionar_metas">
+                                Gestionar metas de producción
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                {% else %}
+                <!-- Poderes específicos para COMERCIO -->
+                <div class="row mt-3">
+                    <div class="col-md-6">
+                        <h6 class="text-info mb-3"><i class="bi bi-box me-2"></i>Productos</h6>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="checkbox" id="puede_editar_productos">
+                            <label class="form-check-label" for="puede_editar_productos">
+                                Editar catálogo de productos
+                            </label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="checkbox" id="puede_gestionar_inventario">
+                            <label class="form-check-label" for="puede_gestionar_inventario">
+                                Gestionar inventario y stock
+                            </label>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <h6 class="text-warning mb-3"><i class="bi bi-calculator me-2"></i>Finanzas</h6>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="checkbox" id="puede_registrar_gastos">
+                            <label class="form-check-label" for="puede_registrar_gastos">
+                                Registrar gastos operativos
+                            </label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="checkbox" id="puede_gestionar_cuentas">
+                            <label class="form-check-label" for="puede_gestionar_cuentas">
+                                Gestionar cuentas contables
+                            </label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="checkbox" id="puede_gestionar_metas">
+                            <label class="form-check-label" for="puede_gestionar_metas">
+                                Gestionar metas comerciales
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" onclick="guardarPoderes()">Guardar Cambios</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let empleadoActualId = null;
+
+function gestionarPoderes(empleadoId, empleadoNombre) {
+    empleadoActualId = empleadoId;
+    document.getElementById('empleadoNombre').textContent = empleadoNombre;
+    
+    // Cargar poderes actuales
+    fetch(`{% url 'empresa:gestion_poderes_empleado' empresa.id 0 %}`.replace('0', empleadoId))
+        .then(response => response.json())
+        .then(data => {
+            document.getElementById('puede_ver_reportes').checked = data.puede_ver_reportes;
+            document.getElementById('puede_registrar_ventas').checked = data.puede_registrar_ventas;
+            document.getElementById('puede_editar_productos').checked = data.puede_editar_productos;
+            document.getElementById('puede_gestionar_cuentas').checked = data.puede_gestionar_cuentas;
+            document.getElementById('puede_registrar_gastos').checked = data.puede_registrar_gastos;
+            document.getElementById('puede_gestionar_inventario').checked = data.puede_gestionar_inventario;
+            document.getElementById('puede_gestionar_metas').checked = data.puede_gestionar_metas;
+            
+            // Mostrar modal
+            new bootstrap.Modal(document.getElementById('poderesModal')).show();
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error al cargar los poderes del empleado');
+        });
+}
+
+function guardarPoderes() {
+    const poderes = {
+        puede_ver_reportes: document.getElementById('puede_ver_reportes').checked,
+        puede_registrar_ventas: document.getElementById('puede_registrar_ventas').checked,
+        puede_editar_productos: document.getElementById('puede_editar_productos').checked,
+        puede_gestionar_cuentas: document.getElementById('puede_gestionar_cuentas').checked,
+        puede_registrar_gastos: document.getElementById('puede_registrar_gastos').checked,
+        puede_gestionar_inventario: document.getElementById('puede_gestionar_inventario').checked,
+        puede_gestionar_metas: document.getElementById('puede_gestionar_metas').checked
+    };
+    
+    fetch(`{% url 'empresa:gestion_poderes_empleado' empresa.id 0 %}`.replace('0', empleadoActualId), {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+        },
+        body: JSON.stringify(poderes)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            bootstrap.Modal.getInstance(document.getElementById('poderesModal')).hide();
+            alert('Poderes actualizados correctamente');
+        } else {
+            alert('Error al actualizar poderes: ' + (data.error || 'Error desconocido'));
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error al guardar los poderes');
+    });
+}
+
+function eliminarEmpleado(empleadoId, empleadoNombre) {
+    if (confirm(`¿Estás seguro de eliminar al empleado "${empleadoNombre}"?\n\nEsto eliminará su acceso al sistema pero mantendrá el historial de sus acciones.`)) {
+        fetch(`/empresa/empleado/${empleadoId}/eliminar/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('Empleado eliminado correctamente');
+                location.reload();
+            } else {
+                alert('Error: ' + (data.error || 'No se pudo eliminar el empleado'));
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error al eliminar empleado');
+        });
+    }
+}
+</script>
+
+<style>
+.info-item {
+    padding: 1rem;
+    border-left: 3px solid #007bff;
+    background-color: #f8f9fa;
+    border-radius: 0 8px 8px 0;
+}
+
+.stat-card {
+    transition: transform 0.2s;
+}
+
+.stat-card:hover {
+    transform: translateY(-2px);
+}
+</style>
+{% endblock %}

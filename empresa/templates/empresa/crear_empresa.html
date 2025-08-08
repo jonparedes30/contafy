@@ -1,0 +1,23 @@
+{% extends 'empresa/base.html' %}
+
+{% block title %}Registrar Empresa{% endblock %}
+
+{% block content %}
+    <h2>Registrar una nueva empresa</h2>
+    <form method="post" style="background-color: #fff; padding: 20px; border-radius: 8px; max-width: 400px; box-shadow: 0 0 10px rgba(0,0,0,0.1);">
+        {% csrf_token %}
+        {% if form.errors %}
+    <ul style="color: red; margin-bottom: 10px;">
+        {% for field in form %}
+            {% for error in field.errors %}
+                <li>{{ error }}</li>
+            {% endfor %}
+        {% endfor %}
+    </ul>
+{% endif %}
+        {{ form.as_p }}
+        <button type="submit" style="background-color: #4CAF50; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer;">
+            Guardar
+        </button>
+    </form>
+{% endblock %}

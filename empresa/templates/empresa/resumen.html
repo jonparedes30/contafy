@@ -1,0 +1,352 @@
+{% extends 'empresa/base.html' %}
+{% load empresa_filters %}
+
+{% block title %}Resumen Financiero{% endblock %}
+
+{% block extra_css %}
+<style>
+body {
+    background: #f8fafc;
+    font-family: 'Inter', 'Segoe UI', Arial, sans-serif;
+}
+.animated-header {
+    background: linear-gradient(-45deg, #2c3e50, #34495e, #27ae60, #2ecc71);
+    background-size: 400% 400%;
+    animation: gradientShift 12s ease-in-out infinite;
+    color: white;
+    border-radius: 15px 15px 0 0;
+    padding: 24px 24px 16px 24px;
+    margin-bottom: 24px;
+}
+@keyframes gradientShift {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+.resumen-container {
+    max-width: 900px;
+    margin: 40px auto 0 auto;
+    padding: 0 16px;
+}
+.resumen-card {
+    background: #fff;
+    border-radius: 18px;
+    box-shadow: 0 2px 16px 0 rgba(60,72,88,0.07);
+    padding: 28px 22px;
+    margin-bottom: 24px;
+    transition: box-shadow 0.2s;
+}
+.resumen-card.text-center {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 210px;
+}
+.resumen-card:hover {
+    box-shadow: 0 4px 24px 0 rgba(60,72,88,0.13);
+}
+.resumen-section-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #1976d2;
+    margin-bottom: 10px;
+    letter-spacing: -0.5px;
+}
+.resumen-amount {
+    font-size: 2.1rem;
+    font-weight: 700;
+    color: #222;
+    margin-bottom: 8px;
+    letter-spacing: -1px;
+}
+.resumen-amount.positivo { color: #198754; }
+.resumen-amount.negativo { color: #dc3545; }
+.resumen-amount.neutro   { color: #1976d2; }
+.resumen-badge {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 12px;
+    font-size: 0.95rem;
+    font-weight: 500;
+    background: #e3f2fd;
+    color: #1976d2;
+    margin-top: 8px;
+}
+.resumen-badge.gasto {
+    background: #fdecea;
+    color: #dc3545;
+}
+.resumen-badge.costo {
+    background: #e0f7fa;
+    color: #0dcaf0;
+}
+.resumen-badge.utilidad {
+    background: #e8f5e9;
+    color: #198754;
+}
+.resumen-divider {
+    border: none;
+    border-top: 1.5px solid #e9ecef;
+    margin: 24px 0;
+}
+.resumen-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0 8px;
+}
+.resumen-table td {
+    background: #fff;
+    padding: 16px 18px;
+    border-radius: 10px;
+    font-size: 1.08rem;
+    color: #444;
+    vertical-align: middle;
+    box-shadow: 0 1px 4px 0 rgba(60,72,88,0.04);
+}
+.resumen-table tr:hover td {
+    background: #f1f8fe;
+}
+@media (max-width: 600px) {
+    .resumen-container {
+        padding: 0 4px;
+    }
+    .resumen-card {
+        padding: 14px 4px;
+    }
+}
+.recommendation-item {
+    border-left: 4px solid #1976d2;
+    padding: 1rem;
+    margin-bottom: 1rem;
+    background: #f8f9fa;
+    border-radius: 0 10px 10px 0;
+    transition: all 0.3s ease;
+}
+.recommendation-item.success { border-left-color: #198754; }
+.recommendation-item.warning { border-left-color: #ffc107; }
+.recommendation-item.danger { border-left-color: #dc3545; }
+.recommendation-item.primary { border-left-color: #0d6efd; }
+.conclusion-card {
+    background: #1976d2;
+    color: white;
+    border: none;
+    border-radius: 15px;
+    box-shadow: 0 4px 15px rgba(25, 118, 210, 0.13);
+}
+.conclusion-card.warning { background: #ffc107; color: #222; }
+.conclusion-card.danger { background: #dc3545; color: #fff; }
+.indicador-icono {
+    font-size: 1.5rem;
+    margin-right: 8px;
+    vertical-align: middle;
+    opacity: 0.85;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="animated-header mb-4 d-flex flex-wrap align-items-center">
+        <div>
+            <h1 class="h2 mb-1">
+                <i class="bi bi-graph-up-arrow"></i> Resumen Financiero
+            </h1>
+            <p class="mb-0">Tu resumen de ingresos, costos, gastos y utilidad neta.</p>
+        </div>
+    </div>
+</div>
+<div class="resumen-container">
+    <!-- KPIs PRINCIPALES -->
+    <div class="row mb-4">
+        <div class="col-xl-3 col-md-6 mb-3">
+            <div class="resumen-card text-center">
+                <div style="font-size:2.2rem; color:#1976d2; margin-bottom:14px;"><i class="bi bi-currency-dollar"></i></div>
+                <div class="resumen-amount neutro">${{ ventas|floatformat:2 }}</div>
+                <div class="resumen-section-title">Total Ventas</div>
+                <div class="resumen-badge">Ingresos principales</div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6 mb-3">
+            <div class="resumen-card text-center">
+                <div style="font-size:2.2rem; color:#0dcaf0; margin-bottom:14px;"><i class="bi bi-cart-check"></i></div>
+                <div class="resumen-amount costo">${{ compras|floatformat:2 }}</div>
+                <div class="resumen-section-title">
+                    {% if user.empresa.categoria == 'manufactura' %}
+                        Total Costos
+                    {% else %}
+                        Total Compras
+                    {% endif %}
+                </div>
+                <div class="resumen-badge costo">
+                    {% if user.empresa.categoria == 'manufactura' %}
+                        Costos de producción
+                    {% else %}
+                        Costos de mercancía
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6 mb-3">
+            <div class="resumen-card text-center">
+                <div style="font-size:2.2rem; color:#dc3545; margin-bottom:14px;"><i class="bi bi-cash-stack"></i></div>
+                <div class="resumen-amount gasto">${{ gastos|floatformat:2 }}</div>
+                <div class="resumen-section-title">Total Gastos</div>
+                <div class="resumen-badge gasto">Gastos operativos</div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6 mb-3">
+            <div class="resumen-card text-center">
+                <div style="font-size:2.2rem; color:#198754; margin-bottom:14px;"><i class="bi bi-calculator"></i></div>
+                <div class="resumen-amount {% if utilidad_neta >= 0 %}positivo{% else %}negativo{% endif %}">${{ utilidad_neta|floatformat:2 }}</div>
+                <div class="resumen-section-title">Utilidad Neta</div>
+                <div class="resumen-badge utilidad">{% if utilidad_neta >= 0 %}Ganancia{% else %}Pérdida{% endif %}</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Indicadores de Rentabilidad y Solvencia -->
+    <div class="row mb-4">
+        <div class="col-lg-6 mb-4">
+            <div class="resumen-card">
+                <div class="resumen-section-title"><i class="bi bi-graph-up-arrow text-primary me-2"></i>Indicadores de Rentabilidad</div>
+                <div class="row">
+                    <div class="col-6 mb-3">
+                        <div class="resumen-amount" style="font-size:1.5rem;">
+                            <i class="bi bi-percent indicador-icono"></i>{{ margen_neto|floatformat:2 }}%
+                        </div>
+                        <div class="resumen-badge utilidad">Margen Neto</div>
+                    </div>
+                    <div class="col-6 mb-3">
+                        <div class="resumen-amount" style="font-size:1.5rem;">
+                            <i class="bi bi-bar-chart indicador-icono"></i>{{ margen_bruto|floatformat:2 }}%
+                        </div>
+                        <div class="resumen-badge">Margen Bruto</div>
+                    </div>
+                    <div class="col-6 mb-3">
+                        <div class="resumen-amount" style="font-size:1.5rem;">
+                            <i class="bi bi-graph-up indicador-icono"></i>{{ roe|floatformat:2 }}%
+                        </div>
+                        <div class="resumen-badge">ROE</div>
+                    </div>
+                    <div class="col-6 mb-3">
+                        <div class="resumen-amount" style="font-size:1.5rem;">
+                            <i class="bi bi-cash-stack indicador-icono"></i>{{ ratio_gastos_ventas|floatformat:2 }}%
+                        </div>
+                        <div class="resumen-badge gasto">Ratio Gastos/Ventas</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-6 mb-4">
+            <div class="resumen-card">
+                <div class="resumen-section-title"><i class="bi bi-shield-check text-primary me-2"></i>Indicadores de Solvencia</div>
+                <div class="row">
+                    <div class="col-6 mb-3">
+                        <div class="resumen-amount" style="font-size:1.5rem;">
+                            <i class="bi bi-droplet-half indicador-icono"></i>{{ liquidez|floatformat:2 }}
+                        </div>
+                        <div class="resumen-badge">Ratio de Liquidez</div>
+                    </div>
+                    <div class="col-6 mb-3">
+                        <div class="resumen-amount" style="font-size:1.5rem;">
+                            <i class="bi bi-pie-chart indicador-icono"></i>{{ endeudamiento|floatformat:2 }}
+                        </div>
+                        <div class="resumen-badge">Ratio de Endeudamiento</div>
+                    </div>
+                    <div class="col-6 mb-3">
+                        <div class="resumen-amount" style="font-size:1.5rem;">
+                            <i class="bi bi-cart4 indicador-icono"></i>{{ ratio_costos|floatformat:2 }}%
+                        </div>
+                        <div class="resumen-badge costo">Ratio Costos/Ventas</div>
+                    </div>
+                    <div class="col-6 mb-3">
+                        <div class="resumen-amount" style="font-size:1.5rem;">
+                            <i class="bi bi-arrow-repeat indicador-icono"></i>{{ rotacion_activos|floatformat:2 }}
+                        </div>
+                        <div class="resumen-badge">Rotación de Activos</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recomendaciones -->
+    <div class="resumen-card">
+        <div class="resumen-section-title">Recomendaciones Automáticas</div>
+        {% if recomendaciones %}
+            {% for recomendacion in recomendaciones %}
+                <div class="recommendation-item {{ recomendacion.tipo }}">
+                    <strong>{{ recomendacion.titulo }}</strong>
+                    <div>{{ recomendacion.descripcion }}</div>
+                </div>
+            {% endfor %}
+        {% endif %}
+        
+        {% if not recomendaciones %}
+            <div class="text-muted text-center py-2">
+                <i class="bi bi-emoji-smile fs-1 d-block mb-2"></i>
+                ¡Excelente! No hay recomendaciones específicas en este momento.
+            </div>
+        {% endif %}
+    </div>
+
+    <!-- Análisis Predictivo -->
+    <div class="resumen-card">
+        <div class="resumen-section-title"><i class="bi bi-graph-up-arrow text-warning me-2"></i>Análisis Predictivo y Riesgo</div>
+        {% if analisis_predictivo.tendencia_general %}
+        <div class="row text-center mb-3">
+            <div class="col-md-3 mb-3">
+                <div class="resumen-amount {{ analisis_predictivo.tendencia_general.color }}" style="font-size:1.8rem;">{{ analisis_predictivo.tendencia_general.nivel }}</div>
+                <div class="resumen-badge">Tendencia General</div>
+            </div>
+            <div class="col-md-3 mb-3">
+                <div class="resumen-amount {% if analisis_predictivo.riesgo_quiebra.nivel == 'Bajo' %}positivo{% elif analisis_predictivo.riesgo_quiebra.nivel == 'Medio' %}neutro{% else %}negativo{% endif %}" style="font-size:1.8rem;">{{ analisis_predictivo.riesgo_quiebra.nivel }}</div>
+                <div class="resumen-badge">Riesgo Financiero</div>
+            </div>
+            <div class="col-md-3 mb-3">
+                <div class="resumen-amount neutro" style="font-size:1.8rem;">{{ analisis_predictivo.probabilidad_crecimiento|floatformat:0 }}%</div>
+                <div class="resumen-badge">Prob. Crecimiento</div>
+            </div>
+            <div class="col-md-3 mb-3">
+                <div class="resumen-amount neutro" style="font-size:1.8rem;">{{ analisis_predictivo.z_score|floatformat:1 }}</div>
+                <div class="resumen-badge">Z-Score</div>
+            </div>
+        </div>
+        
+        <!-- Alertas Tempranas -->
+        {% if analisis_predictivo.alertas_tempranas %}
+        <div class="resumen-divider"></div>
+        <div class="resumen-section-title"><i class="bi bi-exclamation-triangle text-warning me-2"></i>Alertas Tempranas</div>
+        <div class="row">
+            {% for alerta in analisis_predictivo.alertas_tempranas %}
+            <div class="col-md-6 mb-2">
+                <div class="recommendation-item {% if alerta.tipo == 'critico' %}danger{% elif alerta.tipo == 'warning' %}warning{% else %}success{% endif %}">
+                    <strong>{{ alerta.prioridad }}:</strong> {{ alerta.mensaje }}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+        {% else %}
+        <div class="text-center py-3">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Calculando...</span>
+            </div>
+            <p class="mt-2 text-muted">Calculando análisis predictivo...</p>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Conclusión ejecutiva -->
+    <div class="conclusion-card card {% if conclusion.estado == 'atencion' %}danger{% elif conclusion.estado == 'bueno' %}warning{% endif %}">
+        <div class="card-body text-center">
+            <h4 class="mb-3">
+                <i class="bi bi-clipboard-check me-2"></i>
+                {{ conclusion.titulo }}
+            </h4>
+            <p class="fs-5 mb-0 opacity-90">{{ conclusion.descripcion }}</p>
+        </div>
+    </div>
+</div>
+{% endblock %} 

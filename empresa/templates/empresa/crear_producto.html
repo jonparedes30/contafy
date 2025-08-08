@@ -1,0 +1,422 @@
+{% extends 'empresa/base.html' %}
+
+{% block title %}Registrar Producto{% endblock %}
+
+{% block content %}
+<div class="container mt-5" style="max-width: 600px;">
+    <h2 class="mb-4 text-success text-center"><i class="bi bi-box-seam me-2"></i>Registrar nuevo producto</h2>
+
+    <form method="post" class="border p-4 rounded bg-white shadow-sm">
+        {% csrf_token %}
+        {% if form.errors %}
+            <div class="alert alert-danger"><ul class="mb-0">
+                {% for field in form %}
+                    {% for error in field.errors %}
+                        <li>{{ error }}</li>
+                    {% endfor %}
+                {% endfor %}
+                {% for error in form.non_field_errors %}
+                    <li>{{ error }}</li>
+                {% endfor %}
+            </ul></div>
+        {% endif %}
+
+        <!-- Código de barras -->
+        <div class="mb-3">
+            <label for="id_codigo_barras" class="form-label"><i class="bi bi-upc me-2"></i>Código de barras</label>
+            <div class="input-group">
+                {{ form.codigo_barras }}
+                <button type="button" class="btn btn-outline-primary" onclick="escanearCodigo()">
+                    <i class="bi bi-camera-fill me-1"></i>Escanear
+                </button>
+            </div>
+            <div class="form-text">Escanea o ingresa manualmente el código de barras</div>
+        </div>
+
+        <!-- Código -->
+        <div class="mb-3">
+            <label for="id_codigo" class="form-label"><i class="bi bi-hash me-2"></i>Código interno</label>
+            {{ form.codigo }}
+            <div class="form-text">Código único para identificar el producto</div>
+        </div>
+
+        <!-- Nombre -->
+        <div class="mb-3">
+            <label for="id_nombre" class="form-label"><i class="bi bi-tag me-2"></i>Nombre del producto</label>
+            {{ form.nombre }}
+            <div class="form-text">Nombre descriptivo del producto</div>
+        </div>
+
+        <!-- Descripción -->
+        <div class="mb-3">
+            <label for="id_descripcion" class="form-label"><i class="bi bi-card-text me-2"></i>Descripción</label>
+            {{ form.descripcion }}
+            <div class="form-text">Descripción detallada del producto (opcional)</div>
+        </div>
+
+        <!-- Precio Unitario -->
+        <div class="mb-3">
+            <label for="id_precio_unitario" class="form-label"><i class="bi bi-currency-dollar me-2"></i>Precio Unitario (USD)</label>
+            <div class="input-group">
+                <span class="input-group-text">$</span>
+                {{ form.precio_unitario }}
+            </div>
+            <div class="form-text">Precio de costo o compra del producto</div>
+        </div>
+
+        <!-- Stock -->
+        <div class="mb-3">
+            <label for="id_stock" class="form-label"><i class="bi bi-boxes me-2"></i>Stock inicial</label>
+            {{ form.stock }}
+            <div class="form-text">Cantidad inicial en inventario</div>
+        </div>
+
+        <!-- Categoría -->
+        <div class="mb-3">
+            <label for="id_categoria" class="form-label"><i class="bi bi-tags me-2"></i>Categoría</label>
+            <div class="input-group">
+                {{ form.categoria }}
+                <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#categoriaModal">
+                    <i class="bi bi-plus"></i> Nueva
+                </button>
+            </div>
+            <div class="form-text">Categoría para organizar tus productos</div>
+        </div>
+
+        <!-- PVP -->
+        <div class="mb-3">
+            <label for="id_pvp" class="form-label"><i class="bi bi-cash-coin me-2"></i>Precio de Venta al Público (USD)</label>
+            <div class="input-group">
+                <span class="input-group-text">$</span>
+                {{ form.pvp }}
+            </div>
+            <div class="form-text">Precio de venta al cliente final (opcional)</div>
+        </div>
+
+        <!-- Campos opcionales en acordeón -->
+        <div class="accordion mb-3" id="camposOpcionales">
+            <div class="accordion-item">
+                <h2 class="accordion-header">
+                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOpcionales">
+                        <i class="bi bi-gear me-2"></i>Campos opcionales
+                    </button>
+                </h2>
+                <div id="collapseOpcionales" class="accordion-collapse collapse" data-bs-parent="#camposOpcionales">
+                    <div class="accordion-body">
+                        
+                        <!-- Stock mínimo y máximo -->
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="id_stock_minimo" class="form-label">Stock mínimo</label>
+                                    {{ form.stock_minimo }}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="id_stock_maximo" class="form-label">Stock máximo</label>
+                                    {{ form.stock_maximo }}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Fecha de vencimiento y lote -->
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="id_fecha_vencimiento" class="form-label">Fecha de vencimiento</label>
+                                    {{ form.fecha_vencimiento }}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="id_lote" class="form-label">Lote</label>
+                                    {{ form.lote }}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="sugerencia-info" class="form-text text-muted text-center mb-3"></div>
+
+        <button type="submit" class="btn btn-success w-100" id="btn-guardar-producto">
+            <i class="bi bi-save me-2"></i>Guardar Producto
+        </button>
+    </form>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const btnGuardar = document.getElementById('btn-guardar-producto');
+    const form = btnGuardar.closest('form');
+    const inputCodigo = document.getElementById('id_codigo');
+    const inputNombre = document.getElementById('id_nombre');
+    const inputDescripcion = document.getElementById('id_descripcion');
+    const inputPrecio = document.getElementById('id_precio_unitario');
+    const sugerenciaInfo = document.getElementById('sugerencia-info');
+
+    // Función para buscar información del producto
+    function buscarInfoProducto(codigo, esCodBarras = false) {
+        if (!codigo) return;
+        
+        sugerenciaInfo.textContent = "🔄 Buscando información del código...";
+        sugerenciaInfo.style.color = 'gray';
+
+        fetch(`/empresa/producto/info_api/?codigo=${codigo}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.nombre) {
+                    if (inputNombre && !inputNombre.value) inputNombre.value = data.nombre;
+                    if (inputDescripcion && !inputDescripcion.value) inputDescripcion.value = data.descripcion || '';
+                    if (inputPrecio && !inputPrecio.value && data.precio_unitario) inputPrecio.value = data.precio_unitario;
+                    
+                    const fuente = esCodBarras ? 'código de barras' : (data.fuente === 'api_global' ? 'API global' : 'local');
+                    sugerenciaInfo.textContent = `🔍 Sugerido: ${data.nombre} (${fuente})`;
+                    sugerenciaInfo.style.color = 'green';
+                    
+                    if (data.mensaje_precio) {
+                        sugerenciaInfo.textContent += `\n💵 ${data.mensaje_precio}`;
+                        sugerenciaInfo.style.color = 'orange';
+                    }
+                } else {
+                    sugerenciaInfo.textContent = '⚠️ No se encontró información. Puedes ingresar los datos manualmente.';
+                    sugerenciaInfo.style.color = 'gray';
+                }
+            })
+            .catch(() => {
+                sugerenciaInfo.textContent = '⚠️ Código no encontrado. Puedes ingresar los datos manualmente.';
+                sugerenciaInfo.style.color = 'gray';
+            });
+    }
+    
+    // Búsqueda por código interno
+    if (inputCodigo) {
+        inputCodigo.addEventListener('blur', function () {
+            buscarInfoProducto(inputCodigo.value.trim());
+        });
+    }
+    
+    // Búsqueda por código de barras
+    const inputCodigoBarras = document.getElementById('id_codigo_barras');
+    if (inputCodigoBarras) {
+        inputCodigoBarras.addEventListener('blur', function () {
+            buscarInfoProducto(inputCodigoBarras.value.trim(), true);
+        });
+    }
+    
+    // Evento de envío del formulario
+    if (form && btnGuardar) {
+        form.addEventListener('submit', function () {
+            btnGuardar.disabled = true;
+            btnGuardar.innerHTML = '<i class="bi bi-hourglass-split me-2"></i>Guardando...';
+        });
+    }
+});
+
+// Función para escanear código de barras
+function escanearCodigo() {
+    const inputCodigoBarras = document.getElementById('id_codigo_barras');
+    
+    // Crear modal para la cámara
+    const modalHtml = `
+        <div class="modal fade" id="scannerModal" tabindex="-1">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Escanear Código de Barras</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body text-center">
+                        <video id="scanner-video" width="100%" height="300" style="border: 2px solid #007bff; border-radius: 8px;"></video>
+                        <div class="mt-3">
+                            <div id="scanner-result" class="alert alert-info" style="display: none;"></div>
+                            <button id="stop-scanner" class="btn btn-danger">Detener Escáner</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    // Agregar modal al DOM si no existe
+    if (!document.getElementById('scannerModal')) {
+        document.body.insertAdjacentHTML('beforeend', modalHtml);
+    }
+    
+    const modal = new bootstrap.Modal(document.getElementById('scannerModal'));
+    const video = document.getElementById('scanner-video');
+    const result = document.getElementById('scanner-result');
+    const stopBtn = document.getElementById('stop-scanner');
+    
+    let stream = null;
+    let scanning = false;
+    
+    // Función para detener el escáner
+    function stopScanner() {
+        scanning = false;
+        if (stream) {
+            stream.getTracks().forEach(track => track.stop());
+        }
+        modal.hide();
+    }
+    
+    // Función para procesar frame y detectar código
+    function processFrame() {
+        if (!scanning) return;
+        
+        // Simulación de detección
+        const mockDetection = Math.random() > 0.95; // 5% chance cada frame
+        
+        if (mockDetection) {
+            // Generar código de barras simulado
+            const mockBarcode = '123456789012' + Math.floor(Math.random() * 10);
+            result.style.display = 'block';
+            result.innerHTML = `<strong>Código detectado:</strong> ${mockBarcode}`;
+            inputCodigoBarras.value = mockBarcode;
+            
+            setTimeout(() => {
+                stopScanner();
+                // Buscar información del producto automáticamente
+                const event = new Event('DOMContentLoaded');
+                document.dispatchEvent(event);
+                const sugerenciaInfo = document.getElementById('sugerencia-info');
+                const inputNombre = document.getElementById('id_nombre');
+                const inputDescripcion = document.getElementById('id_descripcion');
+                const inputPrecio = document.getElementById('id_precio_unitario');
+                
+                sugerenciaInfo.textContent = "🔄 Buscando información del código...";
+                sugerenciaInfo.style.color = 'gray';
+
+                fetch(`/empresa/producto/info_api/?codigo=${mockBarcode}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.nombre) {
+                            if (inputNombre && !inputNombre.value) inputNombre.value = data.nombre;
+                            if (inputDescripcion && !inputDescripcion.value) inputDescripcion.value = data.descripcion || '';
+                            if (inputPrecio && !inputPrecio.value && data.precio_unitario) inputPrecio.value = data.precio_unitario;
+                            
+                            sugerenciaInfo.textContent = `🔍 Sugerido: ${data.nombre} (código de barras)`;
+                            sugerenciaInfo.style.color = 'green';
+                        } else {
+                            sugerenciaInfo.textContent = '⚠️ No se encontró información. Puedes ingresar los datos manualmente.';
+                            sugerenciaInfo.style.color = 'gray';
+                        }
+                    })
+                    .catch(() => {
+                        sugerenciaInfo.textContent = '⚠️ Código no encontrado. Puedes ingresar los datos manualmente.';
+                        sugerenciaInfo.style.color = 'gray';
+                    });
+            }, 1500);
+            return;
+        }
+        
+        requestAnimationFrame(processFrame);
+    }
+    
+    // Iniciar cámara
+    navigator.mediaDevices.getUserMedia({ 
+        video: { 
+            facingMode: 'environment',
+            width: { ideal: 640 },
+            height: { ideal: 480 }
+        } 
+    })
+    .then(mediaStream => {
+        stream = mediaStream;
+        video.srcObject = stream;
+        video.play();
+        scanning = true;
+        
+        video.addEventListener('loadedmetadata', () => {
+            processFrame();
+        });
+        
+        modal.show();
+    })
+    .catch(error => {
+        console.error('Error accediendo a la cámara:', error);
+        alert('No se pudo acceder a la cámara. Verifica los permisos o ingresa el código manualmente.');
+    });
+    
+    // Event listeners
+    stopBtn.addEventListener('click', stopScanner);
+    document.getElementById('scannerModal').addEventListener('hidden.bs.modal', stopScanner);
+}
+</script>
+
+<!-- Modal Crear Categoría -->
+<div class="modal fade" id="categoriaModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Crear Categoría de Producto</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="formCategoria">
+                    <div class="mb-3">
+                        <label class="form-label">Nombre *</label>
+                        <input type="text" id="categoriaNombre" class="form-control" required placeholder="Ej: Bebidas, Comida, Limpieza">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Descripción</label>
+                        <textarea id="categoriaDescripcion" class="form-control" rows="2" placeholder="Descripción opcional"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" onclick="crearCategoria()">Crear Categoría de Producto</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function crearCategoria() {
+    const nombre = document.getElementById('categoriaNombre').value;
+    const descripcion = document.getElementById('categoriaDescripcion').value;
+    
+    if (!nombre) {
+        alert('El nombre es requerido');
+        return;
+    }
+    
+    fetch('/empresa/api/categorias/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+        },
+        body: JSON.stringify({
+            nombre: nombre,
+            descripcion: descripcion
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Agregar al select
+            const select = document.getElementById('id_categoria');
+            const option = new Option(data.categoria.nombre, data.categoria.id, true, true);
+            select.add(option);
+            
+            // Cerrar modal y limpiar
+            bootstrap.Modal.getInstance(document.getElementById('categoriaModal')).hide();
+            document.getElementById('formCategoria').reset();
+            
+            alert('Categoría de producto creada exitosamente');
+        } else {
+            alert('Error: ' + (data.error || 'No se pudo crear la categoría'));
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error creando categoría');
+    });
+}
+</script>
+{% endblock %}

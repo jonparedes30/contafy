@@ -1,0 +1,169 @@
+{% extends 'empresa/base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1 class="mb-2" style="font-size:2.2rem; font-weight:700; color:#222;">
+        Inventario
+    </h1>
+    <div class="mb-3 text-muted" style="font-size:1.08rem;">
+        Aquí puedes ver todos tus productos registrados. Usa los filtros para encontrar productos específicos.<br>
+        <span style="font-size:0.97rem;">¿Necesitas ayuda? <span title="Puedes buscar por código, nombre, categoría o stock. Usa los botones para exportar o imprimir."><i class="bi bi-info-circle"></i> Más información</span></span>
+    </div>
+    <!-- Tarjetas resumen -->
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card text-center" style="background:linear-gradient(135deg, #ff6b6b, #ee5a52); color:white; border:none; border-radius:10px; box-shadow:0 4px 15px rgba(0,0,0,0.1);">
+                <div class="card-body">
+                    <h5 class="card-title" style="font-size:1.1rem; margin-bottom:0.5rem;">Total Productos</h5>
+                    <h3 class="card-text" style="font-size:2rem; font-weight:700; margin:0;">{{ total_productos }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card text-center" style="background:linear-gradient(135deg, #4ecdc4, #44a08d); color:white; border:none; border-radius:10px; box-shadow:0 4px 15px rgba(0,0,0,0.1);">
+                <div class="card-body">
+                    <h5 class="card-title" style="font-size:1.1rem; margin-bottom:0.5rem;">Bajo Stock</h5>
+                    <h3 class="card-text" style="font-size:2rem; font-weight:700; margin:0;">{{ productos_bajo_stock|default:0 }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card text-center" style="background:linear-gradient(135deg, #45b7d1, #96c93d); color:white; border:none; border-radius:10px; box-shadow:0 4px 15px rgba(0,0,0,0.1);">
+                <div class="card-body">
+                    <h5 class="card-title" style="font-size:1.1rem; margin-bottom:0.5rem;">Valor Total Inventario</h5>
+                    <h3 class="card-text" style="font-size:2rem; font-weight:700; margin:0;">${{ valor_total_inventario|floatformat:2 }}</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Barra de filtros -->
+    <form method="get" class="mb-3" style="display:flex; gap:0.7rem; align-items:flex-end; flex-wrap:wrap;">
+        <div>
+            <label for="buscar" style="font-size:0.97rem; color:#333; font-weight:500;">Buscar</label>
+            <input type="text" name="buscar" id="buscar" value="{{ request.GET.buscar }}" placeholder="Código, nombre o descripción..." style="border:1.5px solid #bdbdbd; border-radius:5px; padding:0.35rem 0.7rem; font-size:1rem; background:#fff; color:#222; min-width:140px;">
+        </div>
+        <div>
+            <label for="categoria" style="font-size:0.97rem; color:#333; font-weight:500;">Categoría</label>
+            <select name="categoria" id="categoria" style="border:1.5px solid #bdbdbd; border-radius:5px; padding:0.35rem 0.7rem; font-size:1rem; background:#fff; color:#222; min-width:110px;">
+                <option value="">Todas las categorías</option>
+                {% for cat in categorias %}
+                <option value="{{ cat.id }}" {% if request.GET.categoria == cat.id|stringformat:"s" %}selected{% endif %}>{{ cat.nombre }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div>
+            <label for="stock" style="font-size:0.97rem; color:#333; font-weight:500;">Estado de Stock</label>
+            <select name="stock" id="stock" style="border:1.5px solid #bdbdbd; border-radius:5px; padding:0.35rem 0.7rem; font-size:1rem; background:#fff; color:#222; min-width:110px;">
+                <option value="">Todos</option>
+                <option value="alto" {% if request.GET.stock == 'alto' %}selected{% endif %}>Alto Stock</option>
+                <option value="medio" {% if request.GET.stock == 'medio' %}selected{% endif %}>Stock Medio</option>
+                <option value="bajo" {% if request.GET.stock == 'bajo' %}selected{% endif %}>Bajo Stock</option>
+                <option value="agotado" {% if request.GET.stock == 'agotado' %}selected{% endif %}>Agotado</option>
+            </select>
+        </div>
+        <div>
+            <button type="submit" class="btn btn-sm btn-primary" style="padding:0.35rem 1.1rem; font-size:1rem; border-radius:5px;">Filtrar</button>
+        </div>
+        <div class="ms-auto d-flex gap-2">
+            <a href="{% url 'empresa:crear_producto' %}" class="btn btn-outline-primary btn-sm"><i class="bi bi-plus"></i> Nuevo Producto</a>
+            <a href="{% url 'empresa:subir_inventario' %}" class="btn btn-outline-success btn-sm"><i class="bi bi-upload"></i> Subir Inventario</a>
+            <a href="{% url 'empresa:exportar_excel_inventario' %}?{{ request.GET.urlencode }}" class="btn btn-outline-info btn-sm"><i class="bi bi-file-earmark-excel"></i> Exportar Excel</a>
+            <a href="{% url 'empresa:exportar_pdf_inventario' %}" class="btn btn-outline-warning btn-sm"><i class="bi bi-file-earmark-pdf"></i> Exportar PDF</a>
+            <button type="button" class="btn btn-outline-secondary btn-sm" onclick="window.print()"><i class="bi bi-printer"></i> Imprimir</button>
+        </div>
+    </form>
+    <!-- Tabla de inventario -->
+    <div class="table-responsive">
+        <table class="table" style="width:100%; border-collapse:collapse;">
+            <thead style="background:#1976d2; color:#fff;">
+                <tr>
+                    <th>Código</th>
+                    <th>Producto</th>
+                    <th>Categoría</th>
+                    <th>Stock Actual</th>
+                    <th>Precio Unitario</th>
+                    <th>Valor Total</th>
+                    <th>Estado</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for producto in productos %}
+                <tr style="border-bottom:1px solid #e0e0e0;">
+                    <td><span style="font-family:'Courier New',monospace;font-weight:600;color:#1976d2;background:#f8f9fa;padding:0.25rem 0.5rem;border-radius:4px;">{{ producto.codigo }}</span></td>
+                    <td>
+                        <div style="font-weight:600;color:#495057;">{{ producto.nombre }}</div>
+                        {% if producto.descripcion %}
+                        <small class="text-muted">{{ producto.descripcion|truncatechars:50 }}</small>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if producto.categoria %}
+                        <span class="badge bg-secondary" style="font-size:0.85rem;">{{ producto.categoria.nombre }}</span>
+                        {% else %}
+                        <span class="text-muted">Sin categoría</span>
+                        {% endif %}
+                    </td>
+                    <td><strong>{{ producto.stock|floatformat:0 }}</strong> {% if producto.unidad_medida %}<small class="text-muted">{{ producto.unidad_medida }}</small>{% endif %}</td>
+                    <td>{% if producto.precio_unitario %}<strong>${{ producto.precio_unitario|floatformat:2 }}</strong>{% else %}<span class="text-muted">No definido</span>{% endif %}</td>
+                    <td>{% if producto.precio_unitario and producto.stock %}<strong>${{ producto.precio_unitario|multiply:producto.stock|floatformat:2 }}</strong>{% else %}<span class="text-muted">-</span>{% endif %}</td>
+                    <td>
+                        {% if producto.stock > 20 %}
+                        <span class="badge bg-success" style="font-size:0.85rem;">Alto Stock</span>
+                        {% elif producto.stock > 10 %}
+                        <span class="badge bg-info" style="font-size:0.85rem;">Stock Medio</span>
+                        {% elif producto.stock > 0 %}
+                        <span class="badge bg-warning" style="font-size:0.85rem;">Bajo Stock</span>
+                        {% else %}
+                        <span class="badge bg-danger" style="font-size:0.85rem;">Agotado</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <div class="btn-group" role="group">
+                            <a href="{% url 'empresa:editar_producto' producto.id %}" class="btn btn-sm btn-outline-primary" title="Editar"><i class="bi bi-pencil"></i></a>
+                            <a href="{% url 'empresa:ver_producto' producto.id %}" class="btn btn-sm btn-outline-info" title="Ver detalles"><i class="bi bi-eye"></i></a>
+                            <button type="button" class="btn btn-sm btn-outline-danger" onclick="confirmarEliminar({{ producto.id }})" title="Eliminar"><i class="bi bi-trash"></i></button>
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="8" style="text-align:center; color:#888;">No hay productos registrados o no hay resultados para los filtros seleccionados.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    <!-- Paginación -->
+    {% if productos.has_other_pages %}
+    <nav aria-label="Navegación de páginas" class="mt-4">
+        <ul class="pagination justify-content-center">
+            {% if productos.has_previous %}
+            <li class="page-item">
+                <a class="page-link" href="?page={{ productos.previous_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}"><i class="bi bi-chevron-left"></i> Anterior</a>
+            </li>
+            {% endif %}
+            {% for num in productos.paginator.page_range %}
+            {% if productos.number == num %}
+            <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+            {% elif num > productos.number|add:'-3' and num < productos.number|add:'3' %}
+            <li class="page-item"><a class="page-link" href="?page={{ num }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">{{ num }}</a></li>
+            {% endif %}
+            {% endfor %}
+            {% if productos.has_next %}
+            <li class="page-item">
+                <a class="page-link" href="?page={{ productos.next_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">Siguiente <i class="bi bi-chevron-right"></i></a>
+            </li>
+            {% endif %}
+        </ul>
+    </nav>
+    {% endif %}
+</div>
+<script>
+function confirmarEliminar(productoId) {
+    // Aquí puedes mostrar un modal de confirmación si lo deseas
+    if(confirm('¿Estás seguro de que deseas eliminar este producto? Esta acción no se puede deshacer.')) {
+        window.location.href = `/empresa/producto/${productoId}/eliminar/`;
+    }
+}
+</script>
+{% endblock %} 

@@ -1,0 +1,144 @@
+{% extends 'empresa/base.html' %}
+
+{% block title %}Editar Producto - {{ producto.nombre }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2>✏️ Editar Producto: {{ producto.nombre }}</h2>
+                <a href="{% url 'empresa:listar_productos_manufacturados' %}" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left"></i> Volver
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="row justify-content-center">
+        <div class="col-md-10">
+            <div class="card">
+                <div class="card-header">
+                    <h5>Modificar Producto y Receta</h5>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        <!-- Información del Producto -->
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="{{ form.codigo.id_for_label }}" class="form-label">
+                                        Código <span class="text-danger">*</span>
+                                    </label>
+                                    {{ form.codigo }}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="{{ form.nombre.id_for_label }}" class="form-label">
+                                        Nombre <span class="text-danger">*</span>
+                                    </label>
+                                    {{ form.nombre }}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="{{ form.descripcion.id_for_label }}" class="form-label">Descripción</label>
+                            {{ form.descripcion }}
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="{{ form.categoria.id_for_label }}" class="form-label">Categoría</label>
+                            <div class="input-group">
+                                {{ form.categoria }}
+                                <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#categoriaModal">
+                                    <i class="fas fa-plus"></i> Nueva
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label for="{{ form.precio_venta.id_for_label }}" class="form-label">
+                                        Precio de Venta <span class="text-danger">*</span>
+                                    </label>
+                                    <div class="input-group">
+                                        <span class="input-group-text">$</span>
+                                        {{ form.precio_venta }}
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label class="form-label">Costo Actual</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text">$</span>
+                                        <input type="text" class="form-control" value="{{ producto.costo_produccion|floatformat:2 }}" readonly>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label for="{{ form.tiempo_produccion.id_for_label }}" class="form-label">
+                                        Tiempo Producción (min)
+                                    </label>
+                                    {{ form.tiempo_produccion }}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <div class="form-check">
+                                {{ form.activo }}
+                                <label class="form-check-label" for="{{ form.activo.id_for_label }}">
+                                    Producto activo
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Receta de Producción -->
+                        <hr>
+                        <h5 class="mb-3">📋 Receta de Producción</h5>
+                        <div id="receta-container">
+                            {{ formset.management_form }}
+                            {% for form_receta in formset %}
+                                <div class="receta-item border p-3 mb-3 rounded">
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <label class="form-label">Materia Prima</label>
+                                            {{ form_receta.materia_prima }}
+                                        </div>
+                                        <div class="col-md-4">
+                                            <label class="form-label">Cantidad Necesaria</label>
+                                            {{ form_receta.cantidad_necesaria }}
+                                        </div>
+                                        <div class="col-md-2 d-flex align-items-end">
+                                            {{ form_receta.DELETE }}
+                                            <label for="{{ form_receta.DELETE.id_for_label }}" class="form-label ms-2">
+                                                Eliminar
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'empresa:listar_productos_manufacturados' %}" class="btn btn-secondary">
+                                Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save"></i> Actualizar Producto
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

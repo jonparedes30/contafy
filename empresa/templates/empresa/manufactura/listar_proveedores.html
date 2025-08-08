@@ -1,0 +1,163 @@
+{% extends 'empresa/base.html' %}
+
+{% block title %}Proveedores - {{ user.empresa.nombre }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2>🚚 Proveedores</h2>
+                <div>
+                    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalProveedor">
+                        <i class="fas fa-plus"></i> Nuevo Proveedor
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    {% if proveedores %}
+                        <div class="table-responsive">
+                            <table class="table table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>Nombre</th>
+                                        <th>RUC</th>
+                                        <th>Teléfono</th>
+                                        <th>Email</th>
+                                        <th>Días Crédito</th>
+                                        <th>Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for proveedor in proveedores %}
+                                    <tr>
+                                        <td><strong>{{ proveedor.nombre }}</strong></td>
+                                        <td>{{ proveedor.ruc }}</td>
+                                        <td>{{ proveedor.telefono|default:"-" }}</td>
+                                        <td>{{ proveedor.email|default:"-" }}</td>
+                                        <td>{{ proveedor.dias_credito }} días</td>
+                                        <td>
+                                            <div class="btn-group" role="group">
+                                                <button type="button" class="btn btn-sm btn-outline-primary" 
+                                                        title="Editar">
+                                                    <i class="fas fa-edit"></i>
+                                                </button>
+                                                <button type="button" class="btn btn-sm btn-outline-info" 
+                                                        title="Ver detalle">
+                                                    <i class="fas fa-eye"></i>
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-5">
+                            <i class="fas fa-truck fa-3x text-muted mb-3"></i>
+                            <h4>No hay proveedores registrados</h4>
+                            <p class="text-muted">Comienza agregando los proveedores de tus materias primas</p>
+                            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalProveedor">
+                                <i class="fas fa-plus"></i> Crear primer proveedor
+                            </button>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para crear proveedor -->
+<div class="modal fade" id="modalProveedor" tabindex="-1" aria-labelledby="modalProveedorLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalProveedorLabel">Nuevo Proveedor</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="formProveedor">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label for="nombre_proveedor" class="form-label">Nombre <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="nombre_proveedor" name="nombre" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="ruc_proveedor" class="form-label">RUC <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="ruc_proveedor" name="ruc" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="telefono_proveedor" class="form-label">Teléfono</label>
+                        <input type="text" class="form-control" id="telefono_proveedor" name="telefono">
+                    </div>
+                    <div class="mb-3">
+                        <label for="email_proveedor" class="form-label">Email</label>
+                        <input type="email" class="form-control" id="email_proveedor" name="email">
+                    </div>
+                    <div class="mb-3">
+                        <label for="dias_credito_proveedor" class="form-label">Días de Crédito</label>
+                        <input type="number" class="form-control" id="dias_credito_proveedor" name="dias_credito" value="0">
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" id="btnGuardarProveedor">
+                    <i class="fas fa-save"></i> Guardar Proveedor
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const btnGuardarProveedor = document.getElementById('btnGuardarProveedor');
+    const formProveedor = document.getElementById('formProveedor');
+    const modalProveedor = new bootstrap.Modal(document.getElementById('modalProveedor'));
+    
+    btnGuardarProveedor.addEventListener('click', function() {
+        const formData = new FormData(formProveedor);
+        
+        fetch('{% url "empresa:crear_proveedor_ajax" %}', {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Cerrar modal y limpiar formulario
+                modalProveedor.hide();
+                formProveedor.reset();
+                
+                // Mostrar mensaje de éxito y recargar página
+                alert('Proveedor creado exitosamente');
+                location.reload();
+            } else {
+                // Mostrar errores
+                let errorMsg = 'Error al crear proveedor:\n';
+                for (let field in data.errors) {
+                    errorMsg += field + ': ' + data.errors[field].join(', ') + '\n';
+                }
+                alert(errorMsg);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error al crear proveedor');
+        });
+    });
+});
+</script>
+{% endblock %}

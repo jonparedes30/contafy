@@ -1,0 +1,259 @@
+{% extends 'empresa/base.html' %}
+
+{% block title %}Asistente de Ayuda - Contafy{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <!-- Header del asistente -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-0 shadow-lg" style="background: linear-gradient(135deg, #28a745 0%, #20c997 100%);">
+                <div class="card-body text-white p-4">
+                    <div class="row align-items-center">
+                        <div class="col-md-8">
+                            <div class="d-flex align-items-center">
+                                <div class="bg-white bg-opacity-20 rounded-circle p-3 me-3">
+                                    <i class="bi bi-robot fs-2"></i>
+                                </div>
+                                <div>
+                                    <h2 class="mb-0 fw-bold">Asistente de Ayuda 24/7</h2>
+                                    <p class="mb-0 opacity-75">Soporte automatizado para {{ request.user.empresa.get_categoria_display|lower }}</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4 text-end">
+                            <div class="bg-white bg-opacity-20 rounded p-3">
+                                <h6 class="mb-1">Disponible</h6>
+                                <h5 class="mb-0 fw-bold">24/7</h5>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Formulario principal -->
+        <div class="col-lg-8">
+            <div class="card shadow-sm">
+                <div class="card-header bg-light border-0">
+                    <h5 class="mb-0 text-dark"><i class="bi bi-chat-dots me-2"></i>Nueva Solicitud de Ayuda</h5>
+                </div>
+                <div class="card-body">
+                    <form id="ayudaForm">
+                        <div class="mb-4">
+                            <label for="asunto" class="form-label fw-bold">Asunto de la consulta</label>
+                            <input type="text" class="form-control" id="asunto" 
+                                   placeholder="Ej: Problema con registro de ventas" required>
+                        </div>
+                        
+                        <div class="mb-4">
+                            <label for="tipoAyuda" class="form-label fw-bold">Tipo de ayuda</label>
+                            <select class="form-select" id="tipoAyuda" required>
+                                <option value="">Selecciona el tipo de ayuda</option>
+                                <option value="tecnico">🔧 Problema Técnico</option>
+                                <option value="contable">📊 Consulta Contable</option>
+                                <option value="funcionalidad">⭐ Nueva Funcionalidad</option>
+                                <option value="capacitacion">🎓 Capacitación</option>
+                                <option value="otro">❓ Otro</option>
+                            </select>
+                        </div>
+                        
+                        <div class="mb-4">
+                            <label for="mensaje" class="form-label fw-bold">Describe tu consulta</label>
+                            <textarea class="form-control" id="mensaje" rows="6" 
+                                    placeholder="Describe detalladamente tu consulta o problema. Incluye pasos que realizaste, mensajes de error, etc." required></textarea>
+                            <div class="form-text">Mientras más detalles proporciones, mejor podremos ayudarte.</div>
+                        </div>
+                        
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <button type="submit" class="btn btn-success btn-lg">
+                                <i class="bi bi-send me-2"></i>Enviar Solicitud
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Panel lateral -->
+        <div class="col-lg-4">
+            <!-- Información de contacto -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-info text-white">
+                    <h6 class="mb-0"><i class="bi bi-info-circle me-2"></i>Información</h6>
+                </div>
+                <div class="card-body">
+                    <div class="text-center mb-3">
+                        <i class="bi bi-clock text-success" style="font-size: 2rem;"></i>
+                        <h6 class="mt-2">Tiempo de respuesta</h6>
+                        <p class="text-muted small mb-0">Normalmente respondemos en menos de 24 horas</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Solicitudes previas -->
+            {% if solicitudes_previas %}
+            <div class="card shadow-sm">
+                <div class="card-header bg-light border-0 d-flex justify-content-between">
+                    <h6 class="mb-0 text-dark"><i class="bi bi-clock-history me-2"></i>Solicitudes Recientes</h6>
+                    <a href="{% url 'empresa:historial_solicitudes' %}" class="btn btn-sm btn-outline-primary">Ver todas</a>
+                </div>
+                <div class="card-body">
+                    {% for solicitud in solicitudes_previas %}
+                    <div class="d-flex align-items-start mb-3 p-2 rounded" style="background-color: #f8f9fa;">
+                        <div class="me-2">
+                            {% if solicitud.estado == 'resuelto' %}
+                                <i class="bi bi-check-circle text-success"></i>
+                            {% elif solicitud.estado == 'en_proceso' %}
+                                <i class="bi bi-clock text-warning"></i>
+                            {% else %}
+                                <i class="bi bi-hourglass text-info"></i>
+                            {% endif %}
+                        </div>
+                        <div class="flex-grow-1">
+                            <div class="fw-bold small">{{ solicitud.asunto|truncatechars:30 }}</div>
+                            <div class="text-muted small">{{ solicitud.fecha_creacion|date:"d/m/Y" }}</div>
+                            <span class="badge bg-secondary small">{{ solicitud.get_estado_display }}</span>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    
+    <!-- Bandeja de Entrada Simple -->
+    <div class="row mt-5" id="bandeja-entrada">
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="bi bi-inbox me-2"></i>Tu Bandeja de Entrada</h5>
+                </div>
+                <div class="card-body">
+                    {% if solicitudes_bandeja %}
+                        {% for solicitud in solicitudes_bandeja %}
+                        <div class="card mb-3">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <div>
+                                        <h6 class="card-title">
+                                            <i class="bi bi-chat-dots"></i> {{ solicitud.asunto }}
+                                        </h6>
+                                        <p class="text-muted mb-2">
+                                            <small>
+                                                <i class="bi bi-tag"></i> {{ solicitud.get_tipo_display }} |
+                                                <i class="bi bi-calendar"></i> {{ solicitud.fecha_creacion|date:"d/m/Y H:i" }}
+                                            </small>
+                                        </p>
+                                        <p class="card-text">{{ solicitud.mensaje|truncatewords:20 }}</p>
+                                        
+                                        {% if solicitud.respuesta %}
+                                        <div class="alert alert-success mt-2">
+                                            <strong><i class="bi bi-person-badge"></i> Respuesta de Soporte:</strong><br>
+                                            {{ solicitud.respuesta|linebreaks }}
+                                        </div>
+                                        {% endif %}
+                                    </div>
+                                    
+                                    <div class="text-end">
+                                        {% if solicitud.estado == 'resuelto' %}
+                                            <span class="badge bg-success">Resuelto</span>
+                                        {% elif solicitud.estado == 'en_proceso' %}
+                                            <span class="badge bg-warning">En Proceso</span>
+                                        {% else %}
+                                            <span class="badge bg-info">Pendiente</span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="text-center py-4">
+                            <i class="bi bi-inbox display-4 text-muted"></i>
+                            <h5 class="text-muted mt-3">No tienes solicitudes aún</h5>
+                            <p class="text-muted">Cuando envíes una solicitud de ayuda, aparecerá aquí con las respuestas.</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.getElementById('ayudaForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    const submitBtn = this.querySelector('button[type="submit"]');
+    const originalText = submitBtn.innerHTML;
+    
+    // Deshabilitar botón y mostrar loading
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<i class="bi bi-hourglass-split me-2"></i>Enviando...';
+    
+    const asunto = document.getElementById('asunto').value;
+    const tipo = document.getElementById('tipoAyuda').value;
+    const mensaje = document.getElementById('mensaje').value;
+    
+    try {
+        const response = await fetch('{% url "empresa:asistente_ayuda" %}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token }}'
+            },
+            body: JSON.stringify({
+                asunto: asunto,
+                tipo: tipo,
+                mensaje: mensaje
+            })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            // Mostrar mensaje de éxito
+            const alertDiv = document.createElement('div');
+            alertDiv.className = 'alert alert-success alert-dismissible fade show';
+            alertDiv.innerHTML = `
+                <i class="bi bi-check-circle me-2"></i>
+                <strong>¡Solicitud enviada!</strong> ${data.mensaje}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+            
+            // Insertar alerta antes del formulario
+            const form = document.getElementById('ayudaForm');
+            form.parentNode.insertBefore(alertDiv, form);
+            
+            // Limpiar formulario
+            form.reset();
+            
+            // Scroll hacia arriba para ver la alerta
+            alertDiv.scrollIntoView({ behavior: 'smooth' });
+        } else {
+            throw new Error(data.error || 'Error desconocido');
+        }
+    } catch (error) {
+        // Mostrar mensaje de error
+        const alertDiv = document.createElement('div');
+        alertDiv.className = 'alert alert-danger alert-dismissible fade show';
+        alertDiv.innerHTML = `
+            <i class="bi bi-exclamation-triangle me-2"></i>
+            <strong>Error:</strong> ${error.message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        `;
+        
+        const form = document.getElementById('ayudaForm');
+        form.parentNode.insertBefore(alertDiv, form);
+    } finally {
+        // Restaurar botón
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = originalText;
+    }
+});
+</script>
+{% endblock %}

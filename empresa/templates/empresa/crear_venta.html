@@ -1,0 +1,376 @@
+{% extends 'empresa/base.html' %}
+
+{% block title %}Registrar Venta{% endblock %}
+
+{% block content %}
+<div class="container mt-5" style="max-width: 600px;">
+    <h2 class="mb-4 text-success text-center">Registrar nueva venta</h2>
+
+    <form method="post" class="border p-4 rounded bg-white shadow-sm">
+        {% csrf_token %}
+        {% if form.errors %}
+            <div class="alert alert-danger"><ul class="mb-0">
+                {% for field in form %}
+                    {% for error in field.errors %}
+                        <li>{{ error }}</li>
+                    {% endfor %}
+                {% endfor %}
+                {% for error in form.non_field_errors %}
+                    <li>{{ error }}</li>
+                {% endfor %}
+            </ul></div>
+        {% endif %}
+
+        <!-- Código de Barras -->
+        <div class="mb-3">
+            <label for="codigo_barras" class="form-label">Código de Barras:</label>
+            <div class="input-group">
+                <input type="text" id="codigo_barras" class="form-control" placeholder="Escanea o escribe el código">
+                <button type="button" id="btn-scanner" class="btn btn-outline-primary">
+                    📷 Escanear
+                </button>
+            </div>
+            <div id="scanner-status" class="form-text"></div>
+        </div>
+        
+        <!-- Contenedor del escáner -->
+        <div id="scanner-container" class="mb-3" style="display: none;">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <span>📷 Escáner Activo</span>
+                    <button type="button" id="btn-stop-scanner" class="btn btn-sm btn-danger">
+                        ❌ Detener
+                    </button>
+                </div>
+                <div class="card-body p-2">
+                    <div id="scanner-viewport" style="width: 100%; height: 240px; background: #000;"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Cliente -->
+        <div class="mb-3">
+            <label class="form-label">Cliente</label>
+            <div class="input-group">
+                {{ form.cliente_fk }}
+                <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#clienteModal">
+                    <i class="bi bi-plus"></i> Nuevo
+                </button>
+            </div>
+        </div>
+
+        <!-- Producto -->
+        <div class="mb-3">
+            {{ form.producto.label_tag }}
+            {{ form.producto }}
+        </div>
+
+        <!-- Cantidad -->
+        <div class="mb-3">
+            {{ form.cantidad.label_tag }}
+            {{ form.cantidad }}
+        </div>
+
+        <!-- Precio Unitario -->
+        <div class="mb-3">
+            {{ form.precio_unitario.label_tag }}
+            {{ form.precio_unitario }}
+        </div>
+
+        <!-- Checkbox IVA -->
+        <div class="mb-3">
+            <div class="form-check">
+                <input class="form-check-input" type="checkbox" id="incluirIva" checked>
+                <label class="form-check-label" for="incluirIva">
+                    📊 <strong>Incluir IVA</strong> (desmarcar para productos exentos)
+                </label>
+            </div>
+        </div>
+        
+        <!-- Campos de IVA -->
+        <div id="ivaDetails">
+            <div class="card card-body mb-3">
+                <h6 class="text-info mb-3">💰 Detalles del IVA</h6>
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label for="id_monto_neto" class="form-label">Monto Neto:</label>
+                        {{ form.monto_neto }}
+                    </div>
+                    <div class="col-md-6">
+                        <label for="id_tasa_iva" class="form-label">Tasa IVA (%):</label>
+                        {{ form.tasa_iva }}
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6">
+                        <label for="id_iva" class="form-label">IVA:</label>
+                        {{ form.iva }}
+                    </div>
+                    <div class="col-md-6">
+                        <label for="id_monto_total" class="form-label">Total:</label>
+                        {{ form.monto }}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tipo de Pago -->
+        <div class="mb-3">
+            {{ form.tipo_pago.label_tag }}
+            {{ form.tipo_pago }}
+        </div>
+
+        <!-- Stock info -->
+        <div id="stock-info" class="fw-bold mb-3 text-center"></div>
+
+        <button type="submit" class="btn btn-success w-100">Guardar Venta</button>
+    </form>
+</div>
+
+<!-- Cargar librería de escáner -->
+<script src="{% load static %}{% static 'js/barcode_scanner.js' %}"></script>
+
+<script>
+    const productos = {};
+    for (const p of {{ productos_json|safe }}) {
+        productos[p.id] = p;
+    }
+    
+    // Instancia del escáner
+    let scanner = null;
+
+    const selectProducto   = document.getElementById('id_producto');
+    const inputCodigo      = document.getElementById('codigo_barras');
+    const inputCantidad    = document.getElementById('id_cantidad');
+    const inputPrecio      = document.getElementById('id_precio_unitario');
+    const inputMontoNeto   = document.getElementById('id_monto_neto');
+    const inputTasaIva     = document.getElementById('id_tasa_iva');
+    const inputIva         = document.getElementById('id_iva');
+    const inputTotal       = document.getElementById('id_monto_total');
+    const stockInfo        = document.getElementById('stock-info');
+
+    const checkboxIva = document.getElementById('incluirIva');
+    const ivaDetails = document.getElementById('ivaDetails');
+    
+    function calcularIVA() {
+        const cantidad = parseFloat(inputCantidad.value) || 0;
+        const precio   = parseFloat(inputPrecio.value) || 0;
+        const incluirIva = checkboxIva.checked;
+        const tasaIva  = incluirIva ? (parseFloat(inputTasaIva.value) || 12) : 0;
+        
+        const montoNeto = cantidad * precio;
+        const iva = incluirIva ? montoNeto * (tasaIva / 100) : 0;
+        const total = montoNeto + iva;
+        
+        inputMontoNeto.value = montoNeto.toFixed(2);
+        inputIva.value = iva.toFixed(2);
+        inputTotal.value = total.toFixed(2);
+        
+        // Mostrar/ocultar detalles IVA
+        ivaDetails.style.display = incluirIva ? 'block' : 'none';
+    }
+
+    function actualizarVenta() {
+        const prodId   = selectProducto.value;
+        const prodData = productos[prodId] || {codigo:'', precio_costo:0, precio_venta:0, stock:0};
+        const cantidad = parseFloat(inputCantidad.value) || 0;
+
+        inputCodigo.value = prodData.codigo;
+        // Usar precio_venta (PVP) para las ventas
+        if (prodData.precio_venta && prodData.precio_venta > 0) {
+            inputPrecio.value = prodData.precio_venta.toFixed(2);
+        }
+        // Stock
+        if (prodData.codigo) {
+            stockInfo.textContent = `\uD83D\uDD0D Stock disponible: ${prodData.stock}`;
+            if (cantidad > prodData.stock) {
+                stockInfo.textContent += ' \u26A0\uFE0F Excede stock';
+                stockInfo.classList.add('text-danger');
+                stockInfo.classList.remove('text-success');
+            } else {
+                stockInfo.classList.toggle('text-success', prodData.stock > 0);
+                stockInfo.classList.toggle('text-danger', prodData.stock === 0);
+            }
+        } else {
+            stockInfo.textContent = '⚠️ Selecciona un producto válido para ver el stock.';
+            stockInfo.classList.remove('text-success', 'text-danger');
+        }
+        calcularIVA();
+    }
+
+    selectProducto.addEventListener('change', actualizarVenta);
+    inputCantidad.addEventListener('input', calcularIVA);
+    inputPrecio.addEventListener('input', calcularIVA);
+    inputTasaIva.addEventListener('input', calcularIVA);
+    checkboxIva.addEventListener('change', calcularIVA);
+    document.addEventListener('DOMContentLoaded', actualizarVenta);
+
+    // Buscar producto por código (mejorado con API)
+    async function buscarProductoPorCodigo(codigo) {
+        if (!codigo.trim()) return;
+        
+        try {
+            const response = await fetch(`/empresa/api/buscar-codigo-barras/?codigo=${encodeURIComponent(codigo)}`);
+            const data = await response.json();
+            
+            if (data.encontrado) {
+                // Buscar el producto en el select
+                for (const option of selectProducto.options) {
+                    if (option.value == data.id) {
+                        selectProducto.value = data.id;
+                        actualizarVenta();
+                        stockInfo.textContent = `✅ Producto encontrado: ${data.nombre}`;
+                        stockInfo.className = 'fw-bold mb-3 text-center text-success';
+                        return;
+                    }
+                }
+            } else {
+                stockInfo.textContent = `⚠️ ${data.mensaje || 'Producto no encontrado'}`;
+                stockInfo.className = 'fw-bold mb-3 text-center text-warning';
+                inputPrecio.value = '';
+                inputTotal.value = '';
+                inputCantidad.value = '';
+            }
+        } catch (error) {
+            console.error('Error buscando producto:', error);
+            stockInfo.textContent = '❌ Error buscando producto';
+            stockInfo.className = 'fw-bold mb-3 text-center text-danger';
+        }
+    }
+    
+    // Evento de búsqueda manual
+    inputCodigo.addEventListener('blur', () => {
+        buscarProductoPorCodigo(inputCodigo.value);
+    });
+    
+    // Escáner de cámara
+    const btnScanner = document.getElementById('btn-scanner');
+    const btnStopScanner = document.getElementById('btn-stop-scanner');
+    const scannerContainer = document.getElementById('scanner-container');
+    const scannerStatus = document.getElementById('scanner-status');
+    
+    btnScanner.addEventListener('click', async () => {
+        try {
+            scannerStatus.textContent = 'Iniciando escáner...';
+            scannerStatus.className = 'form-text text-info';
+            
+            scanner = new BarcodeScanner();
+            scannerContainer.style.display = 'block';
+            
+            await scanner.init('scanner-viewport', (codigo) => {
+                console.log('Código detectado:', codigo);
+                inputCodigo.value = codigo;  // Llenar campo
+                buscarProductoPorCodigo(codigo);
+                scannerContainer.style.display = 'none';
+                scannerStatus.textContent = `Código escaneado: ${codigo}`;
+                scannerStatus.className = 'form-text text-success';
+            });
+            
+            scannerStatus.textContent = 'Escáner activo - Apunta al código de barras';
+            scannerStatus.className = 'form-text text-success';
+            
+        } catch (error) {
+            console.error('Error iniciando escáner:', error);
+            scannerStatus.textContent = 'Error: ' + error.message;
+            scannerStatus.className = 'form-text text-danger';
+            scannerContainer.style.display = 'none';
+        }
+    });
+    
+    btnStopScanner.addEventListener('click', () => {
+        if (scanner) {
+            scanner.stop();
+            scanner = null;
+        }
+        scannerContainer.style.display = 'none';
+        scannerStatus.textContent = 'Escáner detenido';
+        scannerStatus.className = 'form-text text-muted';
+    });
+</script>
+
+<!-- Modal Crear Cliente -->
+<div class="modal fade" id="clienteModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Crear Nuevo Cliente</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="formCliente">
+                    <div class="mb-3">
+                        <label class="form-label">Nombre *</label>
+                        <input type="text" id="clienteNombre" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Documento</label>
+                        <input type="text" id="clienteDocumento" class="form-control" placeholder="Cédula o RUC">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Teléfono</label>
+                        <input type="text" id="clienteTelefono" class="form-control">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Límite de Crédito</label>
+                        <input type="number" id="clienteCredito" class="form-control" value="0" step="0.01">
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" onclick="crearCliente()">Crear Cliente</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function crearCliente() {
+    const nombre = document.getElementById('clienteNombre').value;
+    const documento = document.getElementById('clienteDocumento').value;
+    const telefono = document.getElementById('clienteTelefono').value;
+    const credito = document.getElementById('clienteCredito').value;
+    
+    if (!nombre) {
+        alert('El nombre es requerido');
+        return;
+    }
+    
+    fetch('/empresa/api/clientes/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+        },
+        body: JSON.stringify({
+            nombre: nombre,
+            numero_documento: documento,
+            telefono: telefono,
+            limite_credito: credito
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Agregar al select
+            const select = document.getElementById('id_cliente_fk');
+            const option = new Option(data.cliente.nombre, data.cliente.id, true, true);
+            select.add(option);
+            
+            // Cerrar modal y limpiar
+            bootstrap.Modal.getInstance(document.getElementById('clienteModal')).hide();
+            document.getElementById('formCliente').reset();
+            
+            alert('Cliente creado exitosamente');
+        } else {
+            alert('Error: ' + (data.error || 'No se pudo crear el cliente'));
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error creando cliente');
+    });
+}
+</script>
+{% endblock %}
+

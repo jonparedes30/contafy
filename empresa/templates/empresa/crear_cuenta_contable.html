@@ -1,0 +1,55 @@
+{% extends 'empresa/base.html' %}
+
+{% block title %}Crear Cuenta Contable{% endblock %}
+
+{% block content %}
+<div class="container mt-5" style="max-width: 600px;">
+    <h2 class="mb-4 text-primary text-center">Nueva Cuenta Contable</h2>
+
+    <form method="post" id="cuenta-contable-form">
+        {% csrf_token %}
+        <div class="mb-3">
+            {{ form.tipo.label_tag }}
+            {{ form.tipo }}
+            <div id="tipo-ayuda" class="form-text text-info mt-1"></div>
+        </div>
+
+        <div class="mb-3">
+            {{ form.nombre.label_tag }}
+            {{ form.nombre }}
+        </div>
+
+        <div class="mb-3">
+            {{ form.monto_inicial.label_tag }}
+            {{ form.monto_inicial }}
+            <div class="form-text">Ejemplo: el valor de adquisición del activo, monto del préstamo, etc.</div>
+        </div>
+
+        <div class="text-end">
+            <button type="submit" class="btn btn-success">Guardar cuenta</button>
+            <a href="{% url 'empresa:balance_general' %}" class="btn btn-secondary ms-2">Cancelar</a>
+        </div>
+    </form>
+</div>
+
+<script>
+// Ayuda contextual para el tipo de cuenta
+const ayudaPorTipo = {
+    'activo': 'Activo: Lo que posee la empresa (caja, bancos, equipos, inventario, etc.).',
+    'pasivo': 'Pasivo: Deudas y obligaciones (préstamos, cuentas por pagar, etc.).',
+    'capital': 'Capital: Aportes de los socios o utilidades retenidas.',
+    'ingreso': 'Ingreso: Dinero que entra por ventas o servicios.',
+    'gasto': 'Gasto: Salidas de dinero por operaciones, compras, servicios, etc.'
+};
+const selectTipo = document.getElementById('id_tipo');
+const ayudaDiv = document.getElementById('tipo-ayuda');
+if (selectTipo && ayudaDiv) {
+    function mostrarAyuda() {
+        const val = selectTipo.value;
+        ayudaDiv.textContent = ayudaPorTipo[val] || '';
+    }
+    selectTipo.addEventListener('change', mostrarAyuda);
+    mostrarAyuda();
+}
+</script>
+{% endblock %}

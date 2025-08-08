@@ -1,0 +1,13 @@
+{% extends 'empresa/base.html' %}
+
+{% block title %}Cierre de Sesión{% endblock %}
+
+{% block content %}
+    <div style="background-color: #fff; padding: 30px; border-radius: 8px; max-width: 500px; margin: 40px auto; text-align: center; box-shadow: 0 0 10px rgba(0,0,0,0.1);">
+        <h2>Has cerrado sesión</h2>
+        <p style="margin-top: 15px; font-size: 16px;">Gracias por usar <strong>CONTAFY</strong>. Esperamos verte pronto.</p>
+        <a href="{% url 'empresa:login' %}" style="display: inline-block; margin-top: 25px; background-color: #4CAF50; color: white; padding: 10px 25px; border: none; border-radius: 5px; text-decoration: none;">
+            Iniciar sesión nuevamente
+        </a>
+    </div>
+{% endblock %}

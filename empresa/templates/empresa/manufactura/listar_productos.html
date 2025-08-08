@@ -1,0 +1,173 @@
+{% extends 'empresa/base.html' %}
+
+{% block title %}Productos Manufacturados - {{ user.empresa.nombre }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h2>📚 Catálogo de Productos</h2>
+                    <p class="text-muted mb-0">Productos que puede fabricar la empresa con sus recetas</p>
+                </div>
+                <div>
+                    <a href="{% url 'empresa:exportar_excel_productos_manufacturados' %}" class="btn btn-success me-2">
+                        <i class="bi bi-file-earmark-excel"></i> Excel
+                    </a>
+                    <a href="{% url 'empresa:crear_producto_manufacturado' %}" class="btn btn-primary">
+                        <i class="fas fa-plus"></i> Nuevo Producto
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    {% if productos %}
+                        <div class="table-responsive">
+                            <table class="table table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>Código</th>
+                                        <th>Nombre</th>
+                                        <th>Precio Venta</th>
+                                        <th>Costo Producción</th>
+                                        <th>Margen</th>
+                                        <th>Estado</th>
+                                        <th>Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for producto in productos %}
+                                    <tr>
+                                        <td><strong>{{ producto.codigo }}</strong></td>
+                                        <td>{{ producto.nombre }}</td>
+                                        <td>${{ producto.precio_venta }}</td>
+                                        <td>${{ producto.costo_produccion|floatformat:2 }}</td>
+                                        <td>
+                                            {% if producto.margen_ganancia > 20 %}
+                                                <span class="badge bg-success">{{ producto.margen_ganancia|floatformat:1 }}%</span>
+                                            {% elif producto.margen_ganancia > 10 %}
+                                                <span class="badge bg-warning">{{ producto.margen_ganancia|floatformat:1 }}%</span>
+                                            {% else %}
+                                                <span class="badge bg-danger">{{ producto.margen_ganancia|floatformat:1 }}%</span>
+                                            {% endif %}
+                                        </td>
+
+                                        <td>
+                                            {% if producto.activo %}
+                                                <span class="badge bg-success">Activo</span>
+                                            {% else %}
+                                                <span class="badge bg-secondary">Inactivo</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <div class="btn-group" role="group">
+                                                <a href="{% url 'empresa:editar_producto_manufacturado' producto.id %}" class="btn btn-sm btn-outline-primary" title="Editar">
+                                                    <i class="fas fa-edit"></i>
+                                                </a>
+                                                <button type="button" 
+                                                        class="btn btn-sm {% if producto.activo %}btn-outline-danger{% else %}btn-outline-success{% endif %} btn-cambiar-estado" 
+                                                        data-producto-id="{{ producto.id }}"
+                                                        data-estado-actual="{{ producto.activo|yesno:'true,false' }}"
+                                                        title="{% if producto.activo %}Desactivar{% else %}Activar{% endif %}">
+                                                    <i class="fas {% if producto.activo %}fa-toggle-on{% else %}fa-toggle-off{% endif %}"></i>
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-5">
+                            <i class="fas fa-industry fa-3x text-muted mb-3"></i>
+                            <h4>No hay productos en el catálogo</h4>
+                            <p class="text-muted">Define qué productos puede fabricar tu empresa y sus recetas de materias primas</p>
+                            <a href="{% url 'empresa:crear_producto_manufacturado' %}" class="btn btn-primary">
+                                <i class="fas fa-plus"></i> Crear primer producto
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Manejar cambio de estado de productos
+    document.querySelectorAll('.btn-cambiar-estado').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            const productoId = this.dataset.productoId;
+            const estadoActual = this.dataset.estadoActual === 'true';
+            const boton = this;
+            
+            // Confirmar acción
+            const accion = estadoActual ? 'desactivar' : 'activar';
+            if (!confirm(`¿Está seguro que desea ${accion} este producto?`)) {
+                return;
+            }
+            
+            // Deshabilitar botón durante la petición
+            boton.disabled = true;
+            
+            fetch(`/empresa/manufactura/productos/${productoId}/cambiar-estado/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                    'Content-Type': 'application/json',
+                },
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Actualizar el botón
+                    const nuevoEstado = data.activo;
+                    boton.dataset.estadoActual = nuevoEstado.toString();
+                    
+                    if (nuevoEstado) {
+                        boton.className = 'btn btn-sm btn-outline-danger btn-cambiar-estado';
+                        boton.innerHTML = '<i class="fas fa-toggle-on"></i>';
+                        boton.title = 'Desactivar';
+                    } else {
+                        boton.className = 'btn btn-sm btn-outline-success btn-cambiar-estado';
+                        boton.innerHTML = '<i class="fas fa-toggle-off"></i>';
+                        boton.title = 'Activar';
+                    }
+                    
+                    // Actualizar badge de estado
+                    const fila = boton.closest('tr');
+                    const estadoCell = fila.querySelector('td:nth-child(7)');
+                    if (nuevoEstado) {
+                        estadoCell.innerHTML = '<span class="badge bg-success">Activo</span>';
+                    } else {
+                        estadoCell.innerHTML = '<span class="badge bg-secondary">Inactivo</span>';
+                    }
+                    
+                    // Mostrar mensaje de éxito
+                    alert(data.mensaje);
+                } else {
+                    alert('Error: ' + data.error);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error al cambiar el estado del producto');
+            })
+            .finally(() => {
+                boton.disabled = false;
+            });
+        });
+    });
+});
+</script>
+
+{% csrf_token %}
+{% endblock %}

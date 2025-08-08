@@ -1,0 +1,63 @@
+{% extends 'empresa/base.html' %}
+{% block content %}
+<div class="container mt-4">
+    <div class="card shadow">
+        <div class="card-header bg-primary text-white">
+            <h4 class="mb-0">Registrar Movimiento de Capital</h4>
+        </div>
+        <div class="card-body">
+            <form method="post">
+                {% csrf_token %}
+                
+                <div class="form-group mb-3">
+                    <label for="id_tipo"><strong>Tipo de movimiento</strong></label>
+                    {{ form.tipo }}
+                    {% if form.tipo.errors %}
+                        <div class="invalid-feedback d-block">
+                            {% for error in form.tipo.errors %}
+                                {{ error }}
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+
+                <div class="form-group mb-3">
+                    <label for="id_monto"><strong>Monto</strong></label>
+                    <div class="input-group">
+                        <span class="input-group-text">$</span>
+                        {{ form.monto }}
+                    </div>
+                    {% if form.monto.errors %}
+                        <div class="invalid-feedback d-block">
+                            {% for error in form.monto.errors %}
+                                {{ error }}
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+
+                <div class="form-group mb-4">
+                    <label for="id_descripcion"><strong>Descripción</strong></label>
+                    {{ form.descripcion }}
+                    {% if form.descripcion.errors %}
+                        <div class="invalid-feedback d-block">
+                            {% for error in form.descripcion.errors %}
+                                {{ error }}
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+
+                <div class="d-flex gap-2">
+                    <button type="submit" class="btn btn-success">
+                        <i class="fas fa-save me-2"></i>Registrar
+                    </button>
+                    <a href="{% url 'empresa:listar_capital' %}" class="btn btn-secondary">
+                        <i class="fas fa-times me-2"></i>Cancelar
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

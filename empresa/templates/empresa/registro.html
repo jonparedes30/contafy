@@ -1,0 +1,446 @@
+{% extends 'empresa/base_auth.html' %}
+{% load static %}
+{% block title %}Crear Cuenta - CONTAFY{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+  <div class="row justify-content-center">
+    <div class="col-lg-8">
+      <div class="card shadow">
+        <div class="card-header text-white text-center py-4" style="background: linear-gradient(135deg, #27ae60 0%, #2c3e50 100%);">
+          <h2 class="mb-0"><i class="fas fa-user-plus"></i> Crear Cuenta en CONTAFY</h2>
+          <p class="mb-0 mt-2">Gestiona tu negocio de forma inteligente</p>
+        </div>
+        
+        <div class="card-body p-4">
+          <!-- Mensajes flash -->
+          {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+              {{ message }}
+              <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+          {% endfor %}
+
+          <form method="post" novalidate>
+            {% csrf_token %}
+            
+            <!-- CÓDIGO DE INVITACIÓN -->
+            <div class="mb-4">
+              <h5 class="text-warning border-bottom pb-2 mb-3">
+                <i class="fas fa-key"></i> Código de Invitación
+              </h5>
+              <div class="mb-3">
+                <label for="codigo_invitacion" class="form-label">Código de Invitación <span class="text-danger">*</span></label>
+                <input type="text" class="form-control" id="codigo_invitacion" name="codigo_invitacion" 
+                       placeholder="Ej: CONTAFY-ABC123XYZ" required>
+                <small class="text-muted">Ingresa el código que recibiste por email o WhatsApp</small>
+              </div>
+            </div>
+
+            <!-- SECCIÓN 1: DATOS PERSONALES -->
+            <div class="mb-4">
+              <h5 class="text-primary border-bottom pb-2 mb-3">
+                <i class="fas fa-user"></i> Datos Personales
+              </h5>
+              <div class="row">
+                <div class="col-md-6 mb-3">
+                  <label for="{{ form.first_name.id_for_label }}" class="form-label">Nombre *</label>
+                  {{ form.first_name }}
+                  {% if form.first_name.errors %}
+                    <div class="text-danger small">{{ form.first_name.errors.0 }}</div>
+                  {% endif %}
+                </div>
+                <div class="col-md-6 mb-3">
+                  <label for="{{ form.last_name.id_for_label }}" class="form-label">Apellidos *</label>
+                  {{ form.last_name }}
+                  {% if form.last_name.errors %}
+                    <div class="text-danger small">{{ form.last_name.errors.0 }}</div>
+                  {% endif %}
+                </div>
+              </div>
+              <div class="row">
+                <div class="col-md-6 mb-3">
+                  <label for="{{ form.username.id_for_label }}" class="form-label">Usuario *</label>
+                  {{ form.username }}
+                  {% if form.username.errors %}
+                    <div class="text-danger small">{{ form.username.errors.0 }}</div>
+                  {% endif %}
+                </div>
+                <div class="col-md-6 mb-3">
+                  <label for="{{ form.email.id_for_label }}" class="form-label">Email *</label>
+                  {{ form.email }}
+                  {% if form.email.errors %}
+                    <div class="text-danger small">{{ form.email.errors.0 }}</div>
+                  {% endif %}
+                </div>
+              </div>
+              <div class="row">
+                <div class="col-md-6 mb-3">
+                  <label for="{{ form.password1.id_for_label }}" class="form-label">Contraseña *</label>
+                  {{ form.password1 }}
+                  {% if form.password1.errors %}
+                    <div class="text-danger small">{{ form.password1.errors.0 }}</div>
+                  {% endif %}
+                </div>
+                <div class="col-md-6 mb-3">
+                  <label for="{{ form.password2.id_for_label }}" class="form-label">Confirmar Contraseña *</label>
+                  {{ form.password2 }}
+                  {% if form.password2.errors %}
+                    <div class="text-danger small">{{ form.password2.errors.0 }}</div>
+                  {% endif %}
+                </div>
+              </div>
+            </div>
+
+            <!-- SECCIÓN 2: DATOS DE LA EMPRESA -->
+            <div class="mb-4">
+              <h5 class="text-success border-bottom pb-2 mb-3">
+                <i class="fas fa-building"></i> Datos de la Empresa
+              </h5>
+              <div class="row">
+                <div class="col-md-8 mb-3">
+                  <label for="{{ form.nombre_empresa.id_for_label }}" class="form-label">Nombre de la Empresa *</label>
+                  {{ form.nombre_empresa }}
+                  {% if form.nombre_empresa.errors %}
+                    <div class="text-danger small">{{ form.nombre_empresa.errors.0 }}</div>
+                  {% endif %}
+                </div>
+                <div class="col-md-4 mb-3">
+                  <label for="{{ form.ruc.id_for_label }}" class="form-label">RUC/Cédula *</label>
+                  {{ form.ruc }}
+                  {% if form.ruc.errors %}
+                    <div class="text-danger small">{{ form.ruc.errors.0 }}</div>
+                  {% endif %}
+                  {% if form.ruc.help_text %}
+                    <small class="form-text text-muted">{{ form.ruc.help_text }}</small>
+                  {% endif %}
+                </div>
+              </div>
+              <div class="mb-3">
+                <label for="{{ form.direccion.id_for_label }}" class="form-label">Dirección *</label>
+                {{ form.direccion }}
+                {% if form.direccion.errors %}
+                  <div class="text-danger small">{{ form.direccion.errors.0 }}</div>
+                {% endif %}
+              </div>
+            </div>
+
+            <!-- SECCIÓN 3: CATEGORÍA DEL NEGOCIO -->
+            <div class="mb-4">
+              <h5 class="text-warning border-bottom pb-2 mb-3">
+                <i class="fas fa-tags"></i> Categoría del Negocio
+              </h5>
+              <div class="row">
+                <div class="col-md-6 mb-3">
+                  <label for="{{ form.categoria.id_for_label }}" class="form-label">Categoría *</label>
+                  {{ form.categoria }}
+                  {% if form.categoria.errors %}
+                    <div class="text-danger small">{{ form.categoria.errors.0 }}</div>
+                  {% endif %}
+                </div>
+                <div class="col-md-6 mb-3">
+                  <label for="{{ form.tipo_negocio.id_for_label }}" class="form-label">Tipo de Negocio *</label>
+                  {{ form.tipo_negocio }}
+                  <datalist id="sugerencias_negocio"></datalist>
+                  {% if form.tipo_negocio.errors %}
+                    <div class="text-danger small">{{ form.tipo_negocio.errors.0 }}</div>
+                  {% endif %}
+                  {% if form.tipo_negocio.help_text %}
+                    <small class="form-text text-muted">{{ form.tipo_negocio.help_text }}</small>
+                  {% endif %}
+                </div>
+              </div>
+            </div>
+
+            <!-- SECCIÓN 4: UBICACIÓN -->
+            <div class="mb-4">
+              <h5 class="text-info border-bottom pb-2 mb-3">
+                <i class="fas fa-map-marker-alt"></i> Ubicación
+              </h5>
+              <div class="row">
+                <div class="col-md-6 mb-3">
+                  <label for="{{ form.provincia.id_for_label }}" class="form-label">Provincia *</label>
+                  {{ form.provincia }}
+                  {% if form.provincia.errors %}
+                    <div class="text-danger small">{{ form.provincia.errors.0 }}</div>
+                  {% endif %}
+                </div>
+                <div class="col-md-6 mb-3">
+                  <label for="{{ form.ciudad.id_for_label }}" class="form-label">Ciudad *</label>
+                  {{ form.ciudad }}
+                  {% if form.ciudad.errors %}
+                    <div class="text-danger small">{{ form.ciudad.errors.0 }}</div>
+                  {% endif %}
+                </div>
+              </div>
+              
+              <!-- GPS -->
+              <div class="card bg-light">
+                <div class="card-body py-3">
+                  <div class="d-flex justify-content-between align-items-center mb-2">
+                    <div>
+                      <strong>Ubicación GPS (Opcional)</strong>
+                      <br><small class="text-muted">Ayuda a encontrar empresas similares cerca de ti</small>
+                    </div>
+                    <div>
+                      <button type="button" class="btn btn-outline-primary btn-sm me-1" id="btn-ubicacion">
+                        <i class="fas fa-crosshairs"></i> Mi Ubicación
+                      </button>
+                      <button type="button" class="btn btn-outline-success btn-sm" id="btn-mapa">
+                        <i class="fas fa-map"></i> Seleccionar
+                      </button>
+                    </div>
+                  </div>
+                  <div class="mt-2">
+                    <span id="ubicacion-status" class="badge bg-secondary">No obtenida</span>
+                  </div>
+                  <!-- Mapa -->
+                  <div id="mapa-container" class="mt-3" style="display: none;">
+                    <div id="mapa" style="height: 300px; border-radius: 5px;"></div>
+                    <div class="mt-2 text-center">
+                      <button type="button" class="btn btn-success btn-sm" id="btn-confirmar-mapa">
+                        <i class="fas fa-check"></i> Confirmar Ubicación
+                      </button>
+                      <button type="button" class="btn btn-secondary btn-sm" id="btn-cancelar-mapa">
+                        Cancelar
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- SECCIÓN 5: CONTACTO -->
+            <div class="mb-4">
+              <h5 class="text-secondary border-bottom pb-2 mb-3">
+                <i class="fab fa-whatsapp"></i> Contacto (Opcional)
+              </h5>
+              <div class="col-md-6">
+                <label for="{{ form.telefono_whatsapp.id_for_label }}" class="form-label">WhatsApp</label>
+                {{ form.telefono_whatsapp }}
+                {% if form.telefono_whatsapp.errors %}
+                  <div class="text-danger small">{{ form.telefono_whatsapp.errors.0 }}</div>
+                {% endif %}
+                {% if form.telefono_whatsapp.help_text %}
+                  <small class="form-text text-muted">{{ form.telefono_whatsapp.help_text }}</small>
+                {% endif %}
+              </div>
+            </div>
+
+            <!-- Campos ocultos -->
+            {{ form.latitud }}
+            {{ form.longitud }}
+
+            <!-- Botón de envío -->
+            <div class="d-grid">
+              <button type="submit" class="btn btn-primary btn-lg">
+                <i class="fas fa-rocket"></i> Crear Mi Cuenta
+              </button>
+            </div>
+            
+            <div class="text-center mt-3">
+              <small class="text-muted">
+                ¿Ya tienes cuenta? <a href="{% url 'empresa:login' %}">Inicia sesión aquí</a>
+              </small>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Leaflet CSS -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<!-- Leaflet JS -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<script>
+// Sugerencias de tipos de negocio por categoría
+const sugerenciasNegocio = {
+    'comercial': [
+        'Licorería', 'Farmacia', 'Minimarket', 'Ferretería', 'Papelería', 
+        'Tienda de Ropa', 'Tienda de Zapatos', 'Librería', 'Juguetería',
+        'Tienda de Electrodomésticos', 'Perfumería', 'Tienda de Deportes',
+        'Bazar', 'Tienda de Música', 'Optica', 'Joyería'
+    ],
+    'manufactura': [
+        'Panadería', 'Carpintería', 'Herrería', 'Confección de Ropa',
+        'Procesadora de Alimentos', 'Artesanías', 'Taller de Muebles',
+        'Fábrica de Dulces', 'Taller de Calzado', 'Serigrafía',
+        'Taller de Joyería', 'Elaboración de Quesos', 'Taller Textil',
+        'Producción de Bebidas', 'Taller de Cerámica'
+    ],
+    'servicios': [
+        'Consultorio Médico', 'Peluquería', 'Taller Mecánico', 'Restaurante',
+        'Cafetería', 'Servicios de Limpieza', 'Consultorio Dental',
+        'Salón de Belleza', 'Gimnasio', 'Academia', 'Lavandería',
+        'Servicios Contables', 'Consultoría', 'Transporte', 'Fotografía',
+        'Veterinaria', 'Guardería', 'Servicios Informáticos'
+    ]
+};
+
+// Función para actualizar sugerencias
+function actualizarSugerencias() {
+    const categoriaSelect = document.getElementById('id_categoria');
+    const datalist = document.getElementById('sugerencias_negocio');
+    
+    if (!categoriaSelect || !datalist) return;
+    
+    const categoriaSeleccionada = categoriaSelect.value;
+    const sugerencias = sugerenciasNegocio[categoriaSeleccionada] || [];
+    
+    datalist.innerHTML = '';
+    sugerencias.forEach(function(sugerencia) {
+        const option = document.createElement('option');
+        option.value = sugerencia;
+        datalist.appendChild(option);
+    });
+}
+
+let mapa = null;
+let marcador = null;
+let latitudSeleccionada = null;
+longitudSeleccionada = null;
+
+// Función para obtener ubicación GPS actual
+function obtenerUbicacion() {
+    const btnUbicacion = document.getElementById('btn-ubicacion');
+    const statusUbicacion = document.getElementById('ubicacion-status');
+    const latitudInput = document.getElementById('id_latitud');
+    const longitudInput = document.getElementById('id_longitud');
+    
+    if (!navigator.geolocation) {
+        statusUbicacion.textContent = 'No soportado';
+        statusUbicacion.className = 'badge bg-danger';
+        return;
+    }
+    
+    btnUbicacion.disabled = true;
+    btnUbicacion.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Obteniendo...';
+    statusUbicacion.textContent = 'Obteniendo...';
+    statusUbicacion.className = 'badge bg-info';
+    
+    navigator.geolocation.getCurrentPosition(
+        function(position) {
+            const lat = position.coords.latitude.toFixed(7);
+            const lng = position.coords.longitude.toFixed(7);
+            
+            latitudInput.value = lat;
+            longitudInput.value = lng;
+            
+            statusUbicacion.textContent = 'Obtenida ✓';
+            statusUbicacion.className = 'badge bg-success';
+            btnUbicacion.innerHTML = '<i class="fas fa-check"></i> Obtenida';
+            btnUbicacion.disabled = false;
+        },
+        function(error) {
+            statusUbicacion.textContent = 'Error';
+            statusUbicacion.className = 'badge bg-danger';
+            btnUbicacion.innerHTML = '<i class="fas fa-crosshairs"></i> Reintentar';
+            btnUbicacion.disabled = false;
+        },
+        { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 }
+    );
+}
+
+// Función para mostrar mapa
+function mostrarMapa() {
+    const mapaContainer = document.getElementById('mapa-container');
+    mapaContainer.style.display = 'block';
+    
+    if (!mapa) {
+        // Inicializar mapa centrado en Ecuador
+        mapa = L.map('mapa').setView([-1.8312, -78.1834], 7);
+        
+        // Añadir tiles de OpenStreetMap
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap contributors'
+        }).addTo(mapa);
+        
+        // Click en el mapa para seleccionar ubicación
+        mapa.on('click', function(e) {
+            latitudSeleccionada = e.latlng.lat.toFixed(7);
+            longitudSeleccionada = e.latlng.lng.toFixed(7);
+            
+            // Remover marcador anterior
+            if (marcador) {
+                mapa.removeLayer(marcador);
+            }
+            
+            // Añadir nuevo marcador
+            marcador = L.marker([e.latlng.lat, e.latlng.lng]).addTo(mapa)
+                .bindPopup('Ubicación seleccionada')
+                .openPopup();
+        });
+    }
+    
+    // Redimensionar mapa
+    setTimeout(() => mapa.invalidateSize(), 100);
+}
+
+// Confirmar ubicación del mapa
+function confirmarUbicacionMapa() {
+    if (latitudSeleccionada && longitudSeleccionada) {
+        const latitudInput = document.getElementById('id_latitud');
+        const longitudInput = document.getElementById('id_longitud');
+        const statusUbicacion = document.getElementById('ubicacion-status');
+        const mapaContainer = document.getElementById('mapa-container');
+        
+        latitudInput.value = latitudSeleccionada;
+        longitudInput.value = longitudSeleccionada;
+        
+        statusUbicacion.textContent = 'Seleccionada ✓';
+        statusUbicacion.className = 'badge bg-success';
+        
+        mapaContainer.style.display = 'none';
+    } else {
+        alert('Por favor, haz clic en el mapa para seleccionar una ubicación.');
+    }
+}
+
+// Cancelar selección de mapa
+function cancelarMapa() {
+    const mapaContainer = document.getElementById('mapa-container');
+    mapaContainer.style.display = 'none';
+    
+    if (marcador) {
+        mapa.removeLayer(marcador);
+        marcador = null;
+    }
+    
+    latitudSeleccionada = null;
+    longitudSeleccionada = null;
+}
+
+// Inicializar
+document.addEventListener('DOMContentLoaded', function() {
+    const categoriaSelect = document.getElementById('id_categoria');
+    if (categoriaSelect) {
+        actualizarSugerencias();
+        categoriaSelect.addEventListener('change', actualizarSugerencias);
+    }
+    
+    const btnUbicacion = document.getElementById('btn-ubicacion');
+    if (btnUbicacion) {
+        btnUbicacion.addEventListener('click', obtenerUbicacion);
+    }
+    
+    const btnMapa = document.getElementById('btn-mapa');
+    if (btnMapa) {
+        btnMapa.addEventListener('click', mostrarMapa);
+    }
+    
+    const btnConfirmarMapa = document.getElementById('btn-confirmar-mapa');
+    if (btnConfirmarMapa) {
+        btnConfirmarMapa.addEventListener('click', confirmarUbicacionMapa);
+    }
+    
+    const btnCancelarMapa = document.getElementById('btn-cancelar-mapa');
+    if (btnCancelarMapa) {
+        btnCancelarMapa.addEventListener('click', cancelarMapa);
+    }
+});
+</script>
+
+{% endblock %}

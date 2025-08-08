@@ -1,0 +1,14 @@
+{% extends 'empresa/base.html' %}
+
+{% block title %}Metas - Mantenimiento{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="alert alert-warning text-center">
+        <h4>🔧 Página en Mantenimiento</h4>
+        <p>{{ mensaje }}</p>
+        <p>Esta funcionalidad estará disponible próximamente.</p>
+        <a href="{% url 'empresa:home' %}" class="btn btn-primary">Volver al Dashboard</a>
+    </div>
+</div>
+{% endblock %}

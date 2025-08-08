@@ -1,0 +1,120 @@
+{% extends 'empresa/base.html' %}
+
+{% block title %}Asignar Usuarios a Registros - {{ empresa.nombre }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <!-- Header -->
+    <div class="d-flex align-items-center justify-content-between mb-4">
+        <div>
+            <h1 class="h2 mb-1">
+                <i class="bi bi-person-check text-warning"></i> Asignar Usuarios a Registros
+            </h1>
+            <p class="mb-0 text-muted">Asigna usuarios a registros existentes que no tienen información de auditoría</p>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="{% url 'empresa:actividad_reciente' %}" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left"></i> Volver
+            </a>
+        </div>
+    </div>
+
+    <!-- Información -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-body">
+            <div class="alert alert-info">
+                <h5><i class="bi bi-info-circle"></i> ¿Qué hace esta herramienta?</h5>
+                <p class="mb-0">
+                    Esta herramienta asigna automáticamente tu usuario a todos los registros existentes 
+                    que no tienen información de auditoría (creado_por = None). Esto es necesario para 
+                    que el sistema de trazabilidad funcione correctamente con registros creados antes 
+                    de implementar el sistema de auditoría.
+                </p>
+            </div>
+        </div>
+    </div>
+
+    {% if total_sin_usuario > 0 %}
+        <!-- Resumen de registros sin usuario -->
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-warning text-dark">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-exclamation-triangle"></i> Registros que necesitan asignación
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6>Resumen por tipo:</h6>
+                        <ul class="list-group list-group-flush">
+                            {% for item in resumen %}
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                {{ item.modelo }}
+                                <span class="badge bg-warning text-dark">{{ item.cantidad }}</span>
+                            </li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="text-center">
+                            <div class="display-4 text-warning mb-2">
+                                <i class="bi bi-people"></i>
+                            </div>
+                            <h3 class="text-warning">{{ total_sin_usuario }}</h3>
+                            <p class="text-muted">Registros sin usuario asignado</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Formulario de confirmación -->
+        <div class="card shadow-sm">
+            <div class="card-header bg-primary text-white">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-check-circle"></i> Confirmar Asignación
+                </h5>
+            </div>
+            <div class="card-body">
+                <form method="POST">
+                    {% csrf_token %}
+                    <div class="alert alert-warning">
+                        <h6><i class="bi bi-exclamation-triangle"></i> Importante:</h6>
+                        <ul class="mb-0">
+                            <li>Se asignará tu usuario (<strong>{{ request.user.username }}</strong>) a todos los registros sin usuario.</li>
+                            <li>Esta acción no se puede deshacer.</li>
+                            <li>Los registros nuevos ya tendrán automáticamente el usuario correcto.</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-check-circle"></i> Confirmar y Asignar
+                        </button>
+                        <a href="{% url 'empresa:actividad_reciente' %}" class="btn btn-outline-secondary">
+                            <i class="bi bi-x-circle"></i> Cancelar
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    {% else %}
+        <!-- No hay registros que necesiten asignación -->
+        <div class="card shadow-sm">
+            <div class="card-body text-center py-5">
+                <div class="display-4 text-success mb-3">
+                    <i class="bi bi-check-circle"></i>
+                </div>
+                <h4 class="text-success mb-3">¡Todo está en orden!</h4>
+                <p class="text-muted mb-4">
+                    Todos los registros ya tienen usuarios asignados. 
+                    No es necesario realizar ninguna acción.
+                </p>
+                <a href="{% url 'empresa:actividad_reciente' %}" class="btn btn-primary">
+                    <i class="bi bi-arrow-left"></i> Volver al Historial
+                </a>
+            </div>
+        </div>
+    {% endif %}
+</div>
+{% endblock %} 

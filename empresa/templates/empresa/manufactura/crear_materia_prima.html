@@ -1,0 +1,238 @@
+{% extends 'empresa/base.html' %}
+
+{% block title %}Nueva Materia Prima - {{ user.empresa.nombre }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2>📦 Nueva Materia Prima</h2>
+                <a href="{% url 'empresa:listar_materias_primas' %}" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left"></i> Volver
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5>Información de la Materia Prima</h5>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="{{ form.codigo.id_for_label }}" class="form-label">
+                                        Código <span class="text-danger">*</span>
+                                    </label>
+                                    {{ form.codigo }}
+                                    {% if form.codigo.errors %}
+                                        <div class="text-danger">{{ form.codigo.errors.0 }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="{{ form.nombre.id_for_label }}" class="form-label">
+                                        Nombre <span class="text-danger">*</span>
+                                    </label>
+                                    {{ form.nombre }}
+                                    {% if form.nombre.errors %}
+                                        <div class="text-danger">{{ form.nombre.errors.0 }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="{{ form.descripcion.id_for_label }}" class="form-label">
+                                Descripción
+                            </label>
+                            {{ form.descripcion }}
+                            {% if form.descripcion.errors %}
+                                <div class="text-danger">{{ form.descripcion.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="{{ form.unidad_medida.id_for_label }}" class="form-label">
+                                        Unidad de Medida <span class="text-danger">*</span>
+                                    </label>
+                                    {{ form.unidad_medida }}
+                                    {% if form.unidad_medida.errors %}
+                                        <div class="text-danger">{{ form.unidad_medida.errors.0 }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="{{ form.precio_unitario.id_for_label }}" class="form-label">
+                                        Precio Unitario <span class="text-danger">*</span>
+                                    </label>
+                                    <div class="input-group">
+                                        <span class="input-group-text">$</span>
+                                        {{ form.precio_unitario }}
+                                    </div>
+                                    {% if form.precio_unitario.errors %}
+                                        <div class="text-danger">{{ form.precio_unitario.errors.0 }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="{{ form.stock_actual.id_for_label }}" class="form-label">
+                                        Stock Actual
+                                    </label>
+                                    {{ form.stock_actual }}
+                                    {% if form.stock_actual.errors %}
+                                        <div class="text-danger">{{ form.stock_actual.errors.0 }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="{{ form.stock_minimo.id_for_label }}" class="form-label">
+                                        Stock Mínimo
+                                    </label>
+                                    {{ form.stock_minimo }}
+                                    {% if form.stock_minimo.errors %}
+                                        <div class="text-danger">{{ form.stock_minimo.errors.0 }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="{{ form.proveedor_principal.id_for_label }}" class="form-label">
+                                Proveedor Principal
+                            </label>
+                            <div class="input-group">
+                                {{ form.proveedor_principal }}
+                                <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#modalProveedor">
+                                    <i class="fas fa-plus"></i> Nuevo
+                                </button>
+                            </div>
+                            {% if form.proveedor_principal.errors %}
+                                <div class="text-danger">{{ form.proveedor_principal.errors.0 }}</div>
+                            {% endif %}
+                            <div class="form-text">
+                                Opcional: Selecciona el proveedor principal de esta materia prima
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'empresa:listar_materias_primas' %}" class="btn btn-secondary">
+                                Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save"></i> Guardar Materia Prima
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para crear proveedor -->
+<div class="modal fade" id="modalProveedor" tabindex="-1" aria-labelledby="modalProveedorLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalProveedorLabel">Nuevo Proveedor</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="formProveedor">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label for="nombre_proveedor" class="form-label">Nombre <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="nombre_proveedor" name="nombre" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="ruc_proveedor" class="form-label">RUC <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="ruc_proveedor" name="ruc" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="telefono_proveedor" class="form-label">Teléfono</label>
+                        <input type="text" class="form-control" id="telefono_proveedor" name="telefono">
+                    </div>
+                    <div class="mb-3">
+                        <label for="email_proveedor" class="form-label">Email</label>
+                        <input type="email" class="form-control" id="email_proveedor" name="email">
+                    </div>
+                    <div class="mb-3">
+                        <label for="dias_credito_proveedor" class="form-label">Días de Crédito</label>
+                        <input type="number" class="form-control" id="dias_credito_proveedor" name="dias_credito" value="0">
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" id="btnGuardarProveedor">
+                    <i class="fas fa-save"></i> Guardar Proveedor
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const btnGuardarProveedor = document.getElementById('btnGuardarProveedor');
+    const formProveedor = document.getElementById('formProveedor');
+    const modalProveedor = new bootstrap.Modal(document.getElementById('modalProveedor'));
+    
+    btnGuardarProveedor.addEventListener('click', function() {
+        const formData = new FormData(formProveedor);
+        
+        fetch('{% url "empresa:crear_proveedor_ajax" %}', {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Agregar el nuevo proveedor al select
+                const selectProveedor = document.getElementById('{{ form.proveedor_principal.id_for_label }}');
+                const option = new Option(data.proveedor.nombre, data.proveedor.id, true, true);
+                selectProveedor.add(option);
+                
+                // Cerrar modal y limpiar formulario
+                modalProveedor.hide();
+                formProveedor.reset();
+                
+                // Mostrar mensaje de éxito
+                alert('Proveedor creado exitosamente');
+            } else {
+                // Mostrar errores
+                let errorMsg = 'Error al crear proveedor:\n';
+                for (let field in data.errors) {
+                    errorMsg += field + ': ' + data.errors[field].join(', ') + '\n';
+                }
+                alert(errorMsg);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error al crear proveedor');
+        });
+    });
+});
+</script>
+{% endblock %}

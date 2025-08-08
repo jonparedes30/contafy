@@ -1,0 +1,181 @@
+<!-- Ejemplo de Benchmarking Mejorado -->
+<div class="row">
+    <!-- Resumen General -->
+    <div class="col-12 mb-4">
+        <div class="card border-primary">
+            <div class="card-header bg-primary text-white">
+                <h5><i class="bi bi-graph-up"></i> Tu Posición en el Sector</h5>
+            </div>
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-md-3">
+                        <h3 class="text-success">Top 15%</h3>
+                        <p>Rentabilidad</p>
+                    </div>
+                    <div class="col-md-3">
+                        <h3 class="text-warning">Top 45%</h3>
+                        <p>Ventas</p>
+                    </div>
+                    <div class="col-md-3">
+                        <h3 class="text-danger">Top 75%</h3>
+                        <p>Eficiencia</p>
+                    </div>
+                    <div class="col-md-3">
+                        <h3 class="text-info">Top 25%</h3>
+                        <p>Crecimiento</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Métricas Detalladas -->
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h6>Comparación Financiera</h6>
+            </div>
+            <div class="card-body">
+                <!-- Ventas -->
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between">
+                        <span>Ventas Mensuales</span>
+                        <span class="fw-bold">${{ empresa.ventas_actuales|floatformat:0 }}</span>
+                    </div>
+                    <div class="progress mb-1">
+                        <div class="progress-bar bg-primary" style="width: 65%"></div>
+                    </div>
+                    <small class="text-muted">
+                        Promedio sector: $15,000 | Tu posición: Percentil 65
+                    </small>
+                </div>
+
+                <!-- Rentabilidad -->
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between">
+                        <span>Rentabilidad</span>
+                        <span class="fw-bold text-success">{{ empresa.rentabilidad|floatformat:1 }}%</span>
+                    </div>
+                    <div class="progress mb-1">
+                        <div class="progress-bar bg-success" style="width: 85%"></div>
+                    </div>
+                    <small class="text-muted">
+                        Promedio sector: 12.5% | Tu posición: Percentil 85
+                    </small>
+                </div>
+
+                <!-- Crecimiento -->
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between">
+                        <span>Crecimiento (3 meses)</span>
+                        <span class="fw-bold text-info">+{{ empresa.crecimiento|floatformat:1 }}%</span>
+                    </div>
+                    <div class="progress mb-1">
+                        <div class="progress-bar bg-info" style="width: 75%"></div>
+                    </div>
+                    <small class="text-muted">
+                        Promedio sector: +8.2% | Tu posición: Percentil 75
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recomendaciones -->
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h6>Oportunidades de Mejora</h6>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-warning">
+                    <strong>Rotación de Inventario</strong><br>
+                    Tu inventario rota 4.2 veces/año vs 6.8 del sector.
+                    <br><small>💡 Considera reducir stock lento</small>
+                </div>
+                
+                <div class="alert alert-info">
+                    <strong>Días de Cobranza</strong><br>
+                    Cobras en 45 días vs 32 días del sector.
+                    <br><small>💡 Mejora políticas de crédito</small>
+                </div>
+                
+                <div class="alert alert-success">
+                    <strong>¡Fortaleza!</strong><br>
+                    Tu margen bruto (35%) supera al sector (28%).
+                    <br><small>🎉 Excelente control de costos</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Comparación Regional -->
+    <div class="col-12 mt-4">
+        <div class="card">
+            <div class="card-header">
+                <h6>Comparación Regional - {{ empresa.provincia|title }}</h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-4">
+                        <h6>En tu Provincia</h6>
+                        <p>Posición: <span class="badge bg-success">3° de 45</span></p>
+                        <p>Promedio provincial: $12,800</p>
+                    </div>
+                    <div class="col-md-4">
+                        <h6>En tu Ciudad</h6>
+                        <p>Posición: <span class="badge bg-primary">1° de 12</span></p>
+                        <p>Promedio ciudad: $11,200</p>
+                    </div>
+                    <div class="col-md-4">
+                        <h6>Empresas Cercanas (10km)</h6>
+                        <p>Posición: <span class="badge bg-info">2° de 8</span></p>
+                        <p>Promedio área: $13,500</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Gráfico Radar (requiere Chart.js) -->
+<div class="col-12 mt-4">
+    <div class="card">
+        <div class="card-header">
+            <h6>Perfil Comparativo</h6>
+        </div>
+        <div class="card-body">
+            <canvas id="radarChart" width="400" height="200"></canvas>
+        </div>
+    </div>
+</div>
+
+<script>
+// Gráfico radar comparativo
+const ctx = document.getElementById('radarChart').getContext('2d');
+const radarChart = new Chart(ctx, {
+    type: 'radar',
+    data: {
+        labels: ['Ventas', 'Rentabilidad', 'Crecimiento', 'Eficiencia', 'Liquidez'],
+        datasets: [{
+            label: 'Tu Empresa',
+            data: [65, 85, 75, 45, 70],
+            borderColor: 'rgb(54, 162, 235)',
+            backgroundColor: 'rgba(54, 162, 235, 0.2)',
+        }, {
+            label: 'Promedio Sector',
+            data: [50, 50, 50, 50, 50],
+            borderColor: 'rgb(255, 99, 132)',
+            backgroundColor: 'rgba(255, 99, 132, 0.2)',
+        }]
+    },
+    options: {
+        scales: {
+            r: {
+                beginAtZero: true,
+                max: 100
+            }
+        }
+    }
+});
+</script>

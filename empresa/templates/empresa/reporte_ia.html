@@ -1,0 +1,329 @@
+{% extends 'empresa/base.html' %}
+
+{% block title %}🤖 Análisis Financiero IA - {{ user.empresa.nombre }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header mejorado -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-0 shadow-lg" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                <div class="card-body text-white text-center py-5">
+                    <h1 class="display-4 mb-3">🤖 Análisis Financiero Inteligente</h1>
+                    <p class="lead mb-4">Reporte generado por IA para {{ empresa.nombre }}</p>
+                    <div class="row justify-content-center">
+                        <div class="col-md-8">
+                            <div class="d-flex justify-content-center gap-3">
+                                <a href="{% url 'empresa:generar_reporte_ia_pdf' %}" class="btn btn-light btn-lg">
+                                    <i class="fas fa-file-pdf text-danger"></i> Descargar PDF
+                                </a>
+                                <button class="btn btn-outline-light btn-lg" onclick="window.print()">
+                                    <i class="fas fa-print"></i> Imprimir
+                                </button>
+                                <a href="{% url 'empresa:agente_ia' %}" class="btn btn-outline-light btn-lg">
+                                    <i class="fas fa-robot"></i> Chat con IA
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Resumen Ejecutivo -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h3 class="mb-0"><i class="fas fa-chart-line"></i> Resumen Ejecutivo</h3>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info border-0 shadow-sm">
+                        <h5 class="alert-heading"><i class="fas fa-brain"></i> Análisis IA</h5>
+                        <p class="mb-0">{{ analisis_ia.resumen }}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Métricas Clave -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body text-center">
+                    <div class="display-4 text-success mb-2">💰</div>
+                    <h5>Ventas Mensuales</h5>
+                    <h3 class="text-success">${{ datos_empresa.ventas_mes|floatformat:2 }}</h3>
+                    <small class="text-muted">Último mes</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body text-center">
+                    <div class="display-4 {% if datos_empresa.utilidad_mes > 0 %}text-success{% else %}text-danger{% endif %} mb-2">📊</div>
+                    <h5>Utilidad Neta</h5>
+                    <h3 class="{% if datos_empresa.utilidad_mes > 0 %}text-success{% else %}text-danger{% endif %}">${{ datos_empresa.utilidad_mes|floatformat:2 }}</h3>
+                    <small class="text-muted">Beneficio neto</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body text-center">
+                    <div class="display-4 {% if datos_empresa.margen_mes > 15 %}text-success{% elif datos_empresa.margen_mes > 5 %}text-warning{% else %}text-danger{% endif %} mb-2">📈</div>
+                    <h5>Margen de Utilidad</h5>
+                    <h3 class="{% if datos_empresa.margen_mes > 15 %}text-success{% elif datos_empresa.margen_mes > 5 %}text-warning{% else %}text-danger{% endif %}">{{ datos_empresa.margen_mes|floatformat:1 }}%</h3>
+                    <small class="text-muted">Eficiencia operativa</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body text-center">
+                    <div class="display-4 {% if datos_empresa.liquidez > 1.5 %}text-success{% else %}text-warning{% endif %} mb-2">💧</div>
+                    <h5>Liquidez</h5>
+                    <h3 class="{% if datos_empresa.liquidez > 1.5 %}text-success{% else %}text-warning{% endif %}">{{ datos_empresa.liquidez|floatformat:2 }}</h3>
+                    <small class="text-muted">Capacidad de pago</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Análisis Detallado -->
+    <div class="row">
+        <!-- Fortalezas -->
+        <div class="col-md-6 mb-4">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-header bg-success text-white">
+                    <h4 class="mb-0"><i class="fas fa-thumbs-up"></i> Fortalezas</h4>
+                </div>
+                <div class="card-body">
+                    {% for fortaleza in analisis_ia.fortalezas %}
+                    <div class="d-flex align-items-start mb-3">
+                        <div class="flex-shrink-0">
+                            <span class="badge bg-success rounded-pill">{{ forloop.counter }}</span>
+                        </div>
+                        <div class="flex-grow-1 ms-3">
+                            <p class="mb-0">{{ fortaleza }}</p>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Debilidades -->
+        <div class="col-md-6 mb-4">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-header bg-warning text-dark">
+                    <h4 class="mb-0"><i class="fas fa-exclamation-triangle"></i> Áreas de Mejora</h4>
+                </div>
+                <div class="card-body">
+                    {% for debilidad in analisis_ia.debilidades %}
+                    <div class="d-flex align-items-start mb-3">
+                        <div class="flex-shrink-0">
+                            <span class="badge bg-warning rounded-pill">{{ forloop.counter }}</span>
+                        </div>
+                        <div class="flex-grow-1 ms-3">
+                            <p class="mb-0">{{ debilidad }}</p>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Oportunidades y Acciones -->
+    <div class="row">
+        <!-- Oportunidades -->
+        <div class="col-md-6 mb-4">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-header bg-info text-white">
+                    <h4 class="mb-0"><i class="fas fa-rocket"></i> Oportunidades</h4>
+                </div>
+                <div class="card-body">
+                    {% for oportunidad in analisis_ia.oportunidades %}
+                    <div class="d-flex align-items-start mb-3">
+                        <div class="flex-shrink-0">
+                            <span class="badge bg-info rounded-pill">{{ forloop.counter }}</span>
+                        </div>
+                        <div class="flex-grow-1 ms-3">
+                            <p class="mb-0">{{ oportunidad }}</p>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Acciones Inmediatas -->
+        <div class="col-md-6 mb-4">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-header bg-danger text-white">
+                    <h4 class="mb-0"><i class="fas fa-bolt"></i> Acciones Inmediatas</h4>
+                </div>
+                <div class="card-body">
+                    {% for accion in analisis_ia.acciones_inmediatas %}
+                    <div class="d-flex align-items-start mb-3">
+                        <div class="flex-shrink-0">
+                            <span class="badge bg-danger rounded-pill">{{ forloop.counter }}</span>
+                        </div>
+                        <div class="flex-grow-1 ms-3">
+                            <p class="mb-0">{{ accion }}</p>
+                            <small class="text-muted">
+                                <i class="fas fa-clock"></i> 
+                                {% if forloop.counter <= 2 %}Alta prioridad - 1-2 semanas{% else %}Media prioridad - 1 mes{% endif %}
+                            </small>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Predicción y Recomendación Principal -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-secondary text-white">
+                    <h4 class="mb-0"><i class="fas fa-crystal-ball"></i> Predicción Próximo Mes</h4>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-secondary border-0">
+                        <p class="mb-0">{{ analisis_ia.prediccion_proximo_mes }}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0"><i class="fas fa-target"></i> Recomendación Principal</h4>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-primary border-0">
+                        <p class="mb-0">{{ analisis_ia.recomendacion_principal }}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Productos Top -->
+    {% if datos_empresa.top_productos %}
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-success text-white">
+                    <h4 class="mb-0"><i class="fas fa-trophy"></i> Productos Estrella</h4>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>🛍️ Producto</th>
+                                    <th>💰 Ventas</th>
+                                    <th>📦 Cantidad</th>
+                                    <th>📊 Participación</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for producto in datos_empresa.top_productos|slice:":5" %}
+                                <tr>
+                                    <td><strong>{{ producto.producto__nombre }}</strong></td>
+                                    <td class="text-success">${{ producto.total_vendido|floatformat:2 }}</td>
+                                    <td>{{ producto.cantidad_vendida }} unidades</td>
+                                    <td>
+                                        <div class="progress" style="height: 20px;">
+                                            <div class="progress-bar bg-success" role="progressbar" 
+                                                 style="width: {% widthratio producto.total_vendido datos_empresa.ventas_mes 100 %}%">
+                                                {% widthratio producto.total_vendido datos_empresa.ventas_mes 100 %}%
+                                            </div>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Gastos Principales -->
+    {% if datos_empresa.top_gastos %}
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-warning text-dark">
+                    <h4 class="mb-0"><i class="fas fa-money-bill-wave"></i> Gastos Principales</h4>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>📋 Concepto</th>
+                                    <th>💰 Monto</th>
+                                    <th>📊 Participación</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for gasto in datos_empresa.top_gastos|slice:":5" %}
+                                <tr>
+                                    <td><strong>{{ gasto.descripcion }}</strong></td>
+                                    <td class="text-danger">${{ gasto.total|floatformat:2 }}</td>
+                                    <td>
+                                        <div class="progress" style="height: 20px;">
+                                            <div class="progress-bar bg-warning" role="progressbar" 
+                                                 style="width: {% widthratio gasto.total datos_empresa.gastos_mes 100 %}%">
+                                                {% widthratio gasto.total datos_empresa.gastos_mes 100 %}%
+                                            </div>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Footer del reporte -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body text-center py-4" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
+                    <h5 class="text-white mb-3">📊 Reporte Generado por CONTAFY AI</h5>
+                    <p class="text-white mb-2">
+                        <i class="fas fa-calendar"></i> {{ "now"|date:"d \d\e F \d\e Y \a \l\a\s H:i" }}
+                    </p>
+                    <p class="text-white-50 mb-0">
+                        <i class="fas fa-robot"></i> Este análisis ha sido generado automáticamente usando inteligencia artificial avanzada
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+@media print {
+    .btn, .card-header { 
+        -webkit-print-color-adjust: exact !important; 
+        color-adjust: exact !important; 
+    }
+}
+</style>
+{% endblock %}

@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Responder Solicitud - CONTAFY</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css" rel="stylesheet">
+</head>
+<body>
+<div class="container mt-4">
+    <h2><i class="bi bi-chat-dots"></i> Responder Solicitud #{{ conversacion.solicitud_ayuda.id }}</h2>
+    
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5>{{ conversacion.solicitud_ayuda.asunto }}</h5>
+                    <small class="text-muted">
+                        {{ conversacion.solicitud_ayuda.get_tipo_display }} | 
+                        {{ conversacion.solicitud_ayuda.fecha_creacion|date:"d/m/Y H:i" }}
+                    </small>
+                </div>
+                <div class="card-body">
+                    <h6>Mensaje original:</h6>
+                    <div class="alert alert-light">
+                        {{ conversacion.solicitud_ayuda.mensaje|linebreaks }}
+                    </div>
+                    
+                    <h6>Historial de mensajes:</h6>
+                    {% for mensaje in conversacion.mensajes.all %}
+                    <div class="mb-3 p-3 {% if mensaje.tipo == 'soporte' %}bg-primary text-white{% else %}bg-light{% endif %} rounded">
+                        <strong>
+                            {% if mensaje.tipo == 'soporte' %}Soporte{% else %}{{ conversacion.usuario.username }}{% endif %}:
+                        </strong>
+                        <div>{{ mensaje.mensaje|linebreaks }}</div>
+                        <small class="{% if mensaje.tipo == 'soporte' %}text-white-50{% else %}text-muted{% endif %}">
+                            {{ mensaje.fecha_envio|date:"d/m/Y H:i" }}
+                        </small>
+                    </div>
+                    {% endfor %}
+                    
+                    <hr>
+                    <h6>Enviar respuesta:</h6>
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <textarea name="mensaje" class="form-control" rows="5" placeholder="Escribe tu respuesta aquí..." required></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-send"></i> Enviar Respuesta
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h6>Información del Usuario</h6>
+                </div>
+                <div class="card-body">
+                    <p><strong>Usuario:</strong> {{ conversacion.usuario.username }}</p>
+                    <p><strong>Email:</strong> {{ conversacion.usuario.email }}</p>
+                    <p><strong>Empresa:</strong> {{ conversacion.empresa.nombre }}</p>
+                    <p><strong>Tipo:</strong> {{ conversacion.empresa.get_categoria_display }}</p>
+                    <p><strong>Ubicación:</strong> {{ conversacion.empresa.ubicacion_completa }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>

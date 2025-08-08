@@ -1,0 +1,132 @@
+{% extends 'empresa/base.html' %}
+
+{% block title %}Ventas de Productos Manufacturados - {{ user.empresa.nombre }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2>💰 Ventas de Productos Manufacturados</h2>
+                <a href="{% url 'empresa:crear_venta_manufactura' %}" class="btn btn-primary">
+                    <i class="fas fa-plus"></i> Nueva Venta
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Estadísticas -->
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card bg-success text-white">
+                <div class="card-body">
+                    <h4>${{ total_ventas|floatformat:2 }}</h4>
+                    <p class="mb-0">Total Ventas</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card bg-info text-white">
+                <div class="card-body">
+                    <h4>{{ total_transacciones }}</h4>
+                    <p class="mb-0">Transacciones</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card bg-warning text-white">
+                <div class="card-body">
+                    <h4>${{ promedio_venta|floatformat:2 }}</h4>
+                    <p class="mb-0">Promedio por Venta</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filtros -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <form method="get" class="row g-3">
+                        <div class="col-md-4">
+                            <input type="text" name="buscar" class="form-control" 
+                                   placeholder="Buscar producto o cliente..." 
+                                   value="{{ request.GET.buscar }}">
+                        </div>
+                        <div class="col-md-3">
+                            <input type="date" name="fecha_desde" class="form-control" 
+                                   value="{{ request.GET.fecha_desde }}">
+                        </div>
+                        <div class="col-md-3">
+                            <input type="date" name="fecha_hasta" class="form-control" 
+                                   value="{{ request.GET.fecha_hasta }}">
+                        </div>
+                        <div class="col-md-2">
+                            <button type="submit" class="btn btn-primary w-100">Filtrar</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Lista de Ventas -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    {% if ventas %}
+                        <div class="table-responsive">
+                            <table class="table table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>Fecha</th>
+                                        <th>Producto</th>
+                                        <th>Cliente</th>
+                                        <th>Cantidad</th>
+                                        <th>Precio Unit.</th>
+                                        <th>Total</th>
+                                        <th>Tipo Pago</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for venta in ventas %}
+                                    <tr>
+                                        <td>{{ venta.fecha|date:"d/m/Y H:i" }}</td>
+                                        <td>
+                                            <strong>{{ venta.producto.nombre }}</strong>
+                                            <br><small class="text-muted">{{ venta.producto.codigo }}</small>
+                                        </td>
+                                        <td>{{ venta.cliente_display }}</td>
+                                        <td>{{ venta.cantidad }}</td>
+                                        <td>${{ venta.precio_unitario }}</td>
+                                        <td><strong>${{ venta.total }}</strong></td>
+                                        <td>
+                                            {% if venta.tipo_pago == 'contado' %}
+                                                <span class="badge bg-success">Contado</span>
+                                            {% else %}
+                                                <span class="badge bg-warning">Crédito</span>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-5">
+                            <i class="fas fa-cart-plus fa-3x text-muted mb-3"></i>
+                            <h4>No hay ventas registradas</h4>
+                            <p class="text-muted">Comienza vendiendo tus productos manufacturados</p>
+                            <a href="{% url 'empresa:crear_venta_manufactura' %}" class="btn btn-primary">
+                                <i class="fas fa-plus"></i> Registrar primera venta
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

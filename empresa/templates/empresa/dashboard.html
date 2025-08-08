@@ -1,0 +1,1330 @@
+{% extends "empresa/base.html" %}
+{% load empresa_filters %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+<style>
+    /* Gradiente animado en header */
+    .animated-header {
+        background: linear-gradient(-45deg, #2c3e50, #34495e, #27ae60, #2ecc71);
+        background-size: 400% 400%;
+        animation: gradientShift 12s ease-in-out infinite;
+        color: white;
+        border-radius: 15px 15px 0 0;
+        padding: 24px 24px 16px 24px;
+        margin-bottom: 24px;
+    }
+    @keyframes gradientShift {
+        0% { background-position: 0% 50%; }
+        50% { background-position: 100% 50%; }
+        100% { background-position: 0% 50%; }
+    }
+    .dashboard-card {
+        transition: box-shadow 0.4s, transform 0.4s, background 0.4s;
+        border-radius: 15px;
+        border: none;
+        background: #fff;
+        box-shadow: 0 2px 12px rgba(44,62,80,0.08);
+    }
+    .dashboard-card.kpi-card {
+        background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+        color: white;
+    }
+    .dashboard-card.kpi-card:hover {
+        box-shadow: 0 0 24px 4px #27ae60, 0 4px 24px rgba(44,62,80,0.10);
+        filter: brightness(1.05) drop-shadow(0 0 8px #27ae60);
+        background: linear-gradient(135deg, #263445 0%, #34495e 100%);
+        color: white;
+    }
+    .dashboard-card:hover {
+        box-shadow: 0 16px 40px rgba(44,62,80,0.18), 0 2px 8px rgba(44,62,80,0.10);
+        transform: translateY(-4px) scale(1.01);
+        background: linear-gradient(135deg, #e9ecef 0%, #2c3e50 100%);
+        color: white;
+    }
+    .kpi-card {
+        background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+        color: white;
+        box-shadow: 0 4px 18px rgba(44,62,80,0.08);
+        position: relative;
+        overflow: hidden;
+        transition: box-shadow 0.3s, filter 0.3s;
+    }
+    .kpi-card.pulse {
+        animation: pulseKPI 1.5s infinite;
+    }
+    @keyframes pulseKPI {
+        0% { box-shadow: 0 0 0 0 rgba(39,174,96,0.4); }
+        70% { box-shadow: 0 0 0 12px rgba(39,174,96,0); }
+        100% { box-shadow: 0 0 0 0 rgba(39,174,96,0.4); }
+    }
+    .kpi-card:hover {
+        box-shadow: 0 0 24px 4px #27ae60, 0 4px 24px rgba(44,62,80,0.10);
+        filter: brightness(1.05) drop-shadow(0 0 8px #27ae60);
+    }
+    .kpi-amount {
+        font-size: 2.2rem;
+        font-weight: 700;
+        letter-spacing: -1px;
+        margin-bottom: 0.2em;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5em;
+    }
+    .kpi-label {
+        font-size: 1.1rem;
+        font-weight: 400;
+        opacity: 0.85;
+    }
+    .kpi-badge {
+        display: inline-flex;
+        align-items: center;
+        font-size: 1.1rem;
+        font-weight: 600;
+        border-radius: 8px;
+        padding: 0.1em 0.5em;
+        margin-left: 0.3em;
+        background: rgba(255,255,255,0.15);
+    }
+    .kpi-badge.up { color: #27ae60; }
+    .kpi-badge.down { color: #dc3545; }
+    .quick-action {
+        transition: all 0.2s ease;
+        border-radius: 10px;
+        position: relative;
+        overflow: hidden;
+    }
+    .quick-action:active::after {
+        content: '';
+        position: absolute;
+        left: 50%; top: 50%;
+        width: 200%; height: 200%;
+        background: rgba(44,62,80,0.12);
+        border-radius: 50%;
+        transform: translate(-50%, -50%) scale(0);
+        animation: ripple 0.5s linear;
+        pointer-events: none;
+    }
+    @keyframes ripple {
+        to { transform: translate(-50%, -50%) scale(1); opacity: 0; }
+    }
+    .floating {
+        animation: float 2.2s ease-in-out infinite;
+    }
+    @keyframes float {
+        0%, 100% { transform: translateY(0); }
+        50% { transform: translateY(-8px); }
+    }
+    /* Glow hover effect */
+    .glow-hover:hover {
+        box-shadow: 0 0 24px 4px rgba(39, 174, 96, 0.2), 0 4px 24px rgba(44, 62, 80, 0.15);
+        filter: brightness(1.05) drop-shadow(0 0 8px rgba(39, 174, 96, 0.3));
+    }
+    /* Fade-in effect */
+    .fade-in {
+        opacity: 0;
+        animation: fadeIn 0.8s ease-in forwards;
+    }
+    @keyframes fadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+    }
+    /* Animate pulse for Estado Actual */
+    .animate-pulse {
+        animation: pulse 1.5s infinite;
+    }
+    @keyframes pulse {
+        0%, 100% { transform: scale(1); }
+        50% { transform: scale(1.05); }
+    }
+    /* Ripple button effect */
+    .ripple-btn {
+        position: relative;
+        overflow: hidden;
+    }
+    .ripple-btn:active::after {
+        content: '';
+        position: absolute;
+        left: 50%; top: 50%;
+        width: 200%; height: 200%;
+        background: rgba(44,62,80,0.12);
+        border-radius: 50%;
+        transform: translate(-50%, -50%) scale(0);
+        animation: ripple 0.5s linear;
+        pointer-events: none;
+    }
+    
+    /* Estilos para la leyenda del gráfico */
+    .chart-legend-item {
+        width: 20px;
+        height: 20px;
+        border-radius: 4px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        transition: transform 0.2s ease;
+    }
+    
+    .chart-legend-item:hover {
+        transform: scale(1.1);
+    }
+    
+    /* Mejoras para el contenedor del gráfico */
+    .chart-container {
+        background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+        border-radius: 10px;
+        padding: 20px;
+        box-shadow: inset 0 2px 4px rgba(0,0,0,0.05);
+    }
+    
+    /* Animación de carga para el gráfico */
+    .chart-loading {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 400px;
+        background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+        border-radius: 10px;
+    }
+    
+    .chart-loading::after {
+        content: '';
+        width: 40px;
+        height: 40px;
+        border: 4px solid #e9ecef;
+        border-top: 4px solid #007bff;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+    }
+    
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+</style>
+
+<div class="container-fluid mt-4">
+    <!-- Header con gradiente animado y filtros -->
+    <div class="animated-header mb-4 d-flex flex-wrap justify-content-between align-items-center">
+        <div>
+            <h1 class="h2 mb-1">
+                <i class="bi bi-graph-up-arrow"></i> Dashboard Financiero
+            </h1>
+            <p class="mb-0">Vista operativa en tiempo real</p>
+        </div>
+        <form method="get" class="d-flex flex-wrap gap-2 align-items-end">
+            <div>
+                <label class="form-label mb-1">Desde</label>
+                <input type="date" name="fecha_inicio" class="form-control" value="{{ request.GET.fecha_inicio|default:'' }}">
+            </div>
+            <div>
+                <label class="form-label mb-1">Hasta</label>
+                <input type="date" name="fecha_fin" class="form-control" value="{{ request.GET.fecha_fin|default:'' }}">
+            </div>
+            <button type="submit" class="btn btn-success quick-action">
+                <i class="bi bi-funnel"></i> Filtrar
+            </button>
+            <a href="{% url 'empresa:dashboard' %}" class="btn btn-outline-secondary quick-action">
+                <i class="bi bi-arrow-clockwise"></i> Restablecer
+            </a>
+        </form>
+    </div>
+
+    <!-- KPIs filtrados -->
+    <div class="row mb-4">
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card dashboard-card kpi-card pulse h-100">
+                <div class="card-body text-center p-4">
+                    <div class="mb-3">
+                        <i class="bi bi-currency-dollar fs-1"></i>
+                    </div>
+                    <div class="kpi-amount" id="kpi-ventas">${{ ventas|floatformat:2 }} <span class="kpi-badge up" id="badge-ventas"></span></div>
+                    <div class="kpi-label">Ventas Totales</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card dashboard-card kpi-card h-100">
+                <div class="card-body text-center p-4">
+                    <div class="mb-3">
+                        <i class="bi bi-cash-stack fs-1"></i>
+                    </div>
+                    <div class="kpi-amount" id="kpi-gastos">${{ gastos|floatformat:2 }} <span class="kpi-badge down" id="badge-gastos"></span></div>
+                    <div class="kpi-label">Gastos Totales</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card dashboard-card kpi-card h-100">
+                <div class="card-body text-center p-4">
+                    <div class="mb-3">
+                        <i class="bi bi-bag-check fs-1"></i>
+                    </div>
+                    <div class="kpi-amount" id="kpi-compras">${{ compras|floatformat:2 }} <span class="kpi-badge" id="badge-compras"></span></div>
+                    <div class="kpi-label">Compras Totales</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card dashboard-card kpi-card h-100">
+                <div class="card-body text-center p-4">
+                    <div class="mb-3">
+                        <i class="bi bi-cash-coin fs-1"></i>
+                    </div>
+                    <div class="kpi-amount" id="kpi-utilidad">${{ utilidad_neta|floatformat:2 }} <span class="kpi-badge" id="badge-utilidad"></span></div>
+                    <div class="kpi-label">Utilidad Neta</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Gráfico de barras: Ventas vs Gastos -->
+    <div class="row mb-4">
+      <div class="col-12">
+        <div class="card dashboard-card border-0 shadow-sm">
+          <div class="card-header bg-white border-0 d-flex justify-content-between align-items-center">
+            <h4 class="mb-0">
+              <i class="bi bi-bar-chart text-success me-2"></i> 
+              <span class="fw-bold">Análisis de Ventas vs Gastos</span>
+            </h4>
+            <div class="d-flex gap-3">
+              <div class="d-flex align-items-center">
+                <div class="chart-legend-item" style="background: linear-gradient(135deg, #4CAF50, #45a049);"></div>
+                <span class="ms-2 text-muted">Ventas</span>
+              </div>
+              <div class="d-flex align-items-center">
+                <div class="chart-legend-item" style="background: linear-gradient(135deg, #F44336, #d32f2f);"></div>
+                <span class="ms-2 text-muted">Gastos</span>
+              </div>
+            </div>
+          </div>
+          <div class="card-body p-4">
+            <div class="chart-container" style="min-height: 400px; position: relative;">
+              <canvas id="ventasGastosChart"></canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Gráfico de distribución de gastos -->
+    <div class="row mb-4">
+      <div class="col-12">
+        <div class="card dashboard-card border-0 shadow-sm">
+          <div class="card-header bg-white border-0 d-flex justify-content-between align-items-center">
+            <h4 class="mb-0">
+              <i class="bi bi-pie-chart text-info me-2"></i> 
+              <span class="fw-bold">Top 10 Gastos por Descripción</span>
+            </h4>
+            <div class="d-flex align-items-center">
+              <i class="bi bi-info-circle text-muted me-2"></i>
+              <small class="text-muted">{{ mensaje_gasto_frecuente }}</small>
+            </div>
+          </div>
+          <div class="card-body p-4">
+            <div class="chart-container" style="min-height: 400px; position: relative;">
+              <canvas id="distribucionGastosChart"></canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Top 5 productos y productos sin movimiento -->
+    <div class="row mb-4">
+      <div class="col-md-8">
+        <div class="card dashboard-card border-0 shadow-sm h-100">
+          <div class="card-header bg-white border-0">
+            <h4 class="mb-0">
+              <i class="bi bi-trophy text-success me-2"></i> 
+              <span class="fw-bold">Top 5 Productos Más Vendidos</span>
+            </h4>
+            <small class="text-muted mt-1 d-block">
+              <i class="bi bi-info-circle me-1"></i>
+              {{ mensaje_producto_mas_vendido }}
+            </small>
+          </div>
+          <div class="card-body p-4">
+            <div class="chart-container" style="min-height: 350px; position: relative;">
+              <canvas id="productosMasVendidosChart"></canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="card dashboard-card border-0 shadow-sm h-100">
+          <div class="card-header bg-white border-0">
+            <h4 class="mb-0">
+              <i class="bi bi-exclamation-triangle text-warning me-2"></i> 
+              <span class="fw-bold">Productos sin Movimiento</span>
+            </h4>
+          </div>
+          <div class="card-body p-4">
+            <div class="text-center mb-3">
+              <div class="display-4 text-warning">{{ productos_criticos_count }}</div>
+              <small class="text-muted">Productos sin ventas (30 días)</small>
+            </div>
+            {% if productos_sin_movimiento %}
+              <div class="list-group list-group-flush" style="max-height: 250px; overflow-y: auto;">
+                {% for producto in productos_sin_movimiento %}
+                <div class="list-group-item border-0 px-0 py-2">
+                  <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                      <strong class="small">{{ producto.nombre|truncatechars:15 }}</strong>
+                      <br>
+                      <small class="text-muted">Stock: {{ producto.stock }}</small>
+                    </div>
+                    <div class="text-end">
+                      <small class="text-danger">${{ producto.valor_inmovilizado|floatformat:0 }}</small>
+                    </div>
+                  </div>
+                </div>
+                {% endfor %}
+              </div>
+            {% else %}
+              <div class="text-center text-success">
+                <i class="bi bi-check-circle fs-3"></i>
+                <p class="small mb-0">¡Todos los productos tienen movimiento!</p>
+              </div>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+
+
+
+    <!-- NUEVOS REPORTES COMERCIALES -->
+    
+
+
+    <!-- Rotación de inventario y márgenes por categoría -->
+    <div class="row mb-4">
+      <div class="col-md-8">
+        <div class="card dashboard-card border-0 shadow-sm h-100">
+          <div class="card-header bg-white border-0">
+            <h4 class="mb-0">
+              <i class="bi bi-arrow-repeat text-info me-2"></i> 
+              <span class="fw-bold">Rotación de Inventario por Categoría</span>
+            </h4>
+            <small class="text-muted mt-1 d-block">
+              <i class="bi bi-info-circle me-1"></i>
+              {% if user.empresa.categoria == 'manufactura' %}
+                Mide qué tan rápido se consumen las materias primas y se venden los productos manufacturados
+              {% else %}
+                Mide qué tan rápido se vende el inventario de cada categoría de productos
+              {% endif %}
+            </small>
+          </div>
+          <div class="card-body p-4">
+            <div class="chart-container" style="min-height: 350px; position: relative;">
+              <canvas id="rotacionInventarioChart"></canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="card dashboard-card border-0 shadow-sm h-100">
+          <div class="card-header bg-white border-0">
+            <h4 class="mb-0">
+              <i class="bi bi-percent text-success me-2"></i> 
+              <span class="fw-bold">Márgenes por Categoría</span>
+            </h4>
+            <small class="text-muted mt-1 d-block">
+              <i class="bi bi-award me-1"></i>
+              Más rentable: {{ categoria_mas_rentable }}
+            </small>
+          </div>
+          <div class="card-body p-4">
+            <div class="chart-container" style="min-height: 350px; position: relative;">
+              <canvas id="margenesCategoriaChart"></canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Análisis de rentabilidad temporal -->
+    <div class="row mb-4">
+      <div class="col-12">
+        <div class="card dashboard-card border-0 shadow-sm">
+          <div class="card-header bg-white border-0 d-flex justify-content-between align-items-center">
+            <h4 class="mb-0">
+              <i class="bi bi-graph-up-arrow text-primary me-2"></i> 
+              <span class="fw-bold">Evolución de Rentabilidad</span>
+            </h4>
+            <div class="d-flex gap-3">
+              <div class="d-flex align-items-center">
+                <div class="chart-legend-item" style="background: linear-gradient(135deg, #28a745, #20c997);"></div>
+                <span class="ms-2 text-muted">Margen Bruto</span>
+              </div>
+              <div class="d-flex align-items-center">
+                <div class="chart-legend-item" style="background: linear-gradient(135deg, #007bff, #6610f2);"></div>
+                <span class="ms-2 text-muted">Margen Neto</span>
+              </div>
+            </div>
+          </div>
+          <div class="card-body p-4">
+            <div class="chart-container" style="min-height: 400px; position: relative;">
+              <canvas id="rentabilidadTemporalChart"></canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Gráfico de histórico de utilidades -->
+    <div class="row mb-4">
+      <div class="col-12">
+        <div class="card dashboard-card border-0 shadow-sm">
+          <div class="card-header bg-white border-0 d-flex justify-content-between align-items-center">
+            <h4 class="mb-0">
+              <i class="bi bi-graph-up text-primary me-2"></i> 
+              <span class="fw-bold">Histórico de Utilidades Mensuales</span>
+            </h4>
+            <div class="d-flex align-items-center">
+              <i class="bi bi-info-circle text-muted me-2"></i>
+              <small class="text-muted">{{ mensaje_tendencia }}</small>
+            </div>
+          </div>
+          <div class="card-body p-4">
+            <div class="chart-container" style="min-height: 400px; position: relative;">
+              <canvas id="historicoUtilidadesChart"></canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+
+
+
+    <!-- Comparación con el Sector -->
+    <div class="row mb-4">
+      <div class="col-md-6">
+        <div class="card dashboard-card border-0 shadow-sm h-100">
+          <div class="card-header bg-white border-0">
+            <h4 class="mb-0">
+              <i class="bi bi-bar-chart-line text-primary me-2"></i> 
+              <span class="fw-bold">Comparación con el Sector</span>
+            </h4>
+            <small class="text-muted mt-1 d-block">
+              <i class="bi bi-info-circle me-1"></i>
+              Tu margen vs promedio del sector {{ user.empresa.categoria }}
+            </small>
+          </div>
+          <div class="card-body p-4">
+            <div class="chart-container" style="min-height: 300px; position: relative;">
+              <canvas id="comparacionSectorChart"></canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-6">
+        <div class="card dashboard-card border-0 shadow-sm h-100">
+          <div class="card-header bg-white border-0">
+            <h4 class="mb-0">
+              <i class="bi bi-speedometer2 text-warning me-2"></i> 
+              <span class="fw-bold">Rotación vs Benchmark</span>
+            </h4>
+            <small class="text-muted mt-1 d-block">
+              <i class="bi bi-info-circle me-1"></i>
+              Tu rotación: {{ rotacion_promedio }}x vs sector: {{ rotacion_sector }}x
+            </small>
+          </div>
+          <div class="card-body p-4">
+            <div class="chart-container" style="min-height: 300px; position: relative;">
+              <canvas id="rotacionBenchmarkChart"></canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- KPIs extras -->
+    <div class="row mb-4">
+        <!-- Margen Neto -->
+        <div class="col-lg-3 col-md-6 mb-4">
+            <div class="card dashboard-card glow-hover fade-in h-100">
+                <div class="card-body text-center p-3">
+                    <div class="mb-2">
+                        <i class="bi bi-percent fs-2"></i>
+                    </div>
+                    <div class="fw-bold fs-4">{{ margen_neto|floatformat:2 }}%</div>
+                    <div class="text-muted">Margen Neto</div>
+                </div>
+            </div>
+        </div>
+        <!-- Ratio Gastos/Ventas -->
+        <div class="col-lg-3 col-md-6 mb-4">
+            <div class="card dashboard-card glow-hover fade-in h-100">
+                <div class="card-body text-center p-3">
+                    <div class="mb-2">
+                        <i class="bi bi-pie-chart fs-2"></i>
+                    </div>
+                    <div class="fw-bold fs-4" id="kpi-ratio">{{ ratio_gastos_ventas|floatformat:2 }}%</div>
+                    <div class="text-muted">Ratio Gastos/Ventas</div>
+                </div>
+            </div>
+        </div>
+        <!-- Rotación Promedio -->
+        <div class="col-lg-3 col-md-6 mb-4">
+            <div class="card dashboard-card glow-hover fade-in h-100">
+                <div class="card-body text-center p-3">
+                    <div class="mb-2">
+                        <i class="bi bi-arrow-repeat fs-2 text-info"></i>
+                    </div>
+                    <div class="fw-bold fs-4">{{ rotacion_promedio }}x</div>
+                    <div class="text-muted">Rotación Promedio</div>
+                </div>
+            </div>
+        </div>
+        <!-- Productos Críticos -->
+        <div class="col-lg-3 col-md-6 mb-4">
+            <div class="card dashboard-card glow-hover fade-in h-100">
+                <div class="card-body text-center p-3">
+                    <div class="mb-2">
+                        <i class="bi bi-exclamation-triangle fs-2 text-warning"></i>
+                    </div>
+                    <div class="fw-bold fs-4">{{ productos_criticos_count }}</div>
+                    <div class="text-muted">Productos Críticos</div>
+                </div>
+            </div>
+        </div>
+        <!-- Categoría Más Rentable -->
+        <div class="col-lg-3 col-md-6 mb-4">
+            <div class="card dashboard-card glow-hover fade-in h-100">
+                <div class="card-body text-center p-3">
+                    <div class="mb-2">
+                        <i class="bi bi-trophy fs-2 text-success"></i>
+                    </div>
+                    <div class="fw-bold fs-6">{{ categoria_mas_rentable|truncatechars:12 }}</div>
+                    <div class="text-muted">Categoría Top</div>
+                </div>
+            </div>
+        </div>
+        <!-- Estado Actual -->
+        <div class="col-lg-3 col-md-6 mb-4">
+            <div class="card dashboard-card glow-hover fade-in h-100">
+                <div class="card-body text-center p-3">
+                    <div class="mb-2 floating">
+                        <i class="bi bi-bell-fill text-warning fs-2 animate-pulse"></i>
+                    </div>
+                    <span class="badge px-3 py-1 text-white rounded mb-2"
+                        style="font-size:1.1rem;"
+                        {% if estado_actual == 'Saludable' %}style="background-color:#4CAF50;"{% elif estado_actual == 'Estable' %}style="background-color:#FFC107; color:#222;"{% else %}style="background-color:#F44336;"{% endif %}>
+                        {{ estado_actual }}
+                    </span>
+                    <div class="text-muted">Estado Actual</div>
+                </div>
+            </div>
+        </div>
+        <!-- Última actualización -->
+        <div class="col-lg-6 col-md-6 mb-4">
+            <div class="card dashboard-card glow-hover fade-in h-100">
+                <div class="card-body text-center p-3">
+                    <div class="mb-2">
+                        <i class="bi bi-clock-history fs-2"></i>
+                    </div>
+                    <div class="fw-bold fs-6" id="kpi-actualizacion">{{ fecha_ultima_actualizacion }}</div>
+                    <div class="text-muted">Última actualización</div>
+                </div>
+            </div>
+        </div>
+        <!-- Botón Restablecer filtros -->
+        <div class="col-lg-6 d-flex align-items-end justify-content-end mt-2">
+            <button onclick="window.location.href='/empresa/dashboard/'" class="btn btn-outline-secondary ripple-btn">
+                <i class="bi bi-arrow-clockwise"></i> Restablecer
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Scripts para animaciones y gráficos -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  // Debug: Verificar datos recibidos
+  console.log('DEBUG - Datos recibidos en JavaScript:');
+  console.log('Labels:', {{ labels|safe }});
+  console.log('Ventas data:', {{ ventas_data|safe }});
+  console.log('Gastos data:', {{ gastos_data|safe }});
+  console.log('Descripciones gastos:', {{ descripciones_gastos|safe }});
+  console.log('Montos gastos:', {{ montos_gastos|safe }});
+  console.log('Nombres productos:', {{ nombres_productos|safe }});
+  console.log('Totales ventas:', {{ totales_ventas|safe }});
+  console.log('Utilidades mensuales:', {{ utilidades_mensuales|safe }});
+  
+  const ctx = document.getElementById('ventasGastosChart');
+  if (!ctx) {
+    console.error('ERROR: No se encontró el elemento ventasGastosChart');
+    return;
+  }
+  
+  new Chart(ctx.getContext('2d'), {
+    type: 'bar',
+    data: {
+      labels: {{ labels|safe }},
+      datasets: [
+        {
+          label: 'Ventas',
+          data: {{ ventas_data|safe }},
+          backgroundColor: 'rgba(76, 175, 80, 0.8)',
+          borderColor: 'rgba(76, 175, 80, 1)',
+          borderWidth: 2,
+          borderRadius: 6,
+          hoverBackgroundColor: 'rgba(76, 175, 80, 1)'
+        },
+        {
+          label: 'Gastos',
+          data: {{ gastos_data|safe }},
+          backgroundColor: 'rgba(244, 67, 54, 0.8)',
+          borderColor: 'rgba(244, 67, 54, 1)',
+          borderWidth: 2,
+          borderRadius: 6,
+          hoverBackgroundColor: 'rgba(244, 67, 54, 1)'
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      animation: {
+        duration: 1500,
+        easing: 'easeInOutQuart'
+      },
+      plugins: {
+        legend: {
+          display: false
+        },
+        tooltip: {
+          backgroundColor: 'rgba(44, 62, 80, 0.95)',
+          titleColor: '#ffffff',
+          bodyColor: '#ffffff',
+          borderColor: 'rgba(76, 175, 80, 0.5)',
+          borderWidth: 2,
+          cornerRadius: 8,
+          displayColors: true,
+          padding: 10,
+          callbacks: {
+            label: function(context) {
+              const label = context.dataset.label || '';
+              const value = context.parsed.y;
+              return label + ': $' + value.toLocaleString();
+            }
+          }
+        }
+      },
+      scales: {
+        x: {
+          grid: {
+            display: false
+          },
+          ticks: {
+            font: {
+              size: 12,
+              weight: 'bold'
+            },
+            color: '#2c3e50'
+          }
+        },
+        y: {
+          beginAtZero: true,
+          grid: {
+            color: 'rgba(44, 62, 80, 0.1)',
+            lineWidth: 1
+          },
+          ticks: {
+            font: {
+              size: 12
+            },
+            color: '#2c3e50',
+            callback: function(value) {
+              return '$' + value.toLocaleString();
+            }
+          }
+        }
+      }
+    }
+  });
+  
+  // Gráfico de distribución de gastos
+  const ctxGastos = document.getElementById('distribucionGastosChart');
+  if (!ctxGastos) {
+    console.error('ERROR: No se encontró el elemento distribucionGastosChart');
+    return;
+  }
+  
+  new Chart(ctxGastos.getContext('2d'), {
+    type: 'doughnut',
+    data: {
+      labels: {{ descripciones_gastos|safe }},
+      datasets: [{
+        data: {{ montos_gastos|safe }},
+        backgroundColor: {{ colores_gastos|safe }},
+        borderWidth: 3,
+        borderColor: '#ffffff',
+        hoverBorderWidth: 4,
+        hoverBorderColor: '#2c3e50'
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      animation: {
+        duration: 2000,
+        easing: 'easeInOutQuart'
+      },
+      plugins: {
+        legend: {
+          position: 'bottom',
+          labels: {
+            padding: 20,
+            usePointStyle: true,
+            font: {
+              size: 14,
+              weight: 'bold'
+            },
+            color: '#2c3e50'
+          }
+        },
+        tooltip: {
+          backgroundColor: 'rgba(44, 62, 80, 0.95)',
+          titleColor: '#ffffff',
+          bodyColor: '#ffffff',
+          borderColor: 'rgba(52, 152, 219, 0.5)',
+          borderWidth: 2,
+          cornerRadius: 8,
+          displayColors: true,
+          padding: 12,
+          callbacks: {
+            label: function(context) {
+              const label = context.label || '';
+              const value = context.parsed;
+              const total = context.dataset.data.reduce((a, b) => a + b, 0);
+              const percentage = ((value / total) * 100).toFixed(1);
+              return label + ': $' + value.toLocaleString() + ' (' + percentage + '%)';
+            },
+            title: function(context) {
+              return context[0].label;
+            }
+          }
+        }
+      },
+      cutout: '60%'
+    }
+  });
+  
+  // Gráfico de productos más vendidos
+  const ctxProductos = document.getElementById('productosMasVendidosChart');
+  if (!ctxProductos) {
+    console.error('ERROR: No se encontró el elemento productosMasVendidosChart');
+    return;
+  }
+  
+  new Chart(ctxProductos.getContext('2d'), {
+    type: 'bar',
+    data: {
+      labels: {{ nombres_productos|safe }},
+      datasets: [{
+        label: 'Ventas ($)',
+        data: {{ totales_ventas|safe }},
+        backgroundColor: {{ colores_productos|safe }},
+        borderColor: {{ colores_productos|safe }},
+        borderWidth: 2,
+        borderRadius: 8,
+        hoverBackgroundColor: {{ colores_productos|safe }},
+        hoverBorderWidth: 3
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      animation: {
+        duration: 1800,
+        easing: 'easeInOutQuart'
+      },
+      plugins: {
+        legend: {
+          display: false
+        },
+        tooltip: {
+          backgroundColor: 'rgba(44, 62, 80, 0.95)',
+          titleColor: '#ffffff',
+          bodyColor: '#ffffff',
+          borderColor: 'rgba(76, 175, 80, 0.5)',
+          borderWidth: 2,
+          cornerRadius: 8,
+          displayColors: true,
+          padding: 12,
+          callbacks: {
+            label: function(context) {
+              const label = context.dataset.label || '';
+              const value = context.parsed.y;
+              const cantidades = {{ cantidades_vendidas|safe }};
+              const cantidad = cantidades[context.dataIndex];
+              return [
+                label + ': $' + value.toLocaleString(),
+                'Cantidad vendida: ' + cantidad + ' unidades'
+              ];
+            },
+            title: function(context) {
+              return context[0].label;
+            }
+          }
+        }
+      },
+      scales: {
+        x: {
+          grid: {
+            display: false
+          },
+          ticks: {
+            font: {
+              size: 12,
+              weight: 'bold'
+            },
+            color: '#2c3e50',
+            maxRotation: 45,
+            minRotation: 0
+          }
+        },
+        y: {
+          beginAtZero: true,
+          grid: {
+            color: 'rgba(44, 62, 80, 0.1)',
+            lineWidth: 1
+          },
+          ticks: {
+            font: {
+              size: 12
+            },
+            color: '#2c3e50',
+            callback: function(value) {
+              return '$' + value.toLocaleString();
+            }
+          }
+        }
+      }
+    }
+  });
+  
+  // Gráfico de histórico de utilidades
+  const ctxUtilidades = document.getElementById('historicoUtilidadesChart');
+  if (!ctxUtilidades) {
+    console.error('ERROR: No se encontró el elemento historicoUtilidadesChart');
+    return;
+  }
+  
+  new Chart(ctxUtilidades.getContext('2d'), {
+    type: 'line',
+    data: {
+      labels: {{ labels|safe }},
+      datasets: [{
+        label: 'Utilidad Mensual ($)',
+        data: {{ utilidades_mensuales|safe }},
+        borderColor: '#007bff',
+        backgroundColor: 'rgba(0, 123, 255, 0.1)',
+        borderWidth: 3,
+        fill: true,
+        tension: 0.4,
+        pointBackgroundColor: '#007bff',
+        pointBorderColor: '#ffffff',
+        pointBorderWidth: 2,
+        pointRadius: 6,
+        pointHoverRadius: 8,
+        pointHoverBackgroundColor: '#0056b3',
+        pointHoverBorderColor: '#ffffff'
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      animation: {
+        duration: 2000,
+        easing: 'easeInOutQuart'
+      },
+      plugins: {
+        legend: {
+          display: false
+        },
+        tooltip: {
+          backgroundColor: 'rgba(44, 62, 80, 0.95)',
+          titleColor: '#ffffff',
+          bodyColor: '#ffffff',
+          borderColor: 'rgba(0, 123, 255, 0.5)',
+          borderWidth: 2,
+          cornerRadius: 8,
+          displayColors: true,
+          padding: 12,
+          callbacks: {
+            label: function(context) {
+              const label = context.dataset.label || '';
+              const value = context.parsed.y;
+              return label + ': $' + value.toLocaleString();
+            },
+            title: function(context) {
+              return context[0].label;
+            }
+          }
+        }
+      },
+      scales: {
+        x: {
+          grid: {
+            display: false
+          },
+          ticks: {
+            font: {
+              size: 12,
+              weight: 'bold'
+            },
+            color: '#2c3e50'
+          }
+        },
+        y: {
+          beginAtZero: true,
+          grid: {
+            color: 'rgba(44, 62, 80, 0.1)',
+            lineWidth: 1
+          },
+          ticks: {
+            font: {
+              size: 12
+            },
+            color: '#2c3e50',
+            callback: function(value) {
+              return '$' + value.toLocaleString();
+            }
+          }
+        }
+      },
+      elements: {
+        line: {
+          borderWidth: 3
+        },
+        point: {
+          radius: 6,
+          hoverRadius: 8
+        }
+      }
+    }
+  });
+  
+  // NUEVOS GRÁFICOS COMERCIALES
+  
+  // 1. Gráfico de márgenes por categoría (compacto)
+  const ctxMargenes = document.getElementById('margenesCategoriaChart');
+  if (ctxMargenes) {
+    new Chart(ctxMargenes.getContext('2d'), {
+      type: 'doughnut',
+      data: {
+        labels: {{ nombres_categorias|safe }},
+        datasets: [{
+          data: {{ margenes_categoria|safe }},
+          backgroundColor: {{ colores_categorias|safe }},
+          borderWidth: 2,
+          borderColor: '#ffffff'
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            position: 'bottom',
+            labels: {
+              padding: 15,
+              usePointStyle: true,
+              font: { size: 11 }
+            }
+          },
+          tooltip: {
+            backgroundColor: 'rgba(44, 62, 80, 0.95)',
+            callbacks: {
+              label: function(context) {
+                return context.label + ': ' + context.parsed + '%';
+              }
+            }
+          }
+        },
+        cutout: '50%'
+      }
+    });
+  }
+  
+  // 2. Gráfico de rotación de inventario mejorado
+  const ctxRotacion = document.getElementById('rotacionInventarioChart');
+  if (ctxRotacion) {
+    new Chart(ctxRotacion.getContext('2d'), {
+      type: 'bar',
+      data: {
+        labels: {{ nombres_categorias|safe }},
+        datasets: [{
+          label: 'Rotación de Inventario',
+          data: {{ rotacion_categoria|safe }},
+          backgroundColor: [
+            'rgba(23, 162, 184, 0.8)',
+            'rgba(40, 167, 69, 0.8)',
+            'rgba(255, 193, 7, 0.8)',
+            'rgba(220, 53, 69, 0.8)',
+            'rgba(102, 16, 242, 0.8)',
+            'rgba(255, 159, 64, 0.8)'
+          ],
+          borderColor: [
+            '#17a2b8',
+            '#28a745',
+            '#ffc107',
+            '#dc3545',
+            '#6610f2',
+            '#ff9f40'
+          ],
+          borderWidth: 2,
+          borderRadius: 8
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            backgroundColor: 'rgba(44, 62, 80, 0.95)',
+            callbacks: {
+              label: function(context) {
+                const value = context.parsed.y;
+                let interpretation = value >= 2 ? ' - Excelente' : value >= 1 ? ' - Buena' : value >= 0.5 ? ' - Moderada' : ' - Lenta';
+                return [
+                  'Rotación: ' + value.toFixed(2) + 'x' + interpretation,
+                  'Se vende ' + value.toFixed(1) + ' veces el stock'
+                ];
+              }
+            }
+          }
+        },
+        scales: {
+          y: {
+            beginAtZero: true,
+            ticks: {
+              callback: function(value) {
+                return value.toFixed(1) + 'x';
+              }
+            },
+            title: {
+              display: true,
+              text: 'Veces que rota el inventario'
+            }
+          }
+        }
+      }
+    });
+  }
+  
+  // 3. Gráfico de rentabilidad temporal con drill-down
+  const ctxRentabilidad = document.getElementById('rentabilidadTemporalChart');
+  if (ctxRentabilidad) {
+    new Chart(ctxRentabilidad.getContext('2d'), {
+      type: 'line',
+      data: {
+        labels: {{ labels|safe }},
+        datasets: [
+          {
+            label: 'Margen Bruto (%)',
+            data: {{ margenes_brutos_mensuales|safe }},
+            borderColor: '#28a745',
+            backgroundColor: 'rgba(40, 167, 69, 0.1)',
+            borderWidth: 3,
+            fill: false,
+            tension: 0.4,
+            pointRadius: 6,
+            pointHoverRadius: 10
+          },
+          {
+            label: 'Margen Neto (%)',
+            data: {{ margenes_netos_mensuales|safe }},
+            borderColor: '#007bff',
+            backgroundColor: 'rgba(0, 123, 255, 0.1)',
+            borderWidth: 3,
+            fill: false,
+            tension: 0.4,
+            pointRadius: 6,
+            pointHoverRadius: 10
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        animation: {
+          duration: 2500,
+          easing: 'easeInOutCubic',
+          delay: (context) => context.dataIndex * 100
+        },
+        interaction: {
+          intersect: false,
+          mode: 'index'
+        },
+        onHover: (event, elements) => {
+          event.native.target.style.cursor = elements.length > 0 ? 'pointer' : 'default';
+        },
+        onClick: (event, elements) => {
+          if (elements.length > 0) {
+            const element = elements[0];
+            const month = {{ labels|safe }}[element.index];
+            alert('Drill-down: ' + month + ' - Ventas: $' + {{ ventas_data|safe }}[element.index]);
+          }
+        },
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            backgroundColor: 'rgba(44, 62, 80, 0.95)',
+            callbacks: {
+              label: function(context) {
+                return context.dataset.label + ': ' + context.parsed.y + '%';
+              },
+              afterLabel: function(context) {
+                return 'Haz clic para detalles';
+              }
+            }
+          }
+        },
+        scales: {
+          y: {
+            beginAtZero: true,
+            ticks: {
+              callback: function(value) {
+                return value + '%';
+              }
+            }
+          }
+        }
+      }
+    });
+  }
+  
+  // 4. Gráfico de comparación con el sector
+  const ctxSector = document.getElementById('comparacionSectorChart');
+  if (ctxSector) {
+    new Chart(ctxSector.getContext('2d'), {
+      type: 'bar',
+      data: {
+        labels: ['Tu Empresa', 'Promedio Sector', 'Mejor del Sector'],
+        datasets: [{
+          label: 'Margen (%)',
+          data: [{{ margen_neto }}, {{ promedio_sector }}, {{ mejor_sector }}],
+          backgroundColor: [
+            '{{ margen_neto }}' > '{{ mejor_sector }}' ? 'rgba(40, 167, 69, 0.8)' : 
+            '{{ margen_neto }}' > '{{ promedio_sector }}' ? 'rgba(255, 193, 7, 0.8)' : 
+            'rgba(220, 53, 69, 0.8)',
+            'rgba(108, 117, 125, 0.6)',
+            'rgba(40, 167, 69, 0.6)'
+          ],
+          borderColor: [
+            '{{ margen_neto }}' > '{{ mejor_sector }}' ? '#28a745' : 
+            '{{ margen_neto }}' > '{{ promedio_sector }}' ? '#ffc107' : 
+            '#dc3545',
+            '#6c757d',
+            '#28a745'
+          ],
+          borderWidth: 2,
+          borderRadius: 8
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            backgroundColor: 'rgba(44, 62, 80, 0.95)',
+            callbacks: {
+              label: function(context) {
+                const value = context.parsed.y;
+                let status = '';
+                if (context.dataIndex === 0) {
+                  status = value > {{ mejor_sector }} ? ' - EXCELENTE' : 
+                          value > {{ promedio_sector }} ? ' - BUENO' : ' - NECESITA MEJORAR';
+                }
+                return 'Margen: ' + value + '%' + status;
+              }
+            }
+          }
+        },
+        scales: {
+          y: {
+            beginAtZero: true,
+            max: Math.max({{ margen_neto }}, {{ mejor_sector }}) + 5,
+            ticks: {
+              callback: function(value) {
+                return value + '%';
+              }
+            },
+            title: {
+              display: true,
+              text: 'Margen de Utilidad (%)'
+            }
+          }
+        }
+      }
+    });
+  }
+  
+  // 5. Gráfico de rotación vs benchmark
+  const ctxBenchmark = document.getElementById('rotacionBenchmarkChart');
+  if (ctxBenchmark) {
+    new Chart(ctxBenchmark.getContext('2d'), {
+      type: 'doughnut',
+      data: {
+        labels: ['Tu Rotación', 'Benchmark Sector'],
+        datasets: [{
+          data: [{{ rotacion_promedio }}, {{ rotacion_sector }}],
+          backgroundColor: [
+            {{ rotacion_promedio }} >= {{ rotacion_sector }} ? 'rgba(40, 167, 69, 0.8)' : 'rgba(255, 193, 7, 0.8)',
+            'rgba(108, 117, 125, 0.4)'
+          ],
+          borderColor: [
+            {{ rotacion_promedio }} >= {{ rotacion_sector }} ? '#28a745' : '#ffc107',
+            '#6c757d'
+          ],
+          borderWidth: 3
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            position: 'bottom',
+            labels: {
+              padding: 20,
+              usePointStyle: true,
+              font: { size: 12, weight: 'bold' }
+            }
+          },
+          tooltip: {
+            backgroundColor: 'rgba(44, 62, 80, 0.95)',
+            callbacks: {
+              label: function(context) {
+                const value = context.parsed;
+                let status = '';
+                if (context.dataIndex === 0) {
+                  status = value >= {{ rotacion_sector }} ? ' - EXCELENTE' : 
+                          value >= {{ rotacion_sector }} * 0.7 ? ' - BUENA' : ' - BAJA';
+                }
+                return context.label + ': ' + value + 'x' + status;
+              }
+            }
+          }
+        },
+        cutout: '60%'
+      }
+    });
+  }
+
+
+});
+</script>
+{% endblock %}

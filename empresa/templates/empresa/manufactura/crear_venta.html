@@ -1,0 +1,229 @@
+{% extends 'empresa/base.html' %}
+
+{% block title %}Nueva Venta - Manufactura - {{ user.empresa.nombre }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2>💰 Nueva Venta - Producto Manufacturado</h2>
+                <a href="{% url 'empresa:listar_ventas_manufactura' %}" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left"></i> Volver
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5>Información de la Venta</h5>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        <!-- Cliente -->
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="{{ form.cliente_fk.id_for_label }}" class="form-label">
+                                        Cliente Registrado
+                                    </label>
+                                    {{ form.cliente_fk }}
+                                    {% if form.cliente_fk.errors %}
+                                        <div class="text-danger">{{ form.cliente_fk.errors.0 }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="{{ form.cliente_nombre.id_for_label }}" class="form-label">
+                                        O Nombre del Cliente
+                                    </label>
+                                    {{ form.cliente_nombre }}
+                                    {% if form.cliente_nombre.errors %}
+                                        <div class="text-danger">{{ form.cliente_nombre.errors.0 }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Producto -->
+                        <div class="mb-3">
+                            <label for="{{ form.producto.id_for_label }}" class="form-label">
+                                Producto Manufacturado <span class="text-danger">*</span>
+                            </label>
+                            {{ form.producto }}
+                            {% if form.producto.errors %}
+                                <div class="text-danger">{{ form.producto.errors.0 }}</div>
+                            {% endif %}
+                            <div class="form-text">
+                                <div id="info-producto" class="text-muted">Selecciona un producto para ver información</div>
+                                <div id="alerta-stock" class="mt-2" style="display: none;"></div>
+                            </div>
+                        </div>
+
+                        <!-- Cantidad y Precio -->
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label for="{{ form.cantidad.id_for_label }}" class="form-label">
+                                        Cantidad <span class="text-danger">*</span>
+                                    </label>
+                                    {{ form.cantidad }}
+                                    {% if form.cantidad.errors %}
+                                        <div class="text-danger">{{ form.cantidad.errors.0 }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label for="{{ form.precio_unitario.id_for_label }}" class="form-label">
+                                        Precio Unitario <span class="text-danger">*</span>
+                                    </label>
+                                    <div class="input-group">
+                                        <span class="input-group-text">$</span>
+                                        {{ form.precio_unitario }}
+                                    </div>
+                                    {% if form.precio_unitario.errors %}
+                                        <div class="text-danger">{{ form.precio_unitario.errors.0 }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label for="{{ form.monto.id_for_label }}" class="form-label">
+                                        Total
+                                    </label>
+                                    <div class="input-group">
+                                        <span class="input-group-text">$</span>
+                                        {{ form.monto }}
+                                    </div>
+                                    {% if form.monto.errors %}
+                                        <div class="text-danger">{{ form.monto.errors.0 }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Tipo de Pago -->
+                        <div class="mb-3">
+                            <label for="{{ form.tipo_pago.id_for_label }}" class="form-label">
+                                Tipo de Pago
+                            </label>
+                            {{ form.tipo_pago }}
+                            {% if form.tipo_pago.errors %}
+                                <div class="text-danger">{{ form.tipo_pago.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'empresa:listar_ventas_manufactura' %}" class="btn btn-secondary">
+                                Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save"></i> Registrar Venta
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Datos de productos manufacturados
+const productos = {{ productos_json|safe }};
+
+// Elementos del formulario
+const productoSelect = document.getElementById('id_producto');
+const cantidadInput = document.getElementById('id_cantidad');
+const precioInput = document.getElementById('id_precio_unitario');
+const totalInput = document.getElementById('id_monto');
+const infoProducto = document.getElementById('info-producto');
+
+// Función para actualizar información del producto
+function actualizarInfoProducto() {
+    const productoId = productoSelect.value;
+    const producto = productos.find(p => p.id == productoId);
+    const alertaStock = document.getElementById('alerta-stock');
+    
+    if (producto) {
+        precioInput.value = producto.precio_venta;
+        
+        // Mostrar información del producto
+        const margen = ((producto.precio_venta - producto.costo_produccion) / producto.precio_venta * 100);
+        infoProducto.innerHTML = `
+            <strong>${producto.nombre}</strong> - 
+            Stock: <span class="${producto.stock > 0 ? 'text-success' : 'text-danger'}">${producto.stock}</span> - 
+            Costo: $${producto.costo_produccion} - 
+            PVP: $${producto.precio_venta} - 
+            Margen: ${margen.toFixed(1)}%
+        `;
+        
+        // Verificar stock al cambiar cantidad
+        verificarStock();
+        calcularTotal();
+    } else {
+        infoProducto.textContent = 'Selecciona un producto para ver información';
+        alertaStock.style.display = 'none';
+        precioInput.value = '';
+        totalInput.value = '';
+    }
+}
+
+// Función para verificar stock y mostrar alertas
+function verificarStock() {
+    const productoId = productoSelect.value;
+    const producto = productos.find(p => p.id == productoId);
+    const cantidad = parseInt(cantidadInput.value) || 0;
+    const alertaStock = document.getElementById('alerta-stock');
+    
+    if (producto && cantidad > 0) {
+        if (cantidad > producto.stock) {
+            const faltante = cantidad - producto.stock;
+            alertaStock.innerHTML = `
+                <div class="alert alert-warning alert-sm mb-0">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <strong>Stock insuficiente:</strong> Faltan ${faltante} unidades. 
+                    Se generará automáticamente una orden de producción.
+                </div>
+            `;
+            alertaStock.style.display = 'block';
+        } else if (cantidad === producto.stock) {
+            alertaStock.innerHTML = `
+                <div class="alert alert-info alert-sm mb-0">
+                    <i class="fas fa-info-circle"></i>
+                    Esta venta agotará el stock disponible.
+                </div>
+            `;
+            alertaStock.style.display = 'block';
+        } else {
+            alertaStock.style.display = 'none';
+        }
+    } else {
+        alertaStock.style.display = 'none';
+    }
+}
+
+// Función para calcular total
+function calcularTotal() {
+    const cantidad = parseFloat(cantidadInput.value) || 0;
+    const precio = parseFloat(precioInput.value) || 0;
+    const total = cantidad * precio;
+    totalInput.value = total.toFixed(2);
+}
+
+// Event listeners
+productoSelect.addEventListener('change', actualizarInfoProducto);
+cantidadInput.addEventListener('input', function() {
+    calcularTotal();
+    verificarStock();
+});
+precioInput.addEventListener('input', calcularTotal);
+</script>
+{% endblock %}

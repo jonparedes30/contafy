@@ -1,0 +1,88 @@
+{% extends 'empresa/base.html' %}
+
+{% block title %}Asignación Completada - {{ empresa.nombre }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <!-- Header -->
+    <div class="d-flex align-items-center justify-content-between mb-4">
+        <div>
+            <h1 class="h2 mb-1">
+                <i class="bi bi-check-circle text-success"></i> Asignación Completada
+            </h1>
+            <p class="mb-0 text-muted">Proceso de asignación de usuarios finalizado</p>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="{% url 'empresa:actividad_reciente' %}" class="btn btn-primary">
+                <i class="bi bi-arrow-left"></i> Ver Historial
+            </a>
+        </div>
+    </div>
+
+    {% if total_actualizados > 0 %}
+        <!-- Éxito -->
+        <div class="card shadow-sm">
+            <div class="card-body text-center py-5">
+                <div class="display-4 text-success mb-3">
+                    <i class="bi bi-check-circle"></i>
+                </div>
+                <h3 class="text-success mb-3">¡Asignación Completada!</h3>
+                <p class="text-muted mb-4">
+                    Se han asignado <strong>{{ total_actualizados }}</strong> registros al usuario 
+                    <strong>{{ usuario_asignado }}</strong>.
+                </p>
+                
+                <div class="row justify-content-center">
+                    <div class="col-md-8">
+                        <div class="card bg-light">
+                            <div class="card-body">
+                                <h6 class="card-title">Detalles de la asignación:</h6>
+                                <ul class="list-group list-group-flush">
+                                    {% for detalle in detalles %}
+                                    <li class="list-group-item bg-transparent">{{ detalle }}</li>
+                                    {% endfor %}
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="mt-4">
+                    <div class="alert alert-info">
+                        <h6><i class="bi bi-info-circle"></i> ¿Qué sigue?</h6>
+                        <p class="mb-0">
+                            Ahora puedes ver el historial completo de actividades con información de usuarios. 
+                            Todos los registros nuevos se asignarán automáticamente al usuario que los cree.
+                        </p>
+                    </div>
+                </div>
+                
+                <div class="mt-4">
+                    <a href="{% url 'empresa:actividad_reciente' %}" class="btn btn-primary btn-lg">
+                        <i class="bi bi-clock-history"></i> Ver Historial de Actividades
+                    </a>
+                </div>
+            </div>
+        </div>
+    {% else %}
+        <!-- No hay registros para asignar -->
+        <div class="card shadow-sm">
+            <div class="card-body text-center py-5">
+                <div class="display-4 text-info mb-3">
+                    <i class="bi bi-info-circle"></i>
+                </div>
+                <h3 class="text-info mb-3">No hay registros para asignar</h3>
+                <p class="text-muted mb-4">
+                    {{ mensaje|default:"Todos los registros ya tienen usuarios asignados correctamente." }}
+                </p>
+                
+                <div class="mt-4">
+                    <a href="{% url 'empresa:actividad_reciente' %}" class="btn btn-primary btn-lg">
+                        <i class="bi bi-clock-history"></i> Ver Historial de Actividades
+                    </a>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+</div>
+{% endblock %} 

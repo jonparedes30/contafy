@@ -1,0 +1,717 @@
+{% extends 'empresa/base.html' %}
+{% load static %}
+
+{% block title %}Agente de IA - CONTAFY{% endblock %}
+
+{% block extra_css %}
+<style>
+.ai-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-radius: 15px;
+    padding: 2rem;
+    margin-bottom: 2rem;
+    position: relative;
+    overflow: hidden;
+}
+
+.ai-header::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+    animation: pulse 4s ease-in-out infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { transform: scale(1); opacity: 0.5; }
+    50% { transform: scale(1.1); opacity: 0.8; }
+}
+
+.ai-card {
+    background: white;
+    border-radius: 15px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+    border: none;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.ai-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+}
+
+.chat-container {
+    height: 400px;
+    overflow-y: auto;
+    border: 2px solid #e9ecef;
+    border-radius: 10px;
+    padding: 1rem;
+    background: #f8f9fa;
+}
+
+.chat-message {
+    margin-bottom: 1rem;
+    padding: 0.75rem 1rem;
+    border-radius: 10px;
+    max-width: 80%;
+}
+
+.chat-user {
+    background: #667eea;
+    color: white;
+    margin-left: auto;
+    text-align: right;
+}
+
+.chat-ai {
+    background: white;
+    border: 2px solid #e9ecef;
+    margin-right: auto;
+}
+
+.insight-item {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border-left: 4px solid #667eea;
+    padding: 1rem;
+    margin-bottom: 0.5rem;
+    border-radius: 0 10px 10px 0;
+    transition: all 0.3s ease;
+}
+
+.insight-item:hover {
+    background: linear-gradient(135deg, #e9ecef 0%, #dee2e6 100%);
+    transform: translateX(5px);
+}
+
+.ai-typing {
+    display: none;
+    color: #6c757d;
+    font-style: italic;
+}
+
+.ai-typing.show {
+    display: block;
+}
+
+.btn-ai {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border: none;
+    color: white;
+    border-radius: 25px;
+    padding: 0.75rem 2rem;
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+.btn-ai:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 25px rgba(102, 126, 234, 0.4);
+    color: white;
+}
+
+.status-badge {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    background: rgba(255,255,255,0.2);
+    color: white;
+    padding: 0.25rem 0.75rem;
+    border-radius: 15px;
+    font-size: 0.8rem;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <!-- Header del Agente IA -->
+    <div class="ai-header">
+        <div class="status-badge">
+            <i class="bi bi-cpu"></i> IA Activa
+        </div>
+        <div class="row align-items-center">
+            <div class="col-md-8">
+                <h1 class="h2 mb-2">
+                    <i class="bi bi-robot me-3"></i>
+                    CONTAFY AI Assistant
+                </h1>
+                <p class="mb-0 opacity-90">
+                    Tu consultor financiero inteligente para {{ empresa.nombre }}
+                </p>
+            </div>
+            <div class="col-md-4 text-end">
+                <button class="btn btn-light btn-lg" onclick="actualizarAnalisis()">
+                    <i class="bi bi-arrow-clockwise me-2"></i>
+                    Actualizar Análisis
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Panel de Análisis -->
+        <div class="col-lg-8">
+            <div class="ai-card card mb-4">
+                <div class="card-header bg-transparent border-0 pb-0">
+                    <h4 class="mb-0">
+                        <i class="bi bi-graph-up-arrow text-primary me-2"></i>
+                        Análisis Inteligente
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <div id="analisis-content">
+                        <!-- Resumen -->
+                        <div class="alert alert-info border-0" style="background: linear-gradient(135deg, #d1ecf1 0%, #bee5eb 100%);">
+                            <h6><i class="bi bi-lightbulb me-2"></i>Resumen Ejecutivo</h6>
+                            <p class="mb-0">{{ analisis.resumen }}</p>
+                        </div>
+
+                        <!-- Fortalezas -->
+                        <div class="mb-4">
+                            <h6 class="text-success">
+                                <i class="bi bi-shield-check me-2"></i>Fortalezas Identificadas
+                            </h6>
+                            {% for fortaleza in analisis.fortalezas %}
+                            <div class="insight-item" style="border-left-color: #28a745;">
+                                <i class="bi bi-check-circle text-success me-2"></i>{{ fortaleza }}
+                            </div>
+                            {% endfor %}
+                        </div>
+
+                        <!-- Debilidades -->
+                        <div class="mb-4">
+                            <h6 class="text-warning">
+                                <i class="bi bi-exclamation-triangle me-2"></i>Áreas de Mejora
+                            </h6>
+                            {% for debilidad in analisis.debilidades %}
+                            <div class="insight-item" style="border-left-color: #ffc107;">
+                                <i class="bi bi-arrow-up-right text-warning me-2"></i>{{ debilidad }}
+                            </div>
+                            {% endfor %}
+                        </div>
+
+                        <!-- Oportunidades -->
+                        <div class="mb-4">
+                            <h6 class="text-info">
+                                <i class="bi bi-bullseye me-2"></i>Oportunidades
+                            </h6>
+                            {% for oportunidad in analisis.oportunidades %}
+                            <div class="insight-item" style="border-left-color: #17a2b8;">
+                                <i class="bi bi-arrow-up text-info me-2"></i>{{ oportunidad }}
+                            </div>
+                            {% endfor %}
+                        </div>
+
+                        <!-- Acciones Inmediatas -->
+                        <div class="mb-4">
+                            <h6 class="text-danger">
+                                <i class="bi bi-lightning me-2"></i>Acciones Inmediatas
+                            </h6>
+                            {% for accion in analisis.acciones_inmediatas %}
+                            <div class="insight-item" style="border-left-color: #dc3545;">
+                                <i class="bi bi-play-fill text-danger me-2"></i>{{ accion }}
+                            </div>
+                            {% endfor %}
+                        </div>
+
+                        <!-- Predicción -->
+                        <div class="alert alert-primary border-0" style="background: linear-gradient(135deg, #cce7ff 0%, #b3d9ff 100%);">
+                            <h6><i class="bi bi-crystal-ball me-2"></i>Predicción Próximo Mes</h6>
+                            <p class="mb-0">{{ analisis.prediccion_proximo_mes }}</p>
+                        </div>
+
+                        <!-- Recomendación Principal -->
+                        <div class="alert alert-success border-0" style="background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);">
+                            <h6><i class="bi bi-star me-2"></i>Recomendación Principal</h6>
+                            <p class="mb-0"><strong>{{ analisis.recomendacion_principal }}</strong></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Panel de Chat -->
+        <div class="col-lg-4">
+            <div class="ai-card card mb-4">
+                <div class="card-header bg-transparent border-0">
+                    <h5 class="mb-0">
+                        <i class="bi bi-chat-dots text-primary me-2"></i>
+                        Chat con IA
+                    </h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="chat-container" id="chat-container">
+                        <div class="chat-message chat-ai">
+                            <i class="bi bi-robot me-2"></i>
+                            ¡Hola! Soy tu asistente financiero inteligente. Puedo ayudarte con análisis de ventas, gastos, estrategias de mejora y más. ¿En qué puedo ayudarte?
+                        </div>
+                    </div>
+                    <div class="p-3 border-top">
+                        <div class="ai-typing" id="ai-typing">
+                            <i class="bi bi-three-dots"></i> IA está escribiendo...
+                        </div>
+                        <div class="input-group">
+                            <input type="text" class="form-control" id="chat-input" 
+                                   placeholder="Pregúntame sobre tu empresa..." 
+                                   onkeypress="if(event.key==='Enter') enviarPregunta()">
+                            <button class="btn btn-ai" onclick="enviarPregunta()">
+                                <i class="bi bi-send"></i>
+                            </button>
+                            <button class="btn btn-outline-primary" id="voice-btn" onclick="toggleVoiceCommand()" title="Comando de voz">
+                                <i class="bi bi-mic"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Panel de Acciones -->
+            <div class="ai-card card">
+                <div class="card-header bg-transparent border-0">
+                    <h5 class="mb-0">
+                        <i class="bi bi-gear text-primary me-2"></i>
+                        Acciones Rápidas
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <button class="btn btn-ai" onclick="generarReporte()">
+                            <i class="bi bi-file-earmark-text me-2"></i>
+                            Generar Reporte Completo
+                        </button>
+                        <a href="{% url 'empresa:generar_reporte_ia_pdf' %}" class="btn btn-danger">
+                            <i class="bi bi-file-pdf me-2"></i>
+                            Descargar PDF Completo
+                        </a>
+                        <a href="{% url 'empresa:vista_reporte_ia' %}" class="btn btn-info">
+                            <i class="bi bi-eye me-2"></i>
+                            Ver Reporte Web
+                        </a>
+                        <button class="btn btn-outline-primary" onclick="preguntaRapida('¿Cómo puedo mejorar mis ventas?')">
+                            <i class="bi bi-graph-up me-2"></i>
+                            Mejorar Ventas
+                        </button>
+                        <button class="btn btn-outline-primary" onclick="preguntaRapida('¿Cómo reduzco mis gastos?')">
+                            <i class="bi bi-graph-down me-2"></i>
+                            Reducir Gastos
+                        </button>
+                        <button class="btn btn-outline-primary" onclick="preguntaRapida('¿Cuál es mi situación financiera?')">
+                            <i class="bi bi-pie-chart me-2"></i>
+                            Estado Financiero
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function enviarPregunta() {
+    const input = document.getElementById('chat-input');
+    const pregunta = input.value.trim();
+    
+    if (!pregunta) return;
+    
+    // Agregar mensaje del usuario
+    agregarMensajeChat(pregunta, 'user');
+    input.value = '';
+    
+    // Mostrar typing indicator
+    document.getElementById('ai-typing').classList.add('show');
+    
+    // Enviar a la IA
+    fetch('{% url "empresa:chat_ia" %}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': '{{ csrf_token }}'
+        },
+        body: JSON.stringify({ pregunta: pregunta })
+    })
+    .then(response => response.json())
+    .then(data => {
+        document.getElementById('ai-typing').classList.remove('show');
+        
+        if (data.success) {
+            agregarMensajeChat(data.respuesta, 'ai');
+        } else {
+            agregarMensajeChat('Error: ' + data.error, 'ai');
+        }
+    })
+    .catch(error => {
+        document.getElementById('ai-typing').classList.remove('show');
+        agregarMensajeChat('Error de conexión. Intenta nuevamente.', 'ai');
+    });
+}
+
+function agregarMensajeChat(mensaje, tipo) {
+    const container = document.getElementById('chat-container');
+    const div = document.createElement('div');
+    div.className = `chat-message chat-${tipo}`;
+    
+    if (tipo === 'ai') {
+        div.innerHTML = `<i class="bi bi-robot me-2"></i>${mensaje}`;
+    } else {
+        div.innerHTML = mensaje;
+    }
+    
+    container.appendChild(div);
+    container.scrollTop = container.scrollHeight;
+}
+
+function preguntaRapida(pregunta) {
+    document.getElementById('chat-input').value = pregunta;
+    enviarPregunta();
+}
+
+function generarReporte() {
+    const btn = event.target;
+    const originalText = btn.innerHTML;
+    btn.innerHTML = '<i class="bi bi-hourglass-split me-2"></i>Generando...';
+    btn.disabled = true;
+    
+    fetch('{% url "empresa:generar_reporte_ia" %}', {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': '{{ csrf_token }}'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        btn.innerHTML = originalText;
+        btn.disabled = false;
+        
+        if (data.success) {
+            alert('Reporte enviado por email y WhatsApp');
+        } else {
+            alert('Error generando reporte');
+        }
+    });
+}
+
+function actualizarAnalisis() {
+    const btn = event.target;
+    const originalText = btn.innerHTML;
+    btn.innerHTML = '<i class="bi bi-hourglass-split me-2"></i>Actualizando...';
+    btn.disabled = true;
+    
+    fetch('{% url "empresa:actualizar_analisis" %}', {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': '{{ csrf_token }}'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        btn.innerHTML = originalText;
+        btn.disabled = false;
+        
+        if (data.success) {
+            location.reload();
+        } else {
+            alert('Error actualizando análisis');
+        }
+    });
+}
+</script>
+
+<!-- Script de comandos de voz integrado -->
+<script>
+/**
+ * Sistema de Comandos de Voz para CONTAFY AI - Integrado
+ */
+class VoiceCommandsIA {
+    constructor() {
+        this.recognition = null;
+        this.isListening = false;
+        this.initSpeechRecognition();
+    }
+
+    initSpeechRecognition() {
+        if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            this.recognition = new SpeechRecognition();
+            
+            this.recognition.lang = 'es-ES';
+            this.recognition.continuous = false;
+            this.recognition.interimResults = true;
+            this.recognition.maxAlternatives = 3;
+
+            this.recognition.onstart = () => {
+                this.isListening = true;
+                this.updateVoiceButton(true);
+                this.showVoiceIndicator('🎤 Escuchando... Habla ahora');
+                console.log('Reconocimiento iniciado');
+            };
+
+            this.recognition.onresult = (event) => {
+                let comando = '';
+                for (let i = event.resultIndex; i < event.results.length; i++) {
+                    if (event.results[i].isFinal) {
+                        comando += event.results[i][0].transcript;
+                    } else {
+                        this.showVoiceIndicator('Escuchando: "' + event.results[i][0].transcript + '"', 'info');
+                    }
+                }
+                
+                if (comando.trim()) {
+                    console.log('Comando reconocido:', comando);
+                    this.processVoiceCommand(comando.trim());
+                }
+            };
+
+            this.recognition.onerror = (event) => {
+                console.error('Error de reconocimiento:', event.error);
+                this.showVoiceIndicator('❌ Error: ' + event.error, 'error');
+                this.stopListening();
+            };
+
+            this.recognition.onend = () => {
+                console.log('Reconocimiento terminado');
+                this.stopListening();
+            };
+        } else {
+            console.warn('Reconocimiento de voz no soportado');
+            setTimeout(() => {
+                this.showVoiceIndicator('❌ Usa Chrome o Edge para comandos de voz', 'error');
+            }, 1000);
+        }
+    }
+
+    startListening() {
+        if (this.recognition && !this.isListening) {
+            try {
+                console.log('Iniciando reconocimiento...');
+                this.recognition.start();
+            } catch (error) {
+                console.error('Error iniciando:', error);
+                this.showVoiceIndicator('❌ Permisos de micrófono requeridos', 'error');
+                
+                navigator.mediaDevices.getUserMedia({ audio: true })
+                    .then(() => {
+                        console.log('Permisos concedidos');
+                        setTimeout(() => this.recognition.start(), 500);
+                    })
+                    .catch(err => {
+                        console.error('Permisos denegados:', err);
+                        this.showVoiceIndicator('❌ Permite el micrófono en tu navegador', 'error');
+                    });
+            }
+        }
+    }
+
+    stopListening() {
+        this.isListening = false;
+        this.updateVoiceButton(false);
+        setTimeout(() => this.hideVoiceIndicator(), 2000);
+    }
+
+    processVoiceCommand(comando) {
+        this.showVoiceIndicator(`🔄 Procesando: "${comando}"`, 'processing');
+        
+        // Usar el sistema de chat existente pero esperar respuesta
+        const chatInput = document.getElementById('chat-input');
+        if (chatInput) {
+            chatInput.value = comando;
+            
+            // Interceptar la respuesta del chat
+            this.interceptarRespuestaChat();
+            
+            // Enviar pregunta
+            enviarPregunta();
+            
+            this.showVoiceIndicator(`🔄 Procesando consulta...`, 'processing');
+            return;
+        }
+        
+        // Fallback: usar API directamente
+        const csrfToken = getCookie('csrftoken');
+        
+        fetch('/empresa/chat-ia/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken
+            },
+            body: JSON.stringify({ pregunta: comando })
+        })
+        .then(response => response.json())
+        .then(data => {
+            console.log('Respuesta recibida:', data);
+            if (data.success) {
+                this.showVoiceIndicator(`✅ Respuesta recibida`, 'success');
+                
+                // Generar respuesta de voz
+                const respuestaVoz = this.limpiarParaVoz(data.respuesta || data.mensaje);
+                this.speakResponse(respuestaVoz);
+                
+            } else {
+                this.showVoiceIndicator(`❌ ${data.error || 'Error procesando comando'}`, 'error');
+                this.speakResponse('No pude procesar tu consulta');
+            }
+        })
+        .catch(error => {
+            console.error('Error completo:', error);
+            this.showVoiceIndicator('❌ Error de conexión: ' + error.message, 'error');
+            this.speakResponse('Error de conexión');
+        });
+    }
+
+    speakResponse(texto) {
+        if ('speechSynthesis' in window && texto) {
+            const textoLimpio = this.limpiarParaVoz(texto);
+            const utterance = new SpeechSynthesisUtterance(textoLimpio);
+            utterance.lang = 'es-ES';
+            utterance.rate = 0.9;
+            utterance.pitch = 1;
+            console.log('Hablando:', textoLimpio);
+            speechSynthesis.speak(utterance);
+        }
+    }
+
+    interceptarRespuestaChat() {
+        const chatContainer = document.getElementById('chat-container');
+        const self = this;
+        if (chatContainer) {
+            const observer = new MutationObserver((mutations) => {
+                mutations.forEach((mutation) => {
+                    if (mutation.type === 'childList') {
+                        mutation.addedNodes.forEach((node) => {
+                            if (node.nodeType === 1 && node.classList.contains('chat-ai')) {
+                                const respuestaTexto = node.textContent.replace(/🤖/g, '').trim();
+                                
+                                if (respuestaTexto && respuestaTexto.length > 10) {
+                                    self.showVoiceIndicator(`✅ Respuesta recibida`, 'success');
+                                    self.speakResponse(respuestaTexto);
+                                }
+                                
+                                observer.disconnect();
+                            }
+                        });
+                    }
+                });
+            });
+            
+            observer.observe(chatContainer, { childList: true, subtree: true });
+            
+            setTimeout(() => {
+                observer.disconnect();
+            }, 10000);
+        }
+    }
+
+    limpiarParaVoz(texto) {
+        if (!texto) return '';
+        // Limpiar texto para síntesis de voz
+        let limpio = texto.toString();
+        limpio = limpio.replace(/[🤖📊💰✅❌🔍⚠️📈💡🎯🚀\[\]]/g, '');
+        limpio = limpio.replace(/\$/g, 'dólares ');
+        limpio = limpio.replace(/%/g, ' por ciento');
+        limpio = limpio.replace(/&/g, ' y ');
+        limpio = limpio.replace(/\s+/g, ' ').trim();
+        return limpio.substring(0, 300);
+    }
+
+    updateVoiceButton(listening) {
+        const btn = document.getElementById('voice-btn');
+        if (btn) {
+            if (listening) {
+                btn.innerHTML = '<i class="bi bi-mic-fill text-danger"></i>';
+                btn.classList.add('btn-danger');
+                btn.classList.remove('btn-outline-primary');
+            } else {
+                btn.innerHTML = '<i class="bi bi-mic"></i>';
+                btn.classList.add('btn-outline-primary');
+                btn.classList.remove('btn-danger');
+            }
+        }
+    }
+
+    showVoiceIndicator(mensaje, tipo = 'info') {
+        let indicator = document.getElementById('voice-indicator');
+        if (!indicator) {
+            indicator = document.createElement('div');
+            indicator.id = 'voice-indicator';
+            indicator.style.cssText = `
+                position: fixed;
+                top: 80px;
+                right: 20px;
+                padding: 15px 20px;
+                border-radius: 10px;
+                color: white;
+                font-weight: bold;
+                z-index: 9999;
+                max-width: 350px;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+                font-size: 14px;
+            `;
+            document.body.appendChild(indicator);
+        }
+
+        const colores = {
+            info: '#17a2b8',
+            processing: '#ffc107',
+            success: '#28a745',
+            error: '#dc3545'
+        };
+
+        indicator.style.backgroundColor = colores[tipo] || colores.info;
+        indicator.textContent = mensaje;
+        indicator.style.display = 'block';
+
+        if (tipo === 'success' || tipo === 'error') {
+            setTimeout(() => this.hideVoiceIndicator(), 4000);
+        }
+    }
+
+    hideVoiceIndicator() {
+        const indicator = document.getElementById('voice-indicator');
+        if (indicator) {
+            indicator.style.display = 'none';
+        }
+    }
+}
+
+// Inicializar cuando cargue la página
+let voiceCommands;
+document.addEventListener('DOMContentLoaded', function() {
+    voiceCommands = new VoiceCommandsIA();
+    console.log('Sistema de voz inicializado');
+});
+
+// Función para obtener cookie CSRF
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+// Función global para el botón
+function toggleVoiceCommand() {
+    if (voiceCommands) {
+        if (voiceCommands.isListening) {
+            voiceCommands.stopListening();
+        } else {
+            voiceCommands.startListening();
+        }
+    } else {
+        console.error('Sistema de voz no inicializado');
+    }
+}
+</script>
+
+{% endblock %}

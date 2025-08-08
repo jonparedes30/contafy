@@ -1,0 +1,377 @@
+{% extends 'empresa/base.html' %}
+
+{% block title %}Gestión de Deudas{% endblock %}
+
+{% block content %}
+{% csrf_token %}
+<div class="container-fluid mt-4">
+    <div class="animated-header mb-4">
+        <h1 class="h2 mb-1">
+            <i class="bi bi-credit-card"></i> Gestión de Deudas
+        </h1>
+        <p class="mb-0">Administra las cuentas por cobrar y por pagar de tu empresa</p>
+    </div>
+
+    <!-- Resumen de deudas -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card text-center border-success">
+                <div class="card-body">
+                    <h5 class="card-title text-success">Por Cobrar</h5>
+                    <h3 class="text-success">${{ total_por_cobrar|floatformat:2 }}</h3>
+                    <small class="text-muted">{{ cuentas_cobrar.count }} cuentas</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center border-danger">
+                <div class="card-body">
+                    <h5 class="card-title text-danger">Por Pagar</h5>
+                    <h3 class="text-danger">${{ total_por_pagar|floatformat:2 }}</h3>
+                    <small class="text-muted">{{ cuentas_pagar.count }} cuentas</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center border-warning">
+                <div class="card-body">
+                    <h5 class="card-title text-warning">Vencidas</h5>
+                    <h3 class="text-warning">{{ cobrar_vencidas|add:pagar_vencidas }}</h3>
+                    <small class="text-muted">{{ cobrar_vencidas }} cobrar, {{ pagar_vencidas }} pagar</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center border-info">
+                <div class="card-body">
+                    <h5 class="card-title text-info">Balance Neto</h5>
+                    <h3 class="{% if balance_neto >= 0 %}text-success{% else %}text-danger{% endif %}">
+                        ${{ balance_neto|floatformat:2 }}
+                    </h3>
+                    <small class="text-muted">Diferencia neta</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tabs para cuentas -->
+    <ul class="nav nav-tabs" id="deudasTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="cobrar-tab" data-bs-toggle="tab" data-bs-target="#cobrar" type="button">
+                <i class="bi bi-arrow-down-circle text-success"></i> Cuentas por Cobrar
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="pagar-tab" data-bs-toggle="tab" data-bs-target="#pagar" type="button">
+                <i class="bi bi-arrow-up-circle text-danger"></i> Cuentas por Pagar
+            </button>
+        </li>
+    </ul>
+
+    <div class="tab-content" id="deudasTabsContent">
+        <!-- Tab Cuentas por Cobrar -->
+        <div class="tab-pane fade show active" id="cobrar" role="tabpanel">
+            <div class="card mt-3">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0"><i class="bi bi-people"></i> Clientes que me deben</h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Cliente</th>
+                                    <th>Venta</th>
+                                    <th>Monto Original</th>
+                                    <th>Pendiente</th>
+                                    <th>Vencimiento</th>
+                                    <th>Estado</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tablaCobrar">
+                                {% for cuenta in cuentas_cobrar %}
+                                <tr data-cuenta-id="{{ cuenta.id }}">
+                                    <td>
+                                        <strong>{{ cuenta.cliente.nombre|default:"Cliente no registrado" }}</strong>
+                                    </td>
+                                    <td>
+                                        {% if cuenta.venta %}
+                                            <small class="text-muted">Venta #{{ cuenta.venta.id }}</small>
+                                        {% else %}
+                                            <small class="text-muted">-</small>
+                                        {% endif %}
+                                    </td>
+                                    <td>${{ cuenta.monto_original|floatformat:2 }}</td>
+                                    <td>
+                                        <strong class="text-success">${{ cuenta.monto_pendiente|floatformat:2 }}</strong>
+                                    </td>
+                                    <td>
+                                        {{ cuenta.fecha_vencimiento|date:"d/m/Y" }}
+                                        {% if cuenta.fecha_vencimiento < today %}
+                                            <br><small class="text-danger">Vencida</small>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if cuenta.estado == 'vencida' %}
+                                            <span class="badge bg-danger">Vencida</span>
+                                        {% else %}
+                                            <span class="badge bg-warning">Pendiente</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <button class="btn btn-sm btn-success" onclick="mostrarModalPagoCobrar({{ cuenta.id }}, '{{ cuenta.cliente.nombre|default:"Cliente" }}', {{ cuenta.monto_pendiente }})">
+                                            <i class="bi bi-cash"></i> Registrar Pago
+                                        </button>
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="7" class="text-center text-muted py-4">
+                                        <i class="bi bi-check-circle fs-1"></i>
+                                        <br>No hay cuentas por cobrar pendientes
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab Cuentas por Pagar -->
+        <div class="tab-pane fade" id="pagar" role="tabpanel">
+            <div class="card mt-3">
+                <div class="card-header bg-danger text-white">
+                    <h5 class="mb-0"><i class="bi bi-building"></i> Proveedores que debo pagar</h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Proveedor</th>
+                                    <th>Compra</th>
+                                    <th>Monto Original</th>
+                                    <th>Pendiente</th>
+                                    <th>Vencimiento</th>
+                                    <th>Estado</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tablaPagar">
+                                {% for cuenta in cuentas_pagar %}
+                                <tr data-cuenta-id="{{ cuenta.id }}">
+                                    <td>
+                                        <strong>{{ cuenta.proveedor.nombre|default:"Proveedor no registrado" }}</strong>
+                                    </td>
+                                    <td>
+                                        {% if cuenta.compra %}
+                                            <small class="text-muted">Compra #{{ cuenta.compra.id }}</small>
+                                        {% else %}
+                                            <small class="text-muted">-</small>
+                                        {% endif %}
+                                    </td>
+                                    <td>${{ cuenta.monto_original|floatformat:2 }}</td>
+                                    <td>
+                                        <strong class="text-danger">${{ cuenta.monto_pendiente|floatformat:2 }}</strong>
+                                    </td>
+                                    <td>
+                                        {{ cuenta.fecha_vencimiento|date:"d/m/Y" }}
+                                        {% if cuenta.fecha_vencimiento < today %}
+                                            <br><small class="text-danger">Vencida</small>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if cuenta.estado == 'vencida' %}
+                                            <span class="badge bg-danger">Vencida</span>
+                                        {% else %}
+                                            <span class="badge bg-warning">Pendiente</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <button class="btn btn-sm btn-danger" onclick="mostrarModalPagoPagar({{ cuenta.id }}, '{{ cuenta.proveedor.nombre|default:"Proveedor" }}', {{ cuenta.monto_pendiente }})">
+                                            <i class="bi bi-credit-card"></i> Registrar Pago
+                                        </button>
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="7" class="text-center text-muted py-4">
+                                        <i class="bi bi-check-circle fs-1"></i>
+                                        <br>No hay cuentas por pagar pendientes
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para registrar pago de cuenta por cobrar -->
+<div class="modal fade" id="modalPagoCobrar" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title">Registrar Pago Recibido</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="formPagoCobrar">
+                    <input type="hidden" id="cuentaCobrarId">
+                    <div class="mb-3">
+                        <label class="form-label">Cliente:</label>
+                        <input type="text" id="clienteNombre" class="form-control" readonly>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Monto Pendiente:</label>
+                        <input type="text" id="montoPendienteCobrar" class="form-control" readonly>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Monto Pagado: *</label>
+                        <input type="number" id="montoPagadoCobrar" class="form-control" step="0.01" min="0" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Método de Pago:</label>
+                        <select id="metodoPagoCobrar" class="form-control">
+                            <option value="efectivo">Efectivo</option>
+                            <option value="transferencia">Transferencia</option>
+                            <option value="cheque">Cheque</option>
+                            <option value="tarjeta">Tarjeta</option>
+                        </select>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-success" onclick="registrarPagoCobrar()">
+                    <i class="bi bi-check"></i> Registrar Pago
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para registrar pago de cuenta por pagar -->
+<div class="modal fade" id="modalPagoPagar" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title">Registrar Pago Realizado</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="formPagoPagar">
+                    <input type="hidden" id="cuentaPagarId">
+                    <div class="mb-3">
+                        <label class="form-label">Proveedor:</label>
+                        <input type="text" id="proveedorNombre" class="form-control" readonly>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Monto Pendiente:</label>
+                        <input type="text" id="montoPendientePagar" class="form-control" readonly>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Monto Pagado: *</label>
+                        <input type="number" id="montoPagadoPagar" class="form-control" step="0.01" min="0" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Método de Pago:</label>
+                        <select id="metodoPagoPagar" class="form-control">
+                            <option value="efectivo">Efectivo</option>
+                            <option value="transferencia">Transferencia</option>
+                            <option value="cheque">Cheque</option>
+                            <option value="tarjeta">Tarjeta</option>
+                        </select>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-danger" onclick="registrarPagoPagar()">
+                    <i class="bi bi-check"></i> Registrar Pago
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function mostrarModalPagoCobrar(cuentaId, clienteNombre, montoPendiente) {
+    document.getElementById('cuentaCobrarId').value = cuentaId;
+    document.getElementById('clienteNombre').value = clienteNombre;
+    document.getElementById('montoPendienteCobrar').value = '$' + montoPendiente.toFixed(2);
+    document.getElementById('montoPagadoCobrar').value = '';
+    document.getElementById('montoPagadoCobrar').max = montoPendiente;
+    
+    new bootstrap.Modal(document.getElementById('modalPagoCobrar')).show();
+}
+
+function mostrarModalPagoPagar(cuentaId, proveedorNombre, montoPendiente) {
+    document.getElementById('cuentaPagarId').value = cuentaId;
+    document.getElementById('proveedorNombre').value = proveedorNombre;
+    document.getElementById('montoPendientePagar').value = '$' + montoPendiente.toFixed(2);
+    document.getElementById('montoPagadoPagar').value = '';
+    document.getElementById('montoPagadoPagar').max = montoPendiente;
+    
+    new bootstrap.Modal(document.getElementById('modalPagoPagar')).show();
+}
+
+function registrarPagoCobrar() {
+    const formData = new FormData();
+    formData.append('cuenta_id', document.getElementById('cuentaCobrarId').value);
+    formData.append('monto_pagado', document.getElementById('montoPagadoCobrar').value);
+    formData.append('metodo_pago', document.getElementById('metodoPagoCobrar').value);
+    formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
+    
+    fetch('{% url "empresa:registrar_pago_cobrar" %}', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            bootstrap.Modal.getInstance(document.getElementById('modalPagoCobrar')).hide();
+            location.reload(); // Recargar para actualizar los datos
+        } else {
+            alert('Error: ' + data.error);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error al registrar el pago');
+    });
+}
+
+function registrarPagoPagar() {
+    const formData = new FormData();
+    formData.append('cuenta_id', document.getElementById('cuentaPagarId').value);
+    formData.append('monto_pagado', document.getElementById('montoPagadoPagar').value);
+    formData.append('metodo_pago', document.getElementById('metodoPagoPagar').value);
+    formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
+    
+    fetch('{% url "empresa:registrar_pago_pagar" %}', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            bootstrap.Modal.getInstance(document.getElementById('modalPagoPagar')).hide();
+            location.reload(); // Recargar para actualizar los datos
+        } else {
+            alert('Error: ' + data.error);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error al registrar el pago');
+    });
+}
+</script>
+{% endblock %}

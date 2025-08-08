@@ -1,0 +1,192 @@
+{% extends 'empresa/base.html' %}
+{% load currency_filters %}
+
+{% block title %}Exportaciones - Manufactura{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-0 shadow-lg" style="background: linear-gradient(135deg, #28a745 0%, #20c997 100%);">
+                <div class="card-body text-white p-4">
+                    <h2 class="mb-0 fw-bold"><i class="bi bi-download me-2"></i>Centro de Exportaciones</h2>
+                    <p class="mb-0 opacity-75">Descarga reportes y datos de tu empresa manufacturera</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Exportaciones Excel -->
+        <div class="col-lg-6 mb-4">
+            <div class="card shadow-sm h-100">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0"><i class="bi bi-file-earmark-excel me-2"></i>Exportaciones Excel</h5>
+                </div>
+                <div class="card-body">
+                    <div class="export-item mb-3 p-3 border rounded">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="mb-1">🧱 Materias Primas</h6>
+                                <small class="text-muted">Inventario completo de materias primas con stocks, precios y proveedores</small>
+                            </div>
+                            <a href="{% url 'empresa:exportar_excel_materias_primas' %}" class="btn btn-success btn-sm">
+                                <i class="bi bi-download"></i> Descargar
+                            </a>
+                        </div>
+                    </div>
+
+                    <div class="export-item mb-3 p-3 border rounded">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="mb-1">🏭 Productos Manufacturados</h6>
+                                <small class="text-muted">Catálogo de productos con costos de producción y precios de venta</small>
+                            </div>
+                            <a href="{% url 'empresa:exportar_excel_productos_manufacturados' %}" class="btn btn-success btn-sm">
+                                <i class="bi bi-download"></i> Descargar
+                            </a>
+                        </div>
+                    </div>
+
+                    <div class="export-item mb-3 p-3 border rounded">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="mb-1">📋 Órdenes de Producción</h6>
+                                <small class="text-muted">Historial de órdenes con estados, cantidades y fechas de producción</small>
+                            </div>
+                            <a href="{% url 'empresa:exportar_excel_ordenes_produccion' %}" class="btn btn-success btn-sm">
+                                <i class="bi bi-download"></i> Descargar
+                            </a>
+                        </div>
+                    </div>
+
+                    <div class="export-item mb-3 p-3 border rounded">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="mb-1">💰 Ventas de Productos</h6>
+                                <small class="text-muted">Registro de ventas de productos manufacturados con márgenes</small>
+                            </div>
+                            <a href="{% url 'empresa:exportar_excel_ventas_manufactura' %}" class="btn btn-success btn-sm">
+                                <i class="bi bi-download"></i> Descargar
+                            </a>
+                        </div>
+                    </div>
+
+                    <div class="export-item p-3 border rounded">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="mb-1">💸 Gastos Operativos</h6>
+                                <small class="text-muted">Gastos de la empresa manufacturera categorizados</small>
+                            </div>
+                            <a href="{% url 'empresa:exportar_excel_gastos' %}" class="btn btn-success btn-sm">
+                                <i class="bi bi-download"></i> Descargar
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Exportaciones PDF -->
+        <div class="col-lg-6 mb-4">
+            <div class="card shadow-sm h-100">
+                <div class="card-header bg-danger text-white">
+                    <h5 class="mb-0"><i class="bi bi-file-earmark-pdf me-2"></i>Reportes PDF</h5>
+                </div>
+                <div class="card-body">
+                    <div class="export-item mb-3 p-3 border rounded">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="mb-1">🏦 Reporte Financiero Bancario</h6>
+                                <small class="text-muted">Análisis completo de manufactura con costos, eficiencia y proyecciones financieras</small>
+                            </div>
+                            <a href="{% url 'empresa:exportar_pdf_manufactura_bancario' %}" class="btn btn-danger btn-sm">
+                                <i class="bi bi-download"></i> Descargar
+                            </a>
+                        </div>
+                    </div>
+
+                    <div class="export-item p-3 border rounded">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="mb-1">📊 Reporte Operativo Interno</h6>
+                                <small class="text-muted">Métricas de producción, inventarios y rendimiento para gestión interna</small>
+                            </div>
+                            <a href="{% url 'empresa:exportar_pdf_manufactura_interno' %}" class="btn btn-danger btn-sm">
+                                <i class="bi bi-download"></i> Descargar
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Estadísticas rápidas -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0"><i class="bi bi-graph-up me-2"></i>Vista Previa de Datos</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-md-2">
+                            <div class="stat-preview p-3">
+                                <h4 class="text-primary">{{ stats.total_materias }}</h4>
+                                <small class="text-muted">Materias Primas</small>
+                            </div>
+                        </div>
+                        <div class="col-md-2">
+                            <div class="stat-preview p-3">
+                                <h4 class="text-success">{{ stats.total_productos }}</h4>
+                                <small class="text-muted">Productos</small>
+                            </div>
+                        </div>
+                        <div class="col-md-2">
+                            <div class="stat-preview p-3">
+                                <h4 class="text-warning">{{ stats.ordenes_pendientes }}</h4>
+                                <small class="text-muted">Órdenes Pendientes</small>
+                            </div>
+                        </div>
+                        <div class="col-md-2">
+                            <div class="stat-preview p-3">
+                                <h4 class="text-info">{{ stats.ordenes_proceso }}</h4>
+                                <small class="text-muted">En Producción</small>
+                            </div>
+                        </div>
+                        <div class="col-md-2">
+                            <div class="stat-preview p-3">
+                                <h4 class="text-success">{{ stats.ventas_mes|currency }}</h4>
+                                <small class="text-muted">Ventas del Mes</small>
+                            </div>
+                        </div>
+                        <div class="col-md-2">
+                            <div class="stat-preview p-3">
+                                <h4 class="text-danger">{{ stats.costos_mes|currency }}</h4>
+                                <small class="text-muted">Costos del Mes</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.export-item {
+    transition: all 0.3s ease;
+}
+.export-item:hover {
+    background-color: #f8f9fa;
+    transform: translateY(-2px);
+}
+.stat-preview {
+    border-right: 1px solid #dee2e6;
+}
+.stat-preview:last-child {
+    border-right: none;
+}
+</style>
+{% endblock %}

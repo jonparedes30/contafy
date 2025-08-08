@@ -1,0 +1,94 @@
+{% extends 'empresa/base.html' %}
+
+{% block title %}Servicios - CONTAFY{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">
+                    <i class="bi bi-tools me-2"></i>Servicios Ofrecidos
+                </h5>
+                <a href="{% url 'empresa:crear_tipo_servicio' %}" class="btn btn-success">
+                    <i class="bi bi-plus-circle me-1"></i>Nuevo Servicio
+                </a>
+            </div>
+            <div class="card-body">
+                {% if servicios %}
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Servicio</th>
+                                    <th>Descripción</th>
+                                    <th>Precio Base</th>
+                                    <th>Costo Directo</th>
+                                    <th>Margen</th>
+                                    <th>Tiempo Est.</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for servicio in servicios %}
+                                <tr>
+                                    <td>
+                                        <strong>{{ servicio.nombre }}</strong>
+                                        <br><small class="text-muted">{{ servicio.unidad_medida }}</small>
+                                    </td>
+                                    <td>{{ servicio.descripcion|truncatechars:50 }}</td>
+                                    <td>${{ servicio.precio_base|floatformat:2 }}</td>
+                                    <td>${{ servicio.costo_directo|floatformat:2 }}</td>
+                                    <td>
+                                        <span class="badge bg-{% if servicio.margen_ganancia > 30 %}success{% elif servicio.margen_ganancia > 15 %}warning{% else %}danger{% endif %}">
+                                            {{ servicio.margen_ganancia|floatformat:1 }}%
+                                        </span>
+                                    </td>
+                                    <td>
+                                        {% if servicio.tiempo_estimado %}
+                                            {{ servicio.tiempo_estimado }}h
+                                        {% else %}
+                                            -
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm">
+                                            <a href="{% url 'empresa:editar_tipo_servicio' servicio.id %}" 
+                                               class="btn btn-outline-primary" title="Editar">
+                                                <i class="bi bi-pencil"></i>
+                                            </a>
+                                            <a href="{% url 'empresa:eliminar_tipo_servicio' servicio.id %}" 
+                                               class="btn btn-outline-danger" title="Eliminar">
+                                                <i class="bi bi-trash"></i>
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <div class="row mt-3">
+                        <div class="col-md-6">
+                            <p class="text-muted">
+                                <i class="bi bi-info-circle me-1"></i>
+                                Total de servicios: <strong>{{ total_servicios }}</strong>
+                            </p>
+                        </div>
+                    </div>
+                {% else %}
+                    <div class="text-center py-5">
+                        <i class="bi bi-tools text-muted" style="font-size: 4rem;"></i>
+                        <h4 class="text-muted mt-3">No hay servicios registrados</h4>
+                        <p class="text-muted">Comienza agregando los servicios que ofrece tu empresa.</p>
+                        <a href="{% url 'empresa:crear_tipo_servicio' %}" class="btn btn-primary">
+                            <i class="bi bi-plus-circle me-1"></i>Crear Primer Servicio
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

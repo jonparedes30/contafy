@@ -1,0 +1,137 @@
+{% extends 'empresa/base.html' %}
+
+{% block title %}Conversación - CONTAFY{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h2 mb-1">
+                <i class="bi bi-chat-dots"></i> {{ conversacion.solicitud_ayuda.asunto }}
+            </h1>
+            <p class="mb-0 text-muted">
+                <i class="bi bi-tag"></i> {{ conversacion.solicitud_ayuda.get_tipo_display }} |
+                <i class="bi bi-calendar"></i> {{ conversacion.fecha_creacion|date:"d/m/Y H:i" }}
+            </p>
+        </div>
+        <div>
+            <a href="{% url 'empresa:bandeja_entrada' %}" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left"></i> Volver
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-8">
+            <!-- Mensajes -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Conversación</h5>
+                </div>
+                <div class="card-body" style="max-height: 500px; overflow-y: auto;" id="mensajes-container">
+                    {% for mensaje in conversacion.mensajes.all %}
+                    <div class="mb-3 {% if mensaje.tipo == 'usuario' %}text-end{% endif %}">
+                        <div class="d-inline-block p-3 rounded {% if mensaje.tipo == 'usuario' %}bg-primary text-white{% else %}bg-light{% endif %}" style="max-width: 70%;">
+                            <div class="mb-1">
+                                <strong>
+                                    {% if mensaje.tipo == 'soporte' %}
+                                        <i class="bi bi-person-badge"></i> Soporte CONTAFY
+                                    {% else %}
+                                        <i class="bi bi-person"></i> Tú
+                                    {% endif %}
+                                </strong>
+                            </div>
+                            <div>{{ mensaje.mensaje|linebreaks }}</div>
+                            <small class="{% if mensaje.tipo == 'usuario' %}text-white-50{% else %}text-muted{% endif %}">
+                                {{ mensaje.fecha_envio|date:"d/m/Y H:i" }}
+                            </small>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- Formulario para nuevo mensaje -->
+            {% if not conversacion.cerrada %}
+            <div class="card mt-3">
+                <div class="card-body">
+                    <h6>Enviar mensaje</h6>
+                    <div class="mb-3">
+                        <textarea class="form-control" id="nuevo-mensaje" rows="3" placeholder="Escribe tu mensaje aquí..."></textarea>
+                    </div>
+                    <button type="button" class="btn btn-primary" onclick="enviarMensaje()">
+                        <i class="bi bi-send"></i> Enviar Mensaje
+                    </button>
+                </div>
+            </div>
+            {% else %}
+            <div class="alert alert-info mt-3">
+                <i class="bi bi-info-circle"></i> Esta conversación ha sido cerrada.
+            </div>
+            {% endif %}
+        </div>
+
+        <div class="col-md-4">
+            <!-- Información de la solicitud -->
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="mb-0">Información de la Solicitud</h6>
+                </div>
+                <div class="card-body">
+                    <p><strong>ID:</strong> #{{ conversacion.solicitud_ayuda.id }}</p>
+                    <p><strong>Tipo:</strong> {{ conversacion.solicitud_ayuda.get_tipo_display }}</p>
+                    <p><strong>Estado:</strong> 
+                        {% if conversacion.cerrada %}
+                            <span class="badge bg-secondary">Cerrada</span>
+                        {% else %}
+                            <span class="badge bg-success">Activa</span>
+                        {% endif %}
+                    </p>
+                    <p><strong>Creada:</strong> {{ conversacion.fecha_creacion|date:"d/m/Y H:i" }}</p>
+                    <p><strong>Última actualización:</strong> {{ conversacion.fecha_actualizacion|date:"d/m/Y H:i" }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function enviarMensaje() {
+    const mensaje = document.getElementById('nuevo-mensaje').value.trim();
+    
+    if (!mensaje) {
+        alert('Por favor escribe un mensaje');
+        return;
+    }
+    
+    fetch('', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+        },
+        body: JSON.stringify({
+            mensaje: mensaje
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            location.reload(); // Recargar para mostrar el nuevo mensaje
+        } else {
+            alert('Error: ' + data.error);
+        }
+    })
+    .catch(error => {
+        alert('Error al enviar mensaje');
+        console.error(error);
+    });
+}
+
+// Auto-scroll al último mensaje
+document.addEventListener('DOMContentLoaded', function() {
+    const container = document.getElementById('mensajes-container');
+    container.scrollTop = container.scrollHeight;
+});
+</script>
+{% endblock %}

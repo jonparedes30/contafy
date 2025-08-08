@@ -1,0 +1,111 @@
+{% extends 'empresa/base.html' %}
+
+{% block title %}Subir Inventario (Excel){% endblock %}
+
+{% block content %}
+<div class="container mt-5" style="max-width: 700px;">
+    <h2 class="mb-4 text-success text-center">
+        <i class="bi bi-upload"></i> Subir Inventario por Excel
+    </h2>
+    
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
+    
+    {% if exito %}
+        <div class="card border-success">
+            <div class="card-header bg-success text-white">
+                <h5 class="mb-0"><i class="bi bi-check-circle"></i> ¡Inventario Cargado Exitosamente!</h5>
+            </div>
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-md-4">
+                        <div class="text-success">
+                            <i class="bi bi-plus-circle fs-1"></i>
+                            <h4>{{ creados }}</h4>
+                            <small>Productos Creados</small>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="text-info">
+                            <i class="bi bi-arrow-repeat fs-1"></i>
+                            <h4>{{ actualizados }}</h4>
+                            <small>Productos Actualizados</small>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="text-danger">
+                            <i class="bi bi-exclamation-triangle fs-1"></i>
+                            <h4>{{ errores|default:0 }}</h4>
+                            <small>Errores</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="text-center mt-3">
+                    <a href="{% url 'empresa:listar_productos' %}" class="btn btn-success">
+                        <i class="bi bi-box-seam"></i> Ver Inventario
+                    </a>
+                    <a href="{% url 'empresa:subir_inventario_excel' %}" class="btn btn-outline-primary">
+                        <i class="bi bi-upload"></i> Subir Otro Archivo
+                    </a>
+                </div>
+            </div>
+        </div>
+    {% else %}
+        <!-- Instrucciones -->
+        <div class="card mb-4">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0"><i class="bi bi-info-circle"></i> Instrucciones</h5>
+            </div>
+            <div class="card-body">
+                <ol>
+                    <li><strong>Descarga la plantilla</strong> haciendo clic en el botón de abajo</li>
+                    <li><strong>Completa los datos</strong> en el archivo Excel:
+                        <ul class="mt-2">
+                            <li><span class="badge bg-danger">Obligatorio:</span> <code>codigo</code>, <code>nombre</code></li>
+                            <li><span class="badge bg-warning">Opcional:</span> <code>codigo_barras</code>, <code>descripcion</code>, <code>precio_unitario</code>, <code>pvp</code>, <code>stock</code>, <code>stock_minimo</code>, <code>stock_maximo</code>, <code>fecha_vencimiento</code>, <code>lote</code></li>
+                        </ul>
+                    </li>
+                    <li><strong>Sube el archivo</strong> usando el formulario</li>
+                </ol>
+                <div class="alert alert-warning mt-3">
+                    <i class="bi bi-exclamation-triangle"></i> 
+                    <strong>Importante:</strong> Si un producto ya existe (mismo código), se actualizará con los nuevos datos.
+                </div>
+            </div>
+        </div>
+        
+        <!-- Formulario -->
+        <form method="post" enctype="multipart/form-data" class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-file-earmark-excel"></i> Subir Archivo Excel</h5>
+            </div>
+            <div class="card-body">
+                {% csrf_token %}
+                <div class="mb-3">
+                    <label for="archivo_excel" class="form-label">Selecciona el archivo Excel:</label>
+                    <input type="file" name="archivo_excel" id="archivo_excel" class="form-control" accept=".xlsx,.xls" required>
+                    <div class="form-text">Formatos soportados: .xlsx, .xls</div>
+                </div>
+                <div class="d-grid gap-2">
+                    <button type="submit" class="btn btn-success">
+                        <i class="bi bi-upload"></i> Subir Inventario
+                    </button>
+                </div>
+            </div>
+        </form>
+        
+        <!-- Botón de plantilla -->
+        <div class="text-center mt-4">
+            <a href="{% url 'empresa:descargar_plantilla_inventario' %}" class="btn btn-outline-info">
+                <i class="bi bi-download"></i> Descargar Plantilla Excel
+            </a>
+        </div>
+    {% endif %}
+</div>
+{% endblock %} 

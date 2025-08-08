@@ -1,0 +1,152 @@
+{% extends 'empresa/base.html' %}
+
+{% block title %}Historial de Meta - CONTAFY{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <h1 class="h3 mb-0">
+                    <i class="bi bi-clock-history"></i> Historial de Meta
+                </h1>
+                <a href="{% url 'empresa:gestionar_metas' %}" class="btn btn-outline-secondary">
+                    <i class="bi bi-arrow-left"></i> Volver a Metas
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Información de la Meta -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-primary">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">
+                        <i class="bi bi-target"></i> {{ meta.get_tipo_display }} - {{ meta.mes }}/{{ meta.anio }}
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-3">
+                            <h6>Objetivo</h6>
+                            <h4 class="text-primary">${{ meta.objetivo_mensual|floatformat:2 }}</h4>
+                        </div>
+                        <div class="col-md-3">
+                            <h6>Valor Actual</h6>
+                            <h4 class="text-success">${{ meta.valor_actual|floatformat:2 }}</h4>
+                        </div>
+                        <div class="col-md-3">
+                            <h6>Progreso</h6>
+                            <h4 class="text-info">{{ meta.progreso_actual|floatformat:1 }}%</h4>
+                        </div>
+                        <div class="col-md-3">
+                            <h6>Estado</h6>
+                            {% if meta.estado == 'completada' %}
+                                <span class="badge bg-success fs-6">Completada</span>
+                            {% elif meta.estado == 'en_progreso' %}
+                                <span class="badge bg-primary fs-6">En Progreso</span>
+                            {% elif meta.estado == 'atrasada' %}
+                                <span class="badge bg-warning fs-6">Atrasada</span>
+                            {% else %}
+                                <span class="badge bg-danger fs-6">Crítica</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Historial -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="bi bi-list-ul"></i> Evolución del Progreso
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if historial %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th>Fecha</th>
+                                    <th>Valor Actual</th>
+                                    <th>Progreso</th>
+                                    <th>Estado</th>
+                                    <th>Tendencia</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for registro in historial %}
+                                <tr>
+                                    <td>{{ registro.fecha_registro|date:"d/m/Y H:i" }}</td>
+                                    <td>${{ registro.valor_actual|floatformat:2 }}</td>
+                                    <td>
+                                        <div class="progress" style="height: 20px;">
+                                            {% if registro.estado == 'completada' %}
+                                                <div class="progress-bar bg-success" style="width: {{ registro.progreso }}%">
+                                                    {{ registro.progreso|floatformat:1 }}%
+                                                </div>
+                                            {% elif registro.estado == 'en_progreso' %}
+                                                <div class="progress-bar bg-primary" style="width: {{ registro.progreso }}%">
+                                                    {{ registro.progreso|floatformat:1 }}%
+                                                </div>
+                                            {% elif registro.estado == 'atrasada' %}
+                                                <div class="progress-bar bg-warning" style="width: {{ registro.progreso }}%">
+                                                    {{ registro.progreso|floatformat:1 }}%
+                                                </div>
+                                            {% else %}
+                                                <div class="progress-bar bg-danger" style="width: {{ registro.progreso }}%">
+                                                    {{ registro.progreso|floatformat:1 }}%
+                                                </div>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                    <td>
+                                        {% if registro.estado == 'completada' %}
+                                            <span class="badge bg-success">Completada</span>
+                                        {% elif registro.estado == 'en_progreso' %}
+                                            <span class="badge bg-primary">En Progreso</span>
+                                        {% elif registro.estado == 'atrasada' %}
+                                            <span class="badge bg-warning">Atrasada</span>
+                                        {% else %}
+                                            <span class="badge bg-danger">Crítica</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if forloop.counter > 1 %}
+                                            {% with prev_registro=historial|slice:forloop.counter0|last %}
+                                                {% if registro.progreso > prev_registro.progreso %}
+                                                    <i class="bi bi-arrow-up text-success"></i> Mejorando
+                                                {% elif registro.progreso < prev_registro.progreso %}
+                                                    <i class="bi bi-arrow-down text-danger"></i> Bajando
+                                                {% else %}
+                                                    <i class="bi bi-dash text-muted"></i> Estable
+                                                {% endif %}
+                                            {% endwith %}
+                                        {% else %}
+                                            <i class="bi bi-dash text-muted"></i> Inicial
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-4">
+                        <i class="bi bi-clock-history display-1 text-muted"></i>
+                        <h5 class="text-muted mt-3">No hay historial disponible</h5>
+                        <p class="text-muted">El historial se genera automáticamente cuando se actualiza la meta.</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

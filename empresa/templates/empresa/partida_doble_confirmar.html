@@ -1,0 +1,77 @@
+{% extends 'empresa/base.html' %}
+{% block title %}Confirmar Partida Doble{% endblock %}
+{% block content %}
+<div class="container mt-5" style="max-width: 600px;">
+    <h2 class="mb-4 text-primary text-center">Partida Doble - Confirmación</h2>
+    <div class="alert alert-info">
+        <strong>Nueva cuenta:</strong> {{ cuenta_data.nombre }} ({{ cuenta_data.tipo|title }})<br>
+        <strong>Valor:</strong> ${{ cuenta_data.monto_inicial }}
+    </div>
+    <form method="post">
+        {% csrf_token %}
+        <input type="hidden" name="paso" value="partida_doble">
+        <div class="mb-3">
+            <label for="contrapartida" class="form-label">Selecciona la cuenta contrapartida:</label>
+            <select name="contrapartida" id="contrapartida" class="form-select" required>
+                <option value="">-- Selecciona una cuenta --</option>
+                {% for cuenta in cuentas %}
+                <option value="{{ cuenta.id }}">{{ cuenta.nombre }} ({{ cuenta.tipo|title }})</option>
+                {% endfor %}
+            </select>
+            {% if error %}<div class="text-danger mt-1">{{ error }}</div>{% endif %}
+        </div>
+        <div class="mb-4">
+            <h5>Resumen del asiento contable:</h5>
+            <table class="table table-bordered">
+                <thead>
+                    <tr>
+                        <th>Cuenta</th>
+                        <th>Debe</th>
+                        <th>Haber</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if cuenta_data.tipo in 'activo,gasto' %}
+                    <tr>
+                        <td>{{ cuenta_data.nombre }}</td>
+                        <td>${{ cuenta_data.monto_inicial }}</td>
+                        <td></td>
+                    </tr>
+                    <tr>
+                        <td><span id="contrapartida_nombre">(Selecciona una cuenta)</span></td>
+                        <td></td>
+                        <td>${{ cuenta_data.monto_inicial }}</td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td>{{ cuenta_data.nombre }}</td>
+                        <td></td>
+                        <td>${{ cuenta_data.monto_inicial }}</td>
+                    </tr>
+                    <tr>
+                        <td><span id="contrapartida_nombre">(Selecciona una cuenta)</span></td>
+                        <td>${{ cuenta_data.monto_inicial }}</td>
+                        <td></td>
+                    </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+        <div class="text-end">
+            <button type="submit" class="btn btn-success">Confirmar y guardar</button>
+            <a href="{% url 'empresa:crear_cuenta_contable' %}" class="btn btn-secondary ms-2">Volver</a>
+        </div>
+    </form>
+</div>
+<script>
+// Mostrar el nombre de la cuenta contrapartida seleccionada en el resumen
+const select = document.getElementById('contrapartida');
+const span = document.getElementById('contrapartida_nombre');
+if (select && span) {
+    select.addEventListener('change', function() {
+        const selected = select.options[select.selectedIndex];
+        span.textContent = selected.value ? selected.text : '(Selecciona una cuenta)';
+    });
+}
+</script>
+{% endblock %} 

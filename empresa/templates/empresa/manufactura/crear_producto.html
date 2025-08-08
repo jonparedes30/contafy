@@ -1,0 +1,365 @@
+{% extends 'empresa/base.html' %}
+
+{% block title %}Nuevo Producto Manufacturado - {{ user.empresa.nombre }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2>📚 Nuevo Producto para Catálogo</h2>
+                <a href="{% url 'empresa:listar_productos_manufacturados' %}" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left"></i> Volver
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="row justify-content-center">
+        <div class="col-md-10">
+            <div class="card">
+                <div class="card-header">
+                    <h5>Definir Producto y su Receta de Fabricación</h5>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        <!-- Información del Producto -->
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="{{ form.codigo.id_for_label }}" class="form-label">
+                                        Código <span class="text-danger">*</span>
+                                    </label>
+                                    {{ form.codigo }}
+                                    {% if form.codigo.errors %}
+                                        <div class="text-danger">{{ form.codigo.errors.0 }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="{{ form.nombre.id_for_label }}" class="form-label">
+                                        Nombre <span class="text-danger">*</span>
+                                    </label>
+                                    {{ form.nombre }}
+                                    {% if form.nombre.errors %}
+                                        <div class="text-danger">{{ form.nombre.errors.0 }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="{{ form.descripcion.id_for_label }}" class="form-label">Descripción</label>
+                            {{ form.descripcion }}
+                            {% if form.descripcion.errors %}
+                                <div class="text-danger">{{ form.descripcion.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="{{ form.categoria.id_for_label }}" class="form-label">Categoría</label>
+                            <div class="input-group">
+                                {{ form.categoria }}
+                                <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#categoriaModal">
+                                    <i class="fas fa-plus"></i> Nueva
+                                </button>
+                            </div>
+                            {% if form.categoria.errors %}
+                                <div class="text-danger">{{ form.categoria.errors.0 }}</div>
+                            {% endif %}
+                            <small class="text-muted">Selecciona una categoría para organizar tus productos</small>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-3">
+                                <div class="mb-3">
+                                    <label for="{{ form.precio_venta.id_for_label }}" class="form-label">
+                                        Precio de Venta <span class="text-danger">*</span>
+                                    </label>
+                                    <div class="input-group">
+                                        <span class="input-group-text">$</span>
+                                        {{ form.precio_venta }}
+                                    </div>
+                                    {% if form.precio_venta.errors %}
+                                        <div class="text-danger">{{ form.precio_venta.errors.0 }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="mb-3">
+                                    <label class="form-label">Costo Calculado</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text">$</span>
+                                        <input type="text" class="form-control" id="costo-calculado" readonly value="0.00">
+                                    </div>
+                                    <small class="text-muted">Se calcula automáticamente</small>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="mb-3">
+                                    <label for="{{ form.tiempo_produccion.id_for_label }}" class="form-label">
+                                        Tiempo Producción (min)
+                                    </label>
+                                    {{ form.tiempo_produccion }}
+                                    {% if form.tiempo_produccion.errors %}
+                                        <div class="text-danger">{{ form.tiempo_produccion.errors.0 }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="mb-3">
+                                    <label class="form-label">Margen Calculado</label>
+                                    <div class="input-group">
+                                        <input type="text" class="form-control" id="margen-calculado" readonly>
+                                        <span class="input-group-text">%</span>
+                                    </div>
+                                    <small class="text-muted">Ganancia estimada</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Receta de Producción -->
+                        <hr>
+                        <h5 class="mb-3">📋 Receta de Producción</h5>
+                        <div id="receta-container">
+                            {{ formset.management_form }}
+                            {% for form_receta in formset %}
+                                <div class="receta-item border p-3 mb-3 rounded">
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <label class="form-label">Materia Prima</label>
+                                            {{ form_receta.materia_prima }}
+                                        </div>
+                                        <div class="col-md-3">
+                                            <label class="form-label">Cantidad Necesaria</label>
+                                            {{ form_receta.cantidad_necesaria }}
+                                        </div>
+                                        <div class="col-md-1">
+                                            <label class="form-label">Costo</label>
+                                            <input type="text" class="form-control costo-ingrediente" readonly>
+                                        </div>
+                                        <div class="col-md-2 d-flex align-items-end">
+                                            {{ form_receta.DELETE }}
+                                            <label for="{{ form_receta.DELETE.id_for_label }}" class="form-label ms-2">
+                                                Eliminar
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                        
+                        <button type="button" id="agregar-ingrediente" class="btn btn-outline-primary mb-3">
+                            <i class="fas fa-plus"></i> Agregar Ingrediente
+                        </button>
+
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'empresa:listar_productos_manufacturados' %}" class="btn btn-secondary">
+                                Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save"></i> Guardar Producto y Receta
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Datos de materias primas (precio por unidad)
+    const materiasPrimas = {};
+    let formCount = parseInt(document.querySelector('input[name="form-TOTAL_FORMS"]').value);
+    
+    // Cargar datos de materias primas via AJAX
+    fetch('/empresa/api/materias-primas/')
+        .then(response => response.json())
+        .then(data => {
+            data.forEach(materia => {
+                materiasPrimas[materia.id] = {
+                    precio: parseFloat(materia.precio_unitario),
+                    unidad: materia.unidad_medida
+                };
+            });
+            calcularCostoTotal();
+        })
+        .catch(() => {
+            // Si no hay API, usar datos estáticos o mostrar mensaje
+            console.log('No se pudieron cargar las materias primas');
+        });
+    
+    // Función para calcular costo de un ingrediente
+    function calcularCostoIngrediente(materiaSelect, cantidadInput, costoInput) {
+        const materiaId = materiaSelect.value;
+        const cantidad = parseFloat(cantidadInput.value) || 0;
+        
+        if (materiaId && materiasPrimas[materiaId]) {
+            const costo = cantidad * materiasPrimas[materiaId].precio;
+            costoInput.value = '$' + costo.toFixed(2);
+            return costo;
+        } else {
+            costoInput.value = '$0.00';
+            return 0;
+        }
+    }
+    
+    // Función para calcular costo total
+    function calcularCostoTotal() {
+        let costoTotal = 0;
+        const recetaItems = document.querySelectorAll('.receta-item');
+        
+        recetaItems.forEach(item => {
+            const materiaSelect = item.querySelector('select[name*="materia_prima"]');
+            const cantidadInput = item.querySelector('input[name*="cantidad_necesaria"]');
+            const costoInput = item.querySelector('.costo-ingrediente');
+            const deleteCheckbox = item.querySelector('input[name*="DELETE"]');
+            
+            if (materiaSelect && cantidadInput && costoInput && !deleteCheckbox.checked) {
+                const costoIngrediente = calcularCostoIngrediente(materiaSelect, cantidadInput, costoInput);
+                costoTotal += costoIngrediente;
+            }
+        });
+        
+        document.getElementById('costo-calculado').value = costoTotal.toFixed(2);
+        
+        // Calcular y mostrar margen
+        const precioVenta = parseFloat(document.querySelector('input[name="precio_venta"]').value) || 0;
+        const margenCalculado = document.getElementById('margen-calculado');
+        
+        if (precioVenta > 0 && costoTotal > 0) {
+            const margen = ((precioVenta - costoTotal) / precioVenta * 100);
+            margenCalculado.value = margen.toFixed(1);
+            margenCalculado.className = `form-control text-${margen > 20 ? 'success' : margen > 10 ? 'warning' : 'danger'}`;
+        } else {
+            margenCalculado.value = '0.0';
+            margenCalculado.className = 'form-control';
+        }
+    }
+    
+    // Event listeners para recalcular cuando cambien los valores
+    document.addEventListener('change', function(e) {
+        if (e.target.matches('select[name*="materia_prima"]') || 
+            e.target.matches('input[name*="cantidad_necesaria"]') ||
+            e.target.matches('input[name*="DELETE"]') ||
+            e.target.matches('input[name="precio_venta"]')) {
+            calcularCostoTotal();
+        }
+    });
+    
+    document.addEventListener('input', function(e) {
+        if (e.target.matches('input[name*="cantidad_necesaria"]') ||
+            e.target.matches('input[name="precio_venta"]')) {
+            calcularCostoTotal();
+        }
+    });
+    
+    // Función para agregar nuevo ingrediente
+    document.getElementById('agregar-ingrediente').addEventListener('click', function() {
+        const container = document.getElementById('receta-container');
+        const emptyForm = document.querySelector('.receta-item').cloneNode(true);
+        
+        // Actualizar índices del formulario
+        const formRegex = RegExp(`form-(\\d){1}-`, 'g');
+        emptyForm.innerHTML = emptyForm.innerHTML.replace(formRegex, `form-${formCount}-`);
+        
+        // Limpiar valores
+        emptyForm.querySelectorAll('input, select').forEach(input => {
+            if (input.type !== 'checkbox') {
+                input.value = '';
+            } else {
+                input.checked = false;
+            }
+        });
+        
+        // Agregar al contenedor
+        container.appendChild(emptyForm);
+        
+        // Actualizar contador de formularios
+        formCount++;
+        document.querySelector('input[name="form-TOTAL_FORMS"]').value = formCount;
+        
+        // Recalcular costos
+        calcularCostoTotal();
+    });
+});
+</script>
+
+<!-- Modal Crear Categoría -->
+<div class="modal fade" id="categoriaModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Crear Categoría de Producto</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="formCategoria">
+                    <div class="mb-3">
+                        <label class="form-label">Nombre *</label>
+                        <input type="text" id="categoriaNombre" class="form-control" required placeholder="Ej: Productos de Panadería, Muebles, Decoración">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Descripción</label>
+                        <textarea id="categoriaDescripcion" class="form-control" rows="2" placeholder="Descripción opcional"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" onclick="crearCategoria()">Crear Categoría de Producto</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function crearCategoria() {
+    const nombre = document.getElementById('categoriaNombre').value;
+    const descripcion = document.getElementById('categoriaDescripcion').value;
+    
+    if (!nombre) {
+        alert('El nombre es requerido');
+        return;
+    }
+    
+    fetch('/empresa/api/categorias/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+        },
+        body: JSON.stringify({
+            nombre: nombre,
+            descripcion: descripcion
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Agregar al select
+            const select = document.getElementById('id_categoria');
+            const option = new Option(data.categoria.nombre, data.categoria.id, true, true);
+            select.add(option);
+            
+            // Cerrar modal y limpiar
+            bootstrap.Modal.getInstance(document.getElementById('categoriaModal')).hide();
+            document.getElementById('formCategoria').reset();
+            
+            alert('Categoría de producto creada exitosamente');
+        } else {
+            alert('Error: ' + (data.error || 'No se pudo crear la categoría'));
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error creando categoría');
+    });
+}
+</script>
+{% endblock %}

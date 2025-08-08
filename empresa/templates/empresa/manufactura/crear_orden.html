@@ -1,0 +1,77 @@
+{% extends 'empresa/base.html' %}
+
+{% block title %}Nueva Orden de Producción - {{ user.empresa.nombre }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2>📋 Nueva Orden de Producción</h2>
+                <a href="{% url 'empresa:listar_ordenes_produccion' %}" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left"></i> Volver
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5>Información de la Orden</h5>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="{{ form.producto.id_for_label }}" class="form-label">
+                                        Producto <span class="text-danger">*</span>
+                                    </label>
+                                    {{ form.producto }}
+                                    {% if form.producto.errors %}
+                                        <div class="text-danger">{{ form.producto.errors.0 }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="{{ form.cantidad_solicitada.id_for_label }}" class="form-label">
+                                        Cantidad <span class="text-danger">*</span>
+                                    </label>
+                                    {{ form.cantidad_solicitada }}
+                                    {% if form.cantidad_solicitada.errors %}
+                                        <div class="text-danger">{{ form.cantidad_solicitada.errors.0 }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="{{ form.notas.id_for_label }}" class="form-label">
+                                Notas
+                            </label>
+                            {{ form.notas }}
+                            {% if form.notas.errors %}
+                                <div class="text-danger">{{ form.notas.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'empresa:listar_ordenes_produccion' %}" class="btn btn-secondary">
+                                Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save"></i> Crear Orden
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

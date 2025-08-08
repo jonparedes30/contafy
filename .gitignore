@@ -1,0 +1,41 @@
+# Entorno virtual
+venv/
+.env
+*.env
+
+# Archivos de Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+
+# Archivos de base de datos y migraciones temporales
+*.sqlite3
+*.db
+*.bak
+
+# Archivos de logs
+*.log
+
+# Configuración de IDEs
+.idea/
+.vscode/
+*.sublime-workspace
+*.sublime-project
+
+# Archivos de sistema
+.DS_Store
+Thumbs.db
+
+# Archivos comprimidos y binarios
+*.zip
+*.tar.gz
+*.egg-info/
+dist/
+build/
+
+# Otros posibles directorios temporales
+*.tmp
+*.swp
+*.bak
+node_modules/ 

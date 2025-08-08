@@ -1,0 +1,31 @@
+{% extends 'empresa/base.html' %}
+{% block title %}Capital Registrado{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <h2 class="mb-4 text-center text-success">Historial de Capital Social</h2>
+
+    {% if movimientos %}
+        <table class="table table-bordered table-hover">
+            <thead class="table-success">
+                <tr>
+                    <th>Fecha</th>
+                    <th>Descripción</th>
+                    <th>Monto</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for m in movimientos %}
+                <tr>
+                    <td>{{ m.fecha|date:"d/m/Y" }}</td>
+                    <td>{{ m.descripcion }}</td>
+                    <td>{% load currency_filters %}{{ m.monto|currency }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <div class="alert alert-info text-center">No se han registrado movimientos de capital aún.</div>
+    {% endif %}
+</div>
+{% endblock %}

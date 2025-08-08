@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self' data: gap: https://ssl.gstatic.com 'unsafe-eval' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net; img-src 'self' data: content:;">
+    <title>CONTAFY</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
+    
+    <style>
+        body { 
+            background-color: #f8f9fa; 
+            padding: 1rem;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+        
+        .login-container {
+            max-width: 400px;
+            margin: 2rem auto;
+            padding: 2rem;
+            background: white;
+            border-radius: 1rem;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        }
+        
+        .logo {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+        
+        .logo h1 {
+            color: #27ae60;
+            font-weight: bold;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #27ae60 0%, #2c3e50 100%);
+            border: none;
+            width: 100%;
+            padding: 0.75rem;
+            border-radius: 0.5rem;
+        }
+        
+        .form-control {
+            border-radius: 0.5rem;
+            padding: 0.75rem;
+            margin-bottom: 1rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <div class="logo">
+            <i class="bi bi-calculator-fill" style="font-size: 3rem; color: #27ae60;"></i>
+            <h1>CONTAFY</h1>
+            <p class="text-muted">Sistema Contable para PYMES</p>
+        </div>
+        
+        <form id="loginForm">
+            <div class="mb-3">
+                <input type="text" class="form-control" id="username" placeholder="Usuario" required>
+            </div>
+            <div class="mb-3">
+                <input type="password" class="form-control" id="password" placeholder="Contraseña" required>
+            </div>
+            <button type="submit" class="btn btn-primary">
+                <i class="bi bi-box-arrow-in-right me-2"></i>Iniciar Sesión
+            </button>
+        </form>
+        
+        <div class="text-center mt-3">
+            <small class="text-muted">Versión móvil 1.0.0</small>
+        </div>
+    </div>
+
+    <script src="cordova.js"></script>
+    <script>
+        document.addEventListener('deviceready', function() {
+            console.log('Cordova is ready');
+            
+            document.getElementById('loginForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const username = document.getElementById('username').value;
+                const password = document.getElementById('password').value;
+                
+                // Aquí conectarías con tu API Django
+                fetch('http://tu-servidor.com/empresa/api/login/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        username: username,
+                        password: password
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Redirigir a la app principal
+                        window.location.href = 'main.html';
+                    } else {
+                        alert('Credenciales incorrectas');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Error de conexión');
+                });
+            });
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,245 @@
+{% extends 'empresa/base.html' %}
+{% load static %}
+
+{% block title %}Valuación de Empresa - CONTAFY{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="animated-header mb-4">
+        <h1 class="h2 mb-1">
+            <i class="bi bi-graph-up-arrow"></i> Valuación de Empresa
+        </h1>
+        <p class="mb-0">Conoce el valor estimado de tu empresa usando múltiples métodos de valuación.</p>
+    </div>
+
+    <!-- Resumen de Valuación -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card border-success">
+                <div class="card-body text-center">
+                    <h3 class="text-success">${{ valuacion.valuacion_promedio|floatformat:0 }}</h3>
+                    <p class="mb-0">Valor Estimado</p>
+                    <small class="text-muted">Promedio ponderado</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-body text-center">
+                    <h4>${{ valuacion.valuacion_dcf|floatformat:0 }}</h4>
+                    <p class="mb-0">Método DCF</p>
+                    <small class="text-muted">Flujo de caja descontado</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-body text-center">
+                    <h4>${{ valuacion.valuacion_multiplos|floatformat:0 }}</h4>
+                    <p class="mb-0">Múltiplos</p>
+                    <small class="text-muted">Comparación sectorial</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-body text-center">
+                    <h4>${{ valuacion.valuacion_libros|floatformat:0 }}</h4>
+                    <p class="mb-0">Valor en Libros</p>
+                    <small class="text-muted">Patrimonio ajustado</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Datos Financieros Base -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="bi bi-bar-chart"></i> Datos Financieros (Últimos 12 meses)</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-6">
+                            <p><strong>Ventas Anuales:</strong><br>${{ valuacion.datos_financieros.ventas_anuales|floatformat:0 }}</p>
+                            <p><strong>Utilidad Neta:</strong><br>${{ valuacion.datos_financieros.utilidad_neta|floatformat:0 }}</p>
+                            <p><strong>Activos Totales:</strong><br>${{ valuacion.datos_financieros.activos_totales|floatformat:0 }}</p>
+                        </div>
+                        <div class="col-6">
+                            <p><strong>Margen Neto:</strong><br>{{ valuacion.datos_financieros.margen_neto|floatformat:1 }}%</p>
+                            <p><strong>Crecimiento:</strong><br>{{ valuacion.datos_financieros.tasa_crecimiento|floatformat:1 }}%</p>
+                            <p><strong>Patrimonio:</strong><br>${{ valuacion.datos_financieros.patrimonio|floatformat:0 }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="bi bi-graph-up"></i> Proyección de Valor (5 años)</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="proyeccionChart" width="400" height="200"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Métodos de Valuación Detallados -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="bi bi-calculator"></i> Métodos de Valuación</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <h6>Flujo de Caja Descontado (DCF)</h6>
+                            <p class="small text-muted">Proyecta los flujos futuros y los descuenta a valor presente usando una tasa del 15%.</p>
+                            <div class="progress mb-2">
+                                <div class="progress-bar bg-primary" style="width: 40%">40%</div>
+                            </div>
+                            <p class="mb-0"><strong>${{ valuacion.valuacion_dcf|floatformat:0 }}</strong></p>
+                        </div>
+                        <div class="col-md-4">
+                            <h6>Múltiplos del Sector</h6>
+                            <p class="small text-muted">Compara con empresas similares usando ratios precio/ventas y precio/utilidad.</p>
+                            <div class="progress mb-2">
+                                <div class="progress-bar bg-info" style="width: 40%">40%</div>
+                            </div>
+                            <p class="mb-0"><strong>${{ valuacion.valuacion_multiplos|floatformat:0 }}</strong></p>
+                        </div>
+                        <div class="col-md-4">
+                            <h6>Valor en Libros Ajustado</h6>
+                            <p class="small text-muted">Toma el patrimonio contable y lo ajusta según la rentabilidad actual.</p>
+                            <div class="progress mb-2">
+                                <div class="progress-bar bg-success" style="width: 20%">20%</div>
+                            </div>
+                            <p class="mb-0"><strong>${{ valuacion.valuacion_libros|floatformat:0 }}</strong></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Proyecciones Futuras -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="bi bi-arrow-up-right"></i> Proyecciones de Valor</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Año</th>
+                                    <th>Valor Proyectado</th>
+                                    <th>Crecimiento Acumulado</th>
+                                    <th>Potencial de Ganancia</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr class="table-info">
+                                    <td><strong>Actual</strong></td>
+                                    <td><strong>${{ proyecciones.valor_actual|floatformat:0 }}</strong></td>
+                                    <td><strong>0%</strong></td>
+                                    <td><strong>-</strong></td>
+                                </tr>
+                                {% for proj in proyecciones.proyecciones %}
+                                <tr>
+                                    <td>Año {{ proj.año }}</td>
+                                    <td>${{ proj.valor_proyectado|floatformat:0 }}</td>
+                                    <td>{{ proj.crecimiento_acumulado|floatformat:1 }}%</td>
+                                    <td>
+                                        {% if proj.crecimiento_acumulado > 0 %}
+                                            <span class="text-success">+${{ proj.valor_proyectado|add:proyecciones.valor_actual|floatformat:0 }}</span>
+                                        {% else %}
+                                            <span class="text-danger">${{ proj.valor_proyectado|add:proyecciones.valor_actual|floatformat:0 }}</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recomendaciones -->
+    {% if valuacion.recomendaciones %}
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-warning text-dark">
+                    <h5><i class="bi bi-lightbulb"></i> Recomendaciones para Aumentar el Valor</h5>
+                </div>
+                <div class="card-body">
+                    {% for rec in valuacion.recomendaciones %}
+                    <div class="alert {% if rec.tipo == 'success' %}alert-success{% elif rec.tipo == 'warning' %}alert-warning{% elif rec.tipo == 'danger' %}alert-danger{% else %}alert-info{% endif %}">
+                        <div class="d-flex justify-content-between">
+                            <div>
+                                <strong>{{ rec.area }}</strong><br>
+                                {{ rec.mensaje }}
+                            </div>
+                            <span class="badge {% if rec.impacto == 'Crítico' %}bg-danger{% elif rec.impacto == 'Alto' %}bg-warning{% elif rec.impacto == 'Medio' %}bg-info{% else %}bg-success{% endif %}">
+                                {{ rec.impacto }}
+                            </span>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+// Gráfico de proyección
+const ctx = document.getElementById('proyeccionChart').getContext('2d');
+const proyeccionChart = new Chart(ctx, {
+    type: 'line',
+    data: {
+        labels: ['Actual', {% for proj in proyecciones.proyecciones %}'Año {{ proj.año }}',{% endfor %}],
+        datasets: [{
+            label: 'Valor de la Empresa',
+            data: [{{ proyecciones.valor_actual }}, {% for proj in proyecciones.proyecciones %}{{ proj.valor_proyectado }},{% endfor %}],
+            borderColor: 'rgb(75, 192, 192)',
+            backgroundColor: 'rgba(75, 192, 192, 0.2)',
+            tension: 0.1,
+            fill: true
+        }]
+    },
+    options: {
+        responsive: true,
+        plugins: {
+            title: {
+                display: true,
+                text: 'Proyección de Valor (Tasa: {{ proyecciones.tasa_crecimiento_anual|floatformat:1 }}% anual)'
+            }
+        },
+        scales: {
+            y: {
+                beginAtZero: true,
+                ticks: {
+                    callback: function(value) {
+                        return '$' + value.toLocaleString();
+                    }
+                }
+            }
+        }
+    }
+});
+</script>
+{% endblock %}
