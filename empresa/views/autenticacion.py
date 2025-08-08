@@ -84,9 +84,7 @@ def registrar_usuario(request):
         
         form = RegistroForm(request.POST)
         if form.is_valid():
-            user = form.save(commit=False)
-            user.set_password(form.cleaned_data['password1'])  # Hashear contraseña correctamente
-            user.save()
+            user = form.save()  # El formulario ya maneja el orden correcto
             # Marcar código como usado
             codigo.usado = True
             codigo.usado_por = user
