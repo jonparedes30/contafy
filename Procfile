@@ -1,1 +1,1 @@
-web: gunicorn contafy.wsgi
+web: gunicorn core.wsgi
