@@ -141,7 +141,7 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 AUTH_USER_MODEL = 'empresa.Usuario'
 
 # URLs de login y logout
-LOGIN_URL = '/empresa/login/'
+LOGIN_URL = '/app-beta-2024/login/'
 LOGIN_REDIRECT_URL = '/empresa/'
 LOGOUT_REDIRECT_URL = '/empresa/login/'
 
