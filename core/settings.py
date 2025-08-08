@@ -188,47 +188,62 @@ TWILIO_AUTH_TOKEN = env('TWILIO_AUTH_TOKEN', default='')
 OPENAI_API_KEY = env('OPENAI_API_KEY', default='')
 GEMINI_API_KEY = env('GEMINI_API_KEY', default='')
 
-# Configuración de logging
+# Ajuste robusto de logging para local y Heroku
+# Detectar ejecución en Heroku (DYNO está presente en los dynos)
+RUNNING_ON_HEROKU = bool(os.environ.get("DYNO"))
+
+# En local, escribimos archivo de log; en Heroku, solo consola
+USE_FILE_LOG = not RUNNING_ON_HEROKU
+
+LOGS_DIR = Path(BASE_DIR) / "logs"
+LOG_FILE = LOGS_DIR / "contafy.log"
+
+if USE_FILE_LOG:
+    # Crear carpeta de logs si no existe (evita FileNotFoundError)
+    LOGS_DIR.mkdir(parents=True, exist_ok=True)
+
+LOGGING_HANDLERS = ["console"] + (["file"] if USE_FILE_LOG else [])
+
 LOGGING = {
-    'version': 1,
-    'disable_existing_loggers': False,
-    'formatters': {
-        'verbose': {
-            'format': '{levelname} {asctime} {module} {process:d} {thread:d} {message}',
-            'style': '{',
+    "version": 1,
+    "disable_existing_loggers": False,
+    "formatters": {
+        "verbose": {
+            "format": "%(asctime)s [%(levelname)s] %(name)s:%(lineno)d %(message)s",
         },
-        'simple': {
-            'format': '{levelname} {message}',
-            'style': '{',
+        "simple": {
+            "format": "%(levelname)s %(message)s",
         },
     },
-    'handlers': {
-        'file': {
-            'level': 'INFO',
-            'class': 'logging.FileHandler',
-            'filename': os.path.join(BASE_DIR, 'logs', 'contafy.log'),
-            'formatter': 'verbose',
+    "handlers": {
+        "console": {
+            "class": "logging.StreamHandler",
+            "formatter": "verbose",
         },
-        'console': {
-            'level': 'DEBUG',
-            'class': 'logging.StreamHandler',
-            'formatter': 'simple',
+        # El handler de archivo solo se usará en local; en Heroku no se referenciará
+        "file": {
+            "class": "logging.FileHandler",
+            "filename": str(LOG_FILE),
+            "mode": "a",
+            "encoding": "utf-8",
+            "formatter": "verbose",
         },
     },
-    'root': {
-        'handlers': ['console', 'file'],
-        'level': env('LOG_LEVEL'),
+    "root": {
+        "handlers": LOGGING_HANDLERS,
+        "level": "INFO",
     },
-    'loggers': {
-        'django': {
-            'handlers': ['console', 'file'],
-            'level': 'INFO',
-            'propagate': False,
+    "loggers": {
+        # Ejemplo de loggers de Django
+        "django": {
+            "handlers": LOGGING_HANDLERS,
+            "level": "INFO",
+            "propagate": False,
         },
-        'empresa': {
-            'handlers': ['console', 'file'],
-            'level': 'INFO',
-            'propagate': False,
+        "django.request": {
+            "handlers": LOGGING_HANDLERS,
+            "level": "WARNING",
+            "propagate": False,
         },
     },
 }
