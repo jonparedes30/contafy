@@ -79,19 +79,25 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'core.wsgi.application'
 
-# Base de datos SQLite - Sólida y confiable para sistemas contables
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'contafy_sistema.db',
-        'OPTIONS': {
-            'timeout': 20,
-            'check_same_thread': False,
-        },
+# Base de datos: Postgres en producción, SQLite en desarrollo
+DATABASE_URL = env('DATABASE_URL', default=None)
+if DATABASE_URL:
+    DATABASES = {
+        'default': env.db('DATABASE_URL')
     }
-}
+    DATABASES['default']['CONN_MAX_AGE'] = env.int('CONN_MAX_AGE', default=600)
+else:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'contafy_sistema.db',
+            'OPTIONS': {
+                'timeout': 20,
+                'check_same_thread': False,
+            },
+        }
+    }
 
-# Configuración para integridad de datos
 DATABASES['default']['ATOMIC_REQUESTS'] = True
 
 # Configuración de caché
