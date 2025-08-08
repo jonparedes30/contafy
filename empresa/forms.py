@@ -585,6 +585,10 @@ class RegistroForm(UserCreationForm):
         usuario.empresa = empresa
         usuario.is_active = True
         
+        # 3) Forzar hash de contraseña si no está hasheada
+        if not usuario.password.startswith('pbkdf2_'):
+            usuario.set_password(self.cleaned_data['password1'])
+        
         if commit:
             usuario.save()
             
