@@ -566,8 +566,8 @@ class RegistroForm(UserCreationForm):
         return ruc
 
     def save(self, commit=True):
-        # 1) Crear y guardar empresa SIEMPRE
-        empresa = Empresa.objects.create(
+        # Crear empresa primero
+        empresa = Empresa(
             nombre=self.cleaned_data['nombre_empresa'],
             ruc=self.cleaned_data['ruc'],
             direccion=self.cleaned_data['direccion'],
@@ -579,15 +579,11 @@ class RegistroForm(UserCreationForm):
             categoria=self.cleaned_data['categoria'],
             tipo_negocio=self.cleaned_data['tipo_negocio']
         )
+        empresa.save()
 
-        # 2) Crear usuario con empresa ya guardada
+        # Crear usuario normalmente
         usuario = super().save(commit=False)
-        usuario.empresa = empresa
-        usuario.is_active = True
-        
-        # 3) Forzar hash de contraseña si no está hasheada
-        if not usuario.password.startswith('pbkdf2_'):
-            usuario.set_password(self.cleaned_data['password1'])
+        usuario.empresa_id = empresa.id  # Usar ID en lugar del objeto
         
         if commit:
             usuario.save()
