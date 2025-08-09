@@ -414,6 +414,18 @@ class RegistroForm(UserCreationForm):
     email = forms.EmailField(label="Email")
     first_name = forms.CharField(label="Nombre (usuario)")
     last_name = forms.CharField(label="Apellidos")
+    
+    # Sobreescribir campos de contraseña con help_text personalizado
+    password1 = forms.CharField(
+        label="Contraseña",
+        widget=forms.PasswordInput(attrs={'class': 'form-control'}),
+        help_text="Tu contraseña debe tener al menos 8 caracteres y contener: mayúsculas, minúsculas, números y símbolos (ej: MiPass123!)"
+    )
+    password2 = forms.CharField(
+        label="Confirmar Contraseña",
+        widget=forms.PasswordInput(attrs={'class': 'form-control'}),
+        help_text="Confirma tu contraseña"
+    )
     # Campos de empresa:
     nombre_empresa = forms.CharField(max_length=100, label="🏢 Nombre de la empresa")
     ruc = forms.CharField(
@@ -516,12 +528,7 @@ class RegistroForm(UserCreationForm):
             if field.widget.__class__.__name__ != 'Select':
                 field.widget.attrs.update({'class': 'form-control'})
         
-        # Agregar mensajes de ayuda para contraseñas
-        self.fields['password1'].help_text = (
-            "Tu contraseña debe tener al menos 8 caracteres y contener: "
-            "mayúsculas, minúsculas, números y símbolos (ej: MiPass123!)"
-        )
-        self.fields['password2'].help_text = "Confirma tu contraseña"
+
         
         # Opciones de tipos de negocio por categoría
         self.tipos_negocio = {
