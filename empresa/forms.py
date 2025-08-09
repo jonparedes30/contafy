@@ -516,6 +516,13 @@ class RegistroForm(UserCreationForm):
             if field.widget.__class__.__name__ != 'Select':
                 field.widget.attrs.update({'class': 'form-control'})
         
+        # Agregar mensajes de ayuda para contraseñas
+        self.fields['password1'].help_text = (
+            "Tu contraseña debe tener al menos 8 caracteres y contener: "
+            "mayúsculas, minúsculas, números y símbolos (ej: MiPass123!)"
+        )
+        self.fields['password2'].help_text = "Confirma tu contraseña"
+        
         # Opciones de tipos de negocio por categoría
         self.tipos_negocio = {
             'comercial': [

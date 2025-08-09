@@ -114,10 +114,11 @@ def registrar_usuario(request):
                 messages.error(request, f'Error al crear la cuenta: {str(e)}')
         else:
             logger.error(f"Errores del formulario: {form.errors}")
-            messages.error(request, 'Corrige los errores del formulario.')
+            messages.error(request, 'Por favor corrige los siguientes errores:')
             for field, errors in form.errors.items():
+                field_name = form.fields[field].label or field
                 for error in errors:
-                    messages.error(request, f'{field}: {error}')
+                    messages.error(request, f'{field_name}: {error}')
     else:
         form = RegistroForm()
     return render(request, 'empresa/registro.html', {
