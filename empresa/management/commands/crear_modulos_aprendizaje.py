@@ -26,7 +26,7 @@ class Command(BaseCommand):
             modulo=modulo_comercio,
             titulo="Domina las Ventas: De la Teoría a la Práctica",
             tipo="practica",
-            contenido='{"teoria": "Una venta es el intercambio de un producto por dinero. En CONTAFY cada venta se registra automáticamente para controlar tus ingresos.", "pasos": [{"titulo": "Paso 1: Crear Producto", "descripcion": "Primero necesitas productos para vender", "accion": "crear_producto", "datos": {"nombre": "Camiseta Polo", "codigo": "CAM001", "precio_compra": 8, "precio_venta": 15, "stock": 50}}, {"titulo": "Paso 2: Registrar Venta", "descripcion": "Ahora vende el producto que creaste", "accion": "crear_venta", "datos": {"producto": "Camiseta Polo", "cantidad": 2, "tipo_pago": "contado"}}], "quiz": [{"pregunta": "¿Cuál es el total de vender 2 camisetas a $15 cada una?", "opciones": ["$25", "$30", "$35"], "respuesta": 1}, {"pregunta": "¿Qué pasa con el stock después de una venta?", "opciones": ["Se mantiene igual", "Disminuye automáticamente", "Aumenta"], "respuesta": 1}]}',
+            contenido="INTERACTIVE_LESSON",
             puntos_xp=50,
             tiempo_estimado=15,
             orden=1
