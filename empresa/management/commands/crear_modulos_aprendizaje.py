@@ -5,8 +5,11 @@ class Command(BaseCommand):
     help = 'Crea los módulos de aprendizaje iniciales'
 
     def handle(self, *args, **options):
-        # Limpiar datos existentes
-        ModuloAprendizaje.objects.all().delete()
+        # Limpiar datos existentes si las tablas existen
+        try:
+            ModuloAprendizaje.objects.all().delete()
+        except Exception:
+            pass  # Las tablas no existen aún
         
         # MÓDULOS PARA COMERCIO
         modulo_comercio = ModuloAprendizaje.objects.create(
