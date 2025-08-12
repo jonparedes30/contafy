@@ -1,0 +1,101 @@
+{% extends 'empresa/base.html' %}
+{% load static %}
+
+{% block title %}{{ modulo.nombre }} - Academia CONTAFY{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'empresa:aprendizaje_dashboard' %}">Academia CONTAFY</a></li>
+                    <li class="breadcrumb-item active">{{ modulo.nombre }}</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col-md-8">
+                            <h1><i class="{{ modulo.icono }}"></i> {{ modulo.nombre }}</h1>
+                            <p class="mb-0">{{ modulo.descripcion }}</p>
+                        </div>
+                        <div class="col-md-4 text-end">
+                            <span class="badge bg-warning text-dark fs-6">Nivel {{ modulo.nivel }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-12">
+            <h3>Lecciones</h3>
+        </div>
+    </div>
+
+    <div class="row">
+        {% for leccion in lecciones %}
+        <div class="col-lg-6 col-md-12 mb-3">
+            <div class="card h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <h5 class="card-title">{{ leccion.titulo }}</h5>
+                        {% if progreso_lecciones.leccion.id.completada %}
+                            <span class="badge bg-success">Completada</span>
+                        {% else %}
+                            <span class="badge bg-secondary">Pendiente</span>
+                        {% endif %}
+                    </div>
+                    
+                    <p class="card-text">{{ leccion.contenido|truncatewords:20 }}</p>
+                    
+                    <div class="d-flex justify-content-between align-items-center">
+                        <small class="text-muted">
+                            <i class="fas fa-clock"></i> {{ leccion.tiempo_estimado }} min
+                            <i class="fas fa-star ms-2"></i> {{ leccion.puntos_xp }} XP
+                        </small>
+                        
+                        {% if leccion.tipo == 'simulacion' %}
+                            <span class="badge bg-info">Simulación</span>
+                        {% elif leccion.tipo == 'quiz' %}
+                            <span class="badge bg-warning">Quiz</span>
+                        {% elif leccion.tipo == 'practica' %}
+                            <span class="badge bg-primary">Práctica</span>
+                        {% else %}
+                            <span class="badge bg-secondary">Teoría</span>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <div class="card-footer bg-transparent">
+                    {% if progreso_lecciones.leccion.id.completada %}
+                        <a href="{% url 'empresa:aprendizaje_leccion' leccion.id %}" class="btn btn-outline-success btn-sm">
+                            <i class="fas fa-check"></i> Revisar
+                        </a>
+                    {% else %}
+                        <a href="{% url 'empresa:aprendizaje_leccion' leccion.id %}" class="btn btn-primary btn-sm">
+                            <i class="fas fa-play"></i> Comenzar
+                        </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-12">
+            <div class="alert alert-info text-center">
+                <i class="fas fa-info-circle fa-2x mb-3"></i>
+                <h4>No hay lecciones disponibles</h4>
+                <p>Este módulo aún no tiene lecciones configuradas.</p>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

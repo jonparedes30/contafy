@@ -1,0 +1,102 @@
+{% extends 'empresa/base.html' %}
+{% load static %}
+
+{% block title %}{{ leccion.titulo }} - Academia CONTAFY{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'empresa:aprendizaje_dashboard' %}">Academia CONTAFY</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'empresa:aprendizaje_modulo' leccion.modulo.id %}">{{ leccion.modulo.nombre }}</a></li>
+                    <li class="breadcrumb-item active">{{ leccion.titulo }}</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h3><i class="fas fa-book-open"></i> {{ leccion.titulo }}</h3>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span class="badge bg-light text-dark">{{ leccion.get_tipo_display }}</span>
+                        <small><i class="fas fa-clock"></i> {{ leccion.tiempo_estimado }} minutos</small>
+                    </div>
+                </div>
+                
+                <div class="card-body">
+                    <div class="lesson-content">
+                        {{ leccion.contenido|linebreaks }}
+                    </div>
+                    
+                    {% if leccion.tipo == 'simulacion' %}
+                    <div class="alert alert-info mt-4">
+                        <h5><i class="fas fa-play-circle"></i> Simulación Interactiva</h5>
+                        <p>Esta lección incluye una simulación práctica para aplicar lo aprendido.</p>
+                        <a href="{% url 'empresa:simulacion_venta' %}" class="btn btn-info">
+                            <i class="fas fa-play"></i> Iniciar Simulación
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+                
+                <div class="card-footer">
+                    {% if not progreso.completada %}
+                    <form method="post">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-success">
+                            <i class="fas fa-check"></i> Marcar como Completada (+{{ leccion.puntos_xp }} XP)
+                        </button>
+                    </form>
+                    {% else %}
+                    <div class="alert alert-success mb-0">
+                        <i class="fas fa-check-circle"></i> Lección completada el {{ progreso.tiempo_completado|date:"d/m/Y H:i" }}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="fas fa-chart-line"></i> Tu Progreso</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <strong>Puntos XP:</strong> {{ leccion.puntos_xp }}
+                    </div>
+                    <div class="mb-3">
+                        <strong>Intentos:</strong> {{ progreso.intentos }}
+                    </div>
+                    <div class="mb-3">
+                        <strong>Estado:</strong>
+                        {% if progreso.completada %}
+                            <span class="badge bg-success">Completada</span>
+                        {% else %}
+                            <span class="badge bg-warning">En progreso</span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card mt-3">
+                <div class="card-header">
+                    <h5><i class="fas fa-lightbulb"></i> Consejos</h5>
+                </div>
+                <div class="card-body">
+                    <ul class="list-unstyled">
+                        <li><i class="fas fa-check text-success"></i> Lee todo el contenido</li>
+                        <li><i class="fas fa-check text-success"></i> Practica con ejemplos reales</li>
+                        <li><i class="fas fa-check text-success"></i> Completa las simulaciones</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
