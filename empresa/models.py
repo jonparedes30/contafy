@@ -4,46 +4,8 @@ from django.conf import settings
 from empresa.middleware import get_current_user
 from django.core.validators import RegexValidator
 
-class ModuloAprendizaje(models.Model):
-    nombre = models.CharField(max_length=100)
-    tipo_empresa = models.CharField(max_length=20)
-    descripcion = models.TextField()
-    activo = models.BooleanField(default=True)
-    
-    def __str__(self):
-        return self.nombre
-
-class Leccion(models.Model):
-    modulo = models.ForeignKey(ModuloAprendizaje, on_delete=models.CASCADE)
-    titulo = models.CharField(max_length=200)
-    contenido = models.TextField()
-    puntos_xp = models.IntegerField(default=10)
-    activa = models.BooleanField(default=True)
-    
-    def __str__(self):
-        return self.titulo
-
-class PerfilAprendizaje(models.Model):
-    usuario = models.OneToOneField('Usuario', on_delete=models.CASCADE)
-    nivel = models.IntegerField(default=1)
-    xp_total = models.IntegerField(default=0)
-    racha_dias = models.IntegerField(default=0)
-    ultima_actividad = models.DateField(auto_now=True)
-    
-    def __str__(self):
-        return f"{self.usuario.username} - Nivel {self.nivel}"
-
-class ProgresoUsuario(models.Model):
-    usuario = models.ForeignKey('Usuario', on_delete=models.CASCADE)
-    leccion = models.ForeignKey(Leccion, on_delete=models.CASCADE)
-    completada = models.BooleanField(default=False)
-    puntuacion = models.IntegerField(default=0)
-    intentos = models.IntegerField(default=0)
-    tiempo_completado = models.DateTimeField(null=True, blank=True)
-    creado_en = models.DateTimeField(auto_now_add=True)
-    
-    def __str__(self):
-        return f"{self.usuario.username} - {self.leccion.titulo}"
+# Importar modelos de aprendizaje desde archivo separado
+from .models_aprendizaje import ModuloAprendizaje, Leccion, ProgresoUsuario, PerfilAprendizaje
 
 # Modelo Base para Auditoría
 class AuditModel(models.Model):
