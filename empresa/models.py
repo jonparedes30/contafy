@@ -4,13 +4,24 @@ from django.conf import settings
 from empresa.middleware import get_current_user
 from django.core.validators import RegexValidator
 
-# Importar todos los modelos de aprendizaje para migraciones
-try:
-    from .models_aprendizaje import ModuloAprendizaje, Leccion, ProgresoUsuario, PerfilAprendizaje
-    from .models_gamificacion import Logro, LogroUsuario, ActividadDiaria, Insignia, InsigniaUsuario
-    from .models_simulaciones import TipoSimulacion, SimulacionUsuario, EscenarioSimulacion
-except ImportError:
-    pass
+class ModuloAprendizaje(models.Model):
+    nombre = models.CharField(max_length=100)
+    tipo_empresa = models.CharField(max_length=20)
+    descripcion = models.TextField()
+    activo = models.BooleanField(default=True)
+    
+    def __str__(self):
+        return self.nombre
+
+class Leccion(models.Model):
+    modulo = models.ForeignKey(ModuloAprendizaje, on_delete=models.CASCADE)
+    titulo = models.CharField(max_length=200)
+    contenido = models.TextField()
+    puntos_xp = models.IntegerField(default=10)
+    activa = models.BooleanField(default=True)
+    
+    def __str__(self):
+        return self.titulo
 
 # Modelo Base para Auditoría
 class AuditModel(models.Model):
