@@ -30,7 +30,20 @@
                 
                 <div class="card-body">
                     <div class="lesson-content">
+                        {% if leccion.tipo == 'practica' %}
+                            <div class="alert alert-success">
+                                <h5><i class="fas fa-hands-helping"></i> Lección Práctica</h5>
+                                <p>Sigue estos pasos en tu sistema CONTAFY:</p>
+                            </div>
+                        {% endif %}
+                        
                         {{ leccion.contenido|linebreaks }}
+                        
+                        {% if leccion.tipo == 'practica' %}
+                            <div class="alert alert-info mt-3">
+                                <strong>💡 Consejo:</strong> Abre CONTAFY en otra pestaña para practicar mientras lees.
+                            </div>
+                        {% endif %}
                     </div>
                     
                     {% if leccion.tipo == 'simulacion' %}

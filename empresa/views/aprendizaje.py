@@ -3,7 +3,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.http import JsonResponse
 from django.utils import timezone
-from empresa.models import ModuloAprendizaje, Leccion, ProgresoUsuario, PerfilAprendizaje
+from empresa.models_aprendizaje import ModuloAprendizaje, Leccion, ProgresoUsuario, PerfilAprendizaje
 from empresa.services.gamificacion_service import GamificacionService
 from empresa.services.simulacion_service import SimulacionService
 from empresa.models_simulaciones import TipoSimulacion, SimulacionUsuario

@@ -31,12 +31,32 @@ class Command(BaseCommand):
         
         Leccion.objects.create(
             modulo=modulo_comercio,
-            titulo="Registra tu primera venta",
+            titulo="Práctica: Crear tu primer producto",
             tipo="practica",
-            contenido="Vamos a registrar una venta paso a paso. Necesitarás: cliente, producto, cantidad y precio.",
-            puntos_xp=20,
-            tiempo_estimado=10,
+            contenido="Ahora vamos a crear un producto en CONTAFY paso a paso:\n\n1. Ve a 'Inventario > Ver Productos'\n2. Haz clic en '+ Nuevo Producto'\n3. Completa: Nombre, Código, Precio de compra, PVP, Stock\n4. Ejemplo: Camiseta Polo, código CAM001, compra $8, venta $15, stock 50\n\nEsto te permitirá tener productos listos para vender.",
+            puntos_xp=15,
+            tiempo_estimado=8,
             orden=2
+        )
+        
+        Leccion.objects.create(
+            modulo=modulo_comercio,
+            titulo="Práctica: Registrar una venta real",
+            tipo="practica",
+            contenido="Ahora registremos una venta usando el producto que creaste:\n\n1. Ve a 'Transacciones > + Nueva Venta'\n2. Selecciona el producto que creaste\n3. Ingresa cantidad: 2 unidades\n4. El sistema calculará automáticamente el total\n5. Selecciona tipo de pago: 'contado'\n6. Guarda la venta\n\n¡Felicidades! Has registrado tu primera venta y el stock se actualizó automáticamente.",
+            puntos_xp=25,
+            tiempo_estimado=10,
+            orden=3
+        )
+        
+        Leccion.objects.create(
+            modulo=modulo_comercio,
+            titulo="Simulación: Calculadora de IVA",
+            tipo="simulacion",
+            contenido="Practica calculando el IVA con diferentes productos y cantidades. Esta simulación te ayudará a dominar los cálculos antes de hacerlo en el sistema real.",
+            puntos_xp=20,
+            tiempo_estimado=12,
+            orden=4
         )
         
         # MÓDULOS PARA MANUFACTURA
@@ -62,12 +82,22 @@ class Command(BaseCommand):
         
         Leccion.objects.create(
             modulo=modulo_manufactura,
-            titulo="Crea tu primera receta",
+            titulo="Práctica: Registrar materias primas",
             tipo="practica",
-            contenido="Una receta define qué materias primas necesitas y en qué cantidad para crear un producto.",
-            puntos_xp=20,
-            tiempo_estimado=15,
+            contenido="Vamos a registrar materias primas en CONTAFY:\n\n1. Ve a 'Materias Primas > + Nueva Materia Prima'\n2. Ejemplo: Harina, unidad 'kg', precio $1.50\n3. Registra al menos 3 materias primas\n4. Estas serán la base para crear tus productos\n\nEsto te permitirá controlar costos de producción.",
+            puntos_xp=15,
+            tiempo_estimado=10,
             orden=2
+        )
+        
+        Leccion.objects.create(
+            modulo=modulo_manufactura,
+            titulo="Práctica: Crear producto manufacturado",
+            tipo="practica",
+            contenido="Ahora creemos un producto con receta:\n\n1. Ve a 'Catálogo > + Nuevo Producto'\n2. Ejemplo: Pan Integral\n3. Agrega materias primas: Harina 0.5kg, Azúcar 0.1kg\n4. El sistema calculará el costo automáticamente\n5. Define precio de venta con margen de ganancia\n\n¡Ya tienes tu primer producto manufacturado!",
+            puntos_xp=25,
+            tiempo_estimado=15,
+            orden=3
         )
         
         # MÓDULOS PARA SERVICIOS
@@ -93,12 +123,22 @@ class Command(BaseCommand):
         
         Leccion.objects.create(
             modulo=modulo_servicios,
-            titulo="Registra tu primer servicio",
+            titulo="Práctica: Crear tipos de servicios",
             tipo="practica",
-            contenido="Vamos a crear un tipo de servicio y facturar tu primera prestación de servicio.",
-            puntos_xp=20,
-            tiempo_estimado=10,
+            contenido="Vamos a configurar tus servicios en CONTAFY:\n\n1. Ve a 'Servicios > + Nuevo Servicio'\n2. Ejemplo: Consultoría, precio $25/hora\n3. Crea al menos 2 tipos de servicios\n4. Define precios por hora o por proyecto\n\nEsto te permitirá facturar rápidamente.",
+            puntos_xp=15,
+            tiempo_estimado=8,
             orden=2
+        )
+        
+        Leccion.objects.create(
+            modulo=modulo_servicios,
+            titulo="Práctica: Facturar un servicio",
+            tipo="practica",
+            contenido="Ahora facturemos un servicio:\n\n1. Ve a 'Servicios > + Nueva Factura'\n2. Selecciona el servicio creado\n3. Ingresa horas trabajadas: 3 horas\n4. El sistema calculará el total\n5. Agrega gastos adicionales si los hay\n6. Guarda la factura\n\n¡Has facturado tu primer servicio!",
+            puntos_xp=25,
+            tiempo_estimado=12,
+            orden=3
         )
         
         self.stdout.write(
