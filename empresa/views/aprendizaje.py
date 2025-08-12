@@ -142,7 +142,11 @@ def leccion_detalle(request, leccion_id):
         'progreso': progreso,
     }
     
-    return render(request, 'empresa/aprendizaje/leccion_detalle.html', context)
+    # Use interactive template for practice lessons
+    if leccion.tipo == 'practica':
+        return render(request, 'empresa/aprendizaje/leccion_interactiva.html', context)
+    else:
+        return render(request, 'empresa/aprendizaje/leccion_detalle.html', context)
 
 @login_required
 def perfil_usuario(request):

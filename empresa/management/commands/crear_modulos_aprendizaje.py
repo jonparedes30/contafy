@@ -21,45 +21,15 @@ class Command(BaseCommand):
             orden=1
         )
         
-        # Lecciones para comercio
+        # Lección integrada para comercio
         Leccion.objects.create(
             modulo=modulo_comercio,
-            titulo="¿Qué es una venta?",
-            tipo="teoria",
-            contenido="Una venta es el intercambio de un producto o servicio por dinero. En CONTAFY registramos cada venta para llevar control de nuestros ingresos.",
-            puntos_xp=10,
-            tiempo_estimado=5,
+            titulo="Domina las Ventas: De la Teoría a la Práctica",
+            tipo="practica",
+            contenido='{"teoria": "Una venta es el intercambio de un producto por dinero. En CONTAFY cada venta se registra automáticamente para controlar tus ingresos.", "pasos": [{"titulo": "Paso 1: Crear Producto", "descripcion": "Primero necesitas productos para vender", "accion": "crear_producto", "datos": {"nombre": "Camiseta Polo", "codigo": "CAM001", "precio_compra": 8, "precio_venta": 15, "stock": 50}}, {"titulo": "Paso 2: Registrar Venta", "descripcion": "Ahora vende el producto que creaste", "accion": "crear_venta", "datos": {"producto": "Camiseta Polo", "cantidad": 2, "tipo_pago": "contado"}}], "quiz": [{"pregunta": "¿Cuál es el total de vender 2 camisetas a $15 cada una?", "opciones": ["$25", "$30", "$35"], "respuesta": 1}, {"pregunta": "¿Qué pasa con el stock después de una venta?", "opciones": ["Se mantiene igual", "Disminuye automáticamente", "Aumenta"], "respuesta": 1}]}',
+            puntos_xp=50,
+            tiempo_estimado=15,
             orden=1
-        )
-        
-        Leccion.objects.create(
-            modulo=modulo_comercio,
-            titulo="Práctica: Crear tu primer producto",
-            tipo="practica",
-            contenido="Ahora vamos a crear un producto en CONTAFY paso a paso:\n\n1. Ve a 'Inventario > Ver Productos'\n2. Haz clic en '+ Nuevo Producto'\n3. Completa: Nombre, Código, Precio de compra, PVP, Stock\n4. Ejemplo: Camiseta Polo, código CAM001, compra $8, venta $15, stock 50\n\nEsto te permitirá tener productos listos para vender.",
-            puntos_xp=15,
-            tiempo_estimado=8,
-            orden=2
-        )
-        
-        Leccion.objects.create(
-            modulo=modulo_comercio,
-            titulo="Práctica: Registrar una venta real",
-            tipo="practica",
-            contenido="Ahora registremos una venta usando el producto que creaste:\n\n1. Ve a 'Transacciones > + Nueva Venta'\n2. Selecciona el producto que creaste\n3. Ingresa cantidad: 2 unidades\n4. El sistema calculará automáticamente el total\n5. Selecciona tipo de pago: 'contado'\n6. Guarda la venta\n\n¡Felicidades! Has registrado tu primera venta y el stock se actualizó automáticamente.",
-            puntos_xp=25,
-            tiempo_estimado=10,
-            orden=3
-        )
-        
-        Leccion.objects.create(
-            modulo=modulo_comercio,
-            titulo="Simulación: Calculadora de IVA",
-            tipo="simulacion",
-            contenido="Practica calculando el IVA con diferentes productos y cantidades. Esta simulación te ayudará a dominar los cálculos antes de hacerlo en el sistema real.",
-            puntos_xp=20,
-            tiempo_estimado=12,
-            orden=4
         )
         
         # MÓDULOS PARA MANUFACTURA

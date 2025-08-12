@@ -1,0 +1,332 @@
+{% extends 'empresa/base.html' %}
+{% load static %}
+
+{% block title %}{{ leccion.titulo }} - Academia CONTAFY{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Progress Bar -->
+    <div class="row mb-3">
+        <div class="col-12">
+            <div class="progress" style="height: 8px;">
+                <div class="progress-bar bg-success" id="progressBar" style="width: 0%"></div>
+            </div>
+            <div class="d-flex justify-content-between mt-2">
+                <small class="text-muted">Progreso</small>
+                <small class="text-muted"><span id="currentStep">1</span> de <span id="totalSteps">4</span></small>
+            </div>
+        </div>
+    </div>
+
+    <!-- Lesson Content -->
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card shadow-lg border-0">
+                <div class="card-body p-5">
+                    
+                    <!-- Step 1: Theory -->
+                    <div class="lesson-step" id="step-theory">
+                        <div class="text-center mb-4">
+                            <div class="lesson-icon">
+                                <i class="fas fa-lightbulb fa-3x text-warning"></i>
+                            </div>
+                            <h2 class="mt-3">💡 Aprende el Concepto</h2>
+                        </div>
+                        
+                        <div class="theory-content bg-light p-4 rounded">
+                            <p class="lead" id="theoryText"></p>
+                        </div>
+                        
+                        <div class="text-center mt-4">
+                            <button class="btn btn-primary btn-lg" onclick="nextStep()">
+                                <i class="fas fa-arrow-right"></i> ¡Entendido!
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Step 2: Practice Steps -->
+                    <div class="lesson-step d-none" id="step-practice">
+                        <div class="text-center mb-4">
+                            <div class="lesson-icon">
+                                <i class="fas fa-hands-helping fa-3x text-success"></i>
+                            </div>
+                            <h2 class="mt-3">🎯 Practica en CONTAFY</h2>
+                        </div>
+                        
+                        <div id="practiceContent">
+                            <!-- Dynamic practice steps -->
+                        </div>
+                        
+                        <div class="text-center mt-4">
+                            <button class="btn btn-success btn-lg" onclick="nextStep()">
+                                <i class="fas fa-check"></i> ¡Completado!
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Step 3: Quiz -->
+                    <div class="lesson-step d-none" id="step-quiz">
+                        <div class="text-center mb-4">
+                            <div class="lesson-icon">
+                                <i class="fas fa-brain fa-3x text-info"></i>
+                            </div>
+                            <h2 class="mt-3">🧠 Demuestra lo que Sabes</h2>
+                        </div>
+                        
+                        <div id="quizContent">
+                            <!-- Dynamic quiz questions -->
+                        </div>
+                    </div>
+
+                    <!-- Step 4: Completion -->
+                    <div class="lesson-step d-none" id="step-completion">
+                        <div class="text-center">
+                            <div class="completion-animation">
+                                <i class="fas fa-trophy fa-4x text-warning mb-3"></i>
+                            </div>
+                            <h2 class="text-success">🎉 ¡Lección Completada!</h2>
+                            <p class="lead">Has ganado <strong id="xpEarned">50</strong> puntos XP</p>
+                            
+                            <div class="mt-4">
+                                <button class="btn btn-primary btn-lg me-3" onclick="completeLesson()">
+                                    <i class="fas fa-arrow-right"></i> Siguiente Lección
+                                </button>
+                                <button class="btn btn-outline-secondary" onclick="goToModule()">
+                                    <i class="fas fa-list"></i> Ver Módulo
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.lesson-step {
+    min-height: 400px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.lesson-icon {
+    animation: bounce 2s infinite;
+}
+
+@keyframes bounce {
+    0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+    40% { transform: translateY(-10px); }
+    60% { transform: translateY(-5px); }
+}
+
+.completion-animation {
+    animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+    100% { transform: scale(1); }
+}
+
+.practice-step {
+    background: linear-gradient(135deg, #e3f2fd 0%, #f3e5f5 100%);
+    border-radius: 15px;
+    padding: 20px;
+    margin: 15px 0;
+    border-left: 5px solid #2196f3;
+}
+
+.quiz-option {
+    background: #f8f9fa;
+    border: 2px solid #dee2e6;
+    border-radius: 10px;
+    padding: 15px;
+    margin: 10px 0;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.quiz-option:hover {
+    background: #e9ecef;
+    border-color: #007bff;
+}
+
+.quiz-option.correct {
+    background: #d4edda;
+    border-color: #28a745;
+}
+
+.quiz-option.incorrect {
+    background: #f8d7da;
+    border-color: #dc3545;
+}
+</style>
+
+<script>
+let currentStep = 1;
+let totalSteps = 4;
+let lessonData = null;
+let currentQuiz = 0;
+let score = 0;
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Parse lesson data from Django
+    lessonData = JSON.parse('{{ leccion.contenido|escapejs }}');
+    
+    // Initialize lesson
+    initializeLesson();
+});
+
+function initializeLesson() {
+    // Set theory content
+    document.getElementById('theoryText').textContent = lessonData.teoria;
+    
+    // Set XP
+    document.getElementById('xpEarned').textContent = '{{ leccion.puntos_xp }}';
+    
+    updateProgress();
+}
+
+function nextStep() {
+    // Hide current step
+    document.getElementById(`step-${getStepName(currentStep)}`).classList.add('d-none');
+    
+    currentStep++;
+    
+    if (currentStep === 2) {
+        showPracticeStep();
+    } else if (currentStep === 3) {
+        showQuizStep();
+    } else if (currentStep === 4) {
+        showCompletionStep();
+    }
+    
+    updateProgress();
+}
+
+function getStepName(step) {
+    const steps = ['', 'theory', 'practice', 'quiz', 'completion'];
+    return steps[step];
+}
+
+function showPracticeStep() {
+    const practiceDiv = document.getElementById('practiceContent');
+    let html = '';
+    
+    lessonData.pasos.forEach((paso, index) => {
+        html += `
+            <div class="practice-step">
+                <h4><i class="fas fa-play-circle text-primary"></i> ${paso.titulo}</h4>
+                <p>${paso.descripcion}</p>
+                <div class="alert alert-info">
+                    <strong>En CONTAFY:</strong> ${getPracticeInstructions(paso)}
+                </div>
+            </div>
+        `;
+    });
+    
+    practiceDiv.innerHTML = html;
+    document.getElementById('step-practice').classList.remove('d-none');
+}
+
+function getPracticeInstructions(paso) {
+    if (paso.accion === 'crear_producto') {
+        return `Ve a "Inventario > + Nuevo Producto" y crea: ${paso.datos.nombre}, código ${paso.datos.codigo}, precio $${paso.datos.precio_venta}`;
+    } else if (paso.accion === 'crear_venta') {
+        return `Ve a "Transacciones > + Nueva Venta" y vende ${paso.datos.cantidad} unidades de ${paso.datos.producto}`;
+    }
+    return 'Sigue las instrucciones en CONTAFY';
+}
+
+function showQuizStep() {
+    const quizDiv = document.getElementById('quizContent');
+    const question = lessonData.quiz[currentQuiz];
+    
+    let html = `
+        <div class="quiz-question">
+            <h4 class="mb-4">${question.pregunta}</h4>
+            <div class="quiz-options">
+    `;
+    
+    question.opciones.forEach((opcion, index) => {
+        html += `
+            <div class="quiz-option" onclick="selectAnswer(${index})">
+                <i class="fas fa-circle me-2"></i> ${opcion}
+            </div>
+        `;
+    });
+    
+    html += `
+            </div>
+        </div>
+    `;
+    
+    quizDiv.innerHTML = html;
+    document.getElementById('step-quiz').classList.remove('d-none');
+}
+
+function selectAnswer(selectedIndex) {
+    const question = lessonData.quiz[currentQuiz];
+    const options = document.querySelectorAll('.quiz-option');
+    
+    options.forEach((option, index) => {
+        if (index === question.respuesta) {
+            option.classList.add('correct');
+            option.innerHTML = '<i class="fas fa-check me-2"></i>' + question.opciones[index];
+        } else if (index === selectedIndex && index !== question.respuesta) {
+            option.classList.add('incorrect');
+            option.innerHTML = '<i class="fas fa-times me-2"></i>' + question.opciones[index];
+        }
+        option.style.pointerEvents = 'none';
+    });
+    
+    if (selectedIndex === question.respuesta) {
+        score++;
+    }
+    
+    setTimeout(() => {
+        currentQuiz++;
+        if (currentQuiz < lessonData.quiz.length) {
+            showQuizStep();
+        } else {
+            nextStep();
+        }
+    }, 1500);
+}
+
+function showCompletionStep() {
+    document.getElementById('step-completion').classList.remove('d-none');
+}
+
+function updateProgress() {
+    const progress = (currentStep / totalSteps) * 100;
+    document.getElementById('progressBar').style.width = progress + '%';
+    document.getElementById('currentStep').textContent = currentStep;
+}
+
+function completeLesson() {
+    // Submit completion to Django
+    fetch('', {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': '{{ csrf_token }}',
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            'completed': true,
+            'score': score
+        })
+    }).then(() => {
+        window.location.href = '{% url "empresa:aprendizaje_modulo" leccion.modulo.id %}';
+    });
+}
+
+function goToModule() {
+    window.location.href = '{% url "empresa:aprendizaje_modulo" leccion.modulo.id %}';
+}
+</script>
+{% endblock %}
