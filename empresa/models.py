@@ -4,6 +4,9 @@ from django.conf import settings
 from empresa.middleware import get_current_user
 from django.core.validators import RegexValidator
 
+# Importar modelos de aprendizaje
+from .models_aprendizaje import ModuloAprendizaje, Leccion, ProgresoUsuario, PerfilAprendizaje
+
 # Modelo Base para Auditoría
 class AuditModel(models.Model):
     """Modelo base que agrega campos de auditoría automáticamente"""

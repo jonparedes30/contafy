@@ -49,6 +49,7 @@ from .views.servicios import listar_tipos_servicios, crear_tipo_servicio, editar
 from .views.voice_commands import procesar_comando_voz
 from .views.mobile_api import chat_movil, dashboard_movil, comando_rapido_movil
 from .views.ai_agent import agente_ia, chat_ia, generar_reporte_ia, actualizar_analisis
+from .views.aprendizaje import dashboard_aprendizaje, modulo_detalle, leccion_detalle
 
 # Configurar router para la API
 router = DefaultRouter()
@@ -230,6 +231,11 @@ urlpatterns += [
     path('chat-ia/', chat_ia, name='chat_ia'),
     path('generar-reporte-ia/', generar_reporte_ia, name='generar_reporte_ia'),
     path('actualizar-analisis/', actualizar_analisis, name='actualizar_analisis'),
+    
+    # URLs del Sistema de Aprendizaje
+    path('aprendizaje/', dashboard_aprendizaje, name='aprendizaje_dashboard'),
+    path('aprendizaje/modulo/<int:modulo_id>/', modulo_detalle, name='aprendizaje_modulo'),
+    path('aprendizaje/leccion/<int:leccion_id>/', leccion_detalle, name='aprendizaje_leccion'),
     
     # URLs de Reportes IA
     path('reporte-ia/', lambda request: __import__('empresa.views.ai_reports', fromlist=['vista_reporte_ia']).vista_reporte_ia(request), name='vista_reporte_ia'),
