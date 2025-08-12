@@ -54,6 +54,7 @@ def modulo_detalle(request, modulo_id):
     modulo = get_object_or_404(ModuloAprendizaje, id=modulo_id, activo=True)
     
     # Verificar que el módulo corresponde al tipo de empresa del usuario
+    usuario = request.user
     if usuario.empresa and modulo.tipo_empresa != usuario.empresa.categoria:
         messages.error(request, 'No tienes acceso a este módulo.')
         return redirect('empresa:aprendizaje_dashboard')
