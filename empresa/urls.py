@@ -49,7 +49,7 @@ from .views.servicios import listar_tipos_servicios, crear_tipo_servicio, editar
 from .views.voice_commands import procesar_comando_voz
 from .views.mobile_api import chat_movil, dashboard_movil, comando_rapido_movil
 from .views.ai_agent import agente_ia, chat_ia, generar_reporte_ia, actualizar_analisis
-from .views.aprendizaje import dashboard_aprendizaje, modulo_detalle, leccion_detalle
+from .views.aprendizaje import dashboard_aprendizaje, modulo_detalle, leccion_detalle, perfil_usuario, simulacion_venta, simulacion_receta, simulacion_servicio
 
 # Configurar router para la API
 router = DefaultRouter()
@@ -236,6 +236,15 @@ urlpatterns += [
     path('aprendizaje/', dashboard_aprendizaje, name='aprendizaje_dashboard'),
     path('aprendizaje/modulo/<int:modulo_id>/', modulo_detalle, name='aprendizaje_modulo'),
     path('aprendizaje/leccion/<int:leccion_id>/', leccion_detalle, name='aprendizaje_leccion'),
+    path('aprendizaje/perfil/', perfil_usuario, name='aprendizaje_perfil'),
+    
+    # URLs de Simulaciones
+    path('aprendizaje/simulacion/venta/', simulacion_venta, name='simulacion_venta'),
+    path('aprendizaje/simulacion/venta/<int:leccion_id>/', simulacion_venta, name='simulacion_venta_leccion'),
+    path('aprendizaje/simulacion/receta/', simulacion_receta, name='simulacion_receta'),
+    path('aprendizaje/simulacion/receta/<int:leccion_id>/', simulacion_receta, name='simulacion_receta_leccion'),
+    path('aprendizaje/simulacion/servicio/', simulacion_servicio, name='simulacion_servicio'),
+    path('aprendizaje/simulacion/servicio/<int:leccion_id>/', simulacion_servicio, name='simulacion_servicio_leccion'),
     
     # URLs de Reportes IA
     path('reporte-ia/', lambda request: __import__('empresa.views.ai_reports', fromlist=['vista_reporte_ia']).vista_reporte_ia(request), name='vista_reporte_ia'),

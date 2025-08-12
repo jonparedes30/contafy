@@ -4,14 +4,18 @@ from django.contrib import messages
 from django.http import JsonResponse
 from django.utils import timezone
 from empresa.models import ModuloAprendizaje, Leccion, ProgresoUsuario, PerfilAprendizaje
+from empresa.services.gamificacion_service import GamificacionService
+from empresa.services.simulacion_service import SimulacionService
+from empresa.models_simulaciones import TipoSimulacion, SimulacionUsuario
 
 @login_required
 def dashboard_aprendizaje(request):
     """Dashboard principal del sistema de aprendizaje"""
     usuario = request.user
     
-    # Crear perfil de aprendizaje si no existe
-    perfil, created = PerfilAprendizaje.objects.get_or_create(usuario=usuario)
+    # Obtener estadísticas completas del usuario
+    estadisticas = GamificacionService.obtener_estadisticas_usuario(usuario)
+    perfil = estadisticas['perfil']
     
     # Obtener módulos según el tipo de empresa del usuario
     tipo_empresa = usuario.empresa.categoria if usuario.empresa else 'comercial'
@@ -44,6 +48,7 @@ def dashboard_aprendizaje(request):
         'modulos': modulos,
         'progreso_modulos': progreso_modulos,
         'tipo_empresa': tipo_empresa,
+        'estadisticas': estadisticas,
     }
     
     return render(request, 'empresa/aprendizaje/dashboard.html', context)
@@ -105,19 +110,31 @@ def leccion_detalle(request, leccion_id):
             progreso.tiempo_completado = timezone.now()
             progreso.save()
             
-            # Otorgar XP al usuario
-            perfil, _ = PerfilAprendizaje.objects.get_or_create(usuario=request.user)
-            perfil.xp_total += leccion.puntos_xp
+            # Usar servicio de gamificación
+            resultado = GamificacionService.otorgar_xp(
+                request.user, 
+                leccion.puntos_xp, 
+                f"Lección completada: {leccion.titulo}"
+            )
             
-            # Calcular nuevo nivel
-            nuevo_nivel = (perfil.xp_total // 100) + 1
-            if nuevo_nivel > perfil.nivel:
-                perfil.nivel = nuevo_nivel
-                messages.success(request, f'¡Felicidades! Has subido al nivel {nuevo_nivel}!')
+            # Registrar actividad (1 lección completada)
+            GamificacionService.registrar_actividad_diaria(
+                request.user, 
+                lecciones=1, 
+                tiempo_minutos=leccion.tiempo_estimado
+            )
             
-            perfil.save()
+            # Mensajes de éxito
+            if resultado['subio_nivel']:
+                messages.success(request, f'¡Felicidades! Has subido al nivel {resultado["nivel_actual"]}!')
             
             messages.success(request, f'¡Lección completada! +{leccion.puntos_xp} XP')
+            
+            # Verificar si se desbloquearon logros
+            logros_nuevos = GamificacionService.verificar_logros(request.user)
+            for logro_usuario in logros_nuevos:
+                messages.success(request, f'🏆 ¡Nuevo logro desbloqueado: {logro_usuario.logro.nombre}!')
+            
             return redirect('empresa:aprendizaje_modulo', modulo_id=leccion.modulo.id)
     
     context = {
@@ -126,3 +143,120 @@ def leccion_detalle(request, leccion_id):
     }
     
     return render(request, 'empresa/aprendizaje/leccion_detalle.html', context)
+
+@login_required
+def perfil_usuario(request):
+    """Perfil del usuario con estadísticas de gamificación"""
+    estadisticas = GamificacionService.obtener_estadisticas_usuario(request.user)
+    
+    context = {
+        'estadisticas': estadisticas,
+    }
+    
+    return render(request, 'empresa/aprendizaje/perfil_usuario.html', context)
+
+@login_required
+def simulacion_venta(request, leccion_id=None):
+    """Simulación interactiva de venta"""
+    leccion = None
+    if leccion_id:
+        leccion = get_object_or_404(Leccion, id=leccion_id)
+    
+    if request.method == 'POST':
+        # Iniciar simulación
+        tipo_simulacion = TipoSimulacion.objects.get(nombre='Simulación de Venta')
+        simulacion = SimulacionService.iniciar_simulacion(
+            request.user, 
+            tipo_simulacion.id, 
+            leccion
+        )
+        
+        # Procesar datos
+        resultado = SimulacionService.procesar_simulacion_venta(simulacion, request.POST.dict())
+        
+        return JsonResponse(resultado)
+    
+    # Datos de ejemplo para la simulación
+    productos_ejemplo = [
+        {'nombre': 'Camiseta', 'precio': 15.00},
+        {'nombre': 'Pantalón', 'precio': 25.00},
+        {'nombre': 'Zapatos', 'precio': 45.00},
+    ]
+    
+    context = {
+        'leccion': leccion,
+        'productos_ejemplo': productos_ejemplo,
+    }
+    
+    return render(request, 'empresa/aprendizaje/simulacion_venta.html', context)
+
+@login_required
+def simulacion_receta(request, leccion_id=None):
+    """Simulación interactiva de receta de producción"""
+    leccion = None
+    if leccion_id:
+        leccion = get_object_or_404(Leccion, id=leccion_id)
+    
+    if request.method == 'POST':
+        # Iniciar simulación
+        tipo_simulacion = TipoSimulacion.objects.get(nombre='Simulación de Receta')
+        simulacion = SimulacionService.iniciar_simulacion(
+            request.user, 
+            tipo_simulacion.id, 
+            leccion
+        )
+        
+        # Procesar datos
+        resultado = SimulacionService.procesar_simulacion_receta(simulacion, request.POST.dict())
+        
+        return JsonResponse(resultado)
+    
+    # Ingredientes de ejemplo
+    ingredientes_ejemplo = [
+        {'nombre': 'Harina', 'unidad': 'kg', 'precio': 1.50},
+        {'nombre': 'Azúcar', 'unidad': 'kg', 'precio': 2.00},
+        {'nombre': 'Huevos', 'unidad': 'unidad', 'precio': 0.25},
+        {'nombre': 'Mantequilla', 'unidad': 'kg', 'precio': 4.00},
+    ]
+    
+    context = {
+        'leccion': leccion,
+        'ingredientes_ejemplo': ingredientes_ejemplo,
+    }
+    
+    return render(request, 'empresa/aprendizaje/simulacion_receta.html', context)
+
+@login_required
+def simulacion_servicio(request, leccion_id=None):
+    """Simulación interactiva de facturación de servicio"""
+    leccion = None
+    if leccion_id:
+        leccion = get_object_or_404(Leccion, id=leccion_id)
+    
+    if request.method == 'POST':
+        # Iniciar simulación
+        tipo_simulacion = TipoSimulacion.objects.get(nombre='Simulación de Servicio')
+        simulacion = SimulacionService.iniciar_simulacion(
+            request.user, 
+            tipo_simulacion.id, 
+            leccion
+        )
+        
+        # Procesar datos
+        resultado = SimulacionService.procesar_simulacion_servicio(simulacion, request.POST.dict())
+        
+        return JsonResponse(resultado)
+    
+    # Tipos de servicio de ejemplo
+    servicios_ejemplo = [
+        {'nombre': 'Consultoría', 'tarifa_sugerida': 25.00},
+        {'nombre': 'Diseño Gráfico', 'tarifa_sugerida': 20.00},
+        {'nombre': 'Reparación', 'tarifa_sugerida': 15.00},
+    ]
+    
+    context = {
+        'leccion': leccion,
+        'servicios_ejemplo': servicios_ejemplo,
+    }
+    
+    return render(request, 'empresa/aprendizaje/simulacion_servicio.html', context)

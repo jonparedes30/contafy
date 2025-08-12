@@ -62,6 +62,10 @@ class AIComandosService:
         elif any(word in texto for word in ['cuanto', 'como', 'mostrar', 'ver', 'vendi']):
             return self.consultar_desde_texto(texto_original)
         
+        # EDUCACIÓN Y APRENDIZAJE
+        elif any(word in texto for word in ['enseña', 'explica', 'aprende', 'practica', 'simula', 'recomienda']):
+            return self.procesar_comando_educativo(texto_original)
+        
         # PROCESOS AUTOMÁTICOS
         elif 'automatizar' in texto or 'proceso' in texto:
             return self.crear_proceso_automatico(texto_original)
@@ -593,6 +597,17 @@ class AIComandosService:
                 
         except Exception as e:
             return {"error": f"Error creando proceso: {str(e)}"}
+    
+    def procesar_comando_educativo(self, texto):
+        """Procesa comandos educativos"""
+        if 'explica' in texto.lower():
+            return {"success": True, "mensaje": "El IVA es 12% en Ecuador"}
+        elif 'recomienda' in texto.lower():
+            return {"success": True, "mensaje": "Visita Academia CONTAFY", "enlace": "/app-beta-2024/aprendizaje/"}
+        elif 'practica' in texto.lower():
+            return {"success": True, "mensaje": "Simulaciones disponibles", "enlace": "/app-beta-2024/aprendizaje/simulacion/venta/"}
+        else:
+            return {"error": "Comando educativo no reconocido"}
 
     def ejecutar_accion_confirmada(self, accion_propuesta, datos_pendientes):
         """Ejecuta la acción después de confirmación"""

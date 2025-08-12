@@ -101,6 +101,14 @@ def ayuda_comandos(request):
             "automatizar alertas de stock bajo",
             "activar recordatorios de cobros",
             "proceso de reportes mensuales"
+        ],
+        "educacion": [
+            "enseñame sobre IVA",
+            "explica balance general",
+            "practica simulación de venta",
+            "recomienda lección para mejorar",
+            "analiza mi progreso de aprendizaje",
+            "genera ejercicio personalizado"
         ]
     }
     

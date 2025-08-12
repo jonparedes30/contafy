@@ -1,0 +1,218 @@
+{% extends 'empresa/base.html' %}
+{% load static %}
+
+{% block title %}Simulación de Venta - Academia CONTAFY{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h3><i class="fas fa-cash-register"></i> Simulación: Registrar una Venta</h3>
+                    <p class="mb-0">Practica registrando una venta paso a paso</p>
+                </div>
+                
+                <div class="card-body">
+                    <!-- Instrucciones -->
+                    <div class="alert alert-info">
+                        <h5><i class="fas fa-info-circle"></i> Instrucciones</h5>
+                        <p>Completa todos los campos para registrar una venta. El sistema calculará automáticamente los totales y te dará retroalimentación.</p>
+                    </div>
+                    
+                    <!-- Formulario de Simulación -->
+                    <form id="simulacionForm">
+                        {% csrf_token %}
+                        
+                        <div class="row">
+                            <!-- Datos del Cliente -->
+                            <div class="col-md-6">
+                                <h5 class="text-primary">Datos del Cliente</h5>
+                                <div class="mb-3">
+                                    <label class="form-label">Cliente</label>
+                                    <input type="text" class="form-control" name="cliente" placeholder="Nombre del cliente">
+                                </div>
+                            </div>
+                            
+                            <!-- Datos del Producto -->
+                            <div class="col-md-6">
+                                <h5 class="text-success">Producto</h5>
+                                <div class="mb-3">
+                                    <label class="form-label">Producto *</label>
+                                    <select class="form-select" name="producto" required>
+                                        <option value="">Selecciona un producto</option>
+                                        {% for producto in productos_ejemplo %}
+                                        <option value="{{ producto.nombre }}" data-precio="{{ producto.precio }}">
+                                            {{ producto.nombre }} - ${{ producto.precio }}
+                                        </option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                
+                                <div class="row">
+                                    <div class="col-6">
+                                        <label class="form-label">Cantidad *</label>
+                                        <input type="number" class="form-control" name="cantidad" min="1" required>
+                                    </div>
+                                    <div class="col-6">
+                                        <label class="form-label">Precio Unitario *</label>
+                                        <input type="number" class="form-control" name="precio_unitario" step="0.01" min="0" required readonly>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <hr>
+                        
+                        <!-- Cálculos -->
+                        <div class="row">
+                            <div class="col-md-8">
+                                <h5 class="text-warning">Cálculos</h5>
+                                <p class="text-muted">Completa los cálculos basándote en los datos ingresados</p>
+                                
+                                <div class="row">
+                                    <div class="col-4">
+                                        <label class="form-label">Subtotal *</label>
+                                        <input type="number" class="form-control" name="subtotal" step="0.01" placeholder="Cantidad × Precio" required>
+                                    </div>
+                                    <div class="col-4">
+                                        <label class="form-label">IVA (12%) *</label>
+                                        <input type="number" class="form-control" name="iva" step="0.01" placeholder="Subtotal × 0.12" required>
+                                    </div>
+                                    <div class="col-4">
+                                        <label class="form-label">Total *</label>
+                                        <input type="number" class="form-control" name="total" step="0.01" placeholder="Subtotal + IVA" required>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-4">
+                                <div class="card bg-light">
+                                    <div class="card-body text-center">
+                                        <h6>💡 Ayuda</h6>
+                                        <small class="text-muted">
+                                            • Subtotal = Cantidad × Precio<br>
+                                            • IVA = Subtotal × 12%<br>
+                                            • Total = Subtotal + IVA
+                                        </small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="text-center mt-4">
+                            <button type="submit" class="btn btn-primary btn-lg">
+                                <i class="fas fa-check"></i> Procesar Venta
+                            </button>
+                        </div>
+                    </form>
+                    
+                    <!-- Resultado -->
+                    <div id="resultado" class="mt-4" style="display: none;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('simulacionForm');
+    const productoSelect = document.querySelector('select[name="producto"]');
+    const precioInput = document.querySelector('input[name="precio_unitario"]');
+    
+    // Auto-completar precio al seleccionar producto
+    productoSelect.addEventListener('change', function() {
+        const selectedOption = this.options[this.selectedIndex];
+        const precio = selectedOption.getAttribute('data-precio');
+        if (precio) {
+            precioInput.value = precio;
+        }
+    });
+    
+    // Procesar formulario
+    form.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const formData = new FormData(form);
+        const button = form.querySelector('button[type="submit"]');
+        
+        button.disabled = true;
+        button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Procesando...';
+        
+        fetch('', {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            mostrarResultado(data);
+            button.disabled = false;
+            button.innerHTML = '<i class="fas fa-check"></i> Procesar Venta';
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            button.disabled = false;
+            button.innerHTML = '<i class="fas fa-check"></i> Procesar Venta';
+        });
+    });
+    
+    function mostrarResultado(data) {
+        const resultadoDiv = document.getElementById('resultado');
+        let html = '';
+        
+        if (data.exito) {
+            html = `
+                <div class="alert alert-success">
+                    <h5><i class="fas fa-trophy"></i> ¡Excelente!</h5>
+                    <p>Has completado la simulación correctamente.</p>
+                    <p><strong>Puntuación:</strong> ${data.puntuacion}/100</p>
+                    ${data.xp_otorgada ? `<p><strong>XP Ganada:</strong> +${data.xp_otorgada}</p>` : ''}
+                </div>
+            `;
+        } else {
+            html = `
+                <div class="alert alert-danger">
+                    <h5><i class="fas fa-times"></i> Necesitas mejorar</h5>
+                    <p>Puntuación: ${data.puntuacion}/100</p>
+                </div>
+            `;
+        }
+        
+        // Mostrar feedback
+        if (data.feedback && data.feedback.length > 0) {
+            html += '<div class="alert alert-warning"><h6>Retroalimentación:</h6><ul>';
+            data.feedback.forEach(item => {
+                html += `<li>${item}</li>`;
+            });
+            html += '</ul></div>';
+        }
+        
+        // Mostrar respuestas correctas
+        if (data.subtotal_correcto !== undefined) {
+            html += `
+                <div class="card">
+                    <div class="card-header">
+                        <h6>Respuestas Correctas</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-4">Subtotal: $${data.subtotal_correcto.toFixed(2)}</div>
+                            <div class="col-4">IVA: $${data.iva_correcto.toFixed(2)}</div>
+                            <div class="col-4">Total: $${data.total_correcto.toFixed(2)}</div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+        
+        resultadoDiv.innerHTML = html;
+        resultadoDiv.style.display = 'block';
+        resultadoDiv.scrollIntoView({ behavior: 'smooth' });
+    }
+});
+</script>
+{% endblock %}

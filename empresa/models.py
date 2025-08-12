@@ -4,9 +4,11 @@ from django.conf import settings
 from empresa.middleware import get_current_user
 from django.core.validators import RegexValidator
 
-# Importar modelos de aprendizaje para que Django los detecte en migraciones
+# Importar todos los modelos de aprendizaje para migraciones
 try:
     from .models_aprendizaje import ModuloAprendizaje, Leccion, ProgresoUsuario, PerfilAprendizaje
+    from .models_gamificacion import Logro, LogroUsuario, ActividadDiaria, Insignia, InsigniaUsuario
+    from .models_simulaciones import TipoSimulacion, SimulacionUsuario, EscenarioSimulacion
 except ImportError:
     pass
 
