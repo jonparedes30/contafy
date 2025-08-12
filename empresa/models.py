@@ -23,6 +23,28 @@ class Leccion(models.Model):
     def __str__(self):
         return self.titulo
 
+class PerfilAprendizaje(models.Model):
+    usuario = models.OneToOneField('Usuario', on_delete=models.CASCADE)
+    nivel = models.IntegerField(default=1)
+    xp_total = models.IntegerField(default=0)
+    racha_dias = models.IntegerField(default=0)
+    ultima_actividad = models.DateField(auto_now=True)
+    
+    def __str__(self):
+        return f"{self.usuario.username} - Nivel {self.nivel}"
+
+class ProgresoUsuario(models.Model):
+    usuario = models.ForeignKey('Usuario', on_delete=models.CASCADE)
+    leccion = models.ForeignKey(Leccion, on_delete=models.CASCADE)
+    completada = models.BooleanField(default=False)
+    puntuacion = models.IntegerField(default=0)
+    intentos = models.IntegerField(default=0)
+    tiempo_completado = models.DateTimeField(null=True, blank=True)
+    creado_en = models.DateTimeField(auto_now_add=True)
+    
+    def __str__(self):
+        return f"{self.usuario.username} - {self.leccion.titulo}"
+
 # Modelo Base para Auditoría
 class AuditModel(models.Model):
     """Modelo base que agrega campos de auditoría automáticamente"""
