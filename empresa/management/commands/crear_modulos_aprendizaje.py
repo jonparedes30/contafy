@@ -42,35 +42,15 @@ class Command(BaseCommand):
             orden=1
         )
         
-        # Lecciones para manufactura
+        # Lección integrada para manufactura
         Leccion.objects.create(
             modulo=modulo_manufactura,
-            titulo="¿Qué son las materias primas?",
-            tipo="teoria",
-            contenido="Las materias primas son los ingredientes o materiales que usas para crear tus productos. Controlar su costo es clave para la rentabilidad.",
-            puntos_xp=10,
-            tiempo_estimado=5,
-            orden=1
-        )
-        
-        Leccion.objects.create(
-            modulo=modulo_manufactura,
-            titulo="Práctica: Registrar materias primas",
+            titulo="Domina la Producción: Materias Primas y Productos",
             tipo="practica",
-            contenido="Vamos a registrar materias primas en CONTAFY:\n\n1. Ve a 'Materias Primas > + Nueva Materia Prima'\n2. Ejemplo: Harina, unidad 'kg', precio $1.50\n3. Registra al menos 3 materias primas\n4. Estas serán la base para crear tus productos\n\nEsto te permitirá controlar costos de producción.",
-            puntos_xp=15,
-            tiempo_estimado=10,
-            orden=2
-        )
-        
-        Leccion.objects.create(
-            modulo=modulo_manufactura,
-            titulo="Práctica: Crear producto manufacturado",
-            tipo="practica",
-            contenido="Ahora creemos un producto con receta:\n\n1. Ve a 'Catálogo > + Nuevo Producto'\n2. Ejemplo: Pan Integral\n3. Agrega materias primas: Harina 0.5kg, Azúcar 0.1kg\n4. El sistema calculará el costo automáticamente\n5. Define precio de venta con margen de ganancia\n\n¡Ya tienes tu primer producto manufacturado!",
-            puntos_xp=25,
+            contenido="INTERACTIVE_LESSON",
+            puntos_xp=50,
             tiempo_estimado=15,
-            orden=3
+            orden=1
         )
         
         # MÓDULOS PARA SERVICIOS
@@ -83,35 +63,15 @@ class Command(BaseCommand):
             orden=1
         )
         
-        # Lecciones para servicios
+        # Lección integrada para servicios
         Leccion.objects.create(
             modulo=modulo_servicios,
-            titulo="¿Cómo facturar un servicio?",
-            tipo="teoria",
-            contenido="Facturar servicios es diferente a vender productos. Aquí el tiempo y la experiencia son tu valor principal.",
-            puntos_xp=10,
-            tiempo_estimado=5,
+            titulo="Domina los Servicios: Crear y Facturar",
+            tipo="practica",
+            contenido="INTERACTIVE_LESSON",
+            puntos_xp=50,
+            tiempo_estimado=15,
             orden=1
-        )
-        
-        Leccion.objects.create(
-            modulo=modulo_servicios,
-            titulo="Práctica: Crear tipos de servicios",
-            tipo="practica",
-            contenido="Vamos a configurar tus servicios en CONTAFY:\n\n1. Ve a 'Servicios > + Nuevo Servicio'\n2. Ejemplo: Consultoría, precio $25/hora\n3. Crea al menos 2 tipos de servicios\n4. Define precios por hora o por proyecto\n\nEsto te permitirá facturar rápidamente.",
-            puntos_xp=15,
-            tiempo_estimado=8,
-            orden=2
-        )
-        
-        Leccion.objects.create(
-            modulo=modulo_servicios,
-            titulo="Práctica: Facturar un servicio",
-            tipo="practica",
-            contenido="Ahora facturemos un servicio:\n\n1. Ve a 'Servicios > + Nueva Factura'\n2. Selecciona el servicio creado\n3. Ingresa horas trabajadas: 3 horas\n4. El sistema calculará el total\n5. Agrega gastos adicionales si los hay\n6. Guarda la factura\n\n¡Has facturado tu primer servicio!",
-            puntos_xp=25,
-            tiempo_estimado=12,
-            orden=3
         )
         
         self.stdout.write(

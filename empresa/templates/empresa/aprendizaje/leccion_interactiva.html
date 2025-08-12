@@ -122,6 +122,31 @@
     60% { transform: translateY(-5px); }
 }
 
+.btn {
+    transition: all 0.3s ease;
+    transform: scale(1);
+}
+
+.btn:hover {
+    transform: scale(1.05);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+}
+
+.card {
+    border-radius: 20px;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+}
+
+.progress {
+    border-radius: 10px;
+    background: #e9ecef;
+}
+
+.progress-bar {
+    border-radius: 10px;
+    transition: width 0.6s ease;
+}
+
 .completion-animation {
     animation: pulse 1.5s infinite;
 }
@@ -177,22 +202,24 @@ document.addEventListener('DOMContentLoaded', function() {
     // Parse lesson data from Django
     // Interactive lesson content
     lessonData = {
-        teoria: 'Una venta es el intercambio de un producto por dinero. En CONTAFY cada venta se registra automáticamente.',
+        teoria: '💰 Una venta es el intercambio de un producto por dinero. En CONTAFY cada venta se registra automáticamente.',
         pasos: [
             {
-                titulo: 'Paso 1: Crear Producto',
-                descripcion: 'Primero crea un producto en tu inventario',
-                accion: 'crear_producto'
+                titulo: '📦 Paso 1: Crear Producto',
+                descripcion: 'Vamos a agregar un producto a tu inventario',
+                accion: 'crear_producto',
+                instrucciones: 'Ve a Inventario > + Nuevo Producto'
             },
             {
-                titulo: 'Paso 2: Registrar Venta',
+                titulo: '💵 Paso 2: Registrar Venta',
                 descripcion: 'Ahora vende el producto que creaste',
-                accion: 'crear_venta'
+                accion: 'crear_venta',
+                instrucciones: 'Ve a Transacciones > + Nueva Venta'
             }
         ],
         quiz: [
             {
-                pregunta: '¿Cuál es el total de vender 2 productos a $15 cada uno?',
+                pregunta: '🤔 ¿Cuál es el total de vender 2 productos a $15 cada uno?',
                 opciones: ['$25', '$30', '$35'],
                 respuesta: 1
             }
