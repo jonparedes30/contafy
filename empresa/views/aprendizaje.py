@@ -49,7 +49,7 @@ def dashboard_aprendizaje(request):
         'recomendaciones': None,
     }
     
-    return render(request, 'empresa/aprendizaje/dashboard.html', context)
+    return render(request, 'empresa/aprendizaje/dashboard_simple.html', context)
 
 @login_required
 def modulo_detalle(request, modulo_id):
