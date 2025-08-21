@@ -13,47 +13,10 @@ from empresa.services.social_service import SocialService
 from empresa.models_simulaciones import TipoSimulacion, SimulacionUsuario, EscenarioSimulacion
 import json
 
-@login_required
 def dashboard_aprendizaje(request):
     """Dashboard principal del sistema de aprendizaje"""
-    try:
-        usuario = request.user
-        
-        # Crear perfil básico si no existe
-        perfil, created = PerfilAprendizaje.objects.get_or_create(
-            usuario=usuario,
-            defaults={'xp_total': 0, 'nivel': 1}
-        )
-        
-        # Obtener módulos según el tipo de empresa del usuario
-        tipo_empresa = getattr(usuario.empresa, 'categoria', 'comercial') if hasattr(usuario, 'empresa') and usuario.empresa else 'comercial'
-        modulos = ModuloAprendizaje.objects.filter(
-            tipo_empresa=tipo_empresa,
-            activo=True
-        ).order_by('orden')
-        
-        # Adjuntar progreso básico a módulos
-        for modulo in modulos:
-            modulo.progreso = {
-                'porcentaje': 0,
-                'completadas': 0,
-                'total': 1,
-                'desbloqueado': True
-            }
-        
-        context = {
-            'perfil': perfil,
-            'modulos': modulos,
-            'progreso_modulos': {},
-            'tipo_empresa': tipo_empresa,
-            'estadisticas': {'perfil': perfil},
-            'recomendaciones': None,
-        }
-        
-        return render(request, 'empresa/aprendizaje/dashboard.html', context)
-    except Exception as e:
-        from django.http import HttpResponse
-        return HttpResponse(f'Error: {str(e)}', status=500)
+    from django.http import HttpResponse
+    return HttpResponse('Dashboard de Aprendizaje - Versión Básica', status=200)
 
 @login_required
 def modulo_detalle(request, modulo_id):
