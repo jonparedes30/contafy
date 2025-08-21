@@ -13,11 +13,9 @@
                 <div class="card-body">
                     <p>Bienvenido al sistema de aprendizaje para empresas {{ tipo_empresa|title }}</p>
                     
-                    {% if perfil %}
-                        <div class="alert alert-info">
-                            <strong>Tu Progreso:</strong> Nivel {{ perfil.nivel }} - {{ perfil.xp_total }} XP
-                        </div>
-                    {% endif %}
+                    <div class="alert alert-info">
+                        <strong>Tu Progreso:</strong> Nivel {{ perfil.nivel|default:1 }} - {{ perfil.xp_total|default:0 }} XP
+                    </div>
                     
                     <h5>Módulos Disponibles</h5>
                     
