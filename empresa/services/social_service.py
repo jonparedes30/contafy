@@ -3,7 +3,8 @@ from django.contrib.auth.models import User
 from django.utils import timezone
 from datetime import timedelta, datetime
 from empresa.models_social import LigaSemanal, ParticipanteLiga, RetoSocial, LogroCompartido
-from empresa.models_gamificacion import PerfilAprendizaje, LogroUsuario
+from empresa.models_aprendizaje import PerfilAprendizaje
+from empresa.models_gamificacion import LogroUsuario
 
 class SocialService:
     """Servicio para funcionalidades sociales de la academia"""
