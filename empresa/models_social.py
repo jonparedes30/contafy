@@ -1,5 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import User
+from django.conf import settings
 from django.utils import timezone
 from datetime import timedelta
 
@@ -19,7 +20,7 @@ class LigaSemanal(models.Model):
 class ParticipanteLiga(models.Model):
     """Participación de usuarios en ligas"""
     liga = models.ForeignKey(LigaSemanal, on_delete=models.CASCADE, related_name='participantes')
-    usuario = models.ForeignKey(User, on_delete=models.CASCADE)
+    usuario = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     xp_inicial = models.IntegerField(default=0)
     xp_ganada = models.IntegerField(default=0)
     posicion = models.IntegerField(null=True, blank=True)
@@ -38,14 +39,14 @@ class RetoSocial(models.Model):
         ('simulaciones', 'Completar Simulaciones'),
     ]
     
-    creador = models.ForeignKey(User, on_delete=models.CASCADE, related_name='retos_creados')
-    retado = models.ForeignKey(User, on_delete=models.CASCADE, related_name='retos_recibidos')
+    creador = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='retos_creados')
+    retado = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='retos_recibidos')
     tipo = models.CharField(max_length=20, choices=TIPOS)
     objetivo = models.IntegerField()  # Meta a alcanzar
     fecha_limite = models.DateTimeField()
     completado_creador = models.BooleanField(default=False)
     completado_retado = models.BooleanField(default=False)
-    ganador = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
+    ganador = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True)
     activo = models.BooleanField(default=True)
     
     def __str__(self):
@@ -53,11 +54,11 @@ class RetoSocial(models.Model):
 
 class LogroCompartido(models.Model):
     """Logros compartidos por usuarios"""
-    usuario = models.ForeignKey(User, on_delete=models.CASCADE)
+    usuario = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     logro_usuario = models.ForeignKey('empresa.LogroUsuario', on_delete=models.CASCADE)
     mensaje = models.TextField(blank=True)
     fecha_compartido = models.DateTimeField(auto_now_add=True)
-    likes = models.ManyToManyField(User, related_name='likes_logros', blank=True)
+    likes = models.ManyToManyField(settings.AUTH_USER_MODEL, related_name='likes_logros', blank=True)
     
     class Meta:
         ordering = ['-fecha_compartido']
