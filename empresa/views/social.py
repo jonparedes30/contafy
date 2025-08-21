@@ -5,7 +5,7 @@ from django.http import JsonResponse
 from django.contrib.auth.models import User
 from django.db.models import Q
 from empresa.services.social_service import SocialService
-from empresa.models_social import LigaSemanal, Reto, LogroCompartido
+from empresa.models_social import LigaSemanal, RetoSocial, LogroCompartido
 from empresa.models_gamificacion import LogroUsuario
 import json
 
@@ -19,7 +19,7 @@ def dashboard_social(request):
     clasificacion = SocialService.obtener_tabla_clasificacion(liga_actual, limite=10)
     
     # Obtener retos activos del usuario
-    retos_activos = Reto.objects.filter(
+    retos_activos = RetoSocial.objects.filter(
         Q(creador=request.user) | Q(retado=request.user),
         activo=True
     ).select_related('creador', 'retado')
@@ -74,7 +74,7 @@ def crear_reto(request):
             return JsonResponse({'error': 'No puedes retarte a ti mismo'}, status=400)
         
         # Verificar que no existe un reto activo entre estos usuarios del mismo tipo
-        reto_existente = Reto.objects.filter(
+        reto_existente = RetoSocial.objects.filter(
             Q(creador=request.user, retado=retado) | Q(creador=retado, retado=request.user),
             tipo=tipo,
             activo=True
@@ -100,7 +100,7 @@ def crear_reto(request):
     
     context = {
         'usuarios_disponibles': usuarios_disponibles,
-        'tipos_reto': Reto.TIPOS,
+        'tipos_reto': RetoSocial.TIPOS,
     }
     
     return render(request, 'empresa/aprendizaje/crear_reto.html', context)
@@ -201,12 +201,12 @@ def clasificacion_completa(request):
 @login_required
 def mis_retos(request):
     """Ver todos los retos del usuario (activos e históricos)"""
-    retos_activos = Reto.objects.filter(
+    retos_activos = RetoSocial.objects.filter(
         Q(creador=request.user) | Q(retado=request.user),
         activo=True
     ).select_related('creador', 'retado').order_by('-id')
     
-    retos_completados = Reto.objects.filter(
+    retos_completados = RetoSocial.objects.filter(
         Q(creador=request.user) | Q(retado=request.user),
         activo=False
     ).select_related('creador', 'retado', 'ganador').order_by('-id')[:20]

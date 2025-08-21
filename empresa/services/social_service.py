@@ -2,7 +2,7 @@ from django.db import models
 from django.contrib.auth.models import User
 from django.utils import timezone
 from datetime import timedelta, datetime
-from empresa.models_social import LigaSemanal, ParticipanteLiga, Reto, LogroCompartido
+from empresa.models_social import LigaSemanal, ParticipanteLiga, RetoSocial, LogroCompartido
 from empresa.models_gamificacion import PerfilAprendizaje, LogroUsuario
 
 class SocialService:
@@ -79,7 +79,7 @@ class SocialService:
         """Crea un reto entre dos usuarios"""
         fecha_limite = timezone.now() + timedelta(days=dias_limite)
         
-        reto = Reto.objects.create(
+        reto = RetoSocial.objects.create(
             creador=creador,
             retado=retado,
             tipo=tipo,
@@ -92,7 +92,7 @@ class SocialService:
     @staticmethod
     def verificar_retos_usuario(usuario):
         """Verifica el progreso de los retos activos de un usuario"""
-        retos_activos = Reto.objects.filter(
+        retos_activos = RetoSocial.objects.filter(
             models.Q(creador=usuario) | models.Q(retado=usuario),
             activo=True,
             fecha_limite__gt=timezone.now()

@@ -27,7 +27,7 @@ class Migration(migrations.Migration):
             },
         ),
         migrations.CreateModel(
-            name='Reto',
+            name='RetoSocial',
             fields=[
                 ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
                 ('tipo', models.CharField(choices=[('lecciones', 'Completar Lecciones'), ('xp', 'Ganar XP'), ('simulaciones', 'Completar Simulaciones')], max_length=20)),

@@ -30,7 +30,7 @@ class ParticipanteLiga(models.Model):
     def __str__(self):
         return f"{self.usuario.username} - {self.liga.nombre}"
 
-class Reto(models.Model):
+class RetoSocial(models.Model):
     """Retos entre empleados"""
     TIPOS = [
         ('lecciones', 'Completar Lecciones'),
