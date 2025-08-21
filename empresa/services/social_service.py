@@ -2,7 +2,7 @@ from django.db import models
 from django.contrib.auth.models import User
 from django.utils import timezone
 from datetime import timedelta, datetime
-from empresa.models_social import Liga, ParticipanteLiga, Reto, LogroCompartido
+from empresa.models_social import LigaSemanal, ParticipanteLiga, Reto, LogroCompartido
 from empresa.models_gamificacion import PerfilAprendizaje, LogroUsuario
 
 class SocialService:
@@ -15,7 +15,7 @@ class SocialService:
         inicio_semana = ahora - timedelta(days=ahora.weekday())
         fin_semana = inicio_semana + timedelta(days=6, hours=23, minutes=59)
         
-        liga, created = Liga.objects.get_or_create(
+        liga, created = LigaSemanal.objects.get_or_create(
             fecha_inicio__date=inicio_semana.date(),
             defaults={
                 'nombre': f'Liga Semanal {inicio_semana.strftime("%d/%m")}',
@@ -63,7 +63,7 @@ class SocialService:
     def obtener_tabla_clasificacion(liga=None, limite=10):
         """Obtiene la tabla de clasificación actual"""
         if not liga:
-            liga = Liga.objects.filter(activa=True).first()
+            liga = LigaSemanal.objects.filter(activa=True).first()
         
         if not liga:
             return []

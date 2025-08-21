@@ -3,7 +3,7 @@ from django.contrib.auth.models import User
 from django.utils import timezone
 from datetime import timedelta
 
-class Liga(models.Model):
+class LigaSemanal(models.Model):
     """Ligas semanales para competencia entre usuarios"""
     nombre = models.CharField(max_length=100)
     fecha_inicio = models.DateTimeField()
@@ -18,7 +18,7 @@ class Liga(models.Model):
 
 class ParticipanteLiga(models.Model):
     """Participación de usuarios en ligas"""
-    liga = models.ForeignKey(Liga, on_delete=models.CASCADE, related_name='participantes')
+    liga = models.ForeignKey(LigaSemanal, on_delete=models.CASCADE, related_name='participantes')
     usuario = models.ForeignKey(User, on_delete=models.CASCADE)
     xp_inicial = models.IntegerField(default=0)
     xp_ganada = models.IntegerField(default=0)

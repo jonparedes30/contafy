@@ -14,7 +14,7 @@ class Migration(migrations.Migration):
 
     operations = [
         migrations.CreateModel(
-            name='Liga',
+            name='LigaSemanal',
             fields=[
                 ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
                 ('nombre', models.CharField(max_length=100)),
@@ -48,7 +48,7 @@ class Migration(migrations.Migration):
                 ('xp_inicial', models.IntegerField(default=0)),
                 ('xp_ganada', models.IntegerField(default=0)),
                 ('posicion', models.IntegerField(blank=True, null=True)),
-                ('liga', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='participantes', to='empresa.liga')),
+                ('liga', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='participantes', to='empresa.ligasemanal')),
                 ('usuario', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to=settings.AUTH_USER_MODEL)),
             ],
             options={

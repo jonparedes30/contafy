@@ -5,7 +5,7 @@ from django.http import JsonResponse
 from django.contrib.auth.models import User
 from django.db.models import Q
 from empresa.services.social_service import SocialService
-from empresa.models_social import Liga, Reto, LogroCompartido
+from empresa.models_social import LigaSemanal, Reto, LogroCompartido
 from empresa.models_gamificacion import LogroUsuario
 import json
 
@@ -183,7 +183,7 @@ def toggle_like_logro(request):
 @login_required
 def clasificacion_completa(request):
     """Ver la clasificación completa de la liga actual"""
-    liga_actual = Liga.objects.filter(activa=True).first()
+    liga_actual = LigaSemanal.objects.filter(activa=True).first()
     
     if not liga_actual:
         messages.info(request, 'No hay una liga activa en este momento.')
