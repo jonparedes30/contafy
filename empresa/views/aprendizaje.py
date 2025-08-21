@@ -18,9 +18,17 @@ def dashboard_aprendizaje(request):
     """Dashboard principal del sistema de aprendizaje"""
     usuario = request.user
     
-    # Obtener estadísticas completas del usuario
-    estadisticas = GamificacionService.obtener_estadisticas_usuario(usuario)
-    perfil = estadisticas['perfil']
+    # Obtener estadísticas completas del usuario (con manejo de errores)
+    try:
+        estadisticas = GamificacionService.obtener_estadisticas_usuario(usuario)
+        perfil = estadisticas['perfil']
+    except Exception:
+        # Crear perfil básico si no existe
+        perfil, created = PerfilAprendizaje.objects.get_or_create(
+            usuario=usuario,
+            defaults={'xp_total': 0, 'nivel': 1}
+        )
+        estadisticas = {'perfil': perfil}
     
     # Obtener módulos según el tipo de empresa del usuario
     tipo_empresa = usuario.empresa.categoria if usuario.empresa else 'comercial'
@@ -56,8 +64,11 @@ def dashboard_aprendizaje(request):
             'desbloqueado': True
         })
     
-    # Obtener recomendaciones personalizadas
-    recomendaciones = RecomendacionService.obtener_recomendaciones_dashboard(usuario)
+    # Obtener recomendaciones personalizadas (con manejo de errores)
+    try:
+        recomendaciones = RecomendacionService.obtener_recomendaciones_dashboard(usuario)
+    except Exception:
+        recomendaciones = None
     
     context = {
         'perfil': perfil,
