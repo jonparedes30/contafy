@@ -243,18 +243,34 @@ def generar_conclusion_ejecutiva(ventas, utilidad_neta):
 def resumen_financiero(request):
     """Vista principal del resumen financiero"""
     
-    empresa = request.user.empresa
-    
-    # 1. Obtener datos financieros básicos
-    totales = obtener_totales_contables(empresa)
+    try:
+        empresa = request.user.empresa
+        if not empresa:
+            raise Exception("Usuario sin empresa asociada")
+        
+        # 1. Obtener datos financieros básicos
+        totales = obtener_totales_contables(empresa)
+    except Exception as e:
+        # Datos por defecto en caso de error
+        totales = {
+            'ventas': 0,
+            'compras': 0, 
+            'gastos': 0,
+            'utilidad_bruta': 0,
+            'utilidad_neta': 0
+        }
     
 
     
-    # 3. Obtener productos más vendidos
-    productos_vendidos = obtener_productos_mas_vendidos(empresa)
-    
-    # 4. Obtener gastos por categoría
-    gastos_por_categoria = obtener_gastos_por_categoria(empresa)
+    try:
+        # 3. Obtener productos más vendidos
+        productos_vendidos = obtener_productos_mas_vendidos(empresa)
+        
+        # 4. Obtener gastos por categoría
+        gastos_por_categoria = obtener_gastos_por_categoria(empresa)
+    except:
+        productos_vendidos = []
+        gastos_por_categoria = []
     
     # 5. Generar recomendaciones automáticas
     recomendaciones = generar_recomendaciones(
@@ -319,16 +335,8 @@ def resumen_financiero(request):
     
 
     
-    # Obtener análisis predictivo
-    try:
-        from empresa.services.benchmarking_avanzado_service import BenchmarkingAvanzadoService
-        benchmarking_avanzado = BenchmarkingAvanzadoService.obtener_benchmarking_completo_avanzado(empresa)
-        analisis_predictivo = benchmarking_avanzado.get('analisis_predictivo', {})
-    except Exception as e:
-        print(f"Error en benchmarking avanzado: {e}")
-        analisis_predictivo = {}
-    
-    contexto['analisis_predictivo'] = analisis_predictivo
+    # Deshabilitar análisis predictivo por ahora
+    contexto['analisis_predictivo'] = {}
     
     return render(request, 'empresa/resumen.html', contexto)
 

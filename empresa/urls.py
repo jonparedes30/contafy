@@ -21,7 +21,6 @@ from .views.dashboard import dashboard
 from .views.dashboards import dashboard_ventas, dashboard_inventario, dashboard_gastos, dashboard_productos, dashboard_metas, dashboard_basico
 from .views.contabilidad import estado_resultados, balance_general, flujo_caja
 from .views.resumen import resumen_financiero
-from .views.resumen_simple import resumen_financiero_simple
 from .views.exportaciones import exportar_excel_ventas, exportar_excel_compras, exportar_excel_gastos, exportar_excel_inventario, exportar_pdf, exportar_pdf_usuario, exportar_pdf_profesional, exportar_pdf_inventario, exportar_excel_completo, exportar_excel_iva, exportar_pdf_iva
 from .views.metas import gestionar_metas, historial_meta, marcar_notificacion_leida
 from .views.inventario import inventario, descargar_plantilla_inventario, subir_inventario_excel, saldos_iniciales, inventario_detallado_inicial
@@ -109,8 +108,7 @@ urlpatterns = [
     
     # URLs de reportes
     path('dashboard/', dashboard, name='dashboard'),
-    path('resumen/', resumen_financiero_simple, name='resumen_financiero'),
-    path('resumen-completo/', resumen_financiero, name='resumen_financiero_completo'),
+    path('resumen/', resumen_financiero, name='resumen_financiero'),
     
     # URLs de dashboards rol-centrados
     path('dashboard/ventas/', dashboard_ventas, name='dashboard_ventas'),
