@@ -179,9 +179,9 @@ class TipoServicioAdmin(admin.ModelAdmin):
 
 @admin.register(ModuloAprendizaje)
 class ModuloAprendizajeAdmin(admin.ModelAdmin):
-    list_display = ['titulo', 'tipo_empresa', 'orden', 'activo']
+    list_display = ['nombre', 'tipo_empresa', 'orden', 'activo']
     list_filter = ['tipo_empresa', 'activo']
-    search_fields = ['titulo', 'descripcion']
+    search_fields = ['nombre', 'descripcion']
     ordering = ['orden']
 
 @admin.register(Leccion)
@@ -207,10 +207,10 @@ class PerfilAprendizajeAdmin(admin.ModelAdmin):
 
 @admin.register(PasoCompletado)
 class PasoCompletadoAdmin(admin.ModelAdmin):
-    list_display = ['usuario', 'leccion', 'paso_index', 'completado_en']
+    list_display = ['usuario', 'leccion', 'paso_index', 'creado_en']
     list_filter = ['leccion__modulo']
-    search_fields = ['usuario__username', 'leccion__titulo']
-    ordering = ['-completado_en']
+    search_fields = ['usuario__username', 'leccion__nombre']
+    ordering = ['-creado_en']
 
 # Configuración del sitio admin
 admin.site.site_header = "Contafy - Panel de Administración"
