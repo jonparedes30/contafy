@@ -2,7 +2,12 @@ from django.contrib import admin
 from .models import (
     Empresa, Usuario, Producto, Venta, Compra, 
     Gasto, MovimientoContable, CuentaContable, Capital, CategoriaGastoKeyword,
-    MateriaPrima, ProductoManufacturado, RecetaProduccion, OrdenProduccion, ConsumoMateriaPrima
+    MateriaPrima, ProductoManufacturado, RecetaProduccion, OrdenProduccion, ConsumoMateriaPrima,
+    CodigoInvitacion, MetaFinanciera, Cliente, Proveedor, CategoriaProducto,
+    CuentaPorCobrar, CuentaPorPagar, SolicitudAyuda, TipoServicio
+)
+from .models_aprendizaje import (
+    ModuloAprendizaje, Leccion, ProgresoUsuario, PerfilAprendizaje, PasoCompletado
 )
 
 @admin.register(Empresa)
@@ -123,6 +128,89 @@ class ConsumoMateriaPrimaAdmin(admin.ModelAdmin):
     search_fields = ['orden_produccion__numero_orden', 'materia_prima__nombre']
     ordering = ['-fecha_consumo']
     readonly_fields = ['costo_total', 'creado_en', 'modificado_en', 'creado_por', 'modificado_por']
+
+# === MODELOS CRÍTICOS FALTANTES ===
+
+@admin.register(CodigoInvitacion)
+class CodigoInvitacionAdmin(admin.ModelAdmin):
+    list_display = ['codigo', 'usado', 'usado_por', 'fecha_creacion']
+    list_filter = ['usado', 'fecha_creacion']
+    search_fields = ['codigo']
+    ordering = ['-fecha_creacion']
+
+@admin.register(MetaFinanciera)
+class MetaFinancieraAdmin(admin.ModelAdmin):
+    list_display = ['tipo', 'objetivo_mensual', 'mes', 'anio', 'empresa']
+    list_filter = ['tipo', 'empresa', 'anio', 'mes']
+    ordering = ['-anio', '-mes']
+
+@admin.register(Cliente)
+class ClienteAdmin(admin.ModelAdmin):
+    list_display = ['nombre', 'numero_documento', 'telefono', 'email', 'empresa']
+    list_filter = ['empresa', 'tipo_documento']
+    search_fields = ['nombre', 'numero_documento', 'email']
+
+@admin.register(Proveedor)
+class ProveedorAdmin(admin.ModelAdmin):
+    list_display = ['nombre', 'ruc', 'telefono', 'email', 'empresa']
+    list_filter = ['empresa']
+    search_fields = ['nombre', 'ruc', 'email']
+
+@admin.register(CategoriaProducto)
+class CategoriaProductoAdmin(admin.ModelAdmin):
+    list_display = ['nombre', 'descripcion', 'activa', 'empresa']
+    list_filter = ['activa', 'empresa']
+    search_fields = ['nombre']
+
+@admin.register(SolicitudAyuda)
+class SolicitudAyudaAdmin(admin.ModelAdmin):
+    list_display = ['asunto', 'tipo', 'estado', 'usuario', 'empresa', 'fecha_creacion']
+    list_filter = ['tipo', 'estado', 'empresa']
+    search_fields = ['asunto', 'mensaje']
+    ordering = ['-fecha_creacion']
+
+@admin.register(TipoServicio)
+class TipoServicioAdmin(admin.ModelAdmin):
+    list_display = ['nombre', 'precio_base', 'tiempo_estimado', 'activo', 'empresa']
+    list_filter = ['activo', 'empresa']
+    search_fields = ['nombre', 'descripcion']
+
+# === MODELOS DE APRENDIZAJE ===
+
+@admin.register(ModuloAprendizaje)
+class ModuloAprendizajeAdmin(admin.ModelAdmin):
+    list_display = ['titulo', 'tipo_empresa', 'orden', 'activo']
+    list_filter = ['tipo_empresa', 'activo']
+    search_fields = ['titulo', 'descripcion']
+    ordering = ['orden']
+
+@admin.register(Leccion)
+class LeccionAdmin(admin.ModelAdmin):
+    list_display = ['titulo', 'modulo', 'tipo', 'orden', 'activa']
+    list_filter = ['modulo', 'tipo', 'activa']
+    search_fields = ['titulo', 'descripcion']
+    ordering = ['modulo', 'orden']
+
+@admin.register(ProgresoUsuario)
+class ProgresoUsuarioAdmin(admin.ModelAdmin):
+    list_display = ['usuario', 'leccion', 'completada', 'puntuacion', 'tiempo_completado']
+    list_filter = ['completada', 'leccion__modulo']
+    search_fields = ['usuario__username', 'leccion__titulo']
+    ordering = ['-tiempo_completado']
+
+@admin.register(PerfilAprendizaje)
+class PerfilAprendizajeAdmin(admin.ModelAdmin):
+    list_display = ['usuario', 'nivel', 'xp_total', 'racha_dias']
+    list_filter = ['nivel']
+    search_fields = ['usuario__username']
+    ordering = ['-xp_total']
+
+@admin.register(PasoCompletado)
+class PasoCompletadoAdmin(admin.ModelAdmin):
+    list_display = ['usuario', 'leccion', 'paso_index', 'completado_en']
+    list_filter = ['leccion__modulo']
+    search_fields = ['usuario__username', 'leccion__titulo']
+    ordering = ['-completado_en']
 
 # Configuración del sitio admin
 admin.site.site_header = "Contafy - Panel de Administración"
