@@ -1,5 +1,6 @@
-# ADMIN BÁSICO FUNCIONAL
-from .admin_minimal import *
+# ADMIN COMPLETAMENTE DESHABILITADO - USAR SOLO ADMIN SIMPLE
+# La aplicación está crasheando por modelos duplicados
+# Usar: /app-beta-2024/admin-simple/
 
 @admin.register(Empresa)
 class EmpresaAdmin(admin.ModelAdmin):
