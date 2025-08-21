@@ -1,0 +1,106 @@
+{% extends 'empresa/base.html' %}
+
+{% block title %}Resumen Financiero{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-3">
+        <div class="col-12">
+            <h2><i class="bi bi-graph-up"></i> Resumen Financiero</h2>
+            <div class="alert alert-info">
+                <i class="bi bi-info-circle"></i> Vista simplificada temporal. Para datos completos, usa el <a href="{% url 'empresa:dashboard' %}" class="alert-link">Dashboard Principal</a>.
+            </div>
+        </div>
+    </div>
+    
+    <!-- Indicadores básicos -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card bg-success text-white">
+                <div class="card-body">
+                    <h5>${{ ventas|floatformat:2 }}</h5>
+                    <p>Ventas Totales</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-warning text-white">
+                <div class="card-body">
+                    <h5>${{ gastos|floatformat:2 }}</h5>
+                    <p>Gastos Totales</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-info text-white">
+                <div class="card-body">
+                    <h5>${{ utilidad_bruta|floatformat:2 }}</h5>
+                    <p>Utilidad Bruta</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
+                    <h5>${{ utilidad_neta|floatformat:2 }}</h5>
+                    <p>Utilidad Neta</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Recomendaciones -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="bi bi-lightbulb"></i> Recomendaciones</h5>
+                </div>
+                <div class="card-body">
+                    {% for rec in recomendaciones %}
+                    <div class="alert alert-{{ rec.tipo }}">
+                        <strong>{{ rec.titulo }}</strong><br>
+                        {{ rec.descripcion }}
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Acciones rápidas -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="bi bi-speedometer2"></i> Acciones Rápidas</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-3">
+                            <a href="{% url 'empresa:dashboard' %}" class="btn btn-primary btn-block">
+                                <i class="bi bi-house"></i> Dashboard Principal
+                            </a>
+                        </div>
+                        <div class="col-md-3">
+                            <a href="{% url 'empresa:listar_ventas' %}" class="btn btn-success btn-block">
+                                <i class="bi bi-cart-plus"></i> Ver Ventas
+                            </a>
+                        </div>
+                        <div class="col-md-3">
+                            <a href="{% url 'empresa:listar_gastos' %}" class="btn btn-warning btn-block">
+                                <i class="bi bi-receipt"></i> Ver Gastos
+                            </a>
+                        </div>
+                        <div class="col-md-3">
+                            <a href="{% url 'empresa:listar_productos' %}" class="btn btn-info btn-block">
+                                <i class="bi bi-box"></i> Ver Productos
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
