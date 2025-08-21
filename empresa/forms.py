@@ -509,6 +509,18 @@ class RegistroForm(UserCreationForm):
         }),
         help_text="Describe tu tipo de negocio específico"
     )
+    
+    # CÓDIGO DE INVITACIÓN - OBLIGATORIO
+    codigo_invitacion = forms.CharField(
+        max_length=50,
+        label="🔑 Código de Invitación",
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'Ingresa tu código de invitación',
+            'required': True
+        }),
+        help_text="Código necesario para registrarse en la plataforma"
+    )
 
     class Meta:
         model = Usuario
@@ -520,6 +532,7 @@ class RegistroForm(UserCreationForm):
             'provincia', 'ciudad', 'telefono_whatsapp',
             'latitud', 'longitud',
             'categoria', 'tipo_negocio',
+            'codigo_invitacion',
         ]
 
     def __init__(self, *args, **kwargs):
@@ -578,8 +591,27 @@ class RegistroForm(UserCreationForm):
             raise forms.ValidationError("Ya existe una empresa registrada con este RUC/Cédula.")
         
         return ruc
+    
+    def clean_codigo_invitacion(self):
+        """Validar que el código de invitación existe y está disponible"""
+        from .models import CodigoInvitacion
+        
+        codigo = self.cleaned_data.get('codigo_invitacion')
+        if not codigo:
+            raise forms.ValidationError("El código de invitación es obligatorio.")
+        
+        try:
+            codigo_obj = CodigoInvitacion.objects.get(codigo=codigo)
+            if codigo_obj.usado:
+                raise forms.ValidationError("Este código de invitación ya ha sido utilizado.")
+        except CodigoInvitacion.DoesNotExist:
+            raise forms.ValidationError("Código de invitación inválido.")
+        
+        return codigo
 
     def save(self, commit=True):
+        from .models import CodigoInvitacion
+        
         # Crear empresa primero
         empresa = Empresa(
             nombre=self.cleaned_data['nombre_empresa'],
@@ -601,6 +633,14 @@ class RegistroForm(UserCreationForm):
         
         if commit:
             usuario.save()
+            
+            # Marcar código como usado
+            codigo_invitacion = CodigoInvitacion.objects.get(
+                codigo=self.cleaned_data['codigo_invitacion']
+            )
+            codigo_invitacion.usado = True
+            codigo_invitacion.usado_por = usuario
+            codigo_invitacion.save()
             
         return usuario
 
