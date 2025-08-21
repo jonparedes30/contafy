@@ -22,20 +22,36 @@ class Command(BaseCommand):
             self.stdout.write(f"Fecha registro: {user.date_joined}")
             self.stdout.write(f"Último login: {user.last_login}")
             
-            # Buscar empresa asociada
+            # Buscar empresa asociada (relación ManyToMany)
             try:
-                empresa = Empresa.objects.get(usuario=user)
-                self.stdout.write(f"Empresa: {empresa.nombre} ({empresa.categoria})")
-            except Empresa.DoesNotExist:
-                self.stdout.write("Empresa: NO TIENE EMPRESA ASOCIADA")
+                empresas = user.empresas.all()
+                if empresas.exists():
+                    for empresa in empresas:
+                        self.stdout.write(f"Empresa: {empresa.nombre} ({empresa.categoria})")
+                else:
+                    self.stdout.write("Empresa: NO TIENE EMPRESA ASOCIADA")
+            except Exception as e:
+                self.stdout.write(f"Error al buscar empresa: {str(e)}")
+                self.stdout.write("Empresa: ERROR AL VERIFICAR")
             
             self.stdout.write("---")
         
         self.stdout.write(f"\nTotal usuarios: {users.count()}")
         
-        # Mostrar empresas sin usuario
-        empresas_sin_usuario = Empresa.objects.filter(usuario__isnull=True)
-        if empresas_sin_usuario.exists():
-            self.stdout.write("\n=== EMPRESAS SIN USUARIO ===")
-            for empresa in empresas_sin_usuario:
-                self.stdout.write(f"ID: {empresa.id} - {empresa.nombre}")
+        # Mostrar todas las empresas
+        self.stdout.write("\n=== TODAS LAS EMPRESAS ===")
+        empresas = Empresa.objects.all()
+        for empresa in empresas:
+            usuarios_count = empresa.usuarios.count()
+            self.stdout.write(f"ID: {empresa.id} - {empresa.nombre} - Usuarios: {usuarios_count}")
+            if usuarios_count > 0:
+                for usuario in empresa.usuarios.all():
+                    self.stdout.write(f"  -> Usuario: {usuario.username}")
+        
+        self.stdout.write(f"\nTotal empresas: {empresas.count()}")
+        
+        # Mostrar usuarios más recientes primero
+        self.stdout.write("\n=== USUARIOS RECIENTES (ULTIMOS 10) ===")
+        usuarios_recientes = User.objects.all().order_by('-date_joined')[:10]
+        for user in usuarios_recientes:
+            self.stdout.write(f"{user.id}: {user.username} - {user.email} - {user.date_joined}")
