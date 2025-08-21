@@ -54,6 +54,7 @@ from .views import social
 from .views.simulaciones_api import simulacion_tipos_api, simulacion_escenarios_api, simulacion_start_api, simulacion_step_api, simulacion_result_api
 from .views.recomendaciones_api import obtener_recomendaciones_api, registrar_interaccion_api, obtener_siguiente_leccion_api
 from .views.ranking_api import ranking_semanal_api, ligas_activas_api, inscribir_liga_api, retos_activos_api, ranking_view
+from .views.admin_simple import admin_dashboard, crear_codigo_invitacion
 
 # Configurar router para la API
 router = DefaultRouter()
@@ -296,6 +297,10 @@ urlpatterns += [
     path('api/chat-movil/', chat_movil, name='chat_movil'),
     path('api/dashboard-movil/', dashboard_movil, name='dashboard_movil'),
     path('api/comando-rapido-movil/', comando_rapido_movil, name='comando_rapido_movil'),
+    
+    # URLs del Admin Simple
+    path('admin-simple/', admin_dashboard, name='admin_simple'),
+    path('admin-simple/crear-codigo/', crear_codigo_invitacion, name='crear_codigo_invitacion'),
     
     # URLs de mensajería (deshabilitadas hasta migrar DB)
     # path('bandeja/', lambda request: __import__('empresa.views.mensajeria', fromlist=['bandeja_entrada']).bandeja_entrada(request), name='bandeja_entrada'),

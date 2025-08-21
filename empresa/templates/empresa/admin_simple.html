@@ -1,0 +1,194 @@
+{% extends 'empresa/base.html' %}
+
+{% block title %}Admin CONTAFY{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-3">
+        <div class="col-12">
+            <h2><i class="bi bi-shield-check"></i> Panel Administrativo CONTAFY</h2>
+        </div>
+    </div>
+    
+    <!-- Estadísticas -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
+                    <h5>{{ total_usuarios }}</h5>
+                    <p>Usuarios Totales</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-success text-white">
+                <div class="card-body">
+                    <h5>{{ total_empresas }}</h5>
+                    <p>Empresas Registradas</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-info text-white">
+                <div class="card-body">
+                    <h5>{{ codigos_disponibles }}</h5>
+                    <p>Códigos Disponibles</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-warning text-white">
+                <div class="card-body">
+                    <h5>{{ total_codigos }}</h5>
+                    <p>Códigos Totales</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Usuarios Recientes -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="bi bi-people"></i> Usuarios Recientes</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Usuario</th>
+                                    <th>Email</th>
+                                    <th>Empresa</th>
+                                    <th>Fecha</th>
+                                    <th>Activo</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for usuario in usuarios_recientes %}
+                                <tr>
+                                    <td>{{ usuario.id }}</td>
+                                    <td>{{ usuario.username }}</td>
+                                    <td>{{ usuario.email }}</td>
+                                    <td>{{ usuario.empresa.nombre|default:"Sin empresa" }}</td>
+                                    <td>{{ usuario.date_joined|date:"d/m/Y" }}</td>
+                                    <td>
+                                        {% if usuario.is_active %}
+                                            <span class="badge bg-success">Sí</span>
+                                        {% else %}
+                                            <span class="badge bg-danger">No</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Códigos de Invitación -->
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="bi bi-key"></i> Códigos de Invitación</h5>
+                    <button class="btn btn-sm btn-primary" onclick="crearCodigo()">Crear Código</button>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Código</th>
+                                    <th>Estado</th>
+                                    <th>Usado por</th>
+                                    <th>Fecha</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for codigo in codigos %}
+                                <tr>
+                                    <td><code>{{ codigo.codigo }}</code></td>
+                                    <td>
+                                        {% if codigo.usado %}
+                                            <span class="badge bg-danger">Usado</span>
+                                        {% else %}
+                                            <span class="badge bg-success">Disponible</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ codigo.usado_por.username|default:"-" }}</td>
+                                    <td>{{ codigo.fecha_creacion|date:"d/m/Y" }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Crear Código Modal -->
+    <div class="modal fade" id="crearCodigoModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Crear Código de Invitación</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="crearCodigoForm">
+                        <div class="mb-3">
+                            <label for="nuevoCodigo" class="form-label">Código</label>
+                            <input type="text" class="form-control" id="nuevoCodigo" placeholder="Ej: BETA2024">
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-primary" onclick="guardarCodigo()">Crear</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function crearCodigo() {
+    const modal = new bootstrap.Modal(document.getElementById('crearCodigoModal'));
+    modal.show();
+}
+
+function guardarCodigo() {
+    const codigo = document.getElementById('nuevoCodigo').value;
+    if (!codigo) {
+        alert('Por favor ingresa un código');
+        return;
+    }
+    
+    fetch('{% url "empresa:crear_codigo_invitacion" %}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'X-CSRFToken': '{{ csrf_token }}'
+        },
+        body: `codigo=${encodeURIComponent(codigo)}`
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert(data.message);
+            location.reload();
+        } else {
+            alert('Error: ' + data.message);
+        }
+    })
+    .catch(error => {
+        alert('Error al crear código');
+    });
+}
+</script>
+{% endblock %}
