@@ -9,8 +9,16 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         # Verificar si ya existe un superusuario
-        if User.objects.filter(is_superuser=True).exists():
-            self.stdout.write("Ya existe un superusuario")
+        superusers = User.objects.filter(is_superuser=True)
+        if superusers.exists():
+            self.stdout.write("=== SUPERUSUARIOS EXISTENTES ===")
+            for su in superusers:
+                self.stdout.write(f"Usuario: {su.username}")
+                self.stdout.write(f"Email: {su.email}")
+                self.stdout.write(f"Activo: {su.is_active}")
+                self.stdout.write(f"Empresa: {su.empresa.nombre if su.empresa else 'Sin empresa'}")
+                self.stdout.write("---")
+            self.stdout.write("\n✅ Ya existen superusuarios")
             return
         
         # Crear empresa para el admin
