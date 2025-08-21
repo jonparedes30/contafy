@@ -16,70 +16,44 @@ import json
 @login_required
 def dashboard_aprendizaje(request):
     """Dashboard principal del sistema de aprendizaje"""
-    usuario = request.user
-    
-    # Obtener estadísticas completas del usuario (con manejo de errores)
     try:
-        estadisticas = GamificacionService.obtener_estadisticas_usuario(usuario)
-        perfil = estadisticas['perfil']
-    except Exception:
+        usuario = request.user
+        
         # Crear perfil básico si no existe
         perfil, created = PerfilAprendizaje.objects.get_or_create(
             usuario=usuario,
             defaults={'xp_total': 0, 'nivel': 1}
         )
-        estadisticas = {'perfil': perfil}
-    
-    # Obtener módulos según el tipo de empresa del usuario
-    tipo_empresa = usuario.empresa.categoria if usuario.empresa else 'comercial'
-    modulos = ModuloAprendizaje.objects.filter(
-        tipo_empresa=tipo_empresa,
-        activo=True
-    ).order_by('orden')
-    
-    # Calcular progreso por módulo
-    progreso_modulos = {}
-    for modulo in modulos:
-        lecciones_total = modulo.lecciones.filter(activa=True).count()
-        lecciones_completadas = ProgresoUsuario.objects.filter(
-            usuario=usuario,
-            leccion__modulo=modulo,
-            completada=True
-        ).count()
         
-        porcentaje = (lecciones_completadas / lecciones_total * 100) if lecciones_total > 0 else 0
+        # Obtener módulos según el tipo de empresa del usuario
+        tipo_empresa = getattr(usuario.empresa, 'categoria', 'comercial') if hasattr(usuario, 'empresa') and usuario.empresa else 'comercial'
+        modulos = ModuloAprendizaje.objects.filter(
+            tipo_empresa=tipo_empresa,
+            activo=True
+        ).order_by('orden')
         
-        progreso_modulos[modulo.id] = {
-            'porcentaje': round(porcentaje, 1),
-            'completadas': lecciones_completadas,
-            'total': lecciones_total,
-            'desbloqueado': True  # Por ahora todos desbloqueados
+        # Adjuntar progreso básico a módulos
+        for modulo in modulos:
+            modulo.progreso = {
+                'porcentaje': 0,
+                'completadas': 0,
+                'total': 1,
+                'desbloqueado': True
+            }
+        
+        context = {
+            'perfil': perfil,
+            'modulos': modulos,
+            'progreso_modulos': {},
+            'tipo_empresa': tipo_empresa,
+            'estadisticas': {'perfil': perfil},
+            'recomendaciones': None,
         }
-    # Adjuntar progreso directamente a los objetos modulo para facilitar templates
-    for modulo in modulos:
-        modulo.progreso = progreso_modulos.get(modulo.id, {
-            'porcentaje': 0,
-            'completadas': 0,
-            'total': 0,
-            'desbloqueado': True
-        })
-    
-    # Obtener recomendaciones personalizadas (con manejo de errores)
-    try:
-        recomendaciones = RecomendacionService.obtener_recomendaciones_dashboard(usuario)
-    except Exception:
-        recomendaciones = None
-    
-    context = {
-        'perfil': perfil,
-        'modulos': modulos,
-        'progreso_modulos': progreso_modulos,
-        'tipo_empresa': tipo_empresa,
-        'estadisticas': estadisticas,
-        'recomendaciones': recomendaciones,
-    }
-    
-    return render(request, 'empresa/aprendizaje/dashboard.html', context)
+        
+        return render(request, 'empresa/aprendizaje/dashboard.html', context)
+    except Exception as e:
+        from django.http import HttpResponse
+        return HttpResponse(f'Error: {str(e)}', status=500)
 
 @login_required
 def modulo_detalle(request, modulo_id):
