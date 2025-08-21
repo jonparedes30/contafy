@@ -1,14 +1,5 @@
-from django.contrib import admin
-from .models import (
-    Empresa, Usuario, Producto, Venta, Compra, 
-    Gasto, MovimientoContable, CuentaContable, Capital, CategoriaGastoKeyword,
-    MateriaPrima, ProductoManufacturado, RecetaProduccion, OrdenProduccion, ConsumoMateriaPrima,
-    CodigoInvitacion, MetaFinanciera, Cliente, Proveedor, CategoriaProducto,
-    CuentaPorCobrar, CuentaPorPagar, SolicitudAyuda, TipoServicio
-)
-from .models_aprendizaje import (
-    ModuloAprendizaje, Leccion, ProgresoUsuario, PerfilAprendizaje, PasoCompletado
-)
+# ADMIN BÁSICO FUNCIONAL
+from .admin_minimal import *
 
 @admin.register(Empresa)
 class EmpresaAdmin(admin.ModelAdmin):
