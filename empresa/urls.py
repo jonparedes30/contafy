@@ -49,7 +49,11 @@ from .views.servicios import listar_tipos_servicios, crear_tipo_servicio, editar
 from .views.voice_commands import procesar_comando_voz
 from .views.mobile_api import chat_movil, dashboard_movil, comando_rapido_movil
 from .views.ai_agent import agente_ia, chat_ia, generar_reporte_ia, actualizar_analisis
-from .views.aprendizaje import dashboard_aprendizaje, modulo_detalle, leccion_detalle, perfil_usuario, simulacion_venta, simulacion_receta, simulacion_servicio
+from .views.aprendizaje import dashboard_aprendizaje, modulo_detalle, leccion_detalle, perfil_usuario, simulacion_venta, simulacion_receta, simulacion_servicio, paso_completado
+from .views import social
+from .views.simulaciones_api import simulacion_tipos_api, simulacion_escenarios_api, simulacion_start_api, simulacion_step_api, simulacion_result_api
+from .views.recomendaciones_api import obtener_recomendaciones_api, registrar_interaccion_api, obtener_siguiente_leccion_api
+from .views.ranking_api import ranking_semanal_api, ligas_activas_api, inscribir_liga_api, retos_activos_api, ranking_view
 
 # Configurar router para la API
 router = DefaultRouter()
@@ -237,6 +241,36 @@ urlpatterns += [
     path('aprendizaje/modulo/<int:modulo_id>/', modulo_detalle, name='aprendizaje_modulo'),
     path('aprendizaje/leccion/<int:leccion_id>/', leccion_detalle, name='aprendizaje_leccion'),
     path('aprendizaje/perfil/', perfil_usuario, name='aprendizaje_perfil'),
+    path('aprendizaje/paso-completado/', paso_completado, name='aprendizaje_paso_completado'),
+    
+    # URLs Sociales (Fase 5)
+    path('aprendizaje/social/', social.dashboard_social, name='social_dashboard'),
+    path('aprendizaje/social/crear-reto/', social.crear_reto, name='crear_reto'),
+    path('aprendizaje/social/compartir-logro/', social.compartir_logro, name='compartir_logro'),
+    path('aprendizaje/social/toggle-like/', social.toggle_like_logro, name='toggle_like_logro'),
+    path('aprendizaje/social/clasificacion/', social.clasificacion_completa, name='clasificacion_completa'),
+    path('aprendizaje/social/mis-retos/', social.mis_retos, name='mis_retos'),
+    path('aprendizaje/social/feed/', social.feed_social, name='feed_social'),
+    # APIs de Simulaciones
+    path('api/simulacion/tipos/', simulacion_tipos_api, name='simulacion_tipos_api'),
+    path('api/simulacion/escenarios/', simulacion_escenarios_api, name='simulacion_escenarios_api'),
+    path('api/simulacion/start/', simulacion_start_api, name='simulacion_start_api'),
+    path('api/simulacion/<int:simulacion_id>/step/', simulacion_step_api, name='simulacion_step_api'),
+    path('api/simulacion/<int:simulacion_id>/result/', simulacion_result_api, name='simulacion_result_api'),
+    
+    # APIs de Recomendaciones
+    path('api/recomendaciones/', obtener_recomendaciones_api, name='recomendaciones_api'),
+    path('api/recomendaciones/interaccion/', registrar_interaccion_api, name='registrar_interaccion_api'),
+    path('api/recomendaciones/siguiente/', obtener_siguiente_leccion_api, name='siguiente_leccion_api'),
+    
+    # APIs de Ranking y Ligas
+    path('api/ranking/semanal/', ranking_semanal_api, name='ranking_semanal_api'),
+    path('api/ligas/activas/', ligas_activas_api, name='ligas_activas_api'),
+    path('api/ligas/<int:liga_id>/inscribir/', inscribir_liga_api, name='inscribir_liga_api'),
+    path('api/retos/activos/', retos_activos_api, name='retos_activos_api'),
+    
+    # Vista de Ranking
+    path('aprendizaje/ranking/', ranking_view, name='aprendizaje_ranking'),
     
     # URLs de Simulaciones
     path('aprendizaje/simulacion/venta/', simulacion_venta, name='simulacion_venta'),

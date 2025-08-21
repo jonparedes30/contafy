@@ -117,6 +117,14 @@ def info_producto_api(request):
     # 1. Consultar API global (Open Food Facts)
     api_url = f'https://world.openfoodfacts.org/api/v0/product/{codigo}.json'
     try:
+        # En modo sandbox evitamos consultas externas y devolvemos None para
+        # que la b\u00fasqueda local se ejecute. Esto previene llamadas a servicios
+        # externos durante simulaciones.
+        from empresa.sandbox_mode import is_sandbox
+        if is_sandbox():
+            # Simular no encontrado en API externa cuando est\u00e1 en sandbox
+            raise RuntimeError('Sandbox mode - skipping external API call')
+
         r = requests.get(api_url, timeout=4)
         if r.status_code == 200:
             data = r.json()
@@ -136,10 +144,11 @@ def info_producto_api(request):
                     'descripcion': descripcion,
                     'categoria': producto.get('categories', '').split(',')[0] if producto.get('categories') else '',
                     'precio_unitario': precio,
-                    'mensaje_precio': 'No se encontró precio automático. Por favor, ingrésalo en USD.',
+                    'mensaje_precio': 'No se encontr\u00f3 precio autom\u00e1tico. Por favor, ingr\u00e9salo en USD.',
                     'fuente': 'api_global',
                 })
     except Exception:
+        # Silenciar errores y permitir la b\u00fasqueda local
         pass
     
     # 2. Si no se encuentra, buscar localmente SOLO en la empresa del usuario

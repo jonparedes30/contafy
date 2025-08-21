@@ -1,5 +1,14 @@
 from django.db import models
 from django.conf import settings
+try:
+    # Django 3.1+ provides models.JSONField
+    JSONField = models.JSONField
+except AttributeError:
+    try:
+        # Older Django with postgres
+        from django.contrib.postgres.fields import JSONField
+    except Exception:
+        JSONField = None
 
 class ModuloAprendizaje(models.Model):
     TIPO_EMPRESA_CHOICES = [
@@ -36,6 +45,12 @@ class Leccion(models.Model):
     titulo = models.CharField(max_length=200)
     tipo = models.CharField(max_length=20, choices=TIPO_LECCION_CHOICES, default='teoria')
     contenido = models.TextField()  # Contenido de la lección
+    # Pasos opcionales para lecciones interactivas (micro-lecciones)
+    # Estructura esperada: [{"titulo":..., "descripcion":..., "accion":..., "datos": {...}}, ...]
+    if JSONField:
+        pasos = JSONField(null=True, blank=True)
+    else:
+        pasos = models.TextField(null=True, blank=True, help_text='JSON con pasos si JSONField no disponible')
     puntos_xp = models.IntegerField(default=10)
     tiempo_estimado = models.IntegerField(default=5)  # minutos
     orden = models.IntegerField(default=1)
@@ -88,3 +103,18 @@ class PerfilAprendizaje(models.Model):
     def xp_porcentaje(self):
         xp_actual = self.xp_total % 100
         return (xp_actual / 100) * 100
+
+
+class PasoCompletado(models.Model):
+    usuario = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    leccion = models.ForeignKey(Leccion, on_delete=models.CASCADE)
+    paso_index = models.IntegerField()
+    creado_en = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('usuario', 'leccion', 'paso_index')
+        verbose_name = 'Paso Completado'
+        verbose_name_plural = 'Pasos Completados'
+
+    def __str__(self):
+        return f"{self.usuario.username} - {self.leccion.titulo} - paso {self.paso_index}"

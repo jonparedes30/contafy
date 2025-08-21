@@ -3,6 +3,7 @@ Servicio de Notificaciones por Email y WhatsApp
 """
 from django.core.mail import send_mail
 from django.conf import settings
+from empresa.sandbox_mode import is_sandbox
 import requests
 import logging
 from django.utils import timezone
@@ -18,6 +19,10 @@ class NotificacionesService:
     def enviar_email(destinatario, asunto, mensaje, empresa=None):
         """Envía notificación por email"""
         try:
+            # No enviar emails en modo sandbox
+            if is_sandbox():
+                print(f"[SANDBOX] Skipping email to {destinatario}: {asunto}")
+                return True
             # Usar configuración simple para desarrollo
             from django.core.mail import EmailMessage
             
@@ -48,6 +53,10 @@ class NotificacionesService:
             return False
             
         try:
+            # No enviar WhatsApp en modo sandbox
+            if is_sandbox():
+                print(f"[SANDBOX] Skipping WhatsApp to {telefono}")
+                return True
             # Ejemplo con Twilio WhatsApp API
             # Necesitas configurar TWILIO_ACCOUNT_SID y TWILIO_AUTH_TOKEN en .env
             

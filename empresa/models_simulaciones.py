@@ -40,6 +40,7 @@ class SimulacionUsuario(models.Model):
     tiempo_completado = models.IntegerField(default=0, help_text="Tiempo en segundos")
     fecha_inicio = models.DateTimeField(auto_now_add=True)
     fecha_completado = models.DateTimeField(null=True, blank=True)
+    es_sandbox = models.BooleanField(default=False, help_text="Indica si la simulación se ejecutó en modo sandbox")
     
     class Meta:
         verbose_name = 'Simulación de Usuario'

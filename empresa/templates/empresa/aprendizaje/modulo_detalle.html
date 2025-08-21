@@ -47,7 +47,7 @@
                 <div class="card-body">
                     <div class="d-flex justify-content-between align-items-start mb-2">
                         <h5 class="card-title">{{ leccion.titulo }}</h5>
-                        {% if progreso_lecciones.leccion.id.completada %}
+                        {% if leccion.progreso.completada %}
                             <span class="badge bg-success">Completada</span>
                         {% else %}
                             <span class="badge bg-secondary">Pendiente</span>
@@ -75,15 +75,15 @@
                 </div>
                 
                 <div class="card-footer bg-transparent">
-                    {% if progreso_lecciones.leccion.id.completada %}
-                        <a href="{% url 'empresa:aprendizaje_leccion' leccion.id %}" class="btn btn-outline-success btn-sm">
-                            <i class="fas fa-check"></i> Revisar
-                        </a>
-                    {% else %}
-                        <a href="{% url 'empresa:aprendizaje_leccion' leccion.id %}" class="btn btn-primary btn-sm">
-                            <i class="fas fa-play"></i> Comenzar
-                        </a>
-                    {% endif %}
+                        {% if leccion.progreso.completada %}
+                            <a href="{% url 'empresa:aprendizaje_leccion' leccion.id %}" class="btn btn-outline-success btn-sm">
+                                <i class="fas fa-check"></i> Revisar
+                            </a>
+                        {% else %}
+                            <a href="{% url 'empresa:aprendizaje_leccion' leccion.id %}" class="btn btn-primary btn-sm">
+                                <i class="fas fa-play"></i> Comenzar
+                            </a>
+                        {% endif %}
                 </div>
             </div>
         </div>

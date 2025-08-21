@@ -190,3 +190,75 @@ class GamificacionService:
             'xp_para_siguiente_nivel': 100 - (perfil.xp_total % 100),
             'progreso_nivel': (perfil.xp_total % 100)
         }
+    
+    @staticmethod
+    def obtener_ranking_semanal(tipo_empresa=None, limite=10):
+        """Obtiene el ranking semanal de usuarios"""
+        from datetime import datetime, timedelta
+        from django.db.models import Sum
+        
+        hoy = datetime.now().date()
+        inicio_semana = hoy - timedelta(days=hoy.weekday())
+        
+        query = ActividadDiaria.objects.filter(fecha__gte=inicio_semana)
+        
+        if tipo_empresa:
+            query = query.filter(usuario__empresa__categoria=tipo_empresa)
+        
+        ranking = query.values(
+            'usuario__username',
+            'usuario__id'
+        ).annotate(
+            xp_semanal=Sum('xp_ganada'),
+            lecciones_semanal=Sum('lecciones_completadas')
+        ).order_by('-xp_semanal')[:limite]
+        
+        return list(ranking)
+    
+    @staticmethod
+    def crear_liga_semanal():
+        """Crea una nueva liga semanal"""
+        from datetime import datetime, timedelta
+        from empresa.models_gamificacion import Liga
+        
+        hoy = datetime.now()
+        inicio_semana = hoy - timedelta(days=hoy.weekday())
+        fin_semana = inicio_semana + timedelta(days=6, hours=23, minutes=59)
+        
+        liga, created = Liga.objects.get_or_create(
+            tipo='semanal',
+            fecha_inicio__date=inicio_semana.date(),
+            defaults={
+                'nombre': f'Liga Semanal {inicio_semana.strftime("%d/%m")}',
+                'fecha_inicio': inicio_semana,
+                'fecha_fin': fin_semana,
+                'premio_xp': 200
+            }
+        )
+        
+        return liga
+    
+    @staticmethod
+    def actualizar_puntos_liga(usuario, puntos):
+        """Actualiza los puntos del usuario en la liga activa"""
+        from empresa.models_gamificacion import Liga, ParticipacionLiga
+        from datetime import datetime
+        
+        liga_activa = Liga.objects.filter(
+            activa=True,
+            fecha_inicio__lte=datetime.now(),
+            fecha_fin__gte=datetime.now()
+        ).first()
+        
+        if liga_activa:
+            participacion, created = ParticipacionLiga.objects.get_or_create(
+                usuario=usuario,
+                liga=liga_activa
+            )
+            
+            participacion.puntos_obtenidos += puntos
+            participacion.save()
+            
+            return participacion
+        
+        return None

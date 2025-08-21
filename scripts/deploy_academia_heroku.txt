@@ -1,0 +1,106 @@
+Heroku deployment checklist — Academia CONTAFY
+
+Purpose
+- Apply DB migrations (including pasos and PasoCompletado), run seed script, execute smoke tests and verify the interactive lesson flow on Heroku.
+
+Preconditions
+- You have Heroku CLI installed and authenticated (`heroku login`).
+- You have permissions to the Heroku app and its Postgres addon.
+- The repository is up-to-date and pushed; branch to deploy is `main` (adjust if needed).
+
+Recommended workflow (safe, step-by-step)
+
+1) Prepare local repo
+- Commit all changes and push to origin main (or your main branch):
+  git add -A
+  git commit -m "Academia: fases, PasoCompletado, endpoint paso-completado, tests"
+  git push origin main
+
+2) Create a staging app (strongly recommended)
+- If you have time, create a staging Heroku app and test there first:
+  heroku create contafy-staging
+  heroku addons:create heroku-postgresql:hobby-dev --app contafy-staging
+  heroku git:remote -a contafy-staging
+  git push heroku main
+
+3) Backup production DB (critical before migrations)
+- Capture a backup of production Postgres (replace your-app-name):
+  heroku pg:backups:capture --app your-app-name
+  heroku pg:backups:url --app your-app-name   # get URL if you want to download
+
+4) Deploy code to Heroku
+- Add heroku remote if needed and push
+  heroku git:remote -a your-app-name
+  git push heroku main
+
+5) Run migrations (staging first, then production)
+- On staging (if created):
+  heroku run python manage.py migrate --app contafy-staging
+- On production (only after staging smoke tests pass):
+  heroku run python manage.py migrate --app your-app-name
+
+Notes:
+- If a migration fails, do NOT re-run blindly. Check `heroku logs --tail --app your-app-name` and inspect error. If schema changes are destructive, restore from backup:
+  heroku pg:backups:restore 'BACKUP_URL' DATABASE_URL --app your-app-name
+
+6) Run the seed script (creates demo module/lesson)
+- Staging first:
+  heroku run python scripts/seed_demo_leccion.py --app contafy-staging
+- Production (after verifying staging):
+  heroku run python scripts/seed_demo_leccion.py --app your-app-name
+
+7) Run smoke tests on Heroku (manage.py test)
+- Warning: tests will create a test DB and may be heavy. Prefer running a dedicated smoke script.
+- Quick smoke: run small custom checks (example below) instead of full Django test suite on prod.
+
+8) Manual smoke check (recommended)
+- Open app: `heroku open --app your-app-name`
+- Login with a test user (create via admin if needed):
+  heroku run python manage.py createsuperuser --app your-app-name
+- Navigate to: /empresa/aprendizaje/ and open demo module/lección
+- Click a practice step: verify button changes to "Completado" and toast shows XP
+
+9) Programmatic smoke checks (curl)
+- Check homepage (replace URL):
+  curl -I https://your-app-name.herokuapp.com/
+- Check lesson endpoint returns 200 (lección page):
+  curl -I https://your-app-name.herokuapp.com/empresa/aprendizaje/leccion/<LECCION_ID>/
+
+10) Rollback plan (if migrations break production)
+- Restore DB from last backup captured in step 3:
+  heroku pg:backups:restore b001 DATABASE_URL --app your-app-name
+  # replace b001 with the backup id from `heroku pg:backups`
+- Alternatively, use Heroku Release Rollback:
+  heroku releases --app your-app-name
+  heroku releases:info v123 --app your-app-name
+  heroku releases:rollback v122 --app your-app-name
+
+11) Post-deploy monitoring
+- Tail logs and watch for errors:
+  heroku logs --tail --app your-app-name
+- Check web response times, and review the gamification numbers for sudden anomalies.
+
+Optional: Local testing without Postgres (fast feedback loop)
+- If you want to test migrations and tests locally without Postgres, create an SQLite settings override (not for production):
+  - Create a file `local_settings.py` that sets DATABASES to use sqlite3.
+  - Set env var before running Django: `set DJANGO_SETTINGS_MODULE=myproject.settings_local` or adjust `manage.py` accordingly.
+  - Run migrations/tests locally:
+    python manage.py migrate
+    python manage.py test empresa.tests.test_aprendizaje -v 2
+
+Checklist to verify after deploy
+- [ ] Migrations applied on target app
+- [ ] Seed script ran and demo lesson exists
+- [ ] A test user can mark steps and receive XP
+- [ ] No duplicate XP when re-clicking steps
+- [ ] Logs show no unhandled exceptions from aprendizaje endpoints
+- [ ] Backups exist and are recent
+
+Troubleshooting tips
+- If you see encoding errors from psycopg2 while connecting to Postgres, check `DATABASE_URL` environment variable and credentials encoding.
+- If migrations fail due to dependency ordering, inspect the failing migration and consider running `python manage.py makemigrations` locally then generate a clean migration file.
+
+Contact / Notes
+- Keep this script in `scripts/deploy_academia_heroku.txt` and update with your app name and any environment-specific steps.
+
+End of script

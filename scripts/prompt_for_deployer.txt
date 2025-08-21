@@ -1,0 +1,55 @@
+Tarea: desplegar la aplicación CONTAFY a Heroku y ejecutar migraciones + seed demo.
+
+Objetivo: ejecutar comandos en un entorno PowerShell con acceso al repo local y a la cuenta Heroku del proyecto, aplicar migraciones (incluida la migración 0008_add_pasos_field.py), lanzar seed demo y verificar que la lección interactiva funciona.
+
+Requisitos previos:
+- Tener Heroku CLI instalado y autenticado (heroku login).
+- Tener acceso git al repo y estar en la rama correcta (main).
+- Tener permisos para la app Heroku indicada (APP_NAME).
+
+Pasos (ejecutar en PowerShell desde la raíz del repo):
+
+1) Confirmar cambios y push al remote origin:
+   git add -A
+   git commit -m "Academia: pasos interactivos + migration 0008"
+   git push origin main
+
+2) Enlazar repo con Heroku y push (reemplazar APP_NAME):
+   heroku login
+   heroku git:remote -a APP_NAME
+   git push heroku main
+
+3) Configurar variables necesarias en Heroku (usar settings_produccion):
+   heroku config:set DJANGO_SETTINGS_MODULE=settings_produccion SECRET_KEY='(secret_here)' DEBUG=False --app APP_NAME
+
+4) Crear backup de la DB antes de migrar:
+   heroku pg:backups:capture --app APP_NAME
+
+5) Ejecutar migraciones en Heroku:
+   heroku run python manage.py migrate --app APP_NAME
+
+6) Ejecutar seed demo (crea un módulo y una lección demo):
+   heroku run python manage.py shell -c "exec(open('scripts/seed_demo_leccion.py').read())" --app APP_NAME
+
+7) Ejecutar collectstatic (si aplica):
+   heroku run python manage.py collectstatic --noinput --app APP_NAME
+
+8) Verificar app y logs:
+   heroku open --app APP_NAME
+   heroku logs --tail --app APP_NAME
+
+Notas de seguridad:
+- No exponer SECRET_KEY ni contraseñas públicamente.
+- Si la migración falla, revisar `heroku run python manage.py migrate --app APP_NAME` logs y obtener el trace.
+
+Resultado esperado:
+- Migraciones aplicadas exitosamente en Heroku.
+- Lección demo creada.
+- La ruta de la academia debe mostrar la lección interactiva con pasos.
+
+Si algo falla, copiar el output exacto de:
+- heroku run python manage.py migrate --app APP_NAME
+- heroku logs --tail --app APP_NAME
+
+
+Fin del prompt.

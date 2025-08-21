@@ -90,3 +90,60 @@ class InsigniaUsuario(models.Model):
     
     def __str__(self):
         return f"{self.usuario.username} - {self.insignia.nombre}"
+
+class Liga(models.Model):
+    TIPO_LIGA_CHOICES = [
+        ('semanal', 'Semanal'),
+        ('mensual', 'Mensual'),
+        ('especial', 'Especial'),
+    ]
+    
+    nombre = models.CharField(max_length=100)
+    tipo = models.CharField(max_length=20, choices=TIPO_LIGA_CHOICES)
+    fecha_inicio = models.DateTimeField()
+    fecha_fin = models.DateTimeField()
+    activa = models.BooleanField(default=True)
+    premio_xp = models.IntegerField(default=100)
+    
+    def __str__(self):
+        return f"{self.nombre} ({self.tipo})"
+
+class ParticipacionLiga(models.Model):
+    usuario = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    liga = models.ForeignKey(Liga, on_delete=models.CASCADE)
+    puntos_obtenidos = models.IntegerField(default=0)
+    posicion = models.IntegerField(default=0)
+    fecha_inscripcion = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        unique_together = ['usuario', 'liga']
+        ordering = ['-puntos_obtenidos']
+    
+    def __str__(self):
+        return f"{self.usuario.username} - {self.liga.nombre}"
+
+class Reto(models.Model):
+    nombre = models.CharField(max_length=100)
+    descripcion = models.TextField()
+    objetivo = models.TextField()  # JSON string
+    premio_xp = models.IntegerField(default=50)
+    fecha_inicio = models.DateTimeField()
+    fecha_fin = models.DateTimeField()
+    activo = models.BooleanField(default=True)
+    
+    def __str__(self):
+        return self.nombre
+
+class ParticipacionReto(models.Model):
+    usuario = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    reto = models.ForeignKey(Reto, on_delete=models.CASCADE)
+    progreso = models.TextField(default='{}')
+    completado = models.BooleanField(default=False)
+    fecha_completado = models.DateTimeField(null=True, blank=True)
+    fecha_inscripcion = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        unique_together = ['usuario', 'reto']
+    
+    def __str__(self):
+        return f"{self.usuario.username} - {self.reto.nombre}"
