@@ -257,12 +257,20 @@
     </div>
     
     <ul class="nav flex-column">
-      <!-- INICIO -->
+      <!-- NUEVA VENTA (Acceso rápido) -->
+      {% if is_owner or user_powers.puede_registrar_ventas %}
       <li class="nav-item">
-        <a class="nav-link" href="{% url 'empresa:home' %}">
-          <i class="bi bi-house-door me-2"></i>Inicio
+        {% if user.empresa.categoria == 'manufactura' %}
+        <a class="nav-link" href="{% url 'empresa:crear_venta_manufactura' %}">
+          <i class="bi bi-plus-circle me-2"></i>Nueva Venta
         </a>
+        {% else %}
+        <a class="nav-link" href="{% url 'empresa:crear_venta' %}">
+          <i class="bi bi-plus-circle me-2"></i>Nueva Venta
+        </a>
+        {% endif %}
       </li>
+      {% endif %}
       
       <!-- REPORTES -->
       {% if is_owner or user_powers.puede_ver_reportes %}
@@ -272,8 +280,11 @@
         </a>
         <div class="collapse" id="reportesMenu">
           <ul class="nav flex-column ms-3">
+            <li><a class="nav-link" href="{% url 'empresa:home' %}">
+              <i class="bi bi-house-door me-2"></i>Inicio
+            </a></li>
             <li><a class="nav-link" href="{% url 'empresa:resumen_financiero' %}">
-              <i class="bi bi-house-door me-2"></i>Resumen Financiero
+              <i class="bi bi-graph-up-arrow me-2"></i>Resumen Financiero
             </a></li>
             <li><a class="nav-link" href="{% url 'empresa:dashboard' %}">
               <i class="bi bi-speedometer2 me-2"></i>Dashboard
