@@ -48,24 +48,6 @@
             </div>
         </div>
 
-        <!-- Servicios (solo para empresas de servicios) -->
-        {% if es_servicios %}
-        <div class="mb-3">
-            <label for="servicio_select" class="form-label">Servicio *</label>
-            <select class="form-select" id="servicio_select" name="servicio_id">
-                <option value="">Seleccionar servicio...</option>
-                {% for servicio in servicios %}
-                <option value="{{ servicio.id }}" 
-                        data-precio="{{ servicio.precio_base }}"
-                        data-costo="{{ servicio.costo_directo }}"
-                        data-unidad="{{ servicio.unidad_medida }}">
-                    {{ servicio.nombre }} - ${{ servicio.precio_base }}
-                </option>
-                {% endfor %}
-            </select>
-        </div>
-        {% endif %}
-
         <!-- Cliente -->
         <div class="mb-3">
             <label class="form-label">Cliente</label>
