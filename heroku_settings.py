@@ -1,4 +1,4 @@
-from .core.settings import *
+from core.settings import *
 import os
 
 # Configuración específica para Heroku
