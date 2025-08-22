@@ -16,8 +16,25 @@ from django.utils import timezone
 @require_power('puede_registrar_ventas')
 def crear_venta(request):
     empresa = request.user.empresa
+    
+    # Detectar si es empresa de servicios y cargar servicios
+    servicios = []
+    if empresa.categoria == 'servicios':
+        from empresa.models import TipoServicio
+        servicios_queryset = TipoServicio.objects.filter(empresa=empresa, activo=True)
+        servicios = [{
+            'id': s.id,
+            'nombre': s.nombre,
+            'precio_base': float(s.precio_base),
+            'costo_directo': float(s.costo_directo),
+            'unidad_medida': s.unidad_medida
+        } for s in servicios_queryset]
 
     if request.method == 'POST':
+        # Manejar venta de servicio
+        if empresa.categoria == 'servicios' and request.POST.get('servicio_id'):
+            return procesar_venta_servicio(request, empresa)
+        # Manejar venta de producto normal
         form = VentaForm(request.POST, empresa=empresa)
         if form.is_valid():
             try:
@@ -128,7 +145,121 @@ def crear_venta(request):
         }
         for p in productos
     ]
-    return render(request, 'empresa/crear_venta.html', {'form': form, 'productos_json': productos_json})
+    context = {
+        'form': form, 
+        'productos_json': productos_json,
+        'servicios': servicios,
+        'es_servicios': empresa.categoria == 'servicios'
+    }
+    return render(request, 'empresa/crear_venta.html', context)
+
+def procesar_venta_servicio(request, empresa):
+    """Procesar venta específica de servicio"""
+    try:
+        from empresa.models import TipoServicio, Producto
+        
+        servicio_id = request.POST.get('servicio_id')
+        cliente_nombre = request.POST.get('cliente_nombre', '').strip()
+        cantidad = float(request.POST.get('cantidad', 1))
+        precio_unitario = float(request.POST.get('precio_unitario', 0))
+        tipo_pago = request.POST.get('tipo_pago', 'contado')
+        
+        # Calcular IVA
+        incluye_iva = request.POST.get('incluirIva') == 'on'
+        tasa_iva = float(request.POST.get('tasa_iva', 12)) if incluye_iva else 0
+        monto_neto = cantidad * precio_unitario
+        iva = monto_neto * (tasa_iva / 100) if incluye_iva else 0
+        monto_total = monto_neto + iva
+        
+        servicio = TipoServicio.objects.get(id=servicio_id, empresa=empresa)
+        
+        # Crear o buscar producto equivalente
+        producto, created = Producto.objects.get_or_create(
+            empresa=empresa,
+            codigo=f'SERV-{servicio.id}',
+            defaults={
+                'nombre': servicio.nombre,
+                'descripcion': f'Servicio: {servicio.descripcion}',
+                'precio_unitario': servicio.costo_directo,
+                'pvp': servicio.precio_base,
+                'stock': 999999
+            }
+        )
+        
+        # Crear venta
+        venta = Venta.objects.create(
+            empresa=empresa,
+            cliente_nombre=cliente_nombre or 'Cliente General',
+            producto=producto,
+            cantidad=int(cantidad),
+            precio_unitario=precio_unitario,
+            monto_neto=monto_neto,
+            iva=iva,
+            monto=monto_total,
+            tasa_iva=tasa_iva,
+            tipo_pago=tipo_pago
+        )
+        
+        messages.success(request, f'Venta de servicio "{servicio.nombre}" registrada por ${monto_total:.2f}')
+        return redirect('empresa:home')
+        
+    except Exception as e:
+        messages.error(request, f'Error al registrar venta de servicio: {str(e)}')
+        return redirect('empresa:crear_venta')
+
+def procesar_venta_servicio(request, empresa):
+    """Procesar venta específica de servicio"""
+    try:
+        from empresa.models import TipoServicio, Producto
+        
+        servicio_id = request.POST.get('servicio_id')
+        cliente_nombre = request.POST.get('cliente_nombre', '').strip()
+        cantidad = float(request.POST.get('cantidad', 1))
+        precio_unitario = float(request.POST.get('precio_unitario', 0))
+        tipo_pago = request.POST.get('tipo_pago', 'contado')
+        incluye_iva = request.POST.get('incluye_iva') == 'on'
+        tasa_iva = float(request.POST.get('tasa_iva', 12)) if incluye_iva else 0
+        
+        servicio = TipoServicio.objects.get(id=servicio_id, empresa=empresa)
+        
+        # Calcular montos
+        monto_neto = cantidad * precio_unitario
+        iva = monto_neto * (tasa_iva / 100) if incluye_iva else 0
+        monto_total = monto_neto + iva
+        
+        # Crear o buscar producto equivalente
+        producto, created = Producto.objects.get_or_create(
+            empresa=empresa,
+            codigo=f'SERV-{servicio.id}',
+            defaults={
+                'nombre': servicio.nombre,
+                'descripcion': f'Servicio: {servicio.descripcion}',
+                'precio_unitario': servicio.costo_directo,
+                'pvp': servicio.precio_base,
+                'stock': 999999
+            }
+        )
+        
+        # Crear venta
+        venta = Venta.objects.create(
+            empresa=empresa,
+            cliente_nombre=cliente_nombre or 'Cliente General',
+            producto=producto,
+            cantidad=int(cantidad),
+            precio_unitario=precio_unitario,
+            monto_neto=monto_neto,
+            iva=iva,
+            monto=monto_total,
+            tasa_iva=tasa_iva,
+            tipo_pago=tipo_pago
+        )
+        
+        messages.success(request, f'Venta de servicio "{servicio.nombre}" registrada por ${monto_total:.2f}')
+        return redirect('empresa:home')
+        
+    except Exception as e:
+        messages.error(request, f'Error al registrar venta de servicio: {str(e)}')
+        return redirect('empresa:crear_venta')
 
 @login_required
 @require_power('puede_registrar_ventas')

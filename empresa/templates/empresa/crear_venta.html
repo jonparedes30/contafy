@@ -48,22 +48,62 @@
             </div>
         </div>
 
+        <!-- Servicios (solo para empresas de servicios) -->
+        {% if es_servicios %}
+        <div class="mb-3">
+            <label for="servicio_select" class="form-label">Servicio *</label>
+            <select class="form-select" id="servicio_select" name="servicio_id">
+                <option value="">Seleccionar servicio...</option>
+                {% for servicio in servicios %}
+                <option value="{{ servicio.id }}" 
+                        data-precio="{{ servicio.precio_base }}"
+                        data-costo="{{ servicio.costo_directo }}"
+                        data-unidad="{{ servicio.unidad_medida }}">
+                    {{ servicio.nombre }} - ${{ servicio.precio_base }}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+        {% endif %}
+
         <!-- Cliente -->
         <div class="mb-3">
             <label class="form-label">Cliente</label>
+            {% if es_servicios %}
+                <input type="text" class="form-control" name="cliente_nombre" placeholder="Nombre del cliente (opcional)">
+            {% else %}
             <div class="input-group">
                 {{ form.cliente_fk }}
                 <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#clienteModal">
                     <i class="bi bi-plus"></i> Nuevo
                 </button>
             </div>
+            {% endif %}
         </div>
 
-        <!-- Producto -->
+        <!-- Servicios (solo para empresas de servicios) -->
+        {% if user.empresa.categoria == 'servicios' %}
+        <div class="mb-3">
+            <label for="servicio_id" class="form-label">Servicio *</label>
+            <select class="form-select" id="servicio_id" name="servicio_id">
+                <option value="">Seleccionar servicio...</option>
+                {% for servicio in servicios %}
+                <option value="{{ servicio.id }}" 
+                        data-precio="{{ servicio.precio_base }}"
+                        data-costo="{{ servicio.costo_directo }}"
+                        data-unidad="{{ servicio.unidad_medida }}">
+                    {{ servicio.nombre }} - ${{ servicio.precio_base }}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+        {% else %}
+        <!-- Producto (para comercio y manufactura) -->
         <div class="mb-3">
             {{ form.producto.label_tag }}
             {{ form.producto }}
         </div>
+        {% endif %}
 
         <!-- Cantidad -->
         <div class="mb-3">
@@ -140,6 +180,7 @@
     let scanner = null;
 
     const selectProducto   = document.getElementById('id_producto');
+    const selectServicio   = document.getElementById('servicio_id');
     const inputCodigo      = document.getElementById('codigo_barras');
     const inputCantidad    = document.getElementById('id_cantidad');
     const inputPrecio      = document.getElementById('id_precio_unitario');
@@ -148,6 +189,8 @@
     const inputIva         = document.getElementById('id_iva');
     const inputTotal       = document.getElementById('id_monto_total');
     const stockInfo        = document.getElementById('stock-info');
+    
+    const esServicios = {{ user.empresa.categoria|yesno:'true,false' }} === 'servicios';
 
     const checkboxIva = document.getElementById('incluirIva');
     const ivaDetails = document.getElementById('ivaDetails');
@@ -178,34 +221,54 @@
     }
 
     function actualizarVenta() {
-        const prodId   = selectProducto.value;
-        const prodData = productos[prodId] || {codigo:'', precio_costo:0, precio_venta:0, stock:0};
-        const cantidad = parseFloat(inputCantidad.value) || 0;
-
-        inputCodigo.value = prodData.codigo;
-        // Usar precio_venta (PVP) para las ventas
-        if (prodData.precio_venta && prodData.precio_venta > 0) {
-            inputPrecio.value = prodData.precio_venta.toFixed(2);
-        }
-        // Stock
-        if (prodData.codigo) {
-            stockInfo.textContent = `\uD83D\uDD0D Stock disponible: ${prodData.stock}`;
-            if (cantidad > prodData.stock) {
-                stockInfo.textContent += ' \u26A0\uFE0F Excede stock';
-                stockInfo.classList.add('text-danger');
-                stockInfo.classList.remove('text-success');
+        if (esServicios && selectServicio) {
+            // Manejar servicios
+            const servicioOption = selectServicio.options[selectServicio.selectedIndex];
+            if (servicioOption.value) {
+                const precio = parseFloat(servicioOption.dataset.precio) || 0;
+                inputPrecio.value = precio.toFixed(2);
+                stockInfo.textContent = `\uD83D\uDEE0\uFE0F Servicio: ${servicioOption.text}`;
+                stockInfo.classList.add('text-success');
+                stockInfo.classList.remove('text-danger');
             } else {
-                stockInfo.classList.toggle('text-success', prodData.stock > 0);
-                stockInfo.classList.toggle('text-danger', prodData.stock === 0);
+                inputPrecio.value = '';
+                stockInfo.textContent = '⚠️ Selecciona un servicio.';
+                stockInfo.classList.remove('text-success', 'text-danger');
             }
-        } else {
-            stockInfo.textContent = '⚠️ Selecciona un producto válido para ver el stock.';
-            stockInfo.classList.remove('text-success', 'text-danger');
+        } else if (selectProducto) {
+            // Manejar productos (comercio/manufactura)
+            const prodId   = selectProducto.value;
+            const prodData = productos[prodId] || {codigo:'', precio_costo:0, precio_venta:0, stock:0};
+            const cantidad = parseFloat(inputCantidad.value) || 0;
+
+            inputCodigo.value = prodData.codigo;
+            if (prodData.precio_venta && prodData.precio_venta > 0) {
+                inputPrecio.value = prodData.precio_venta.toFixed(2);
+            }
+            if (prodData.codigo) {
+                stockInfo.textContent = `\uD83D\uDD0D Stock disponible: ${prodData.stock}`;
+                if (cantidad > prodData.stock) {
+                    stockInfo.textContent += ' \u26A0\uFE0F Excede stock';
+                    stockInfo.classList.add('text-danger');
+                    stockInfo.classList.remove('text-success');
+                } else {
+                    stockInfo.classList.toggle('text-success', prodData.stock > 0);
+                    stockInfo.classList.toggle('text-danger', prodData.stock === 0);
+                }
+            } else {
+                stockInfo.textContent = '⚠️ Selecciona un producto válido para ver el stock.';
+                stockInfo.classList.remove('text-success', 'text-danger');
+            }
         }
         calcularIVA();
     }
 
-    selectProducto.addEventListener('change', actualizarVenta);
+    if (selectProducto) {
+        selectProducto.addEventListener('change', actualizarVenta);
+    }
+    if (selectServicio) {
+        selectServicio.addEventListener('change', actualizarVenta);
+    }
     inputCantidad.addEventListener('input', calcularIVA);
     inputPrecio.addEventListener('input', calcularIVA);
     inputTasaIva.addEventListener('input', calcularIVA);
