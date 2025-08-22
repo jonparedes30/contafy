@@ -10,9 +10,14 @@
                 <h5 class="mb-0">
                     <i class="bi bi-tools me-2"></i>Servicios Ofrecidos
                 </h5>
-                <a href="{% url 'empresa:crear_tipo_servicio' %}" class="btn btn-success">
-                    <i class="bi bi-plus-circle me-1"></i>Nuevo Servicio
-                </a>
+                <div class="btn-group">
+                    <a href="{% url 'empresa:crear_venta_servicio' %}" class="btn btn-primary">
+                        <i class="bi bi-cash-coin me-1"></i>Nueva Venta
+                    </a>
+                    <a href="{% url 'empresa:crear_tipo_servicio' %}" class="btn btn-success">
+                        <i class="bi bi-plus-circle me-1"></i>Nuevo Servicio
+                    </a>
+                </div>
             </div>
             <div class="card-body">
                 {% if servicios %}

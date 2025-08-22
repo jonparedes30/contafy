@@ -156,7 +156,7 @@
         const cantidad = parseFloat(inputCantidad.value) || 0;
         const precio   = parseFloat(inputPrecio.value) || 0;
         const incluirIva = checkboxIva.checked;
-        const tasaIva  = incluirIva ? (parseFloat(inputTasaIva.value) || 12) : 0;
+        const tasaIva  = parseFloat(inputTasaIva.value) || 12;
         
         const montoNeto = cantidad * precio;
         const iva = incluirIva ? montoNeto * (tasaIva / 100) : 0;
@@ -165,6 +165,13 @@
         inputMontoNeto.value = montoNeto.toFixed(2);
         inputIva.value = iva.toFixed(2);
         inputTotal.value = total.toFixed(2);
+        
+        // Actualizar tasa IVA a 0 si no incluye IVA
+        if (!incluirIva) {
+            inputTasaIva.value = '0';
+        } else if (inputTasaIva.value === '0') {
+            inputTasaIva.value = '12';
+        }
         
         // Mostrar/ocultar detalles IVA
         ivaDetails.style.display = incluirIva ? 'block' : 'none';

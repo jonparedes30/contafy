@@ -54,6 +54,7 @@ from .views import social
 from .views.simulaciones_api import simulacion_tipos_api, simulacion_escenarios_api, simulacion_start_api, simulacion_step_api, simulacion_result_api
 from .views.recomendaciones_api import obtener_recomendaciones_api, registrar_interaccion_api, obtener_siguiente_leccion_api
 from .views.ranking_api import ranking_semanal_api, ligas_activas_api, inscribir_liga_api, retos_activos_api, ranking_view
+from .views.ventas_servicios import crear_venta_servicio
 from .views.admin_simple import admin_dashboard, crear_codigo_invitacion
 
 # Configurar router para la API
@@ -272,6 +273,9 @@ urlpatterns += [
     
     # Vista de Ranking
     path('aprendizaje/ranking/', ranking_view, name='aprendizaje_ranking'),
+    
+    # Ventas de Servicios
+    path('servicios/venta/crear/', crear_venta_servicio, name='crear_venta_servicio'),
     
     # URLs de Simulaciones
     path('aprendizaje/simulacion/venta/', simulacion_venta, name='simulacion_venta'),

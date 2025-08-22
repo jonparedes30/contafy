@@ -1,0 +1,222 @@
+{% extends 'empresa/base.html' %}
+
+{% block title %}Nueva Venta de Servicio - CONTAFY{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-plus-circle me-2"></i>Nueva Venta de Servicio
+                </h5>
+            </div>
+            <div class="card-body">
+                <form method="post" id="form-venta-servicio">
+                    {% csrf_token %}
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="servicio" class="form-label">Servicio *</label>
+                                <select class="form-select" id="servicio" name="servicio" required>
+                                    <option value="">Seleccionar servicio...</option>
+                                    {% for servicio in servicios %}
+                                    <option value="{{ servicio.id }}" 
+                                            data-precio="{{ servicio.precio_base }}"
+                                            data-unidad="{{ servicio.unidad_medida }}">
+                                        {{ servicio.nombre }} - ${{ servicio.precio_base }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="cliente_nombre" class="form-label">Cliente</label>
+                                <input type="text" class="form-control" id="cliente_nombre" name="cliente_nombre" 
+                                       placeholder="Nombre del cliente (opcional)">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label for="cantidad" class="form-label">Cantidad *</label>
+                                <input type="number" class="form-control" id="cantidad" name="cantidad" 
+                                       min="1" step="0.01" value="1" required>
+                                <small class="form-text text-muted" id="unidad-medida">Unidades</small>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label for="precio_unitario" class="form-label">Precio Unitario ($)</label>
+                                <input type="number" class="form-control" id="precio_unitario" name="precio_unitario" 
+                                       step="0.01" readonly>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label for="tipo_pago" class="form-label">Tipo de Pago</label>
+                                <select class="form-select" id="tipo_pago" name="tipo_pago">
+                                    <option value="contado">Contado</option>
+                                    <option value="credito">Crédito</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- IVA Section -->
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="incluye_iva" name="incluye_iva" checked>
+                                    <label class="form-check-label" for="incluye_iva">
+                                        Incluye IVA (12%)
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="tasa_iva" class="form-label">Tasa IVA (%)</label>
+                                <input type="number" class="form-control" id="tasa_iva" name="tasa_iva" 
+                                       value="12" step="0.01" min="0">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Totales -->
+                    <div class="card bg-light">
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <div class="mb-2">
+                                        <label class="form-label">Subtotal:</label>
+                                        <div class="h5" id="subtotal-display">$0.00</div>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="mb-2">
+                                        <label class="form-label">IVA:</label>
+                                        <div class="h5" id="iva-display">$0.00</div>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="mb-2">
+                                        <label class="form-label">Total:</label>
+                                        <div class="h4 text-primary" id="total-display">$0.00</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="d-flex justify-content-between mt-3">
+                        <a href="{% url 'empresa:listar_tipos_servicios' %}" class="btn btn-secondary">
+                            <i class="bi bi-arrow-left me-1"></i>Cancelar
+                        </a>
+                        <button type="submit" class="btn btn-success">
+                            <i class="bi bi-check-circle me-1"></i>Registrar Venta
+                        </button>
+                    </div>
+                    
+                    <!-- Hidden fields for calculations -->
+                    <input type="hidden" id="monto_neto" name="monto_neto">
+                    <input type="hidden" id="iva" name="iva">
+                    <input type="hidden" id="monto" name="monto">
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const servicioSelect = document.getElementById('servicio');
+    const cantidadInput = document.getElementById('cantidad');
+    const precioUnitarioInput = document.getElementById('precio_unitario');
+    const incluyeIvaCheck = document.getElementById('incluye_iva');
+    const tasaIvaInput = document.getElementById('tasa_iva');
+    const unidadMedidaText = document.getElementById('unidad-medida');
+    
+    const subtotalDisplay = document.getElementById('subtotal-display');
+    const ivaDisplay = document.getElementById('iva-display');
+    const totalDisplay = document.getElementById('total-display');
+    
+    const montoNetoHidden = document.getElementById('monto_neto');
+    const ivaHidden = document.getElementById('iva');
+    const montoHidden = document.getElementById('monto');
+    
+    function actualizarPrecio() {
+        const servicioOption = servicioSelect.options[servicioSelect.selectedIndex];
+        if (servicioOption.value) {
+            const precio = parseFloat(servicioOption.dataset.precio) || 0;
+            const unidad = servicioOption.dataset.unidad || 'Unidades';
+            
+            precioUnitarioInput.value = precio.toFixed(2);
+            unidadMedidaText.textContent = unidad;
+            
+            calcularTotales();
+        } else {
+            precioUnitarioInput.value = '';
+            unidadMedidaText.textContent = 'Unidades';
+            limpiarTotales();
+        }
+    }
+    
+    function calcularTotales() {
+        const cantidad = parseFloat(cantidadInput.value) || 0;
+        const precioUnitario = parseFloat(precioUnitarioInput.value) || 0;
+        const tasaIva = parseFloat(tasaIvaInput.value) || 0;
+        const incluyeIva = incluyeIvaCheck.checked;
+        
+        if (cantidad > 0 && precioUnitario > 0) {
+            let subtotal, iva, total;
+            
+            if (incluyeIva && tasaIva > 0) {
+                // El precio incluye IVA
+                total = cantidad * precioUnitario;
+                subtotal = total / (1 + tasaIva / 100);
+                iva = total - subtotal;
+            } else {
+                // El precio no incluye IVA o IVA es 0
+                subtotal = cantidad * precioUnitario;
+                iva = incluyeIva ? (subtotal * tasaIva / 100) : 0;
+                total = subtotal + iva;
+            }
+            
+            // Actualizar displays
+            subtotalDisplay.textContent = '$' + subtotal.toFixed(2);
+            ivaDisplay.textContent = '$' + iva.toFixed(2);
+            totalDisplay.textContent = '$' + total.toFixed(2);
+            
+            // Actualizar campos ocultos
+            montoNetoHidden.value = subtotal.toFixed(2);
+            ivaHidden.value = iva.toFixed(2);
+            montoHidden.value = total.toFixed(2);
+        } else {
+            limpiarTotales();
+        }
+    }
+    
+    function limpiarTotales() {
+        subtotalDisplay.textContent = '$0.00';
+        ivaDisplay.textContent = '$0.00';
+        totalDisplay.textContent = '$0.00';
+        
+        montoNetoHidden.value = '';
+        ivaHidden.value = '';
+        montoHidden.value = '';
+    }
+    
+    // Event listeners
+    servicioSelect.addEventListener('change', actualizarPrecio);
+    cantidadInput.addEventListener('input', calcularTotales);
+    incluyeIvaCheck.addEventListener('change', calcularTotales);
+    tasaIvaInput.addEventListener('input', calcularTotales);
+});
+</script>
+{% endblock %}
