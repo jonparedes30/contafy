@@ -521,6 +521,9 @@
             <li><a class="nav-link" href="{% url 'empresa:listar_empresas' %}">
               <i class="bi bi-building me-2"></i>Mi Empresa
             </a></li>
+            <li><a class="nav-link" href="{% url 'empresa:asistente_ayuda' %}">
+              <i class="bi bi-question-circle me-2"></i>Asistente
+            </a></li>
             {% endif %}
           </ul>
         </div>
@@ -550,12 +553,7 @@
         </a>
       </li>
       
-      <!-- ASISTENTE -->
-      <li class="nav-item">
-        <a class="nav-link" href="{% url 'empresa:asistente_ayuda' %}">
-          <i class="bi bi-question-circle me-2"></i>Asistente
-        </a>
-      </li>
+
     </ul>
     
     <!-- USUARIO -->
