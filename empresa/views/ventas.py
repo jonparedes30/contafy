@@ -11,6 +11,8 @@ from django.contrib import messages
 from django.db.models import Sum, Avg, Count, Q
 from datetime import datetime, timedelta
 from django.utils import timezone
+from django.http import JsonResponse
+import json
 
 @login_required
 @require_power('puede_registrar_ventas')
@@ -323,3 +325,117 @@ def listar_ventas(request):
         'promedio_venta': promedio_venta,
     }
     return render(request, 'empresa/listar_ventas.html', contexto)
+
+@login_required
+@require_power('puede_registrar_ventas')
+def crear_venta_multiple(request):
+    """Vista para crear ventas múltiples"""
+    empresa = request.user.empresa
+    
+    if request.method == 'GET':
+        productos = Producto.objects.filter(empresa=empresa, stock__gt=0)
+        servicios = []
+        if empresa.categoria == 'servicios':
+            from empresa.models import TipoServicio
+            servicios_queryset = TipoServicio.objects.filter(empresa=empresa, activo=True)
+            servicios = [{
+                'id': s.id,
+                'nombre': s.nombre,
+                'precio_base': float(s.precio_base),
+                'stock': 999999
+            } for s in servicios_queryset]
+        
+        context = {
+            'productos': productos,
+            'servicios': servicios,
+            'es_servicios': empresa.categoria == 'servicios'
+        }
+        return render(request, 'empresa/crear_venta_multiple.html', context)
+    
+    elif request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            productos_venta = data.get('productos', [])
+            cliente_nombre = data.get('cliente_nombre', '').strip()
+            incluir_iva = data.get('incluir_iva', False)
+            tipo_pago = data.get('tipo_pago', 'contado')
+            monto_recibido = float(data.get('monto_recibido', 0))
+            
+            if not productos_venta:
+                return JsonResponse({'success': False, 'error': 'No hay productos en la venta'})
+            
+            with transaction.atomic():
+                total_venta = 0
+                ventas_creadas = []
+                
+                for item in productos_venta:
+                    producto_id = item['id']
+                    cantidad = int(item['cantidad'])
+                    precio = float(item['precio'])
+                    
+                    if empresa.categoria == 'servicios':
+                        from empresa.models import TipoServicio
+                        servicio = TipoServicio.objects.get(id=producto_id, empresa=empresa)
+                        producto, created = Producto.objects.get_or_create(
+                            empresa=empresa,
+                            codigo=f'SERV-{servicio.id}',
+                            defaults={
+                                'nombre': servicio.nombre,
+                                'precio_unitario': servicio.costo_directo,
+                                'pvp': servicio.precio_base,
+                                'stock': 999999
+                            }
+                        )
+                    else:
+                        producto = Producto.objects.get(id=producto_id, empresa=empresa)
+                        if producto.stock < cantidad:
+                            return JsonResponse({
+                                'success': False, 
+                                'error': f'Stock insuficiente para {producto.nombre}. Disponible: {producto.stock}'
+                            })
+                    
+                    monto_neto = cantidad * precio
+                    iva = monto_neto * 0.15 if incluir_iva else 0
+                    monto_total = monto_neto + iva
+                    
+                    venta = Venta.objects.create(
+                        empresa=empresa,
+                        cliente_nombre=cliente_nombre or 'Cliente General',
+                        producto=producto,
+                        cantidad=cantidad,
+                        precio_unitario=precio,
+                        monto_neto=monto_neto,
+                        iva=iva,
+                        monto=monto_total,
+                        tasa_iva=15 if incluir_iva else 0,
+                        tipo_pago=tipo_pago,
+                        creado_por=request.user
+                    )
+                    
+                    if empresa.categoria != 'servicios':
+                        producto.stock -= cantidad
+                        producto.save()
+                    
+                    ventas_creadas.append(venta)
+                    total_venta += monto_total
+                
+                if tipo_pago == 'contado' and monto_recibido < total_venta:
+                    return JsonResponse({
+                        'success': False, 
+                        'error': f'Monto insuficiente. Total: ${total_venta:.2f}, Recibido: ${monto_recibido:.2f}'
+                    })
+                
+                cambio = monto_recibido - total_venta if tipo_pago == 'contado' else 0
+                
+                return JsonResponse({
+                    'success': True, 
+                    'message': f'Venta procesada exitosamente. Total: ${total_venta:.2f}',
+                    'total': total_venta,
+                    'cambio': cambio,
+                    'ventas_count': len(ventas_creadas)
+                })
+                
+        except Exception as e:
+            return JsonResponse({'success': False, 'error': str(e)})
+    
+    return JsonResponse({'success': False, 'error': 'Método no permitido'})

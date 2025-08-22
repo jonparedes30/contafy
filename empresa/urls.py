@@ -12,7 +12,7 @@ from .views.autenticacion import login_usuario, logout_usuario, registrar_usuari
 from .views.empresa import crear_empresa, listar_empresas, gestion_poderes_empleado, crear_empleado, home, eliminar_empleado
 from .views.entrada_beta import entrada_beta
 from .views.productos import crear_producto, listar_productos, editar_producto, eliminar_producto
-from .views.ventas import crear_venta, listar_ventas
+from .views.ventas import crear_venta, listar_ventas, crear_venta_multiple
 from .views.compras import crear_compra, listar_compras
 from .views.gastos import crear_gasto, listar_gastos
 from .views.capital import crear_capital, listar_capital
@@ -89,6 +89,7 @@ urlpatterns = [
     
     # URLs de ventas
     path('venta/crear/', crear_venta, name='crear_venta'),
+    path('venta/multiple/', crear_venta_multiple, name='crear_venta_multiple'),
     path('venta/listar/', listar_ventas, name='listar_ventas'),
     
     # URLs de compras

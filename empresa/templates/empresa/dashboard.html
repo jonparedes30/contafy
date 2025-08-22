@@ -231,6 +231,26 @@
         </form>
     </div>
 
+    <!-- Acciones Rápidas -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex flex-wrap gap-2 justify-content-center">
+                <a href="{% url 'empresa:crear_venta' %}" class="btn btn-success quick-action">
+                    <i class="bi bi-plus-circle"></i> Venta Simple
+                </a>
+                <a href="{% url 'empresa:crear_venta_multiple' %}" class="btn btn-primary quick-action">
+                    <i class="bi bi-cart-plus"></i> Venta Múltiple
+                </a>
+                <a href="{% url 'empresa:crear_compra' %}" class="btn btn-info quick-action">
+                    <i class="bi bi-bag-plus"></i> Compra
+                </a>
+                <a href="{% url 'empresa:crear_gasto' %}" class="btn btn-warning quick-action">
+                    <i class="bi bi-receipt"></i> Gasto
+                </a>
+            </div>
+        </div>
+    </div>
+
     <!-- KPIs filtrados -->
     <div class="row mb-4">
         <div class="col-xl-3 col-md-6 mb-4">

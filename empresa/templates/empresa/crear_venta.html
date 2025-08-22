@@ -159,6 +159,32 @@
             {{ form.tipo_pago.label_tag }}
             {{ form.tipo_pago }}
         </div>
+        
+        <!-- Calculadora de cambio (solo contado) -->
+        <div id="calculadora-cambio-simple" style="display: none;" class="mb-3">
+            <div class="card bg-light">
+                <div class="card-body">
+                    <h6 class="text-primary">💵 Calculadora de Cambio</h6>
+                    <div class="row">
+                        <div class="col-md-4">
+                            <label class="form-label">Total a cobrar:</label>
+                            <div class="h5 text-info" id="total-cobrar-display">$0.00</div>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="monto-recibido-simple" class="form-label">Monto recibido:</label>
+                            <div class="input-group">
+                                <span class="input-group-text">$</span>
+                                <input type="number" class="form-control" id="monto-recibido-simple" step="0.01" placeholder="0.00">
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Cambio:</label>
+                            <div class="h5 text-success" id="cambio-display-simple">$0.00</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
 
         <!-- Stock info -->
         <div id="stock-info" class="fw-bold mb-3 text-center"></div>
@@ -208,6 +234,11 @@
         inputMontoNeto.value = montoNeto.toFixed(2);
         inputIva.value = iva.toFixed(2);
         inputTotal.value = total.toFixed(2);
+        
+        // Actualizar calculadora de cambio
+        if (tipoPagoSelect && tipoPagoSelect.value === 'contado') {
+            actualizarTotalCobrar();
+        }
         
         // Actualizar tasa IVA a 0 si no incluye IVA
         if (!incluirIva) {
@@ -276,10 +307,53 @@
     inputTasaIva.addEventListener('input', calcularIVA);
     checkboxIva.addEventListener('change', calcularIVA);
     
+    // Calculadora de cambio para venta simple
+    const tipoPagoSelect = document.getElementById('id_tipo_pago');
+    const calculadoraCambioSimple = document.getElementById('calculadora-cambio-simple');
+    const totalCobrarDisplay = document.getElementById('total-cobrar-display');
+    const montoRecibidoSimple = document.getElementById('monto-recibido-simple');
+    const cambioDisplaySimple = document.getElementById('cambio-display-simple');
+    
+    function mostrarCalculadoraCambio() {
+        if (tipoPagoSelect && calculadoraCambioSimple) {
+            calculadoraCambioSimple.style.display = tipoPagoSelect.value === 'contado' ? 'block' : 'none';
+            if (tipoPagoSelect.value === 'contado') {
+                actualizarTotalCobrar();
+            }
+        }
+    }
+    
+    function actualizarTotalCobrar() {
+        const total = parseFloat(inputTotal.value) || 0;
+        if (totalCobrarDisplay) {
+            totalCobrarDisplay.textContent = '$' + total.toFixed(2);
+        }
+        calcularCambioSimple();
+    }
+    
+    function calcularCambioSimple() {
+        const total = parseFloat(inputTotal.value) || 0;
+        const recibido = parseFloat(montoRecibidoSimple.value) || 0;
+        const cambio = recibido - total;
+        
+        if (cambioDisplaySimple) {
+            cambioDisplaySimple.textContent = '$' + Math.max(0, cambio).toFixed(2);
+            cambioDisplaySimple.className = cambio >= 0 ? 'h5 text-success' : 'h5 text-danger';
+        }
+    }
+    
+    if (tipoPagoSelect) {
+        tipoPagoSelect.addEventListener('change', mostrarCalculadoraCambio);
+    }
+    if (montoRecibidoSimple) {
+        montoRecibidoSimple.addEventListener('input', calcularCambioSimple);
+    }
+    
     // Inicializar estado de IVA al cargar la página
     document.addEventListener('DOMContentLoaded', function() {
         actualizarVenta();
         calcularIVA(); // Asegurar que los detalles de IVA estén ocultos inicialmente
+        mostrarCalculadoraCambio();
     });
 
     // Buscar producto por código (mejorado con API)

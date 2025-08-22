@@ -1,0 +1,350 @@
+{% extends 'empresa/base.html' %}
+
+{% block title %}Venta Múltiple{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2 class="mb-4 text-success text-center">🛒 Venta Múltiple</h2>
+
+    <div class="row">
+        <!-- Lista de productos -->
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5>Productos en la venta</h5>
+                </div>
+                <div class="card-body">
+                    <!-- Agregar producto -->
+                    <div class="row mb-3">
+                        <div class="col-md-4">
+                            <select class="form-select" id="producto-select">
+                                <option value="">Seleccionar producto...</option>
+                                {% for producto in productos %}
+                                <option value="{{ producto.id }}" 
+                                        data-nombre="{{ producto.nombre }}"
+                                        data-precio="{{ producto.precio_unitario }}"
+                                        data-stock="{{ producto.stock }}">
+                                    {{ producto.nombre }} - ${{ producto.precio_unitario }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <input type="number" class="form-control" id="cantidad-input" placeholder="Cant." min="1" value="1">
+                        </div>
+                        <div class="col-md-2">
+                            <button type="button" class="btn btn-primary" id="agregar-producto">
+                                ➕ Agregar
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Tabla de productos -->
+                    <div class="table-responsive">
+                        <table class="table table-striped" id="tabla-productos">
+                            <thead>
+                                <tr>
+                                    <th>Producto</th>
+                                    <th>Cantidad</th>
+                                    <th>Precio Unit.</th>
+                                    <th>Subtotal</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="productos-tbody">
+                                <tr id="no-productos">
+                                    <td colspan="5" class="text-center text-muted">No hay productos agregados</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Resumen y pago -->
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5>💰 Resumen de Venta</h5>
+                </div>
+                <div class="card-body">
+                    <!-- Cliente -->
+                    <div class="mb-3">
+                        <label class="form-label">Cliente</label>
+                        <input type="text" class="form-control" id="cliente-nombre" placeholder="Nombre del cliente (opcional)">
+                    </div>
+
+                    <!-- IVA -->
+                    <div class="mb-3">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="incluir-iva">
+                            <label class="form-check-label" for="incluir-iva">
+                                Incluir IVA (15%)
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Totales -->
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between">
+                            <span>Subtotal:</span>
+                            <span id="subtotal-display">$0.00</span>
+                        </div>
+                        <div class="d-flex justify-content-between">
+                            <span>IVA:</span>
+                            <span id="iva-display">$0.00</span>
+                        </div>
+                        <hr>
+                        <div class="d-flex justify-content-between h5">
+                            <span>Total:</span>
+                            <span id="total-display">$0.00</span>
+                        </div>
+                    </div>
+
+                    <!-- Tipo de pago -->
+                    <div class="mb-3">
+                        <label class="form-label">Tipo de Pago</label>
+                        <select class="form-select" id="tipo-pago">
+                            <option value="contado">Contado</option>
+                            <option value="credito">Crédito</option>
+                        </select>
+                    </div>
+
+                    <!-- Calculadora de cambio (solo contado) -->
+                    <div id="calculadora-cambio" style="display: none;">
+                        <div class="card bg-light mb-3">
+                            <div class="card-body">
+                                <h6>💵 Calculadora de Cambio</h6>
+                                <div class="mb-2">
+                                    <label class="form-label">Monto recibido:</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text">$</span>
+                                        <input type="number" class="form-control" id="monto-recibido" step="0.01" placeholder="0.00">
+                                    </div>
+                                </div>
+                                <div class="d-flex justify-content-between">
+                                    <span>Cambio:</span>
+                                    <span class="h6 text-success" id="cambio-display">$0.00</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Botones -->
+                    <button type="button" class="btn btn-success w-100 mb-2" id="procesar-venta">
+                        🛒 Procesar Venta
+                    </button>
+                    <a href="{% url 'empresa:dashboard' %}" class="btn btn-secondary w-100">
+                        ❌ Cancelar
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let productosVenta = [];
+let contadorProductos = 0;
+
+document.addEventListener('DOMContentLoaded', function() {
+    const productoSelect = document.getElementById('producto-select');
+    const cantidadInput = document.getElementById('cantidad-input');
+    const agregarBtn = document.getElementById('agregar-producto');
+    const incluirIvaCheck = document.getElementById('incluir-iva');
+    const tipoPagoSelect = document.getElementById('tipo-pago');
+    const calculadoraCambio = document.getElementById('calculadora-cambio');
+    const montoRecibidoInput = document.getElementById('monto-recibido');
+    const procesarVentaBtn = document.getElementById('procesar-venta');
+
+    // Agregar producto
+    agregarBtn.addEventListener('click', function() {
+        const productoOption = productoSelect.options[productoSelect.selectedIndex];
+        const cantidad = parseInt(cantidadInput.value) || 1;
+
+        if (!productoOption.value) {
+            alert('Selecciona un producto');
+            return;
+        }
+
+        const producto = {
+            id: productoOption.value,
+            nombre: productoOption.dataset.nombre,
+            precio: parseFloat(productoOption.dataset.precio),
+            stock: parseInt(productoOption.dataset.stock),
+            cantidad: cantidad
+        };
+
+        if (cantidad > producto.stock) {
+            alert(`Stock insuficiente. Disponible: ${producto.stock}`);
+            return;
+        }
+
+        // Verificar si ya existe
+        const existente = productosVenta.find(p => p.id === producto.id);
+        if (existente) {
+            existente.cantidad += cantidad;
+        } else {
+            productosVenta.push(producto);
+        }
+
+        actualizarTabla();
+        calcularTotales();
+        
+        // Limpiar selección
+        productoSelect.value = '';
+        cantidadInput.value = '1';
+    });
+
+    // Mostrar/ocultar calculadora de cambio
+    tipoPagoSelect.addEventListener('change', function() {
+        calculadoraCambio.style.display = this.value === 'contado' ? 'block' : 'none';
+    });
+
+    // Calcular cambio
+    montoRecibidoInput.addEventListener('input', calcularCambio);
+    
+    // Recalcular al cambiar IVA
+    incluirIvaCheck.addEventListener('change', calcularTotales);
+
+    // Procesar venta
+    procesarVentaBtn.addEventListener('click', procesarVenta);
+});
+
+function actualizarTabla() {
+    const tbody = document.getElementById('productos-tbody');
+    const noProductos = document.getElementById('no-productos');
+    
+    if (productosVenta.length === 0) {
+        noProductos.style.display = 'table-row';
+        return;
+    }
+    
+    noProductos.style.display = 'none';
+    
+    // Limpiar filas existentes (excepto no-productos)
+    const filas = tbody.querySelectorAll('tr:not(#no-productos)');
+    filas.forEach(fila => fila.remove());
+    
+    productosVenta.forEach((producto, index) => {
+        const subtotal = producto.cantidad * producto.precio;
+        const fila = document.createElement('tr');
+        fila.innerHTML = `
+            <td>${producto.nombre}</td>
+            <td>
+                <input type="number" class="form-control form-control-sm" 
+                       value="${producto.cantidad}" min="1" max="${producto.stock}"
+                       onchange="cambiarCantidad(${index}, this.value)">
+            </td>
+            <td>$${producto.precio.toFixed(2)}</td>
+            <td>$${subtotal.toFixed(2)}</td>
+            <td>
+                <button class="btn btn-sm btn-danger" onclick="eliminarProducto(${index})">
+                    🗑️
+                </button>
+            </td>
+        `;
+        tbody.appendChild(fila);
+    });
+}
+
+function cambiarCantidad(index, nuevaCantidad) {
+    const cantidad = parseInt(nuevaCantidad) || 1;
+    const producto = productosVenta[index];
+    
+    if (cantidad > producto.stock) {
+        alert(`Stock insuficiente. Disponible: ${producto.stock}`);
+        actualizarTabla();
+        return;
+    }
+    
+    producto.cantidad = cantidad;
+    actualizarTabla();
+    calcularTotales();
+}
+
+function eliminarProducto(index) {
+    productosVenta.splice(index, 1);
+    actualizarTabla();
+    calcularTotales();
+}
+
+function calcularTotales() {
+    const incluirIva = document.getElementById('incluir-iva').checked;
+    
+    let subtotal = 0;
+    productosVenta.forEach(producto => {
+        subtotal += producto.cantidad * producto.precio;
+    });
+    
+    const iva = incluirIva ? subtotal * 0.15 : 0;
+    const total = subtotal + iva;
+    
+    document.getElementById('subtotal-display').textContent = '$' + subtotal.toFixed(2);
+    document.getElementById('iva-display').textContent = '$' + iva.toFixed(2);
+    document.getElementById('total-display').textContent = '$' + total.toFixed(2);
+    
+    calcularCambio();
+}
+
+function calcularCambio() {
+    const montoRecibido = parseFloat(document.getElementById('monto-recibido').value) || 0;
+    const total = parseFloat(document.getElementById('total-display').textContent.replace('$', '')) || 0;
+    const cambio = montoRecibido - total;
+    
+    const cambioDisplay = document.getElementById('cambio-display');
+    cambioDisplay.textContent = '$' + Math.max(0, cambio).toFixed(2);
+    cambioDisplay.className = cambio >= 0 ? 'h6 text-success' : 'h6 text-danger';
+}
+
+function procesarVenta() {
+    if (productosVenta.length === 0) {
+        alert('Agrega al menos un producto');
+        return;
+    }
+    
+    const tipoPago = document.getElementById('tipo-pago').value;
+    const montoRecibido = parseFloat(document.getElementById('monto-recibido').value) || 0;
+    const total = parseFloat(document.getElementById('total-display').textContent.replace('$', '')) || 0;
+    
+    if (tipoPago === 'contado' && montoRecibido < total) {
+        alert('El monto recibido es insuficiente');
+        return;
+    }
+    
+    const ventaData = {
+        productos: productosVenta,
+        cliente_nombre: document.getElementById('cliente-nombre').value,
+        incluir_iva: document.getElementById('incluir-iva').checked,
+        tipo_pago: tipoPago,
+        monto_recibido: montoRecibido
+    };
+    
+    // Enviar al servidor
+    fetch('{% url "empresa:crear_venta_multiple" %}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+        },
+        body: JSON.stringify(ventaData)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('Venta procesada exitosamente');
+            window.location.href = '{% url "empresa:dashboard" %}';
+        } else {
+            alert('Error: ' + (data.error || 'No se pudo procesar la venta'));
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error procesando la venta');
+    });
+}
+</script>
+
+{% csrf_token %}
+{% endblock %}
