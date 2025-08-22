@@ -95,56 +95,61 @@
         
         <!-- Calculadora de IVA -->
         <div class="mb-3">
-            <div class="form-check">
-                <input class="form-check-input" type="checkbox" id="producto_incluye_iva">
-                <label class="form-check-label" for="producto_incluye_iva">
-                    <i class="bi bi-percent me-2"></i>Calcular precios desde total con IVA
-                </label>
-            </div>
-            <div class="form-text">Marcar para calcular precios sin IVA desde el total con IVA</div>
+            <h6 class="text-primary"><i class="bi bi-calculator me-2"></i>Calculadora de IVA</h6>
+            <div class="form-text mb-2">Calcula los precios reales sin IVA desde los totales con IVA</div>
         </div>
         
         <!-- Calculadora IVA Producto -->
-        <div id="calculadoraIvaProducto" style="display: none;" class="mb-3">
+        <div id="calculadoraIvaProducto" class="mb-3">
             <div class="card bg-light">
                 <div class="card-body">
-                    <h6 class="text-primary"><i class="bi bi-calculator me-2"></i>Calculadora de IVA</h6>
                     <div class="row">
-                        <div class="col-md-4">
-                            <label for="precioConIva" class="form-label">Precio con IVA:</label>
+                        <div class="col-md-3">
+                            <label for="precioConIva" class="form-label">Precio Costo + IVA:</label>
                             <div class="input-group">
                                 <span class="input-group-text">$</span>
-                                <input type="number" id="precioConIva" class="form-control" step="0.01" placeholder="Ej: 11.20">
+                                <input type="number" id="precioConIva" class="form-control" step="0.01" placeholder="11.20">
                             </div>
+                            <small class="text-muted">Lo que pagas</small>
                         </div>
-                        <div class="col-md-4">
-                            <label for="pvpConIva" class="form-label">PVP con IVA:</label>
+                        <div class="col-md-3">
+                            <label for="pvpConIva" class="form-label">PVP + IVA:</label>
                             <div class="input-group">
                                 <span class="input-group-text">$</span>
-                                <input type="number" id="pvpConIva" class="form-control" step="0.01" placeholder="Ej: 15.68">
+                                <input type="number" id="pvpConIva" class="form-control" step="0.01" placeholder="15.68">
                             </div>
+                            <small class="text-muted">Lo que cobras</small>
                         </div>
-                        <div class="col-md-4">
+                        <div class="col-md-2">
                             <label for="porcentajeIvaProducto" class="form-label">% IVA:</label>
                             <div class="input-group">
                                 <input type="number" id="porcentajeIvaProducto" class="form-control" value="12" step="0.01" min="0" max="100">
                                 <span class="input-group-text">%</span>
                             </div>
                         </div>
-                    </div>
-                    <div class="row mt-2">
-                        <div class="col-md-6">
-                            <label class="form-label">Precio Unitario (sin IVA):</label>
+                        <div class="col-md-2">
+                            <label class="form-label">Costo Real:</label>
                             <div class="h6 text-success" id="precioUnitarioCalculado">$0.00</div>
+                            <small class="text-muted">Sin IVA</small>
                         </div>
-                        <div class="col-md-6">
-                            <label class="form-label">PVP (sin IVA):</label>
+                        <div class="col-md-2">
+                            <label class="form-label">PVP Real:</label>
                             <div class="h6 text-success" id="pvpCalculado">$0.00</div>
+                            <small class="text-muted">Sin IVA</small>
                         </div>
                     </div>
-                    <button type="button" class="btn btn-sm btn-primary" id="aplicarCalculoProducto">
-                        ✅ Aplicar precios calculados
-                    </button>
+                    <div class="row mt-3">
+                        <div class="col-md-6">
+                            <div class="alert alert-info py-2">
+                                <small><strong>Fórmula:</strong> Precio Real = Total ÷ (1 + %IVA/100)</small>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <button type="button" class="btn btn-primary" id="aplicarCalculoProducto">
+                                ✅ Usar precios reales
+                            </button>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -217,8 +222,6 @@
 <script>
 document.addEventListener('DOMContentLoaded', function () {
     // Calculadora de IVA para productos
-    const checkboxIvaProducto = document.getElementById('producto_incluye_iva');
-    const calculadoraIvaProducto = document.getElementById('calculadoraIvaProducto');
     const precioConIva = document.getElementById('precioConIva');
     const pvpConIva = document.getElementById('pvpConIva');
     const porcentajeIvaProducto = document.getElementById('porcentajeIvaProducto');
@@ -227,11 +230,6 @@ document.addEventListener('DOMContentLoaded', function () {
     const aplicarCalculoProducto = document.getElementById('aplicarCalculoProducto');
     const inputPrecioUnitario = document.getElementById('id_precio_unitario');
     const inputPvp = document.getElementById('id_pvp');
-    
-    // Mostrar/ocultar calculadora
-    checkboxIvaProducto.addEventListener('change', function() {
-        calculadoraIvaProducto.style.display = this.checked ? 'block' : 'none';
-    });
     
     // Calcular precios sin IVA
     function calcularPreciosProducto() {
