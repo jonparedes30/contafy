@@ -6,50 +6,43 @@ from .models import (
     CuentaPorCobrar, CuentaPorPagar, MetaFinanciera
 )
 
-# Configuración del admin para Usuario
+# Configuración básica del admin - solo campos seguros
 @admin.register(Usuario)
 class UsuarioAdmin(admin.ModelAdmin):
-    list_display = ['username', 'email', 'empresa', 'is_superuser', 'is_active', 'date_joined']
-    list_filter = ['is_superuser', 'is_active', 'empresa']
+    list_display = ['username', 'email', 'is_superuser', 'is_active']
+    list_filter = ['is_superuser', 'is_active']
     search_fields = ['username', 'email']
-    readonly_fields = ['date_joined', 'last_login']
 
-# Configuración del admin para Empresa
 @admin.register(Empresa)
 class EmpresaAdmin(admin.ModelAdmin):
-    list_display = ['nombre', 'categoria', 'propietario', 'fecha_creacion']
-    list_filter = ['categoria', 'fecha_creacion']
-    search_fields = ['nombre', 'propietario__username']
+    list_display = ['nombre', 'categoria']
+    list_filter = ['categoria']
+    search_fields = ['nombre']
 
-# Configuración del admin para Venta
 @admin.register(Venta)
 class VentaAdmin(admin.ModelAdmin):
-    list_display = ['id', 'empresa', 'total', 'fecha', 'usuario']
+    list_display = ['id', 'empresa', 'fecha']
     list_filter = ['fecha', 'empresa']
-    search_fields = ['empresa__nombre']
     date_hierarchy = 'fecha'
 
-# Configuración del admin para Gasto
 @admin.register(Gasto)
 class GastoAdmin(admin.ModelAdmin):
-    list_display = ['descripcion', 'monto', 'fecha', 'empresa', 'usuario']
+    list_display = ['descripcion', 'monto', 'fecha', 'empresa']
     list_filter = ['fecha', 'empresa']
-    search_fields = ['descripcion', 'empresa__nombre']
+    search_fields = ['descripcion']
     date_hierarchy = 'fecha'
 
-# Configuración del admin para Producto
 @admin.register(Producto)
 class ProductoAdmin(admin.ModelAdmin):
-    list_display = ['nombre', 'precio', 'stock', 'empresa']
+    list_display = ['nombre', 'empresa']
     list_filter = ['empresa']
-    search_fields = ['nombre', 'empresa__nombre']
+    search_fields = ['nombre']
 
-# Configuración del admin para CuentaContable
 @admin.register(CuentaContable)
 class CuentaContableAdmin(admin.ModelAdmin):
-    list_display = ['codigo', 'nombre', 'tipo', 'empresa']
-    list_filter = ['tipo', 'empresa']
-    search_fields = ['codigo', 'nombre']
+    list_display = ['nombre', 'empresa']
+    list_filter = ['empresa']
+    search_fields = ['nombre']
 
 # Registrar otros modelos con configuración básica
 admin.site.register(Capital)
