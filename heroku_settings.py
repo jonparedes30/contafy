@@ -8,11 +8,9 @@ ALLOWED_HOSTS = ['*']  # Heroku maneja esto
 # WhiteNoise para archivos estáticos
 MIDDLEWARE.insert(1, 'whitenoise.middleware.WhiteNoiseMiddleware')
 
-STORAGES = {
-    "staticfiles": {
-        "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
-    }
-}
+# Usar WhiteNoise sin manifest estricto para evitar errores con archivos faltantes
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedStaticFilesStorage'
+WHITENOISE_MANIFEST_STRICT = False
 
 # Configuración de seguridad para producción
 SECURE_SSL_REDIRECT = True
