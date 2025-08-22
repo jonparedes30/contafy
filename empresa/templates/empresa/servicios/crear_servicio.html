@@ -70,9 +70,19 @@
                         </div>
                     </div>
                     
+                    <!-- Margen de Ganancia (calculado) -->
+                    <div class="mb-3" id="margen-container" style="display: none;">
+                        <label class="form-label"><i class="bi bi-percent me-2"></i>Margen de Ganancia</label>
+                        <div class="input-group">
+                            <input type="text" id="margen-display" class="form-control" readonly>
+                            <span class="input-group-text">%</span>
+                        </div>
+                        <div class="form-text" id="margen-info">Margen calculado automáticamente</div>
+                    </div>
+                    
                     <div class="alert alert-info">
                         <i class="bi bi-info-circle me-2"></i>
-                        <strong>Nota:</strong> El margen de ganancia se calculará automáticamente como: 
+                        <strong>Nota:</strong> El margen de ganancia se calcula automáticamente como: 
                         ((Precio Base - Costo Directo) / Precio Base) × 100
                     </div>
                     
@@ -89,4 +99,59 @@
         </div>
     </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const inputPrecioBase = document.getElementById('precio_base');
+    const inputCostoDirecto = document.getElementById('costo_directo');
+    const margenContainer = document.getElementById('margen-container');
+    const margenDisplay = document.getElementById('margen-display');
+    const margenInfo = document.getElementById('margen-info');
+
+    function calcularMargen() {
+        const precioBase = parseFloat(inputPrecioBase.value) || 0;
+        const costoDirecto = parseFloat(inputCostoDirecto.value) || 0;
+        
+        if (precioBase > 0) {
+            const margen = ((precioBase - costoDirecto) / precioBase) * 100;
+            const utilidad = precioBase - costoDirecto;
+            
+            margenDisplay.value = margen.toFixed(1);
+            
+            if (margen > 50) {
+                margenDisplay.style.backgroundColor = '#d4edda';
+                margenDisplay.style.color = '#155724';
+                margenInfo.innerHTML = `🟢 Excelente margen. Utilidad: $${utilidad.toFixed(2)}`;
+                margenInfo.style.color = '#28a745';
+            } else if (margen > 30) {
+                margenDisplay.style.backgroundColor = '#fff3cd';
+                margenDisplay.style.color = '#856404';
+                margenInfo.innerHTML = `🟡 Buen margen. Utilidad: $${utilidad.toFixed(2)}`;
+                margenInfo.style.color = '#ffc107';
+            } else if (margen > 0) {
+                margenDisplay.style.backgroundColor = '#f8d7da';
+                margenDisplay.style.color = '#721c24';
+                margenInfo.innerHTML = `🔴 Margen bajo. Utilidad: $${utilidad.toFixed(2)}`;
+                margenInfo.style.color = '#dc3545';
+            } else {
+                margenDisplay.style.backgroundColor = '#f8d7da';
+                margenDisplay.style.color = '#721c24';
+                margenInfo.innerHTML = `⚠️ Sin ganancia o pérdida`;
+                margenInfo.style.color = '#dc3545';
+            }
+            
+            margenContainer.style.display = 'block';
+        } else {
+            margenContainer.style.display = 'none';
+        }
+    }
+    
+    if (inputPrecioBase) {
+        inputPrecioBase.addEventListener('input', calcularMargen);
+    }
+    if (inputCostoDirecto) {
+        inputCostoDirecto.addEventListener('input', calcularMargen);
+    }
+});
+</script>
 {% endblock %}

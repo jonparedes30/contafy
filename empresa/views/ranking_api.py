@@ -1,6 +1,7 @@
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
 from django.shortcuts import render
+from django.views.decorators.csrf import csrf_exempt
 from empresa.services.gamificacion_service import GamificacionService
 from empresa.models_gamificacion import Liga, ParticipacionLiga, Reto, ParticipacionReto
 from datetime import datetime
@@ -78,6 +79,7 @@ def ligas_activas_api(request):
         'ligas': ligas_data
     })
 
+@csrf_exempt
 @login_required
 def inscribir_liga_api(request, liga_id):
     """API para inscribirse en una liga"""

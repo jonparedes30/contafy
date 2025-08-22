@@ -38,8 +38,8 @@ def obtener_recomendaciones_api(request):
         }
     })
 
-@login_required
 @csrf_exempt
+@login_required
 def registrar_interaccion_api(request):
     """API para registrar interacciones del usuario"""
     

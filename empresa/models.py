@@ -254,6 +254,27 @@ class Producto(AuditModel):
         """Verifica si está próximo a vencer (30 días)"""
         dias = self.dias_para_vencer
         return dias is not None and 0 <= dias <= 30
+    
+    @property
+    def costo_promedio(self):
+        """Calcula el costo promedio basado en las últimas compras"""
+        from django.db.models import Avg
+        ultima_compra = Compra.objects.filter(
+            empresa=self.empresa,
+            producto=self
+        ).order_by('-fecha').first()
+        
+        if ultima_compra:
+            return ultima_compra.monto_neto / ultima_compra.cantidad
+        return 0
+    
+    @property
+    def margen_ganancia(self):
+        """Calcula el margen de ganancia del producto"""
+        costo = self.costo_promedio
+        if self.precio_unitario > 0 and costo > 0:
+            return ((self.precio_unitario - costo) / self.precio_unitario) * 100
+        return 0
 
     def __str__(self):
         return f"{self.nombre} ({self.codigo})"

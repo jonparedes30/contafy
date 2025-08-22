@@ -2,6 +2,7 @@ from django.shortcuts import get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_http_methods
 from empresa.models_simulaciones import TipoSimulacion, EscenarioSimulacion, SimulacionUsuario
 from empresa.services.simulacion_service import SimulacionService
 import json
@@ -40,8 +41,8 @@ def simulacion_escenarios_api(request):
     except TipoSimulacion.DoesNotExist:
         return JsonResponse({'ok': False, 'error': 'Tipo no encontrado'})
 
-@login_required
 @csrf_exempt
+@login_required
 def simulacion_start_api(request):
     """API para iniciar una simulación sandbox"""
     if request.method != 'POST':
@@ -86,8 +87,8 @@ def simulacion_start_api(request):
     except (TipoSimulacion.DoesNotExist, EscenarioSimulacion.DoesNotExist):
         return JsonResponse({'ok': False, 'error': 'Tipo o escenario no encontrado'})
 
-@login_required
 @csrf_exempt
+@login_required
 def simulacion_step_api(request, simulacion_id):
     """API para procesar un paso de simulación"""
     if request.method != 'POST':

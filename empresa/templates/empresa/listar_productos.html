@@ -92,6 +92,7 @@
                     <th>Stock</th>
                     <th>Precio Unitario</th>
                     <th>PVP</th>
+                    <th>Margen</th>
                     <th>Valor Total</th>
                     <th>Acciones</th>
                 </tr>
@@ -120,6 +121,15 @@
                     </td>
                     <td><strong>${{ producto.precio_unitario|floatformat:2 }}</strong></td>
                     <td><strong>${{ producto.pvp|default_if_none:0|floatformat:2 }}</strong></td>
+                    <td>
+                        {% if producto.margen_ganancia > 20 %}
+                            <span class="badge bg-success">{{ producto.margen_ganancia|floatformat:1 }}%</span>
+                        {% elif producto.margen_ganancia > 10 %}
+                            <span class="badge bg-warning">{{ producto.margen_ganancia|floatformat:1 }}%</span>
+                        {% else %}
+                            <span class="badge bg-danger">{{ producto.margen_ganancia|floatformat:1 }}%</span>
+                        {% endif %}
+                    </td>
                     <td><strong>${{ producto.stock|multiply:producto.precio_unitario|floatformat:2 }}</strong></td>
                     <td>
                         <div class="btn-group" role="group">
@@ -129,18 +139,18 @@
                     </td>
                 </tr>
                 {% empty %}
-                <tr><td colspan="7" style="text-align:center; color:#888;">No hay productos registrados o no hay resultados para los filtros seleccionados.</td></tr>
+                <tr><td colspan="8" style="text-align:center; color:#888;">No hay productos registrados o no hay resultados para los filtros seleccionados.</td></tr>
                 {% endfor %}
             </tbody>
             {% if productos %}
             <tfoot>
                 <tr class="table-info">
-                    <td colspan="5" class="text-end fw-bold">Total Inventario:</td>
+                    <td colspan="6" class="text-end fw-bold">Total Inventario:</td>
                     <td class="fw-bold">${{ total_inventario|floatformat:2 }}</td>
                     <td></td>
                 </tr>
                 <tr class="table-warning">
-                    <td colspan="5" class="text-end fw-bold">Total PVP:</td>
+                    <td colspan="6" class="text-end fw-bold">Total PVP:</td>
                     <td class="fw-bold">${{ total_pvp|default_if_none:0|floatformat:2 }}</td>
                     <td></td>
                 </tr>
