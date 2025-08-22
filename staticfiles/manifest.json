@@ -1,11 +1,11 @@
 {
-  "name": "CONTAFY - Sistema Contable",
+  "name": "CONTAFY - Gestión Contable",
   "short_name": "CONTAFY",
-  "description": "Sistema de contabilidad para PYMES",
-  "start_url": "/empresa/",
+  "description": "Plataforma de gestión contable-financiera para pymes ecuatorianas",
+  "start_url": "/app-beta-2024/",
   "display": "standalone",
-  "background_color": "#27ae60",
-  "theme_color": "#2c3e50",
+  "background_color": "#2c3e50",
+  "theme_color": "#3498db",
   "orientation": "portrait",
   "icons": [
     {
@@ -14,7 +14,7 @@
       "type": "image/png"
     },
     {
-      "src": "/static/icon-512.png",
+      "src": "/static/icon-512.png", 
       "sizes": "512x512",
       "type": "image/png"
     }

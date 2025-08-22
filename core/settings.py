@@ -20,7 +20,7 @@ SECRET_KEY = env('SECRET_KEY')
 if not SECRET_KEY or SECRET_KEY == 'clave_de_prueba_contafy':
     raise ValueError("SECRET_KEY debe ser configurada en .env")
 
-ALLOWED_HOSTS = env.list('ALLOWED_HOSTS')
+ALLOWED_HOSTS = env.list('ALLOWED_HOSTS', default=['localhost', '127.0.0.1', '.herokuapp.com'])
 
 # Configuración de seguridad
 SECURE_BROWSER_XSS_FILTER = True
@@ -43,12 +43,12 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'rest_framework',  # Django REST Framework
     'rest_framework.authtoken',  # Autenticación por token
-    'empresa.apps.EmpresaConfig',  # Tu app principal
+    'empresa',  # Tu app principal
 ]
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
-    'whitenoise.middleware.WhiteNoiseMiddleware',
+    # 'whitenoise.middleware.WhiteNoiseMiddleware',  # Solo para producción
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -136,12 +136,12 @@ CURRENCY_NAME = 'Dólares Americanos'
 STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
-# Storage para estáticos con WhiteNoise
-STORAGES = {
-    "staticfiles": {
-        "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
-    }
-}
+# Storage para estáticos - usar por defecto en desarrollo
+# STORAGES = {
+#     "staticfiles": {
+#         "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+#     }
+# }
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
@@ -153,11 +153,16 @@ LOGIN_URL = '/app-beta-2024/login/'
 LOGIN_REDIRECT_URL = '/app-beta-2024/home/'
 LOGOUT_REDIRECT_URL = '/app-beta-2024/login/'
 
-# --- CSRF para desarrollo local ---
+# --- CSRF para desarrollo local y Heroku ---
 CSRF_TRUSTED_ORIGINS = [
     'http://localhost:8000',
     'http://127.0.0.1:8000',
+    'https://*.herokuapp.com',
 ]
+
+# Configuración para proxy de Heroku
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+USE_TZ = True
 
 # Configuración de Django REST Framework
 REST_FRAMEWORK = {
@@ -202,64 +207,37 @@ TWILIO_AUTH_TOKEN = env('TWILIO_AUTH_TOKEN', default='')
 OPENAI_API_KEY = env('OPENAI_API_KEY', default='')
 GEMINI_API_KEY = env('GEMINI_API_KEY', default='')
 
-# Configuración robusta de logging para local y Heroku
-import sys
-
-IS_HEROKU = bool(os.environ.get("DYNO"))
-LOGS_DIR = Path(BASE_DIR) / "logs"
-
-# Si NO estamos en Heroku y queremos escribir a archivo, asegurar que exista el directorio
-if not IS_HEROKU:
-    try:
-        LOGS_DIR.mkdir(parents=True, exist_ok=True)
-    except Exception:
-        # Si por cualquier razón no se puede crear, caeremos a consola más abajo
-        pass
-
-# Configurar handlers dinámicamente
-handlers_config = {
-    "console": {
-        "class": "logging.StreamHandler",
-        "stream": sys.stdout,
-        "formatter": "verbose",
-    }
-}
-
-# Solo agregar file handler si no estamos en Heroku y el directorio existe
-if not IS_HEROKU and LOGS_DIR.exists():
-    handlers_config["file"] = {
-        "class": "logging.handlers.RotatingFileHandler",
-        "filename": str(LOGS_DIR / "contafy.log"),
-        "maxBytes": 5 * 1024 * 1024,  # 5MB
-        "backupCount": 3,
-        "encoding": "utf-8",
-        "formatter": "verbose",
-    }
-    active_handlers = ["console", "file"]
-else:
-    active_handlers = ["console"]
-
+# Configuración de logging simplificada para Heroku
 LOGGING = {
-    "version": 1,
-    "disable_existing_loggers": False,
-    "formatters": {
-        "verbose": {
-            "format": "%(asctime)s [%(levelname)s] %(name)s:%(lineno)d %(message)s"
-        },
-        "simple": {
-            "format": "%(levelname)s %(message)s"
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'verbose': {
+            'format': '{levelname} {asctime} {name} {message}',
+            'style': '{',
         },
     },
-    "handlers": handlers_config,
-    "root": {
-        "level": "INFO",
-        "handlers": active_handlers,
+    'handlers': {
+        'console': {
+            'level': 'INFO',
+            'class': 'logging.StreamHandler',
+            'formatter': 'verbose',
+        },
     },
-    "loggers": {
-        "django": {
-            "level": "INFO",
-            "handlers": active_handlers,
-            "propagate": False,
+    'root': {
+        'handlers': ['console'],
+        'level': 'INFO',
+    },
+    'loggers': {
+        'django': {
+            'handlers': ['console'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+        'empresa': {
+            'handlers': ['console'],
+            'level': 'INFO',
+            'propagate': False,
         },
     },
 }

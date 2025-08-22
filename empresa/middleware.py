@@ -25,10 +25,13 @@ class CurrentUserMiddleware(MiddlewareMixin):
     
     def process_exception(self, request, exception):
         """Log de excepciones"""
-        if isinstance(exception, PermissionDenied):
-            logger.warning(f"Acceso denegado para {request.user}: {request.path}")
-        else:
-            logger.error(f"Excepción en {request.path}: {str(exception)}")
+        try:
+            if isinstance(exception, PermissionDenied):
+                logger.warning(f"Acceso denegado para {getattr(request, 'user', 'unknown')}: {request.path}")
+            else:
+                logger.error(f"Excepción en {request.path}: {str(exception)}")
+        except Exception:
+            pass
         return None
 
 class SecurityMiddleware(MiddlewareMixin):
