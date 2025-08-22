@@ -98,23 +98,112 @@
             </select>
         </div>
         {% else %}
-        <!-- Producto (para comercio y manufactura) -->
+        <!-- Modo de venta -->
         <div class="mb-3">
-            {{ form.producto.label_tag }}
-            {{ form.producto }}
+            <div class="btn-group w-100" role="group">
+                <input type="radio" class="btn-check" name="modo_venta" id="modo_simple" value="simple" checked>
+                <label class="btn btn-outline-primary" for="modo_simple">
+                    <i class="bi bi-box"></i> Producto Único
+                </label>
+                <input type="radio" class="btn-check" name="modo_venta" id="modo_multiple" value="multiple">
+                <label class="btn btn-outline-success" for="modo_multiple">
+                    <i class="bi bi-cart-plus"></i> Múltiples Productos
+                </label>
+            </div>
         </div>
-        {% endif %}
 
-        <!-- Cantidad -->
-        <div class="mb-3">
-            {{ form.cantidad.label_tag }}
-            {{ form.cantidad }}
+        <!-- Venta simple (original) -->
+        <div id="venta-simple">
+            <!-- Producto (para comercio y manufactura) -->
+            <div class="mb-3">
+                {{ form.producto.label_tag }}
+                {{ form.producto }}
+            </div>
+            {% endif %}
+
+            <!-- Cantidad -->
+            <div class="mb-3">
+                {{ form.cantidad.label_tag }}
+                {{ form.cantidad }}
+            </div>
+
+            <!-- Precio Unitario -->
+            <div class="mb-3">
+                {{ form.precio_unitario.label_tag }}
+                {{ form.precio_unitario }}
+            </div>
         </div>
 
-        <!-- Precio Unitario -->
-        <div class="mb-3">
-            {{ form.precio_unitario.label_tag }}
-            {{ form.precio_unitario }}
+        <!-- Venta múltiple -->
+        <div id="venta-multiple" style="display: none;">
+            <div class="card mb-3">
+                <div class="card-header">
+                    <h6 class="mb-0">🛍️ Agregar Productos</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-5">
+                            <select class="form-select" id="producto-multiple-select">
+                                <option value="">Seleccionar producto...</option>
+                                {% for producto in productos_json %}
+                                <option value="{{ producto.id }}" 
+                                        data-nombre="{{ producto.nombre }}"
+                                        data-precio="{{ producto.precio_venta }}"
+                                        data-stock="{{ producto.stock }}">
+                                    {{ producto.nombre }} - ${{ producto.precio_venta }}
+                                </option>
+                                {% endfor %}
+                                {% for servicio in servicios %}
+                                <option value="serv_{{ servicio.id }}" 
+                                        data-nombre="{{ servicio.nombre }}"
+                                        data-precio="{{ servicio.precio_base }}"
+                                        data-stock="999">
+                                    {{ servicio.nombre }} - ${{ servicio.precio_base }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <input type="number" class="form-control" id="cantidad-multiple" placeholder="Cant." min="1" value="1">
+                        </div>
+                        <div class="col-md-2">
+                            <input type="number" class="form-control" id="precio-multiple" placeholder="Precio" step="0.01">
+                        </div>
+                        <div class="col-md-3">
+                            <button type="button" class="btn btn-success" id="agregar-producto-multiple">
+                                ➕ Agregar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Lista de productos agregados -->
+            <div class="card mb-3">
+                <div class="card-header">
+                    <h6 class="mb-0">📋 Productos en la Venta</h6>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-sm" id="tabla-productos-multiple">
+                            <thead>
+                                <tr>
+                                    <th>Producto</th>
+                                    <th>Cant.</th>
+                                    <th>Precio</th>
+                                    <th>Subtotal</th>
+                                    <th>Acción</th>
+                                </tr>
+                            </thead>
+                            <tbody id="productos-tbody-multiple">
+                                <tr id="no-productos-multiple">
+                                    <td colspan="5" class="text-center text-muted">No hay productos agregados</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <!-- Checkbox IVA -->
@@ -302,10 +391,26 @@
     if (selectServicio) {
         selectServicio.addEventListener('change', actualizarVenta);
     }
-    inputCantidad.addEventListener('input', calcularIVA);
-    inputPrecio.addEventListener('input', calcularIVA);
-    inputTasaIva.addEventListener('input', calcularIVA);
-    checkboxIva.addEventListener('change', calcularIVA);
+    inputCantidad.addEventListener('input', function() {
+        if (modoSimple.checked) calcularIVA();
+    });
+    inputPrecio.addEventListener('input', function() {
+        if (modoSimple.checked) calcularIVA();
+    });
+    inputTasaIva.addEventListener('input', function() {
+        if (modoSimple.checked) {
+            calcularIVA();
+        } else {
+            calcularTotalMultiple();
+        }
+    });
+    checkboxIva.addEventListener('change', function() {
+        if (modoSimple.checked) {
+            calcularIVA();
+        } else {
+            calcularTotalMultiple();
+        }
+    });
     
     // Calculadora de cambio para venta simple
     const tipoPagoSelect = document.getElementById('id_tipo_pago');
@@ -349,11 +454,209 @@
         montoRecibidoSimple.addEventListener('input', calcularCambioSimple);
     }
     
+    // Variables para venta múltiple
+    let productosMultiple = [];
+    
+    // Manejar cambio de modo de venta
+    const modoSimple = document.getElementById('modo_simple');
+    const modoMultiple = document.getElementById('modo_multiple');
+    const ventaSimple = document.getElementById('venta-simple');
+    const ventaMultiple = document.getElementById('venta-multiple');
+    
+    function cambiarModoVenta() {
+        if (modoMultiple.checked) {
+            ventaSimple.style.display = 'none';
+            ventaMultiple.style.display = 'block';
+        } else {
+            ventaSimple.style.display = 'block';
+            ventaMultiple.style.display = 'none';
+            // Limpiar productos múltiples
+            productosMultiple = [];
+            actualizarTablaMultiple();
+        }
+    }
+    
+    modoSimple.addEventListener('change', cambiarModoVenta);
+    modoMultiple.addEventListener('change', cambiarModoVenta);
+    
+    // Funciones para venta múltiple
+    const productoMultipleSelect = document.getElementById('producto-multiple-select');
+    const cantidadMultiple = document.getElementById('cantidad-multiple');
+    const precioMultiple = document.getElementById('precio-multiple');
+    const agregarProductoBtn = document.getElementById('agregar-producto-multiple');
+    
+    productoMultipleSelect.addEventListener('change', function() {
+        const option = this.options[this.selectedIndex];
+        if (option.value) {
+            precioMultiple.value = option.dataset.precio || '';
+        }
+    });
+    
+    agregarProductoBtn.addEventListener('click', function() {
+        const option = productoMultipleSelect.options[productoMultipleSelect.selectedIndex];
+        const cantidad = parseInt(cantidadMultiple.value) || 1;
+        const precio = parseFloat(precioMultiple.value) || 0;
+        
+        if (!option.value || precio <= 0) {
+            alert('Selecciona un producto y precio válido');
+            return;
+        }
+        
+        const stock = parseInt(option.dataset.stock) || 0;
+        if (cantidad > stock && !option.value.startsWith('serv_')) {
+            alert(`Stock insuficiente. Disponible: ${stock}`);
+            return;
+        }
+        
+        const producto = {
+            id: option.value,
+            nombre: option.dataset.nombre,
+            cantidad: cantidad,
+            precio: precio,
+            subtotal: cantidad * precio
+        };
+        
+        // Verificar si ya existe
+        const existente = productosMultiple.find(p => p.id === producto.id);
+        if (existente) {
+            existente.cantidad += cantidad;
+            existente.subtotal = existente.cantidad * existente.precio;
+        } else {
+            productosMultiple.push(producto);
+        }
+        
+        actualizarTablaMultiple();
+        calcularTotalMultiple();
+        
+        // Limpiar formulario
+        productoMultipleSelect.value = '';
+        cantidadMultiple.value = '1';
+        precioMultiple.value = '';
+    });
+    
+    function actualizarTablaMultiple() {
+        const tbody = document.getElementById('productos-tbody-multiple');
+        const noProductos = document.getElementById('no-productos-multiple');
+        
+        // Limpiar filas existentes
+        const filas = tbody.querySelectorAll('tr:not(#no-productos-multiple)');
+        filas.forEach(fila => fila.remove());
+        
+        if (productosMultiple.length === 0) {
+            noProductos.style.display = 'table-row';
+            return;
+        }
+        
+        noProductos.style.display = 'none';
+        
+        productosMultiple.forEach((producto, index) => {
+            const fila = document.createElement('tr');
+            fila.innerHTML = `
+                <td>${producto.nombre}</td>
+                <td>
+                    <input type="number" class="form-control form-control-sm" 
+                           value="${producto.cantidad}" min="1"
+                           onchange="cambiarCantidadMultiple(${index}, this.value)">
+                </td>
+                <td>$${producto.precio.toFixed(2)}</td>
+                <td>$${producto.subtotal.toFixed(2)}</td>
+                <td>
+                    <button class="btn btn-sm btn-danger" onclick="eliminarProductoMultiple(${index})">
+                        🗑️
+                    </button>
+                </td>
+            `;
+            tbody.appendChild(fila);
+        });
+    }
+    
+    function cambiarCantidadMultiple(index, nuevaCantidad) {
+        const cantidad = parseInt(nuevaCantidad) || 1;
+        productosMultiple[index].cantidad = cantidad;
+        productosMultiple[index].subtotal = cantidad * productosMultiple[index].precio;
+        actualizarTablaMultiple();
+        calcularTotalMultiple();
+    }
+    
+    function eliminarProductoMultiple(index) {
+        productosMultiple.splice(index, 1);
+        actualizarTablaMultiple();
+        calcularTotalMultiple();
+    }
+    
+    function calcularTotalMultiple() {
+        const incluirIva = checkboxIva.checked;
+        const tasaIva = parseFloat(inputTasaIva.value) || 15;
+        
+        let subtotal = 0;
+        productosMultiple.forEach(producto => {
+            subtotal += producto.subtotal;
+        });
+        
+        const iva = incluirIva ? subtotal * (tasaIva / 100) : 0;
+        const total = subtotal + iva;
+        
+        inputMontoNeto.value = subtotal.toFixed(2);
+        inputIva.value = iva.toFixed(2);
+        inputTotal.value = total.toFixed(2);
+        
+        // Actualizar calculadora de cambio
+        if (tipoPagoSelect && tipoPagoSelect.value === 'contado') {
+            actualizarTotalCobrar();
+        }
+    }
+    
+    // Modificar el envío del formulario para venta múltiple
+    const form = document.querySelector('form');
+    form.addEventListener('submit', function(e) {
+        if (modoMultiple.checked && productosMultiple.length > 0) {
+            e.preventDefault();
+            procesarVentaMultiple();
+        }
+    });
+    
+    function procesarVentaMultiple() {
+        const ventaData = {
+            productos: productosMultiple,
+            cliente_nombre: document.querySelector('[name="cliente_nombre"]')?.value || '',
+            incluir_iva: checkboxIva.checked,
+            tipo_pago: tipoPagoSelect.value,
+            monto_recibido: parseFloat(montoRecibidoSimple?.value || 0)
+        };
+        
+        fetch('{% url "empresa:crear_venta_multiple" %}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+            },
+            body: JSON.stringify(ventaData)
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('Venta procesada exitosamente');
+                window.location.href = '{% url "empresa:home" %}';
+            } else {
+                alert('Error: ' + (data.error || 'No se pudo procesar la venta'));
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error procesando la venta');
+        });
+    }
+    
+    // Hacer funciones globales
+    window.cambiarCantidadMultiple = cambiarCantidadMultiple;
+    window.eliminarProductoMultiple = eliminarProductoMultiple;
+    
     // Inicializar estado de IVA al cargar la página
     document.addEventListener('DOMContentLoaded', function() {
         actualizarVenta();
         calcularIVA(); // Asegurar que los detalles de IVA estén ocultos inicialmente
         mostrarCalculadoraCambio();
+        cambiarModoVenta();
     });
 
     // Buscar producto por código (mejorado con API)
