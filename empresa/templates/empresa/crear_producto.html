@@ -200,7 +200,7 @@ document.addEventListener('DOMContentLoaded', function () {
     // Calcular IVA desde precio unitario
     function calcularIvaProducto() {
         const precioUnitario = parseFloat(inputPrecioUnitario.value) || 0;
-        const porcentaje = parseFloat(porcentajeIvaProducto.value) || 12;
+        const porcentaje = parseFloat(porcentajeIvaProducto.value);
         
         if (precioUnitario > 0) {
             const iva = precioUnitario * (porcentaje / 100);

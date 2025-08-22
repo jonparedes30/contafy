@@ -236,7 +236,7 @@
     // Calculadora de IVA desde precio unitario
     function calcularIvaCompra() {
       const precioUnitario = parseFloat(inputPrecioUnitario.value) || 0;
-      const porcentaje = parseFloat(porcentajeIva.value) || 12;
+      const porcentaje = parseFloat(porcentajeIva.value);
       
       if (precioUnitario > 0) {
         const iva = precioUnitario * (porcentaje / 100);
