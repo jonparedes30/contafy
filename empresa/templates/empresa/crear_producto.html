@@ -93,15 +93,60 @@
             <div class="form-text">Precio de venta al cliente final (opcional)</div>
         </div>
         
-        <!-- IVA -->
+        <!-- Calculadora de IVA -->
         <div class="mb-3">
             <div class="form-check">
                 <input class="form-check-input" type="checkbox" id="producto_incluye_iva">
                 <label class="form-check-label" for="producto_incluye_iva">
-                    <i class="bi bi-percent me-2"></i>Este producto incluye IVA en sus precios
+                    <i class="bi bi-percent me-2"></i>Calcular precios desde total con IVA
                 </label>
             </div>
-            <div class="form-text">Marcar si los precios ingresados ya incluyen IVA</div>
+            <div class="form-text">Marcar para calcular precios sin IVA desde el total con IVA</div>
+        </div>
+        
+        <!-- Calculadora IVA Producto -->
+        <div id="calculadoraIvaProducto" style="display: none;" class="mb-3">
+            <div class="card bg-light">
+                <div class="card-body">
+                    <h6 class="text-primary"><i class="bi bi-calculator me-2"></i>Calculadora de IVA</h6>
+                    <div class="row">
+                        <div class="col-md-4">
+                            <label for="precioConIva" class="form-label">Precio con IVA:</label>
+                            <div class="input-group">
+                                <span class="input-group-text">$</span>
+                                <input type="number" id="precioConIva" class="form-control" step="0.01" placeholder="Ej: 11.20">
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="pvpConIva" class="form-label">PVP con IVA:</label>
+                            <div class="input-group">
+                                <span class="input-group-text">$</span>
+                                <input type="number" id="pvpConIva" class="form-control" step="0.01" placeholder="Ej: 15.68">
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="porcentajeIvaProducto" class="form-label">% IVA:</label>
+                            <div class="input-group">
+                                <input type="number" id="porcentajeIvaProducto" class="form-control" value="12" step="0.01" min="0" max="100">
+                                <span class="input-group-text">%</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row mt-2">
+                        <div class="col-md-6">
+                            <label class="form-label">Precio Unitario (sin IVA):</label>
+                            <div class="h6 text-success" id="precioUnitarioCalculado">$0.00</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">PVP (sin IVA):</label>
+                            <div class="h6 text-success" id="pvpCalculado">$0.00</div>
+                        </div>
+                    </div>
+                    <button type="button" class="btn btn-sm btn-primary" id="aplicarCalculoProducto">
+                        ✅ Aplicar precios calculados
+                    </button>
+                </div>
+            </div>
         </div>
 
         <!-- Margen de Ganancia (calculado) -->
@@ -171,6 +216,82 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function () {
+    // Calculadora de IVA para productos
+    const checkboxIvaProducto = document.getElementById('producto_incluye_iva');
+    const calculadoraIvaProducto = document.getElementById('calculadoraIvaProducto');
+    const precioConIva = document.getElementById('precioConIva');
+    const pvpConIva = document.getElementById('pvpConIva');
+    const porcentajeIvaProducto = document.getElementById('porcentajeIvaProducto');
+    const precioUnitarioCalculado = document.getElementById('precioUnitarioCalculado');
+    const pvpCalculado = document.getElementById('pvpCalculado');
+    const aplicarCalculoProducto = document.getElementById('aplicarCalculoProducto');
+    const inputPrecioUnitario = document.getElementById('id_precio_unitario');
+    const inputPvp = document.getElementById('id_pvp');
+    
+    // Mostrar/ocultar calculadora
+    checkboxIvaProducto.addEventListener('change', function() {
+        calculadoraIvaProducto.style.display = this.checked ? 'block' : 'none';
+    });
+    
+    // Calcular precios sin IVA
+    function calcularPreciosProducto() {
+        const precioTotal = parseFloat(precioConIva.value) || 0;
+        const pvpTotal = parseFloat(pvpConIva.value) || 0;
+        const porcentaje = parseFloat(porcentajeIvaProducto.value) || 12;
+        
+        if (precioTotal > 0) {
+            const precioSinIva = precioTotal / (1 + porcentaje / 100);
+            precioUnitarioCalculado.textContent = '$' + precioSinIva.toFixed(2);
+        } else {
+            precioUnitarioCalculado.textContent = '$0.00';
+        }
+        
+        if (pvpTotal > 0) {
+            const pvpSinIva = pvpTotal / (1 + porcentaje / 100);
+            pvpCalculado.textContent = '$' + pvpSinIva.toFixed(2);
+        } else {
+            pvpCalculado.textContent = '$0.00';
+        }
+    }
+    
+    precioConIva.addEventListener('input', calcularPreciosProducto);
+    pvpConIva.addEventListener('input', calcularPreciosProducto);
+    porcentajeIvaProducto.addEventListener('input', calcularPreciosProducto);
+    
+    // Aplicar precios calculados
+    aplicarCalculoProducto.addEventListener('click', function() {
+        const precioTotal = parseFloat(precioConIva.value) || 0;
+        const pvpTotal = parseFloat(pvpConIva.value) || 0;
+        const porcentaje = parseFloat(porcentajeIvaProducto.value) || 12;
+        
+        if (precioTotal > 0) {
+            const precioSinIva = precioTotal / (1 + porcentaje / 100);
+            inputPrecioUnitario.value = precioSinIva.toFixed(2);
+        }
+        
+        if (pvpTotal > 0) {
+            const pvpSinIva = pvpTotal / (1 + porcentaje / 100);
+            inputPvp.value = pvpSinIva.toFixed(2);
+        }
+        
+        // Mensaje de confirmación
+        const mensaje = document.createElement('div');
+        mensaje.className = 'alert alert-success alert-dismissible fade show mt-2';
+        mensaje.innerHTML = `
+            ✅ Precios aplicados correctamente (sin IVA)
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        `;
+        calculadoraIvaProducto.appendChild(mensaje);
+        
+        setTimeout(() => {
+            if (mensaje.parentNode) mensaje.remove();
+        }, 3000);
+        
+        // Recalcular margen
+        calcularMargen();
+    });
+    
+    // Variables existentes
     const btnGuardar = document.getElementById('btn-guardar-producto');
     const form = btnGuardar.closest('form');
     const inputCodigo = document.getElementById('id_codigo');

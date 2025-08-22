@@ -78,13 +78,52 @@
       {{ form.precio_unitario }}
     </div>
 
-    <!-- Checkbox IVA -->
+    <!-- Calculadora de IVA -->
     <div class="mb-3">
       <div class="form-check">
         <input class="form-check-input" type="checkbox" id="incluirIvaCompra">
         <label class="form-check-label" for="incluirIvaCompra">
-          📊 <strong>Incluir IVA</strong> (desmarcar para productos exentos)
+          📊 <strong>Incluir IVA</strong> - Calcular desde total con IVA
         </label>
+      </div>
+      <div class="form-text">Marcar si el precio ingresado incluye IVA y deseas calcularlo</div>
+    </div>
+    
+    <!-- Calculadora IVA -->
+    <div id="calculadoraIva" style="display: none;" class="mb-3">
+      <div class="card bg-light">
+        <div class="card-body">
+          <h6 class="text-primary">🧮 Calculadora de IVA</h6>
+          <div class="row">
+            <div class="col-md-6">
+              <label for="totalConIva" class="form-label">Total con IVA:</label>
+              <div class="input-group">
+                <span class="input-group-text">$</span>
+                <input type="number" id="totalConIva" class="form-control" step="0.01" placeholder="Ej: 11.20">
+              </div>
+            </div>
+            <div class="col-md-6">
+              <label for="porcentajeIva" class="form-label">% IVA:</label>
+              <div class="input-group">
+                <input type="number" id="porcentajeIva" class="form-control" value="12" step="0.01" min="0" max="100">
+                <span class="input-group-text">%</span>
+              </div>
+            </div>
+          </div>
+          <div class="row mt-2">
+            <div class="col-md-6">
+              <label class="form-label">Precio sin IVA:</label>
+              <div class="h6 text-success" id="precioSinIva">$0.00</div>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">IVA calculado:</label>
+              <div class="h6 text-info" id="ivaCalculado">$0.00</div>
+            </div>
+          </div>
+          <button type="button" class="btn btn-sm btn-primary" id="aplicarCalculo">
+            ✅ Aplicar al precio unitario
+          </button>
+        </div>
       </div>
     </div>
     
@@ -205,12 +244,67 @@
   inputPrecio.addEventListener('input', actualizarCompra);
   inputTasaIva.addEventListener('input', actualizarCompra);
   
-  // Manejar checkbox IVA
+  // Manejar checkbox IVA y calculadora
   document.addEventListener('DOMContentLoaded', function() {
     const checkboxIvaCompra = document.getElementById('incluirIvaCompra');
+    const calculadoraIva = document.getElementById('calculadoraIva');
+    const totalConIva = document.getElementById('totalConIva');
+    const porcentajeIva = document.getElementById('porcentajeIva');
+    const precioSinIva = document.getElementById('precioSinIva');
+    const ivaCalculado = document.getElementById('ivaCalculado');
+    const aplicarCalculo = document.getElementById('aplicarCalculo');
+    const inputPrecioUnitario = document.getElementById('id_precio_unitario');
+    
     if (checkboxIvaCompra) {
-      checkboxIvaCompra.addEventListener('change', actualizarCompra);
+      checkboxIvaCompra.addEventListener('change', function() {
+        calculadoraIva.style.display = this.checked ? 'block' : 'none';
+        actualizarCompra();
+      });
     }
+    
+    // Calculadora de IVA
+    function calcularIva() {
+      const total = parseFloat(totalConIva.value) || 0;
+      const porcentaje = parseFloat(porcentajeIva.value) || 12;
+      
+      if (total > 0) {
+        const sinIva = total / (1 + porcentaje / 100);
+        const iva = total - sinIva;
+        
+        precioSinIva.textContent = '$' + sinIva.toFixed(2);
+        ivaCalculado.textContent = '$' + iva.toFixed(2);
+      } else {
+        precioSinIva.textContent = '$0.00';
+        ivaCalculado.textContent = '$0.00';
+      }
+    }
+    
+    totalConIva.addEventListener('input', calcularIva);
+    porcentajeIva.addEventListener('input', calcularIva);
+    
+    aplicarCalculo.addEventListener('click', function() {
+      const total = parseFloat(totalConIva.value) || 0;
+      const porcentaje = parseFloat(porcentajeIva.value) || 12;
+      
+      if (total > 0) {
+        const sinIva = total / (1 + porcentaje / 100);
+        inputPrecioUnitario.value = sinIva.toFixed(2);
+        actualizarCompra();
+        
+        // Mensaje de confirmación
+        const mensaje = document.createElement('div');
+        mensaje.className = 'alert alert-success alert-dismissible fade show mt-2';
+        mensaje.innerHTML = `
+          ✅ Precio aplicado: $${sinIva.toFixed(2)} (sin IVA)
+          <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        `;
+        calculadoraIva.appendChild(mensaje);
+        
+        setTimeout(() => {
+          if (mensaje.parentNode) mensaje.remove();
+        }, 3000);
+      }
+    });
   });
   document.addEventListener('DOMContentLoaded', actualizarCompra);
   
