@@ -366,6 +366,8 @@
             inputCodigo.value = prodData.codigo;
             if (prodData.precio_venta && prodData.precio_venta > 0) {
                 inputPrecio.value = prodData.precio_venta.toFixed(2);
+            } else if (prodData.precio_costo && prodData.precio_costo > 0) {
+                inputPrecio.value = prodData.precio_costo.toFixed(2);
             }
             if (prodData.codigo) {
                 stockInfo.textContent = `\uD83D\uDD0D Stock disponible: ${prodData.stock}`;
@@ -488,17 +490,30 @@
     productoMultipleSelect.addEventListener('change', function() {
         const option = this.options[this.selectedIndex];
         if (option.value) {
-            precioMultiple.value = option.dataset.precio || '';
+            precioMultiple.value = parseFloat(option.dataset.precio || 0).toFixed(2);
+        } else {
+            precioMultiple.value = '';
         }
     });
     
     agregarProductoBtn.addEventListener('click', function() {
         const option = productoMultipleSelect.options[productoMultipleSelect.selectedIndex];
         const cantidad = parseInt(cantidadMultiple.value) || 1;
-        const precio = parseFloat(precioMultiple.value) || 0;
+        let precio = parseFloat(precioMultiple.value) || 0;
         
-        if (!option.value || precio <= 0) {
-            alert('Selecciona un producto y precio válido');
+        if (!option.value) {
+            alert('Selecciona un producto');
+            return;
+        }
+        
+        // Si no hay precio, usar el del producto
+        if (precio <= 0) {
+            precio = parseFloat(option.dataset.precio) || 0;
+            precioMultiple.value = precio.toFixed(2);
+        }
+        
+        if (precio <= 0) {
+            alert('El producto debe tener un precio válido');
             return;
         }
         
