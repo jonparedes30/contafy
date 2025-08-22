@@ -308,7 +308,7 @@ class Venta(AuditModel):
     monto_neto = models.DecimalField(max_digits=10, decimal_places=2, default=0, help_text="Monto sin IVA")
     iva = models.DecimalField(max_digits=10, decimal_places=2, default=0, help_text="IVA calculado")
     monto = models.DecimalField(max_digits=10, decimal_places=2, help_text="Monto total con IVA")
-    tasa_iva = models.DecimalField(max_digits=5, decimal_places=2, default=12, help_text="Tasa de IVA (%)")
+    tasa_iva = models.DecimalField(max_digits=5, decimal_places=2, default=15, help_text="Tasa de IVA (%)")
     tipo_pago = models.CharField(max_length=15, choices=TIPO_PAGO_CHOICES, default='contado')
     fecha = models.DateTimeField(auto_now_add=True)
     
@@ -525,7 +525,7 @@ class Compra(AuditModel):
     monto_neto = models.DecimalField(max_digits=10, decimal_places=2, default=0, help_text="Monto sin IVA")
     iva = models.DecimalField(max_digits=10, decimal_places=2, default=0, help_text="IVA pagado")
     monto = models.DecimalField(max_digits=10, decimal_places=2, help_text="Monto total con IVA")
-    tasa_iva = models.DecimalField(max_digits=5, decimal_places=2, default=12, help_text="Tasa de IVA (%)")
+    tasa_iva = models.DecimalField(max_digits=5, decimal_places=2, default=15, help_text="Tasa de IVA (%)")
     tipo_pago = models.CharField(max_length=10, choices=TIPO_PAGO_CHOICES, default='contado')
     fecha = models.DateTimeField(auto_now_add=True)
     

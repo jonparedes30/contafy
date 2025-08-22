@@ -199,7 +199,7 @@
         const cantidad = parseFloat(inputCantidad.value) || 0;
         const precio   = parseFloat(inputPrecio.value) || 0;
         const incluirIva = checkboxIva.checked;
-        const tasaIva  = parseFloat(inputTasaIva.value) || 12;
+        const tasaIva  = parseFloat(inputTasaIva.value) || 15;
         
         const montoNeto = cantidad * precio;
         const iva = incluirIva ? montoNeto * (tasaIva / 100) : 0;
@@ -213,7 +213,7 @@
         if (!incluirIva) {
             inputTasaIva.value = '0';
         } else if (inputTasaIva.value === '0') {
-            inputTasaIva.value = '12';
+            inputTasaIva.value = '15';
         }
         
         // Mostrar/ocultar detalles IVA
