@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Margen</title>
+    <style>
+        .margen-container { margin: 20px; padding: 20px; border: 1px solid #ccc; }
+        .form-control { padding: 8px; margin: 5px; width: 200px; }
+        .input-group { display: flex; align-items: center; }
+        .input-group-text { padding: 8px; background: #f0f0f0; }
+    </style>
+</head>
+<body>
+    <div class="margen-container">
+        <h3>Test Cálculo de Margen - Comercio</h3>
+        
+        <div>
+            <label>Precio Costo:</label>
+            <input type="number" id="precio_costo" class="form-control" placeholder="10.00" step="0.01">
+        </div>
+        
+        <div>
+            <label>Precio Venta (PVP):</label>
+            <input type="number" id="precio_venta" class="form-control" placeholder="15.00" step="0.01">
+        </div>
+        
+        <div id="margen-container" style="display: none;">
+            <label>Margen de Ganancia:</label>
+            <div class="input-group">
+                <input type="text" id="margen-display" class="form-control" readonly>
+                <span class="input-group-text">%</span>
+            </div>
+            <div id="margen-info">Margen calculado automáticamente</div>
+        </div>
+    </div>
+
+    <script>
+        const inputPrecioCosto = document.getElementById('precio_costo');
+        const inputPrecioVenta = document.getElementById('precio_venta');
+        const margenContainer = document.getElementById('margen-container');
+        const margenDisplay = document.getElementById('margen-display');
+        const margenInfo = document.getElementById('margen-info');
+
+        function calcularMargen() {
+            const precioCosto = parseFloat(inputPrecioCosto.value) || 0;
+            const precioVenta = parseFloat(inputPrecioVenta.value) || 0;
+            
+            console.log('Calculando margen:', precioCosto, precioVenta);
+            
+            if (precioCosto > 0 && precioVenta > 0) {
+                const margen = ((precioVenta - precioCosto) / precioVenta) * 100;
+                const utilidad = precioVenta - precioCosto;
+                
+                margenDisplay.value = margen.toFixed(1);
+                
+                if (margen > 30) {
+                    margenDisplay.style.backgroundColor = '#d4edda';
+                    margenInfo.innerHTML = `🟢 Excelente margen. Utilidad: $${utilidad.toFixed(2)}`;
+                } else if (margen > 15) {
+                    margenDisplay.style.backgroundColor = '#fff3cd';
+                    margenInfo.innerHTML = `🟡 Buen margen. Utilidad: $${utilidad.toFixed(2)}`;
+                } else {
+                    margenDisplay.style.backgroundColor = '#f8d7da';
+                    margenInfo.innerHTML = `🔴 Margen bajo. Utilidad: $${utilidad.toFixed(2)}`;
+                }
+                
+                margenContainer.style.display = 'block';
+            } else {
+                margenContainer.style.display = 'none';
+            }
+        }
+        
+        inputPrecioCosto.addEventListener('input', calcularMargen);
+        inputPrecioVenta.addEventListener('input', calcularMargen);
+        
+        // Test automático
+        setTimeout(() => {
+            inputPrecioCosto.value = '10';
+            inputPrecioVenta.value = '15';
+            calcularMargen();
+        }, 1000);
+    </script>
+</body>
+</html>

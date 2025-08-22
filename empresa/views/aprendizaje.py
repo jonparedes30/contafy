@@ -16,31 +16,60 @@ import json
 @login_required
 def dashboard_aprendizaje(request):
     """Dashboard principal del sistema de aprendizaje"""
-    try:
-        # Datos básicos sin modelos complejos
-        tipo_empresa = 'comercial'
-        if hasattr(request.user, 'empresa') and request.user.empresa:
-            tipo_empresa = getattr(request.user.empresa, 'categoria', 'comercial')
+    usuario = request.user
+    
+    # Obtener estadísticas completas del usuario
+    estadisticas = GamificacionService.obtener_estadisticas_usuario(usuario)
+    perfil = estadisticas['perfil']
+    
+    # Obtener módulos según el tipo de empresa del usuario
+    tipo_empresa = usuario.empresa.categoria if usuario.empresa else 'comercial'
+    modulos = ModuloAprendizaje.objects.filter(
+        tipo_empresa=tipo_empresa,
+        activo=True
+    ).order_by('orden')
+    
+    # Calcular progreso por módulo
+    progreso_modulos = {}
+    for modulo in modulos:
+        lecciones_total = modulo.lecciones.filter(activa=True).count()
+        lecciones_completadas = ProgresoUsuario.objects.filter(
+            usuario=usuario,
+            leccion__modulo=modulo,
+            completada=True
+        ).count()
         
-        # Perfil simulado
-        perfil_data = {
-            'nivel': 1,
-            'xp_total': 0
+        porcentaje = (lecciones_completadas / lecciones_total * 100) if lecciones_total > 0 else 0
+        
+        progreso_modulos[modulo.id] = {
+            'porcentaje': round(porcentaje, 1),
+            'completadas': lecciones_completadas,
+            'total': lecciones_total,
+            'desbloqueado': True
         }
-        
-        # Módulos simulados
-        modulos_data = []
-        
-        context = {
-            'perfil': perfil_data,
-            'modulos': modulos_data,
-            'tipo_empresa': tipo_empresa,
-        }
-        
-        return render(request, 'empresa/aprendizaje/dashboard_simple.html', context)
-    except Exception as e:
-        from django.http import HttpResponse
-        return HttpResponse(f'Error en dashboard: {str(e)}', status=500)
+    
+    # Adjuntar progreso directamente a los objetos modulo
+    for modulo in modulos:
+        modulo.progreso = progreso_modulos.get(modulo.id, {
+            'porcentaje': 0,
+            'completadas': 0,
+            'total': 0,
+            'desbloqueado': True
+        })
+    
+    # Obtener recomendaciones personalizadas
+    recomendaciones = RecomendacionService.obtener_recomendaciones_dashboard(usuario)
+    
+    context = {
+        'perfil': perfil,
+        'modulos': modulos,
+        'progreso_modulos': progreso_modulos,
+        'tipo_empresa': tipo_empresa,
+        'estadisticas': estadisticas,
+        'recomendaciones': recomendaciones,
+    }
+    
+    return render(request, 'empresa/aprendizaje/dashboard.html', context)
 
 @login_required
 def modulo_detalle(request, modulo_id):
