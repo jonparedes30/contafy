@@ -284,6 +284,8 @@ class Venta(AuditModel):
     TIPO_PAGO_CHOICES = [
         ('contado', 'Contado'),
         ('credito', 'Crédito'),
+        ('transferencia', 'Transferencia'),
+        ('tarjeta', 'Tarjeta'),
     ]
     
     empresa = models.ForeignKey(Empresa, on_delete=models.CASCADE)
@@ -307,7 +309,7 @@ class Venta(AuditModel):
     iva = models.DecimalField(max_digits=10, decimal_places=2, default=0, help_text="IVA calculado")
     monto = models.DecimalField(max_digits=10, decimal_places=2, help_text="Monto total con IVA")
     tasa_iva = models.DecimalField(max_digits=5, decimal_places=2, default=12, help_text="Tasa de IVA (%)")
-    tipo_pago = models.CharField(max_length=10, choices=TIPO_PAGO_CHOICES, default='contado')
+    tipo_pago = models.CharField(max_length=15, choices=TIPO_PAGO_CHOICES, default='contado')
     fecha = models.DateTimeField(auto_now_add=True)
     
     @property

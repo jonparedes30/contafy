@@ -65,10 +65,30 @@ def crear_venta(request):
                     if venta.tipo_pago == 'contado':
                         registrar_movimiento_contable(
                             empresa=empresa,
-                            cuenta_debito_nombre='Caja/Banco',
+                            cuenta_debito_nombre='Caja',
                             cuenta_credito_nombre='Ventas',
                             monto=venta.monto,
                             descripcion=f"Venta contado {venta.producto.nombre} (x{venta.cantidad})",
+                            tipo_cuenta_debito='activo',
+                            tipo_cuenta_credito='ingreso'
+                        )
+                    elif venta.tipo_pago == 'transferencia':
+                        registrar_movimiento_contable(
+                            empresa=empresa,
+                            cuenta_debito_nombre='Banco',
+                            cuenta_credito_nombre='Ventas',
+                            monto=venta.monto,
+                            descripcion=f"Venta transferencia {venta.producto.nombre} (x{venta.cantidad})",
+                            tipo_cuenta_debito='activo',
+                            tipo_cuenta_credito='ingreso'
+                        )
+                    elif venta.tipo_pago == 'tarjeta':
+                        registrar_movimiento_contable(
+                            empresa=empresa,
+                            cuenta_debito_nombre='Cuentas por Cobrar - Tarjetas',
+                            cuenta_credito_nombre='Ventas',
+                            monto=venta.monto,
+                            descripcion=f"Venta tarjeta {venta.producto.nombre} (x{venta.cantidad})",
                             tipo_cuenta_debito='activo',
                             tipo_cuenta_credito='ingreso'
                         )
