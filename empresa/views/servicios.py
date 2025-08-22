@@ -27,13 +27,35 @@ def crear_tipo_servicio(request):
     if request.method == 'POST':
         try:
             with transaction.atomic():
+                # Validar campos requeridos
+                nombre = request.POST.get('nombre', '').strip()
+                if not nombre:
+                    messages.error(request, 'El nombre del servicio es requerido.')
+                    return render(request, 'empresa/servicios/crear_servicio.html')
+                
+                # Convertir valores numéricos de forma segura
+                try:
+                    precio_base = float(request.POST.get('precio_base', 0) or 0)
+                except (ValueError, TypeError):
+                    precio_base = 0
+                
+                try:
+                    costo_directo = float(request.POST.get('costo_directo', 0) or 0)
+                except (ValueError, TypeError):
+                    costo_directo = 0
+                
+                try:
+                    tiempo_estimado = int(request.POST.get('tiempo_estimado', 0) or 0) if request.POST.get('tiempo_estimado') else None
+                except (ValueError, TypeError):
+                    tiempo_estimado = None
+                
                 servicio = TipoServicio.objects.create(
                     empresa=request.user.empresa,
-                    nombre=request.POST.get('nombre'),
-                    descripcion=request.POST.get('descripcion', ''),
-                    precio_base=float(request.POST.get('precio_base', 0)),
-                    costo_directo=float(request.POST.get('costo_directo', 0)),
-                    tiempo_estimado=int(request.POST.get('tiempo_estimado', 0)) if request.POST.get('tiempo_estimado') else None,
+                    nombre=nombre,
+                    descripcion=request.POST.get('descripcion', '').strip(),
+                    precio_base=precio_base,
+                    costo_directo=costo_directo,
+                    tiempo_estimado=tiempo_estimado,
                     unidad_medida=request.POST.get('unidad_medida', 'Servicio'),
                 )
                 
@@ -54,11 +76,34 @@ def editar_tipo_servicio(request, servicio_id):
     if request.method == 'POST':
         try:
             with transaction.atomic():
-                servicio.nombre = request.POST.get('nombre')
-                servicio.descripcion = request.POST.get('descripcion', '')
-                servicio.precio_base = float(request.POST.get('precio_base', 0))
-                servicio.costo_directo = float(request.POST.get('costo_directo', 0))
-                servicio.tiempo_estimado = int(request.POST.get('tiempo_estimado', 0)) if request.POST.get('tiempo_estimado') else None
+                # Validar campos requeridos
+                nombre = request.POST.get('nombre', '').strip()
+                if not nombre:
+                    messages.error(request, 'El nombre del servicio es requerido.')
+                    context = {'servicio': servicio}
+                    return render(request, 'empresa/servicios/editar_servicio.html', context)
+                
+                # Convertir valores numéricos de forma segura
+                try:
+                    precio_base = float(request.POST.get('precio_base', 0) or 0)
+                except (ValueError, TypeError):
+                    precio_base = 0
+                
+                try:
+                    costo_directo = float(request.POST.get('costo_directo', 0) or 0)
+                except (ValueError, TypeError):
+                    costo_directo = 0
+                
+                try:
+                    tiempo_estimado = int(request.POST.get('tiempo_estimado', 0) or 0) if request.POST.get('tiempo_estimado') else None
+                except (ValueError, TypeError):
+                    tiempo_estimado = None
+                
+                servicio.nombre = nombre
+                servicio.descripcion = request.POST.get('descripcion', '').strip()
+                servicio.precio_base = precio_base
+                servicio.costo_directo = costo_directo
+                servicio.tiempo_estimado = tiempo_estimado
                 servicio.unidad_medida = request.POST.get('unidad_medida', 'Servicio')
                 servicio.save()
                 
