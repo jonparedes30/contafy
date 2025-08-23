@@ -446,10 +446,11 @@ class Venta(AuditModel):
                 from datetime import date, timedelta
                 
                 # Si no hay cliente registrado, crear uno genérico
-                if not self.cliente_fk and self.cliente_nombre:
+                if not self.cliente_fk:
+                    nombre_cliente = self.cliente_nombre or 'Cliente General'
                     cliente, created = Cliente.objects.get_or_create(
                         empresa=self.empresa,
-                        nombre=self.cliente_nombre,
+                        nombre=nombre_cliente,
                         defaults={
                             'numero_documento': '9999999999',
                             'limite_credito': 1000
@@ -459,16 +460,16 @@ class Venta(AuditModel):
                     Venta.objects.filter(pk=self.pk).update(cliente_fk=cliente)
                     self.cliente_fk = cliente
                 
-                if self.cliente_fk:
-                    CuentaPorCobrar.objects.create(
-                        empresa=self.empresa,
-                        cliente=self.cliente_fk,
-                        venta=self,
-                        monto_original=self.monto,
-                        monto_pendiente=self.monto,
-                        fecha_vencimiento=date.today() + timedelta(days=30),
-                        estado='pendiente'
-                    )
+                # Siempre crear cuenta por cobrar para ventas a crédito
+                CuentaPorCobrar.objects.create(
+                    empresa=self.empresa,
+                    cliente=self.cliente_fk,
+                    venta=self,
+                    monto_original=self.monto,
+                    monto_pendiente=self.monto,
+                    fecha_vencimiento=date.today() + timedelta(days=30),
+                    estado='pendiente'
+                )
             except Exception as e:
                 print(f'Error creando cuenta por cobrar: {e}')
     
