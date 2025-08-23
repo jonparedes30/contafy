@@ -71,19 +71,14 @@ def registrar_pago_cobrar(request):
                 })
             
             with transaction.atomic():
-                # Crear registro de pago
+                # Crear registro de pago (el modelo se encarga de actualizar la cuenta)
                 pago = PagoCuentaPorCobrar.objects.create(
                     empresa=request.user.empresa,
                     cuenta_por_cobrar=cuenta,
                     monto_pagado=monto_pagado,
                     metodo_pago=metodo_pago
                 )
-                
-                # Actualizar cuenta
-                cuenta.monto_pendiente -= monto_pagado
-                if cuenta.monto_pendiente <= 0:
-                    cuenta.estado = 'pagada'
-                cuenta.save()
+                # La cuenta se actualiza automáticamente en el método save() del modelo PagoCuentaPorCobrar
             
             return JsonResponse({
                 'success': True,
@@ -117,19 +112,14 @@ def registrar_pago_pagar(request):
                 })
             
             with transaction.atomic():
-                # Crear registro de pago
+                # Crear registro de pago (el modelo se encarga de actualizar la cuenta)
                 pago = PagoCuentaPorPagar.objects.create(
                     empresa=request.user.empresa,
                     cuenta_por_pagar=cuenta,
                     monto_pagado=monto_pagado,
                     metodo_pago=metodo_pago
                 )
-                
-                # Actualizar cuenta
-                cuenta.monto_pendiente -= monto_pagado
-                if cuenta.monto_pendiente <= 0:
-                    cuenta.estado = 'pagada'
-                cuenta.save()
+                # La cuenta se actualiza automáticamente en el método save() del modelo PagoCuentaPorPagar
             
             return JsonResponse({
                 'success': True,
