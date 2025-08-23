@@ -17,13 +17,15 @@ def gestion_deudas(request):
     # Cuentas por cobrar
     cuentas_cobrar = CuentaPorCobrar.objects.filter(
         empresa=empresa,
-        estado__in=['pendiente', 'vencida']
+        estado__in=['pendiente', 'vencida'],
+        monto_pendiente__gt=0
     ).select_related('cliente', 'venta').order_by('fecha_vencimiento')
     
     # Cuentas por pagar
     cuentas_pagar = CuentaPorPagar.objects.filter(
         empresa=empresa,
-        estado__in=['pendiente', 'vencida']
+        estado__in=['pendiente', 'vencida'],
+        monto_pendiente__gt=0
     ).select_related('proveedor', 'compra').order_by('fecha_vencimiento')
     
     # Totales
@@ -145,7 +147,8 @@ def api_cuentas_cobrar(request):
     empresa = request.user.empresa
     cuentas = CuentaPorCobrar.objects.filter(
         empresa=empresa,
-        estado__in=['pendiente', 'vencida']
+        estado__in=['pendiente', 'vencida'],
+        monto_pendiente__gt=0
     ).select_related('cliente', 'venta')
     
     data = []
@@ -172,7 +175,8 @@ def api_cuentas_pagar(request):
     empresa = request.user.empresa
     cuentas = CuentaPorPagar.objects.filter(
         empresa=empresa,
-        estado__in=['pendiente', 'vencida']
+        estado__in=['pendiente', 'vencida'],
+        monto_pendiente__gt=0
     ).select_related('proveedor', 'compra')
     
     data = []

@@ -1456,6 +1456,7 @@ class PagoCuentaPorCobrar(AuditModel):
         cuenta = self.cuenta_por_cobrar
         cuenta.monto_pendiente -= self.monto_pagado
         
+        # Asegurar que el monto pendiente no sea negativo
         if cuenta.monto_pendiente <= 0:
             cuenta.estado = 'pagada'
             cuenta.monto_pendiente = 0
@@ -1534,6 +1535,7 @@ class PagoCuentaPorPagar(AuditModel):
         cuenta = self.cuenta_por_pagar
         cuenta.monto_pendiente -= self.monto_pagado
         
+        # Asegurar que el monto pendiente no sea negativo
         if cuenta.monto_pendiente <= 0:
             cuenta.estado = 'pagada'
             cuenta.monto_pendiente = 0
