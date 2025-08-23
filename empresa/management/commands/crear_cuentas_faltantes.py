@@ -22,14 +22,30 @@ class Command(BaseCommand):
                 # Asegurar que tenga cliente
                 if not venta.cliente_fk:
                     nombre_cliente = venta.cliente_nombre or 'Cliente General'
-                    cliente, created = Cliente.objects.get_or_create(
+                    # Buscar cliente existente por nombre o crear uno nuevo
+                    cliente = Cliente.objects.filter(
                         empresa=venta.empresa,
-                        nombre=nombre_cliente,
-                        defaults={
-                            'numero_documento': '9999999999',
-                            'limite_credito': 1000
-                        }
-                    )
+                        nombre=nombre_cliente
+                    ).first()
+                    
+                    if not cliente:
+                        # Buscar cliente genérico existente
+                        cliente = Cliente.objects.filter(
+                            empresa=venta.empresa,
+                            numero_documento='9999999999'
+                        ).first()
+                        
+                        if not cliente:
+                            # Crear nuevo cliente con documento único
+                            import random
+                            doc_unico = f'999999{random.randint(1000, 9999)}'
+                            cliente = Cliente.objects.create(
+                                empresa=venta.empresa,
+                                nombre=nombre_cliente,
+                                numero_documento=doc_unico,
+                                limite_credito=1000
+                            )
+                    
                     venta.cliente_fk = cliente
                     venta.save()
                 
