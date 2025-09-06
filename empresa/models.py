@@ -271,9 +271,12 @@ class Producto(AuditModel):
     @property
     def margen_ganancia(self):
         """Calcula el margen de ganancia del producto"""
-        costo = self.costo_promedio
-        if self.precio_unitario > 0 and costo > 0:
-            return ((self.precio_unitario - costo) / self.precio_unitario) * 100
+        # Usar PVP si existe, sino precio_unitario como precio de venta
+        precio_venta = self.pvp if self.pvp and self.pvp > 0 else 0
+        precio_costo = self.precio_unitario
+        
+        if precio_venta > 0 and precio_costo > 0:
+            return ((precio_venta - precio_costo) / precio_venta) * 100
         return 0
 
     def __str__(self):
