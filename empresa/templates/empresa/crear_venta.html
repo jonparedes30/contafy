@@ -150,6 +150,7 @@
                     <div class="row mb-4">
                         <div class="col-md-6">
                             {{ form.producto.label_tag }}
+                            <input type="text" id="producto-search" class="form-control mb-2" placeholder="Escribe para buscar producto..." autocomplete="off">
                             {{ form.producto }}
                             <div id="producto-descripcion" class="form-text text-muted mt-1"></div>
                         </div>
@@ -756,6 +757,42 @@
             botonActivo.classList.add('btn-primary');
         }
     };
+    
+    // Filtro de búsqueda en tiempo real
+    const productoSearch = document.getElementById('producto-search');
+    if (productoSearch && selectProducto) {
+        productoSearch.addEventListener('input', function() {
+            const searchTerm = this.value.toLowerCase();
+            
+            // Limpiar el select
+            selectProducto.innerHTML = '';
+            
+            // Agregar opción vacía
+            const opcionVacia = document.createElement('option');
+            opcionVacia.value = '';
+            opcionVacia.textContent = 'Seleccionar producto...';
+            selectProducto.appendChild(opcionVacia);
+            
+            // Filtrar opciones
+            todasLasOpciones.forEach(option => {
+                if (option.value === '') return;
+                
+                const nombre = option.textContent.toLowerCase();
+                if (searchTerm === '' || nombre.includes(searchTerm)) {
+                    const nuevaOpcion = option.cloneNode(true);
+                    selectProducto.appendChild(nuevaOpcion);
+                }
+            });
+        });
+        
+        // Limpiar búsqueda cuando se selecciona un producto
+        selectProducto.addEventListener('change', function() {
+            if (this.value) {
+                const selectedOption = this.options[this.selectedIndex];
+                productoSearch.value = selectedOption.textContent;
+            }
+        });
+    }
     
     // Mostrar descripción del producto seleccionado
     if (selectProducto) {
