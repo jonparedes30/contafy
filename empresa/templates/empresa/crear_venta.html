@@ -176,6 +176,7 @@
                                                     {% endfor %}
                                                 </select>
                                                 <div id="producto-multiple-descripcion" class="form-text text-muted mt-1"></div>
+                                                <div id="stock-info-multiple" class="fw-bold text-center mt-2"></div>
                                             </div>
                                         </div>
                                         <div class="col-md-2">
@@ -589,6 +590,25 @@
                             descripcionDiv.style.display = 'block';
                         } else if (descripcionDiv) {
                             descripcionDiv.style.display = 'none';
+                        }
+                        
+                        // Mostrar stock
+                        const stockInfoMultiple = document.getElementById('stock-info-multiple');
+                        if (stockInfoMultiple) {
+                            const stock = parseInt(this.dataset.stock) || 0;
+                            if (id.startsWith('serv_')) {
+                                stockInfoMultiple.textContent = `🛠️ Servicio disponible`;
+                                stockInfoMultiple.className = 'fw-bold text-center mt-2 text-success';
+                            } else {
+                                stockInfoMultiple.textContent = `🔍 Stock disponible: ${stock}`;
+                                if (stock > 20) {
+                                    stockInfoMultiple.className = 'fw-bold text-center mt-2 text-success';
+                                } else if (stock > 0) {
+                                    stockInfoMultiple.className = 'fw-bold text-center mt-2 text-warning';
+                                } else {
+                                    stockInfoMultiple.className = 'fw-bold text-center mt-2 text-danger';
+                                }
+                            }
                         }
                     });
                 });
