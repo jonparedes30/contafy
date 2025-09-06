@@ -19,7 +19,8 @@ from .views.capital import crear_capital, listar_capital
 from .views.cuentas_contables import crear_cuenta_contable, listar_cuentas_contables
 from .views.dashboard import dashboard
 from .views.dashboards import dashboard_ventas, dashboard_inventario, dashboard_gastos, dashboard_productos, dashboard_metas, dashboard_basico
-from .views.contabilidad import estado_resultados, balance_general, flujo_caja
+from .views.contabilidad import balance_general, flujo_caja
+from .views.estado_resultados_simple import estado_resultados_simple
 from .views.resumen import resumen_financiero
 from .views.exportaciones import exportar_excel_ventas, exportar_excel_compras, exportar_excel_gastos, exportar_excel_inventario, exportar_pdf, exportar_pdf_usuario, exportar_pdf_profesional, exportar_pdf_inventario, exportar_excel_completo, exportar_excel_iva, exportar_pdf_iva
 from .views.metas import gestionar_metas, historial_meta, marcar_notificacion_leida
@@ -121,7 +122,7 @@ urlpatterns = [
     path('dashboard/productos/', dashboard_productos, name='dashboard_productos'),
     path('dashboard/metas/', dashboard_metas, name='dashboard_metas'),
     path('dashboard/basico/', dashboard_basico, name='dashboard_basico'),
-    path('estado-resultados/', estado_resultados, name='estado_resultados'),
+    path('estado-resultados/', estado_resultados_simple, name='estado_resultados'),
     path('balance-general/', balance_general, name='balance_general'),
     path('flujo-caja/', flujo_caja, name='flujo_caja'),
     
