@@ -160,7 +160,8 @@
                                                     <option value="{{ producto.id }}" 
                                                             data-nombre="{{ producto.nombre }}"
                                                             data-precio="{{ producto.precio_venta }}"
-                                                            data-stock="{{ producto.stock }}">
+                                                            data-stock="{{ producto.stock }}"
+                                                            data-descripcion="{{ producto.descripcion }}">
                                                         {{ producto.nombre }} - ${{ producto.precio_venta }}
                                                     </option>
                                                     {% endfor %}
@@ -168,11 +169,13 @@
                                                     <option value="serv_{{ servicio.id }}" 
                                                             data-nombre="{{ servicio.nombre }}"
                                                             data-precio="{{ servicio.precio_base }}"
-                                                            data-stock="999">
+                                                            data-stock="999"
+                                                            data-descripcion="">
                                                         {{ servicio.nombre }} - ${{ servicio.precio_base }}
                                                     </option>
                                                     {% endfor %}
                                                 </select>
+                                                <div id="producto-multiple-descripcion" class="form-text text-muted mt-1"></div>
                                             </div>
                                         </div>
                                         <div class="col-md-2">
@@ -526,7 +529,8 @@
                     id: option.value,
                     nombre: option.dataset.nombre,
                     precio: option.dataset.precio,
-                    stock: option.dataset.stock
+                    stock: option.dataset.stock,
+                    descripcion: option.dataset.descripcion || ''
                 });
             }
         });
@@ -558,7 +562,7 @@
             if (coincidencias.length > 0) {
                 let html = '';
                 coincidencias.forEach(producto => {
-                    html += `<a class="dropdown-item" href="#" data-id="${producto.id}" data-nombre="${producto.nombre}" data-precio="${producto.precio}" data-stock="${producto.stock}">${producto.nombre} - $${producto.precio}</a>`;
+                    html += `<a class="dropdown-item" href="#" data-id="${producto.id}" data-nombre="${producto.nombre}" data-precio="${producto.precio}" data-stock="${producto.stock}" data-descripcion="${producto.descripcion}">${producto.nombre} - $${producto.precio}</a>`;
                 });
                 
                 productoMultipleDropdown.innerHTML = html;
@@ -571,11 +575,21 @@
                         const nombre = this.dataset.nombre;
                         const id = this.dataset.id;
                         const precio = this.dataset.precio;
+                        const descripcion = this.dataset.descripcion;
                         
                         productoMultipleSearch.value = nombre;
                         productoMultipleSelect.value = id;
                         productoMultipleDropdown.style.display = 'none';
                         precioMultiple.value = parseFloat(precio || 0).toFixed(2);
+                        
+                        // Mostrar descripción
+                        const descripcionDiv = document.getElementById('producto-multiple-descripcion');
+                        if (descripcionDiv && descripcion) {
+                            descripcionDiv.textContent = `📝 ${descripcion}`;
+                            descripcionDiv.style.display = 'block';
+                        } else if (descripcionDiv) {
+                            descripcionDiv.style.display = 'none';
+                        }
                     });
                 });
             } else {
