@@ -111,42 +111,6 @@
 
                 <!-- Venta simple -->
                 <div id="venta-simple">
-                    <!-- Filtro alfabético -->
-                    <div class="row mb-3">
-                        <div class="col-12">
-                            <label class="form-label">Filtrar productos por letra:</label>
-                            <div class="btn-group flex-wrap" role="group">
-                                <button type="button" class="btn btn-outline-secondary btn-sm" onclick="filtrarPorLetra('')">Todos</button>
-                                <button type="button" class="btn btn-outline-secondary btn-sm" onclick="filtrarPorLetra('A')">A</button>
-                                <button type="button" class="btn btn-outline-secondary btn-sm" onclick="filtrarPorLetra('B')">B</button>
-                                <button type="button" class="btn btn-outline-secondary btn-sm" onclick="filtrarPorLetra('C')">C</button>
-                                <button type="button" class="btn btn-outline-secondary btn-sm" onclick="filtrarPorLetra('D')">D</button>
-                                <button type="button" class="btn btn-outline-secondary btn-sm" onclick="filtrarPorLetra('E')">E</button>
-                                <button type="button" class="btn btn-outline-secondary btn-sm" onclick="filtrarPorLetra('F')">F</button>
-                                <button type="button" class="btn btn-outline-secondary btn-sm" onclick="filtrarPorLetra('G')">G</button>
-                                <button type="button" class="btn btn-outline-secondary btn-sm" onclick="filtrarPorLetra('H')">H</button>
-                                <button type="button" class="btn btn-outline-secondary btn-sm" onclick="filtrarPorLetra('I')">I</button>
-                                <button type="button" class="btn btn-outline-secondary btn-sm" onclick="filtrarPorLetra('J')">J</button>
-                                <button type="button" class="btn btn-outline-secondary btn-sm" onclick="filtrarPorLetra('K')">K</button>
-                                <button type="button" class="btn btn-outline-secondary btn-sm" onclick="filtrarPorLetra('L')">L</button>
-                                <button type="button" class="btn btn-outline-secondary btn-sm" onclick="filtrarPorLetra('M')">M</button>
-                                <button type="button" class="btn btn-outline-secondary btn-sm" onclick="filtrarPorLetra('N')">N</button>
-                                <button type="button" class="btn btn-outline-secondary btn-sm" onclick="filtrarPorLetra('O')">O</button>
-                                <button type="button" class="btn btn-outline-secondary btn-sm" onclick="filtrarPorLetra('P')">P</button>
-                                <button type="button" class="btn btn-outline-secondary btn-sm" onclick="filtrarPorLetra('Q')">Q</button>
-                                <button type="button" class="btn btn-outline-secondary btn-sm" onclick="filtrarPorLetra('R')">R</button>
-                                <button type="button" class="btn btn-outline-secondary btn-sm" onclick="filtrarPorLetra('S')">S</button>
-                                <button type="button" class="btn btn-outline-secondary btn-sm" onclick="filtrarPorLetra('T')">T</button>
-                                <button type="button" class="btn btn-outline-secondary btn-sm" onclick="filtrarPorLetra('U')">U</button>
-                                <button type="button" class="btn btn-outline-secondary btn-sm" onclick="filtrarPorLetra('V')">V</button>
-                                <button type="button" class="btn btn-outline-secondary btn-sm" onclick="filtrarPorLetra('W')">W</button>
-                                <button type="button" class="btn btn-outline-secondary btn-sm" onclick="filtrarPorLetra('X')">X</button>
-                                <button type="button" class="btn btn-outline-secondary btn-sm" onclick="filtrarPorLetra('Y')">Y</button>
-                                <button type="button" class="btn btn-outline-secondary btn-sm" onclick="filtrarPorLetra('Z')">Z</button>
-                            </div>
-                        </div>
-                    </div>
-                    
                     <div class="row mb-4">
                         <div class="col-md-6">
                             {{ form.producto.label_tag }}
@@ -718,49 +682,11 @@
         todasLasOpciones = Array.from(selectProducto.options);
     }
     
-    // Función para filtrar productos por letra
-    window.filtrarPorLetra = function(letra) {
-        if (!selectProducto || todasLasOpciones.length === 0) return;
-        
-        // Limpiar el select
-        selectProducto.innerHTML = '';
-        
-        // Agregar opción vacía
-        const opcionVacia = document.createElement('option');
-        opcionVacia.value = '';
-        opcionVacia.textContent = 'Seleccionar producto...';
-        selectProducto.appendChild(opcionVacia);
-        
-        // Filtrar y agregar opciones
-        todasLasOpciones.forEach(option => {
-            if (option.value === '') return; // Saltar opción vacía original
-            
-            const nombre = option.textContent.trim();
-            if (letra === '' || nombre.toUpperCase().startsWith(letra.toUpperCase())) {
-                const nuevaOpcion = option.cloneNode(true);
-                selectProducto.appendChild(nuevaOpcion);
-            }
-        });
-        
-        // Actualizar estilos de botones
-        document.querySelectorAll('.btn-group button').forEach(btn => {
-            btn.classList.remove('btn-primary');
-            btn.classList.add('btn-outline-secondary');
-        });
-        
-        // Marcar botón activo
-        const botonActivo = Array.from(document.querySelectorAll('.btn-group button')).find(btn => 
-            btn.textContent.trim() === (letra || 'Todos')
-        );
-        if (botonActivo) {
-            botonActivo.classList.remove('btn-outline-secondary');
-            botonActivo.classList.add('btn-primary');
-        }
-    };
+
     
     // Filtro de búsqueda en tiempo real
     const productoSearch = document.getElementById('producto-search');
-    if (productoSearch && selectProducto) {
+    if (productoSearch && selectProducto && todasLasOpciones.length > 0) {
         productoSearch.addEventListener('input', function() {
             const searchTerm = this.value.toLowerCase();
             
@@ -790,6 +716,8 @@
             if (this.value) {
                 const selectedOption = this.options[this.selectedIndex];
                 productoSearch.value = selectedOption.textContent;
+            } else {
+                productoSearch.value = '';
             }
         });
     }
