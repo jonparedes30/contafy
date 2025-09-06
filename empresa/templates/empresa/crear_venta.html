@@ -114,8 +114,15 @@
                     <div class="row mb-4">
                         <div class="col-md-6">
                             {{ form.producto.label_tag }}
-                            <input type="text" id="producto-search" class="form-control mb-2" placeholder="Escribe para buscar producto..." autocomplete="off">
-                            {{ form.producto }}
+                            <input type="text" id="producto-search" class="form-control" placeholder="Escribe para buscar y seleccionar producto..." autocomplete="off">
+                            <select id="id_producto" name="producto" class="form-select" style="display: none;">
+                                <option value="">Seleccionar producto...</option>
+                                {% for producto in productos_json %}
+                                <option value="{{ producto.id }}" data-nombre="{{ producto.nombre }}" data-descripcion="{{ producto.descripcion }}">
+                                    {{ producto.nombre }}
+                                </option>
+                                {% endfor %}
+                            </select>
                             <div id="producto-descripcion" class="form-text text-muted mt-1"></div>
                         </div>
                         <div class="col-md-3">
@@ -676,54 +683,78 @@
         });
     }
     
-    // Filtro de búsqueda en tiempo real
+    // Autocompletado de productos
     const productoSearch = document.getElementById('producto-search');
-    let todasLasOpciones = [];
+    let productosData = [];
     
-    // Guardar opciones originales cuando el DOM esté listo
-    if (productoSearch && selectProducto) {
-        // Esperar un momento para que el select se llene completamente
-        setTimeout(() => {
-            todasLasOpciones = Array.from(selectProducto.options);
-        }, 100);
+    // Cargar datos de productos
+    if (selectProducto) {
+        Array.from(selectProducto.options).forEach(option => {
+            if (option.value) {
+                productosData.push({
+                    id: option.value,
+                    nombre: option.textContent,
+                    descripcion: option.dataset.descripcion || ''
+                });
+            }
+        });
+    }
+    
+    // Configurar autocompletado
+    if (productoSearch) {
+        let selectedProductId = '';
         
-        // Configurar el filtro de búsqueda
         productoSearch.addEventListener('input', function() {
             const searchTerm = this.value.toLowerCase();
+            selectedProductId = '';
+            selectProducto.value = '';
             
-            // Si no hay opciones guardadas aún, guardarlas ahora
-            if (todasLasOpciones.length === 0) {
-                todasLasOpciones = Array.from(selectProducto.options);
-            }
+            // Limpiar descripción
+            const descripcionDiv = document.getElementById('producto-descripcion');
+            if (descripcionDiv) descripcionDiv.style.display = 'none';
             
-            // Limpiar el select
-            selectProducto.innerHTML = '';
+            // Buscar coincidencia exacta
+            const coincidenciaExacta = productosData.find(p => 
+                p.nombre.toLowerCase() === searchTerm
+            );
             
-            // Agregar opción vacía
-            const opcionVacia = document.createElement('option');
-            opcionVacia.value = '';
-            opcionVacia.textContent = 'Seleccionar producto...';
-            selectProducto.appendChild(opcionVacia);
-            
-            // Filtrar opciones
-            todasLasOpciones.forEach(option => {
-                if (option.value === '') return;
+            if (coincidenciaExacta) {
+                selectedProductId = coincidenciaExacta.id;
+                selectProducto.value = coincidenciaExacta.id;
                 
-                const nombre = option.textContent.toLowerCase();
-                if (searchTerm === '' || nombre.includes(searchTerm)) {
-                    const nuevaOpcion = option.cloneNode(true);
-                    selectProducto.appendChild(nuevaOpcion);
+                // Mostrar descripción
+                if (descripcionDiv && coincidenciaExacta.descripcion) {
+                    descripcionDiv.textContent = `📝 ${coincidenciaExacta.descripcion}`;
+                    descripcionDiv.style.display = 'block';
                 }
-            });
+                
+                actualizarVenta();
+            }
         });
         
-        // Limpiar búsqueda cuando se selecciona un producto
-        selectProducto.addEventListener('change', function() {
-            if (this.value) {
-                const selectedOption = this.options[this.selectedIndex];
-                productoSearch.value = selectedOption.textContent;
-            } else {
-                productoSearch.value = '';
+        // Autocompletado con Tab o Enter
+        productoSearch.addEventListener('keydown', function(e) {
+            if (e.key === 'Tab' || e.key === 'Enter') {
+                const searchTerm = this.value.toLowerCase();
+                const coincidencias = productosData.filter(p => 
+                    p.nombre.toLowerCase().includes(searchTerm)
+                );
+                
+                if (coincidencias.length === 1) {
+                    e.preventDefault();
+                    this.value = coincidencias[0].nombre;
+                    selectedProductId = coincidencias[0].id;
+                    selectProducto.value = coincidencias[0].id;
+                    
+                    // Mostrar descripción
+                    const descripcionDiv = document.getElementById('producto-descripcion');
+                    if (descripcionDiv && coincidencias[0].descripcion) {
+                        descripcionDiv.textContent = `📝 ${coincidencias[0].descripcion}`;
+                        descripcionDiv.style.display = 'block';
+                    }
+                    
+                    actualizarVenta();
+                }
             }
         });
     }
