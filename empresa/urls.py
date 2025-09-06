@@ -9,7 +9,7 @@ from .views.api_comercio import (
 
 # Importar vistas específicas
 from .views.autenticacion import login_usuario, logout_usuario, registrar_usuario
-from .views.empresa import crear_empresa, listar_empresas, gestion_poderes_empleado, crear_empleado, home, eliminar_empleado, editar_empresa
+from .views.empresa import crear_empresa, listar_empresas, gestion_poderes_empleado, crear_empleado, home, eliminar_empleado, editar_empresa, editar_usuario
 from .views.entrada_beta import entrada_beta
 from .views.productos import crear_producto, listar_productos, editar_producto, eliminar_producto
 from .views.ventas import crear_venta, listar_ventas, crear_venta_multiple
@@ -81,6 +81,7 @@ urlpatterns = [
     path('empresa/<int:empresa_id>/empleado/<int:empleado_id>/poderes/', gestion_poderes_empleado, name='gestion_poderes_empleado'),
     path('empleado/<int:empleado_id>/eliminar/', eliminar_empleado, name='eliminar_empleado'),
     path('editar/', editar_empresa, name='editar_empresa'),
+    path('editar-usuario/', editar_usuario, name='editar_usuario'),
     
     # URLs de productos
     path('producto/crear/', crear_producto, name='crear_producto'),

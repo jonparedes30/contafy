@@ -213,6 +213,7 @@ def editar_empresa(request):
     empresa.nombre = data.get('nombre')
     empresa.ruc = data.get('ruc')
     empresa.direccion = data.get('direccion')
+    empresa.categoria = data.get('categoria', empresa.categoria)
     empresa.provincia = data.get('provincia', '')
     empresa.ciudad = data.get('ciudad', '')
     empresa.telefono_whatsapp = data.get('telefono_whatsapp', '')
@@ -220,6 +221,33 @@ def editar_empresa(request):
     
     try:
         empresa.save()
+        return JsonResponse({'success': True})
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
+
+
+@csrf_exempt
+@login_required
+@require_http_methods(["POST"])
+def editar_usuario(request):
+    try:
+        data = json.loads(request.body.decode('utf-8'))
+    except Exception:
+        return JsonResponse({'error': 'Datos inválidos.'}, status=400)
+    
+    usuario = request.user
+    
+    # Validaciones básicas
+    if not data.get('first_name') or not data.get('last_name'):
+        return JsonResponse({'error': 'Nombre y apellido son obligatorios.'}, status=400)
+    
+    # Actualizar campos del usuario
+    usuario.first_name = data.get('first_name').strip()
+    usuario.last_name = data.get('last_name').strip()
+    usuario.email = data.get('email', '').strip()
+    
+    try:
+        usuario.save()
         return JsonResponse({'success': True})
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=500)

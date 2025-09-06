@@ -38,15 +38,75 @@
     <div class="row">
         <!-- Información detallada -->
         <div class="col-lg-8">
+            <!-- Información del Usuario -->
             <div class="card shadow-sm mb-4">
                 <div class="card-header bg-light border-0 d-flex justify-content-between align-items-center">
-                    <h5 class="mb-0 text-dark"><i class="bi bi-info-circle me-2"></i>Información Empresarial</h5>
-                    <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#editarEmpresaModal">
-                        <i class="bi bi-pencil"></i> Editar
+                    <h5 class="mb-0 text-dark"><i class="bi bi-person-circle me-2"></i>Mi Perfil</h5>
+                    <button type="button" class="btn btn-sm btn-success" data-bs-toggle="modal" data-bs-target="#editarUsuarioModal">
+                        <i class="bi bi-pencil"></i> Editar Perfil
                     </button>
                 </div>
                 <div class="card-body">
                     <div class="row g-4">
+                        <div class="col-md-6">
+                            <div class="info-item">
+                                <div class="d-flex align-items-center mb-2">
+                                    <i class="bi bi-person text-primary me-2"></i>
+                                    <strong>Nombre Completo</strong>
+                                </div>
+                                <p class="text-muted mb-0">{{ user.get_full_name|default:user.username }}</p>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="info-item">
+                                <div class="d-flex align-items-center mb-2">
+                                    <i class="bi bi-envelope text-info me-2"></i>
+                                    <strong>Email</strong>
+                                </div>
+                                <p class="text-muted mb-0">{{ user.email|default:"No especificado" }}</p>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="info-item">
+                                <div class="d-flex align-items-center mb-2">
+                                    <i class="bi bi-shield-check text-success me-2"></i>
+                                    <strong>Rol</strong>
+                                </div>
+                                <p class="text-muted mb-0">Propietario de la empresa</p>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="info-item">
+                                <div class="d-flex align-items-center mb-2">
+                                    <i class="bi bi-calendar text-warning me-2"></i>
+                                    <strong>Miembro desde</strong>
+                                </div>
+                                <p class="text-muted mb-0">{{ user.date_joined|date:"d/m/Y" }}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Información Empresarial -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-light border-0 d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0 text-dark"><i class="bi bi-building me-2"></i>Información Empresarial</h5>
+                    <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#editarEmpresaModal">
+                        <i class="bi bi-pencil"></i> Editar Empresa
+                    </button>
+                </div>
+                <div class="card-body">
+                    <div class="row g-4">
+                        <div class="col-md-6">
+                            <div class="info-item">
+                                <div class="d-flex align-items-center mb-2">
+                                    <i class="bi bi-tag text-info me-2"></i>
+                                    <strong>Categoría</strong>
+                                </div>
+                                <p class="text-muted mb-0">{{ empresa.get_categoria_display }}</p>
+                            </div>
+                        </div>
                         <div class="col-md-6">
                             <div class="info-item">
                                 <div class="d-flex align-items-center mb-2">
@@ -237,6 +297,20 @@
                             <input type="text" class="form-control" id="empresaRuc" value="{{ empresa.ruc }}" required>
                         </div>
                     </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Categoría de Negocio *</label>
+                            <select class="form-select" id="empresaCategoria" required>
+                                <option value="comercial" {% if empresa.categoria == 'comercial' %}selected{% endif %}>Comercial</option>
+                                <option value="manufactura" {% if empresa.categoria == 'manufactura' %}selected{% endif %}>Manufactura</option>
+                                <option value="servicios" {% if empresa.categoria == 'servicios' %}selected{% endif %}>Servicios</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Tipo de Negocio</label>
+                            <input type="text" class="form-control" id="empresaTipoNegocio" value="{{ empresa.tipo_negocio|default:'' }}" placeholder="Ej: Panadería, Ferretería...">
+                        </div>
+                    </div>
                     <div class="mb-3">
                         <label class="form-label">Dirección *</label>
                         <input type="text" class="form-control" id="empresaDireccion" value="{{ empresa.direccion }}" required>
@@ -276,21 +350,55 @@
                             <input type="text" class="form-control" id="empresaCiudad" value="{{ empresa.ciudad|default:'' }}">
                         </div>
                     </div>
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">WhatsApp</label>
-                            <input type="text" class="form-control" id="empresaWhatsapp" value="{{ empresa.telefono_whatsapp|default:'' }}" placeholder="+593987654321">
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">Tipo de Negocio</label>
-                            <input type="text" class="form-control" id="empresaTipoNegocio" value="{{ empresa.tipo_negocio|default:'' }}" placeholder="Ej: Panadería, Ferretería...">
-                        </div>
+                    <div class="mb-3">
+                        <label class="form-label">WhatsApp</label>
+                        <input type="text" class="form-control" id="empresaWhatsapp" value="{{ empresa.telefono_whatsapp|default:'' }}" placeholder="+593987654321">
+                        <div class="form-text">Número de WhatsApp para notificaciones y contacto</div>
                     </div>
                 </form>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
                 <button type="button" class="btn btn-primary" onclick="guardarEmpresa()">Guardar Cambios</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Editar Usuario -->
+<div class="modal fade" id="editarUsuarioModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="bi bi-person-circle me-2"></i>Editar Mi Perfil</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="formEditarUsuario">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Nombre *</label>
+                            <input type="text" class="form-control" id="usuarioNombre" value="{{ user.first_name }}" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Apellido *</label>
+                            <input type="text" class="form-control" id="usuarioApellido" value="{{ user.last_name }}" required>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Email</label>
+                        <input type="email" class="form-control" id="usuarioEmail" value="{{ user.email|default:'' }}" placeholder="tu@email.com">
+                        <div class="form-text">Email para notificaciones y recuperación de cuenta</div>
+                    </div>
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle me-2"></i>
+                        <strong>Nota:</strong> Tu nombre de usuario es <code>{{ user.username }}</code> y no se puede cambiar.
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-success" onclick="guardarUsuario()">Guardar Cambios</button>
             </div>
         </div>
     </div>
@@ -507,14 +615,15 @@ function guardarEmpresa() {
         nombre: document.getElementById('empresaNombre').value,
         ruc: document.getElementById('empresaRuc').value,
         direccion: document.getElementById('empresaDireccion').value,
+        categoria: document.getElementById('empresaCategoria').value,
         provincia: document.getElementById('empresaProvincia').value,
         ciudad: document.getElementById('empresaCiudad').value,
         telefono_whatsapp: document.getElementById('empresaWhatsapp').value,
         tipo_negocio: document.getElementById('empresaTipoNegocio').value
     };
     
-    if (!datos.nombre || !datos.ruc || !datos.direccion) {
-        alert('Los campos Nombre, RUC y Dirección son obligatorios');
+    if (!datos.nombre || !datos.ruc || !datos.direccion || !datos.categoria) {
+        alert('Los campos Nombre, RUC, Dirección y Categoría son obligatorios');
         return;
     }
     
@@ -539,6 +648,42 @@ function guardarEmpresa() {
     .catch(error => {
         console.error('Error:', error);
         alert('Error al actualizar los datos de la empresa');
+    });
+}
+
+function guardarUsuario() {
+    const datos = {
+        first_name: document.getElementById('usuarioNombre').value,
+        last_name: document.getElementById('usuarioApellido').value,
+        email: document.getElementById('usuarioEmail').value
+    };
+    
+    if (!datos.first_name || !datos.last_name) {
+        alert('Los campos Nombre y Apellido son obligatorios');
+        return;
+    }
+    
+    fetch('/app-beta-2024/editar-usuario/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+        },
+        body: JSON.stringify(datos)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            bootstrap.Modal.getInstance(document.getElementById('editarUsuarioModal')).hide();
+            alert('Perfil actualizado correctamente');
+            location.reload();
+        } else {
+            alert('Error: ' + (data.error || 'No se pudo actualizar el perfil'));
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error al actualizar el perfil');
     });
 }
 </script>
