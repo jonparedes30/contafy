@@ -109,91 +109,91 @@ def flujo_caja(request):
         hoy = datetime.today()
         año_actual = hoy.year
         meses = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic']
-    
-    # Buscar la cuenta de Caja/Banco
-    try:
-        cuenta_caja = CuentaContable.objects.get(empresa=empresa, nombre__iexact='Caja/Banco')
-    except CuentaContable.DoesNotExist:
-        cuenta_caja = None
+        
+        # Buscar la cuenta de Caja/Banco
+        try:
+            cuenta_caja = CuentaContable.objects.get(empresa=empresa, nombre__iexact='Caja/Banco')
+        except CuentaContable.DoesNotExist:
+            cuenta_caja = None
 
-    flujo = []
-    total_entradas = 0.0
-    total_salidas = 0.0
-    meses_positivos = 0
-    acumulado = 0.0
-    
-    for idx, mes_nombre in enumerate(meses, start=1):
-        # Entradas de efectivo: Ventas + Otros ingresos
-        try:
-            cuenta_ventas = CuentaContable.objects.get(empresa=empresa, nombre__iexact='Ventas')
-            entradas_ventas = MovimientoContable.objects.filter(
-                empresa=empresa,
-                cuenta_fk=cuenta_ventas,
-                tipo='credito',
-                fecha__year=año_actual,
-                fecha__month=idx
-            ).aggregate(total=Sum('monto'))['total'] or 0
-        except CuentaContable.DoesNotExist:
-            entradas_ventas = 0
+        flujo = []
+        total_entradas = 0.0
+        total_salidas = 0.0
+        meses_positivos = 0
+        acumulado = 0.0
         
-        # Salidas de efectivo: Gastos + Costos de Ventas + Compras
-        try:
-            cuenta_gastos = CuentaContable.objects.get(empresa=empresa, nombre__iexact='Gastos')
-            salidas_gastos = MovimientoContable.objects.filter(
-                empresa=empresa,
-                cuenta_fk=cuenta_gastos,
-                tipo='debito',
-                fecha__year=año_actual,
-                fecha__month=idx
-            ).aggregate(total=Sum('monto'))['total'] or 0
-        except CuentaContable.DoesNotExist:
-            salidas_gastos = 0
-        
-        # INCLUIR COSTOS DE VENTAS EN FLUJO DE CAJA
-        try:
-            cuenta_costos = CuentaContable.objects.get(empresa=empresa, nombre__iexact='Costo de Ventas')
-            salidas_costos = MovimientoContable.objects.filter(
-                empresa=empresa,
-                cuenta_fk=cuenta_costos,
-                tipo='debito',
-                fecha__year=año_actual,
-                fecha__month=idx
-            ).aggregate(total=Sum('monto'))['total'] or 0
-        except CuentaContable.DoesNotExist:
-            salidas_costos = 0
-        
-        try:
-            cuenta_inventario = CuentaContable.objects.get(empresa=empresa, nombre__iexact='Inventario')
-            salidas_compras = MovimientoContable.objects.filter(
-                empresa=empresa,
-                cuenta_fk=cuenta_inventario,
-                tipo='debito',
-                fecha__year=año_actual,
-                fecha__month=idx
-            ).aggregate(total=Sum('monto'))['total'] or 0
-        except CuentaContable.DoesNotExist:
-            salidas_compras = 0
-        
-        entradas = float(entradas_ventas)
-        salidas = float(salidas_gastos + salidas_costos + salidas_compras)
-        
-        neto = entradas - salidas
-        acumulado += neto
-        
-        # Contar meses positivos
-        if neto > 0:
-            meses_positivos += 1
-        
-        total_entradas += entradas
-        total_salidas += salidas
-        
-        flujo.append({
-            'mes':       mes_nombre,
-            'entrada':   entradas,
-            'salida':    salidas,
-            'neto':      neto,
-            'acumulado': acumulado,
-        })
+        for idx, mes_nombre in enumerate(meses, start=1):
+            # Entradas de efectivo: Ventas + Otros ingresos
+            try:
+                cuenta_ventas = CuentaContable.objects.get(empresa=empresa, nombre__iexact='Ventas')
+                entradas_ventas = MovimientoContable.objects.filter(
+                    empresa=empresa,
+                    cuenta_fk=cuenta_ventas,
+                    tipo='credito',
+                    fecha__year=año_actual,
+                    fecha__month=idx
+                ).aggregate(total=Sum('monto'))['total'] or 0
+            except CuentaContable.DoesNotExist:
+                entradas_ventas = 0
+            
+            # Salidas de efectivo: Gastos + Costos de Ventas + Compras
+            try:
+                cuenta_gastos = CuentaContable.objects.get(empresa=empresa, nombre__iexact='Gastos')
+                salidas_gastos = MovimientoContable.objects.filter(
+                    empresa=empresa,
+                    cuenta_fk=cuenta_gastos,
+                    tipo='debito',
+                    fecha__year=año_actual,
+                    fecha__month=idx
+                ).aggregate(total=Sum('monto'))['total'] or 0
+            except CuentaContable.DoesNotExist:
+                salidas_gastos = 0
+            
+            # INCLUIR COSTOS DE VENTAS EN FLUJO DE CAJA
+            try:
+                cuenta_costos = CuentaContable.objects.get(empresa=empresa, nombre__iexact='Costo de Ventas')
+                salidas_costos = MovimientoContable.objects.filter(
+                    empresa=empresa,
+                    cuenta_fk=cuenta_costos,
+                    tipo='debito',
+                    fecha__year=año_actual,
+                    fecha__month=idx
+                ).aggregate(total=Sum('monto'))['total'] or 0
+            except CuentaContable.DoesNotExist:
+                salidas_costos = 0
+            
+            try:
+                cuenta_inventario = CuentaContable.objects.get(empresa=empresa, nombre__iexact='Inventario')
+                salidas_compras = MovimientoContable.objects.filter(
+                    empresa=empresa,
+                    cuenta_fk=cuenta_inventario,
+                    tipo='debito',
+                    fecha__year=año_actual,
+                    fecha__month=idx
+                ).aggregate(total=Sum('monto'))['total'] or 0
+            except CuentaContable.DoesNotExist:
+                salidas_compras = 0
+            
+            entradas = float(entradas_ventas)
+            salidas = float(salidas_gastos + salidas_costos + salidas_compras)
+            
+            neto = entradas - salidas
+            acumulado += neto
+            
+            # Contar meses positivos
+            if neto > 0:
+                meses_positivos += 1
+            
+            total_entradas += entradas
+            total_salidas += salidas
+            
+            flujo.append({
+                'mes':       mes_nombre,
+                'entrada':   entradas,
+                'salida':    salidas,
+                'neto':      neto,
+                'acumulado': acumulado,
+            })
 
         flujo_neto_total = total_entradas - total_salidas
         total_meses = len(meses)
