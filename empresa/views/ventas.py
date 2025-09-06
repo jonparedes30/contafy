@@ -161,6 +161,7 @@ def crear_venta(request):
             'codigo': p.codigo,
             'codigo_barras': p.codigo_barras or '',
             'nombre': p.nombre,
+            'descripcion': p.descripcion or '',
             'precio_costo': float(p.precio_unitario),  # Precio de costo
             'precio_venta': float(p.pvp) if p.pvp else float(p.precio_unitario),  # PVP o precio_unitario como fallback
             'stock': p.stock,
