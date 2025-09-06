@@ -10,45 +10,62 @@ from empresa.views.resumen import obtener_totales_contables
 # ======================
 @login_required
 def estado_resultados(request):
-    empresa = request.user.empresa
-    
-    # Obtener filtros de fecha
-    from empresa.services.filtros_service import FiltrosFechaService
-    fecha_inicio, fecha_fin = FiltrosFechaService.obtener_rango_fechas(request)
-    
-    # Verificar si se solicita formato NIIF
-    formato_niif = request.GET.get('niif', 'false') == 'true'
-    
-    if formato_niif:
-        # Usar servicio NIIF para reporte mejorado
-        from empresa.services.reportes_niif_service import ReportesNIIFService
-        reporte_niif = ReportesNIIFService.generar_estado_resultados_niif(empresa, fecha_inicio, fecha_fin)
+    try:
+        empresa = request.user.empresa
+        if not empresa:
+            return render(request, 'empresa/estado_resultado.html', {
+                'error': 'No tienes una empresa asociada',
+                'ventas': 0, 'costos': 0, 'gastos': 0,
+                'utilidad_bruta': 0, 'utilidad_operativa': 0, 'utilidad_neta': 0
+            })
+        
+        # Obtener fechas del request o usar valores por defecto
+        fecha_inicio_str = request.GET.get('fecha_inicio')
+        fecha_fin_str = request.GET.get('fecha_fin')
+        
+        if fecha_inicio_str and fecha_fin_str:
+            try:
+                fecha_inicio = datetime.strptime(fecha_inicio_str, '%Y-%m-%d').date()
+                fecha_fin = datetime.strptime(fecha_fin_str, '%Y-%m-%d').date()
+            except ValueError:
+                fecha_inicio = datetime.now().replace(day=1).date()
+                fecha_fin = datetime.now().date()
+        else:
+            fecha_inicio = datetime.now().replace(day=1).date()
+            fecha_fin = datetime.now().date()
+        
+        # Calcular totales usando consultas directas
+        ventas_total = MovimientoContable.objects.filter(
+            empresa=empresa,
+            cuenta_fk__nombre__icontains='Ventas',
+            tipo='credito',
+            fecha__date__gte=fecha_inicio,
+            fecha__date__lte=fecha_fin
+        ).aggregate(total=Sum('monto'))['total'] or 0
+        
+        costos_total = MovimientoContable.objects.filter(
+            empresa=empresa,
+            cuenta_fk__nombre__icontains='Costo',
+            tipo='debito',
+            fecha__date__gte=fecha_inicio,
+            fecha__date__lte=fecha_fin
+        ).aggregate(total=Sum('monto'))['total'] or 0
+        
+        gastos_total = MovimientoContable.objects.filter(
+            empresa=empresa,
+            cuenta_fk__nombre__icontains='Gastos',
+            tipo='debito',
+            fecha__date__gte=fecha_inicio,
+            fecha__date__lte=fecha_fin
+        ).aggregate(total=Sum('monto'))['total'] or 0
+        
+        utilidad_bruta = ventas_total - costos_total
+        utilidad_neta = utilidad_bruta - gastos_total
         
         contexto = {
-            'reporte_niif': reporte_niif,
-            'formato_niif': True,
-            'fecha_inicio': fecha_inicio,
-            'fecha_fin': fecha_fin,
-        }
-    else:
-        # Lógica original
-        ventas = FiltrosFechaService.obtener_movimientos_contables_por_periodo(
-            empresa, 'Ventas', 'credito', fecha_inicio, fecha_fin
-        )
-        costos = FiltrosFechaService.obtener_movimientos_contables_por_periodo(
-            empresa, 'Costo de Ventas', 'debito', fecha_inicio, fecha_fin
-        )
-        gastos = FiltrosFechaService.obtener_movimientos_contables_por_periodo(
-            empresa, 'Gastos', 'debito', fecha_inicio, fecha_fin
-        )
-        
-        utilidad_bruta = ventas - costos
-        utilidad_neta = utilidad_bruta - gastos
-        
-        contexto = {
-            'ventas': float(ventas),
-            'costos': float(costos),
-            'gastos': float(gastos),
+            'ventas': float(ventas_total),
+            'costos': float(costos_total),
+            'gastos': float(gastos_total),
             'utilidad_bruta': float(utilidad_bruta),
             'utilidad_operativa': float(utilidad_neta),
             'utilidad_neta': float(utilidad_neta),
@@ -56,24 +73,42 @@ def estado_resultados(request):
             'fecha_fin': fecha_fin,
             'formato_niif': False,
         }
-    
-    return render(request, 'empresa/estado_resultado.html', contexto)
+        
+        return render(request, 'empresa/estado_resultado.html', contexto)
+        
+    except Exception as e:
+        # En caso de error, mostrar reporte vacío
+        return render(request, 'empresa/estado_resultado.html', {
+            'error': f'Error generando reporte: {str(e)}',
+            'ventas': 0,
+            'costos': 0,
+            'gastos': 0,
+            'utilidad_bruta': 0,
+            'utilidad_operativa': 0,
+            'utilidad_neta': 0,
+            'fecha_inicio': datetime.now().replace(day=1).date(),
+            'fecha_fin': datetime.now().date(),
+            'formato_niif': False,
+        })
 
 # ======================
 # FLUJO DE CAJA ESTIMADO
 # ======================
 @login_required
 def flujo_caja(request):
-    empresa = request.user.empresa
-    
-    # Análisis completo con DCF y proyecciones
-    from empresa.services.flujo_caja_dcf_service import FlujoCajaDCFService
-    analisis_completo = FlujoCajaDCFService.calcular_flujo_completo(empresa)
-    
-    # Flujo histórico para compatibilidad con template existente
-    hoy = datetime.today()
-    año_actual = hoy.year
-    meses = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic']
+    try:
+        empresa = request.user.empresa
+        if not empresa:
+            return render(request, 'empresa/flujo_caja.html', {
+                'error': 'No tienes una empresa asociada',
+                'flujo': [], 'labels': [],
+                'total_entradas': 0, 'total_salidas': 0, 'flujo_neto_total': 0
+            })
+        
+        # Flujo histórico simplificado
+        hoy = datetime.today()
+        año_actual = hoy.year
+        meses = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic']
     
     # Buscar la cuenta de Caja/Banco
     try:
@@ -160,62 +195,59 @@ def flujo_caja(request):
             'acumulado': acumulado,
         })
 
-    flujo_neto_total = total_entradas - total_salidas
-    total_meses = len(meses)
+        flujo_neto_total = total_entradas - total_salidas
+        total_meses = len(meses)
 
-    return render(request, 'empresa/flujo_caja.html', {
-        # Datos tradicionales
-        'flujo': flujo,
-        'labels': meses,
-        'total_entradas': total_entradas,
-        'total_salidas': total_salidas,
-        'flujo_neto_total': flujo_neto_total,
-        'meses_positivos': meses_positivos,
-        'total_meses': total_meses,
-        # Análisis avanzado con DCF
-        'analisis_completo': analisis_completo,
-    })
+        return render(request, 'empresa/flujo_caja.html', {
+            'flujo': flujo,
+            'labels': meses,
+            'total_entradas': total_entradas,
+            'total_salidas': total_salidas,
+            'flujo_neto_total': flujo_neto_total,
+            'meses_positivos': meses_positivos,
+            'total_meses': total_meses,
+        })
+        
+    except Exception as e:
+        return render(request, 'empresa/flujo_caja.html', {
+            'error': f'Error generando flujo de caja: {str(e)}',
+            'flujo': [],
+            'labels': ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'],
+            'total_entradas': 0,
+            'total_salidas': 0,
+            'flujo_neto_total': 0,
+            'meses_positivos': 0,
+            'total_meses': 12,
+        })
 
 @login_required
 def balance_general(request):
-    empresa = request.user.empresa
-    
-    # Obtener filtros de fecha
-    from empresa.services.filtros_service import FiltrosFechaService
-    fecha_inicio, fecha_fin = FiltrosFechaService.obtener_rango_fechas(request)
-    
-    # Verificar si se solicita formato NIIF
-    formato_niif = request.GET.get('niif', 'false') == 'true'
-    
-    if formato_niif:
-        # Usar servicio NIIF para reporte mejorado
-        from empresa.services.reportes_niif_service import ReportesNIIFService
-        reporte_niif = ReportesNIIFService.generar_estado_situacion_financiera(empresa, fecha_fin)
+    try:
+        empresa = request.user.empresa
+        if not empresa:
+            return render(request, 'empresa/balance_general.html', {
+                'error': 'No tienes una empresa asociada',
+                'activos': [], 'pasivos': [], 'capital': [],
+                'total_activos': 0, 'total_pasivos': 0, 'total_capital': 0, 'total_patrimonio': 0
+            })
         
-        contexto = {
-            'reporte_niif': reporte_niif,
-            'formato_niif': True,
-            'fecha_inicio': fecha_inicio,
-            'fecha_fin': fecha_fin,
-        }
-    else:
-        # Lógica original
+        # Obtener fechas del request o usar valores por defecto
+        fecha_inicio_str = request.GET.get('fecha_inicio')
+        fecha_fin_str = request.GET.get('fecha_fin')
+        
+        if fecha_inicio_str and fecha_fin_str:
+            try:
+                fecha_inicio = datetime.strptime(fecha_inicio_str, '%Y-%m-%d').date()
+                fecha_fin = datetime.strptime(fecha_fin_str, '%Y-%m-%d').date()
+            except ValueError:
+                fecha_inicio = datetime.now().replace(day=1).date()
+                fecha_fin = datetime.now().date()
+        else:
+            fecha_inicio = datetime.now().replace(day=1).date()
+            fecha_fin = datetime.now().date()
+        
+        # Obtener cuentas contables
         cuentas = CuentaContable.objects.filter(empresa=empresa)
-        
-        movimientos = MovimientoContable.objects.filter(
-            empresa=empresa,
-            fecha__date__gte=fecha_inicio,
-            fecha__date__lte=fecha_fin
-        ).values(
-            'cuenta_fk', 'tipo'
-        ).annotate(
-            total=Sum('monto')
-        )
-        
-        movimientos_dict = {}
-        for mov in movimientos:
-            key = (mov['cuenta_fk'], mov['tipo'])
-            movimientos_dict[key] = mov['total']
         
         activos = []
         pasivos = []
@@ -226,31 +258,43 @@ def balance_general(request):
 
         for cuenta in cuentas:
             try:
-                saldo = cuenta.valor
-            except Exception:
-                debitos = movimientos_dict.get((cuenta.id, 'debito'), 0)
-                creditos = movimientos_dict.get((cuenta.id, 'credito'), 0)
+                # Calcular saldo de la cuenta
+                debitos = MovimientoContable.objects.filter(
+                    empresa=empresa,
+                    cuenta_fk=cuenta,
+                    tipo='debito',
+                    fecha__date__lte=fecha_fin
+                ).aggregate(total=Sum('monto'))['total'] or 0
+                
+                creditos = MovimientoContable.objects.filter(
+                    empresa=empresa,
+                    cuenta_fk=cuenta,
+                    tipo='credito',
+                    fecha__date__lte=fecha_fin
+                ).aggregate(total=Sum('monto'))['total'] or 0
                 
                 if cuenta.tipo in ['activo', 'gasto']:
                     saldo = debitos - creditos
                 else:
                     saldo = creditos - debitos
 
-            cuenta_dict = {
-                'cuenta_fk__nombre': cuenta.nombre,
-                'valor': saldo
-            }
-            
-            if abs(saldo) > 0.01:
-                if cuenta.tipo == 'activo':
-                    activos.append(cuenta_dict)
-                    total_activos += saldo
-                elif cuenta.tipo == 'pasivo':
-                    pasivos.append(cuenta_dict)
-                    total_pasivos += saldo
-                elif cuenta.tipo == 'capital':
-                    capital.append(cuenta_dict)
-                    total_capital += saldo
+                cuenta_dict = {
+                    'cuenta_fk__nombre': cuenta.nombre,
+                    'valor': saldo
+                }
+                
+                if abs(saldo) > 0.01:
+                    if cuenta.tipo == 'activo':
+                        activos.append(cuenta_dict)
+                        total_activos += saldo
+                    elif cuenta.tipo == 'pasivo':
+                        pasivos.append(cuenta_dict)
+                        total_pasivos += saldo
+                    elif cuenta.tipo == 'capital':
+                        capital.append(cuenta_dict)
+                        total_capital += saldo
+            except Exception:
+                continue
 
         total_activos_float = float(total_activos or 0.0)
         total_pasivos_float = float(total_pasivos or 0.0)
@@ -268,8 +312,23 @@ def balance_general(request):
             'fecha_fin': fecha_fin,
             'formato_niif': False,
         }
-    
-    return render(request, 'empresa/balance_general.html', contexto)
+        
+        return render(request, 'empresa/balance_general.html', contexto)
+        
+    except Exception as e:
+        return render(request, 'empresa/balance_general.html', {
+            'error': f'Error generando balance: {str(e)}',
+            'activos': [],
+            'pasivos': [],
+            'capital': [],
+            'total_activos': 0,
+            'total_pasivos': 0,
+            'total_capital': 0,
+            'total_patrimonio': 0,
+            'fecha_inicio': datetime.now().replace(day=1).date(),
+            'fecha_fin': datetime.now().date(),
+            'formato_niif': False,
+        })
 
 # ======================
 # REGISTRO DE MOVIMIENTOS
