@@ -114,15 +114,18 @@
                     <div class="row mb-4">
                         <div class="col-md-6">
                             {{ form.producto.label_tag }}
-                            <input type="text" id="producto-search" class="form-control" placeholder="Escribe para buscar y seleccionar producto..." autocomplete="off">
-                            <select id="id_producto" name="producto" class="form-select" style="display: none;">
-                                <option value="">Seleccionar producto...</option>
-                                {% for producto in productos_json %}
-                                <option value="{{ producto.id }}" data-nombre="{{ producto.nombre }}" data-descripcion="{{ producto.descripcion }}">
-                                    {{ producto.nombre }}
-                                </option>
-                                {% endfor %}
-                            </select>
+                            <div class="position-relative">
+                                <input type="text" id="producto-search" class="form-control" placeholder="Escribe para buscar producto..." autocomplete="off">
+                                <div id="producto-dropdown" class="dropdown-menu w-100" style="display: none; max-height: 200px; overflow-y: auto;"></div>
+                                <select id="id_producto" name="producto" class="form-select" style="display: none;">
+                                    <option value="">Seleccionar producto...</option>
+                                    {% for producto in productos_json %}
+                                    <option value="{{ producto.id }}" data-nombre="{{ producto.nombre }}" data-descripcion="{{ producto.descripcion }}">
+                                        {{ producto.nombre }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
                             <div id="producto-descripcion" class="form-text text-muted mt-1"></div>
                         </div>
                         <div class="col-md-3">
@@ -683,8 +686,9 @@
         });
     }
     
-    // Autocompletado de productos
+    // Autocompletado con dropdown de productos
     const productoSearch = document.getElementById('producto-search');
+    const productoDropdown = document.getElementById('producto-dropdown');
     let productosData = [];
     
     // Cargar datos de productos
@@ -700,61 +704,89 @@
         });
     }
     
-    // Configurar autocompletado
-    if (productoSearch) {
-        let selectedProductId = '';
-        
+    // Configurar autocompletado con dropdown
+    if (productoSearch && productoDropdown) {
         productoSearch.addEventListener('input', function() {
             const searchTerm = this.value.toLowerCase();
-            selectedProductId = '';
-            selectProducto.value = '';
             
-            // Limpiar descripción
-            const descripcionDiv = document.getElementById('producto-descripcion');
-            if (descripcionDiv) descripcionDiv.style.display = 'none';
+            if (searchTerm.length === 0) {
+                productoDropdown.style.display = 'none';
+                return;
+            }
             
-            // Buscar coincidencia exacta
-            const coincidenciaExacta = productosData.find(p => 
-                p.nombre.toLowerCase() === searchTerm
+            // Filtrar productos
+            const coincidencias = productosData.filter(p => 
+                p.nombre.toLowerCase().includes(searchTerm)
             );
             
-            if (coincidenciaExacta) {
-                selectedProductId = coincidenciaExacta.id;
-                selectProducto.value = coincidenciaExacta.id;
+            if (coincidencias.length > 0) {
+                let html = '';
+                coincidencias.slice(0, 10).forEach(producto => {
+                    html += `<a class="dropdown-item" href="#" data-id="${producto.id}" data-nombre="${producto.nombre}" data-descripcion="${producto.descripcion}">${producto.nombre}</a>`;
+                });
                 
-                // Mostrar descripción
-                if (descripcionDiv && coincidenciaExacta.descripcion) {
-                    descripcionDiv.textContent = `📝 ${coincidenciaExacta.descripcion}`;
-                    descripcionDiv.style.display = 'block';
-                }
+                productoDropdown.innerHTML = html;
+                productoDropdown.style.display = 'block';
                 
-                actualizarVenta();
+                // Agregar eventos de clic
+                productoDropdown.querySelectorAll('.dropdown-item').forEach(item => {
+                    item.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        const nombre = this.dataset.nombre;
+                        const id = this.dataset.id;
+                        const descripcion = this.dataset.descripcion;
+                        
+                        productoSearch.value = nombre;
+                        selectProducto.value = id;
+                        productoDropdown.style.display = 'none';
+                        
+                        // Mostrar descripción
+                        const descripcionDiv = document.getElementById('producto-descripcion');
+                        if (descripcionDiv && descripcion) {
+                            descripcionDiv.textContent = `📝 ${descripcion}`;
+                            descripcionDiv.style.display = 'block';
+                        }
+                        
+                        actualizarVenta();
+                    });
+                });
+            } else {
+                productoDropdown.style.display = 'none';
             }
         });
         
-        // Autocompletado con Tab o Enter
+        // Ocultar dropdown al hacer clic fuera
+        document.addEventListener('click', function(e) {
+            if (!productoSearch.contains(e.target) && !productoDropdown.contains(e.target)) {
+                productoDropdown.style.display = 'none';
+            }
+        });
+        
+        // Navegación con teclado
         productoSearch.addEventListener('keydown', function(e) {
-            if (e.key === 'Tab' || e.key === 'Enter') {
-                const searchTerm = this.value.toLowerCase();
-                const coincidencias = productosData.filter(p => 
-                    p.nombre.toLowerCase().includes(searchTerm)
-                );
-                
-                if (coincidencias.length === 1) {
-                    e.preventDefault();
-                    this.value = coincidencias[0].nombre;
-                    selectedProductId = coincidencias[0].id;
-                    selectProducto.value = coincidencias[0].id;
-                    
-                    // Mostrar descripción
-                    const descripcionDiv = document.getElementById('producto-descripcion');
-                    if (descripcionDiv && coincidencias[0].descripcion) {
-                        descripcionDiv.textContent = `📝 ${coincidencias[0].descripcion}`;
-                        descripcionDiv.style.display = 'block';
-                    }
-                    
-                    actualizarVenta();
+            const items = productoDropdown.querySelectorAll('.dropdown-item');
+            let activeIndex = -1;
+            
+            // Encontrar elemento activo
+            items.forEach((item, index) => {
+                if (item.classList.contains('active')) {
+                    activeIndex = index;
                 }
+            });
+            
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                items.forEach(item => item.classList.remove('active'));
+                activeIndex = (activeIndex + 1) % items.length;
+                if (items[activeIndex]) items[activeIndex].classList.add('active');
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                items.forEach(item => item.classList.remove('active'));
+                activeIndex = activeIndex <= 0 ? items.length - 1 : activeIndex - 1;
+                if (items[activeIndex]) items[activeIndex].classList.add('active');
+            } else if (e.key === 'Enter' && activeIndex >= 0) {
+                e.preventDefault();
+                items[activeIndex].click();
             }
         });
     }
