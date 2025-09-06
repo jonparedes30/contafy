@@ -151,25 +151,29 @@
                                 <div class="card-body">
                                     <div class="row">
                                         <div class="col-md-5">
-                                            <select class="form-select" id="producto-multiple-select">
-                                                <option value="">Seleccionar producto...</option>
-                                                {% for producto in productos_json %}
-                                                <option value="{{ producto.id }}" 
-                                                        data-nombre="{{ producto.nombre }}"
-                                                        data-precio="{{ producto.precio_venta }}"
-                                                        data-stock="{{ producto.stock }}">
-                                                    {{ producto.nombre }} - ${{ producto.precio_venta }}
-                                                </option>
-                                                {% endfor %}
-                                                {% for servicio in servicios %}
-                                                <option value="serv_{{ servicio.id }}" 
-                                                        data-nombre="{{ servicio.nombre }}"
-                                                        data-precio="{{ servicio.precio_base }}"
-                                                        data-stock="999">
-                                                    {{ servicio.nombre }} - ${{ servicio.precio_base }}
-                                                </option>
-                                                {% endfor %}
-                                            </select>
+                                            <div class="position-relative">
+                                                <input type="text" id="producto-multiple-search" class="form-control" placeholder="Escribe para buscar producto..." autocomplete="off">
+                                                <div id="producto-multiple-dropdown" class="dropdown-menu w-100" style="display: none; max-height: 200px; overflow-y: auto;"></div>
+                                                <select class="form-select" id="producto-multiple-select" style="display: none;">
+                                                    <option value="">Seleccionar producto...</option>
+                                                    {% for producto in productos_json %}
+                                                    <option value="{{ producto.id }}" 
+                                                            data-nombre="{{ producto.nombre }}"
+                                                            data-precio="{{ producto.precio_venta }}"
+                                                            data-stock="{{ producto.stock }}">
+                                                        {{ producto.nombre }} - ${{ producto.precio_venta }}
+                                                    </option>
+                                                    {% endfor %}
+                                                    {% for servicio in servicios %}
+                                                    <option value="serv_{{ servicio.id }}" 
+                                                            data-nombre="{{ servicio.nombre }}"
+                                                            data-precio="{{ servicio.precio_base }}"
+                                                            data-stock="999">
+                                                        {{ servicio.nombre }} - ${{ servicio.precio_base }}
+                                                    </option>
+                                                    {% endfor %}
+                                                </select>
+                                            </div>
                                         </div>
                                         <div class="col-md-2">
                                             <input type="number" class="form-control" id="cantidad-multiple" placeholder="Cant." min="1" value="1">
@@ -507,9 +511,85 @@
     
     // Funciones para venta múltiple
     const productoMultipleSelect = document.getElementById('producto-multiple-select');
+    const productoMultipleSearch = document.getElementById('producto-multiple-search');
+    const productoMultipleDropdown = document.getElementById('producto-multiple-dropdown');
     const cantidadMultiple = document.getElementById('cantidad-multiple');
     const precioMultiple = document.getElementById('precio-multiple');
     const agregarProductoBtn = document.getElementById('agregar-producto-multiple');
+    let productosMultipleData = [];
+    
+    // Cargar datos de productos para múltiples
+    if (productoMultipleSelect) {
+        Array.from(productoMultipleSelect.options).forEach(option => {
+            if (option.value) {
+                productosMultipleData.push({
+                    id: option.value,
+                    nombre: option.dataset.nombre,
+                    precio: option.dataset.precio,
+                    stock: option.dataset.stock
+                });
+            }
+        });
+    }
+    
+    // Configurar autocompletado para múltiples productos
+    if (productoMultipleSearch && productoMultipleDropdown) {
+        productoMultipleSearch.addEventListener('input', function() {
+            const searchTerm = this.value.toLowerCase();
+            
+            if (searchTerm.length === 0) {
+                productoMultipleDropdown.style.display = 'none';
+                return;
+            }
+            
+            // Filtrar y ordenar productos
+            const coincidencias = productosMultipleData.filter(p => 
+                p.nombre.toLowerCase().includes(searchTerm)
+            ).sort((a, b) => {
+                const aEmpiezaCon = a.nombre.toLowerCase().startsWith(searchTerm);
+                const bEmpiezaCon = b.nombre.toLowerCase().startsWith(searchTerm);
+                
+                if (aEmpiezaCon && !bEmpiezaCon) return -1;
+                if (!aEmpiezaCon && bEmpiezaCon) return 1;
+                
+                return a.nombre.localeCompare(b.nombre);
+            });
+            
+            if (coincidencias.length > 0) {
+                let html = '';
+                coincidencias.forEach(producto => {
+                    html += `<a class="dropdown-item" href="#" data-id="${producto.id}" data-nombre="${producto.nombre}" data-precio="${producto.precio}" data-stock="${producto.stock}">${producto.nombre} - $${producto.precio}</a>`;
+                });
+                
+                productoMultipleDropdown.innerHTML = html;
+                productoMultipleDropdown.style.display = 'block';
+                
+                // Agregar eventos de clic
+                productoMultipleDropdown.querySelectorAll('.dropdown-item').forEach(item => {
+                    item.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        const nombre = this.dataset.nombre;
+                        const id = this.dataset.id;
+                        const precio = this.dataset.precio;
+                        
+                        productoMultipleSearch.value = nombre;
+                        productoMultipleSelect.value = id;
+                        productoMultipleDropdown.style.display = 'none';
+                        precioMultiple.value = parseFloat(precio || 0).toFixed(2);
+                    });
+                });
+            } else {
+                productoMultipleDropdown.style.display = 'none';
+            }
+        });
+        
+        // Ocultar dropdown al hacer clic fuera
+        document.addEventListener('click', function(e) {
+            if (!productoMultipleSearch.contains(e.target) && !productoMultipleDropdown.contains(e.target)) {
+                productoMultipleDropdown.style.display = 'none';
+            }
+        });
+    }
     
     productoMultipleSelect.addEventListener('change', function() {
         const option = this.options[this.selectedIndex];
