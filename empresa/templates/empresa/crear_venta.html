@@ -714,14 +714,24 @@
                 return;
             }
             
-            // Filtrar productos
+            // Filtrar y ordenar productos
             const coincidencias = productosData.filter(p => 
                 p.nombre.toLowerCase().includes(searchTerm)
-            );
+            ).sort((a, b) => {
+                const aEmpiezaCon = a.nombre.toLowerCase().startsWith(searchTerm);
+                const bEmpiezaCon = b.nombre.toLowerCase().startsWith(searchTerm);
+                
+                // Primero los que empiecen con la letra/palabra
+                if (aEmpiezaCon && !bEmpiezaCon) return -1;
+                if (!aEmpiezaCon && bEmpiezaCon) return 1;
+                
+                // Luego orden alfabético
+                return a.nombre.localeCompare(b.nombre);
+            });
             
             if (coincidencias.length > 0) {
                 let html = '';
-                coincidencias.slice(0, 10).forEach(producto => {
+                coincidencias.forEach(producto => {
                     html += `<a class="dropdown-item" href="#" data-id="${producto.id}" data-nombre="${producto.nombre}" data-descripcion="${producto.descripcion}">${producto.nombre}</a>`;
                 });
                 
