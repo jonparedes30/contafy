@@ -10,86 +10,27 @@ from empresa.views.resumen import obtener_totales_contables
 # ======================
 @login_required
 def estado_resultados(request):
-    try:
-        empresa = request.user.empresa
-        if not empresa:
-            return render(request, 'empresa/estado_resultado.html', {
-                'error': 'No tienes una empresa asociada',
-                'ventas': 0, 'costos': 0, 'gastos': 0,
-                'utilidad_bruta': 0, 'utilidad_operativa': 0, 'utilidad_neta': 0
-            })
-        
-        # Obtener fechas del request o usar valores por defecto
-        fecha_inicio_str = request.GET.get('fecha_inicio')
-        fecha_fin_str = request.GET.get('fecha_fin')
-        
-        if fecha_inicio_str and fecha_fin_str:
-            try:
-                fecha_inicio = datetime.strptime(fecha_inicio_str, '%Y-%m-%d').date()
-                fecha_fin = datetime.strptime(fecha_fin_str, '%Y-%m-%d').date()
-            except ValueError:
-                fecha_inicio = datetime.now().replace(day=1).date()
-                fecha_fin = datetime.now().date()
-        else:
-            fecha_inicio = datetime.now().replace(day=1).date()
-            fecha_fin = datetime.now().date()
-        
-        # Calcular totales usando consultas directas
-        ventas_total = MovimientoContable.objects.filter(
-            empresa=empresa,
-            cuenta_fk__nombre__icontains='Ventas',
-            tipo='credito',
-            fecha__date__gte=fecha_inicio,
-            fecha__date__lte=fecha_fin
-        ).aggregate(total=Sum('monto'))['total'] or 0
-        
-        costos_total = MovimientoContable.objects.filter(
-            empresa=empresa,
-            cuenta_fk__nombre__icontains='Costo',
-            tipo='debito',
-            fecha__date__gte=fecha_inicio,
-            fecha__date__lte=fecha_fin
-        ).aggregate(total=Sum('monto'))['total'] or 0
-        
-        gastos_total = MovimientoContable.objects.filter(
-            empresa=empresa,
-            cuenta_fk__nombre__icontains='Gastos',
-            tipo='debito',
-            fecha__date__gte=fecha_inicio,
-            fecha__date__lte=fecha_fin
-        ).aggregate(total=Sum('monto'))['total'] or 0
-        
-        utilidad_bruta = ventas_total - costos_total
-        utilidad_neta = utilidad_bruta - gastos_total
-        
-        contexto = {
-            'ventas': float(ventas_total),
-            'costos': float(costos_total),
-            'gastos': float(gastos_total),
-            'utilidad_bruta': float(utilidad_bruta),
-            'utilidad_operativa': float(utilidad_neta),
-            'utilidad_neta': float(utilidad_neta),
-            'fecha_inicio': fecha_inicio,
-            'fecha_fin': fecha_fin,
-            'formato_niif': False,
-        }
-        
-        return render(request, 'empresa/estado_resultado.html', contexto)
-        
-    except Exception as e:
-        # En caso de error, mostrar reporte vacío
-        return render(request, 'empresa/estado_resultado.html', {
-            'error': f'Error generando reporte: {str(e)}',
-            'ventas': 0,
-            'costos': 0,
-            'gastos': 0,
-            'utilidad_bruta': 0,
-            'utilidad_operativa': 0,
-            'utilidad_neta': 0,
-            'fecha_inicio': datetime.now().replace(day=1).date(),
-            'fecha_fin': datetime.now().date(),
-            'formato_niif': False,
-        })
+    empresa = request.user.empresa
+    
+    # Usar datos básicos de ventas y gastos directamente
+    ventas_total = Venta.objects.filter(empresa=empresa).aggregate(total=Sum('monto'))['total'] or 0
+    gastos_total = Gasto.objects.filter(empresa=empresa).aggregate(total=Sum('monto'))['total'] or 0
+    
+    utilidad_neta = ventas_total - gastos_total
+    
+    contexto = {
+        'ventas': float(ventas_total),
+        'costos': 0,
+        'gastos': float(gastos_total),
+        'utilidad_bruta': float(ventas_total),
+        'utilidad_operativa': float(utilidad_neta),
+        'utilidad_neta': float(utilidad_neta),
+        'fecha_inicio': datetime.now().replace(day=1).date(),
+        'fecha_fin': datetime.now().date(),
+        'formato_niif': False,
+    }
+    
+    return render(request, 'empresa/estado_resultado.html', contexto)
 
 # ======================
 # FLUJO DE CAJA ESTIMADO
