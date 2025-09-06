@@ -676,19 +676,25 @@
         });
     }
     
-    // Guardar todas las opciones originales del select de productos
-    let todasLasOpciones = [];
-    if (selectProducto) {
-        todasLasOpciones = Array.from(selectProducto.options);
-    }
-    
-
-    
     // Filtro de búsqueda en tiempo real
     const productoSearch = document.getElementById('producto-search');
-    if (productoSearch && selectProducto && todasLasOpciones.length > 0) {
+    let todasLasOpciones = [];
+    
+    // Guardar opciones originales cuando el DOM esté listo
+    if (productoSearch && selectProducto) {
+        // Esperar un momento para que el select se llene completamente
+        setTimeout(() => {
+            todasLasOpciones = Array.from(selectProducto.options);
+        }, 100);
+        
+        // Configurar el filtro de búsqueda
         productoSearch.addEventListener('input', function() {
             const searchTerm = this.value.toLowerCase();
+            
+            // Si no hay opciones guardadas aún, guardarlas ahora
+            if (todasLasOpciones.length === 0) {
+                todasLasOpciones = Array.from(selectProducto.options);
+            }
             
             // Limpiar el select
             selectProducto.innerHTML = '';
