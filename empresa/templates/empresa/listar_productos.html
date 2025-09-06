@@ -58,6 +58,15 @@
             </select>
         </div>
         <div>
+            <label for="categoria" style="font-size:0.97rem; color:#333; font-weight:500;">Categoría</label>
+            <select name="categoria" id="categoria" style="border:1.5px solid #bdbdbd; border-radius:5px; padding:0.35rem 0.7rem; font-size:1rem; background:#fff; color:#222; min-width:120px;">
+                <option value="">Todas</option>
+                {% for categoria in categorias %}
+                <option value="{{ categoria.id }}" {% if request.GET.categoria == categoria.id|stringformat:"s" %}selected{% endif %}>{{ categoria.nombre }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div>
             <button type="submit" class="btn btn-sm btn-primary" style="padding:0.35rem 1.1rem; font-size:1rem; border-radius:5px;">Filtrar</button>
         </div>
         <div class="ms-auto d-flex gap-2">
@@ -103,8 +112,11 @@
                     <td><span style="font-family:'Courier New',monospace;font-weight:600;color:#1976d2;background:#f8f9fa;padding:0.25rem 0.5rem;border-radius:4px;">{{ producto.codigo }}</span></td>
                     <td>
                         <div style="font-weight:600;color:#495057;">{{ producto.nombre }}</div>
+                        {% if producto.categoria %}
+                        <span class="badge bg-secondary me-1">{{ producto.categoria.nombre }}</span>
+                        {% endif %}
                         {% if producto.descripcion %}
-                        <small class="text-muted">{{ producto.descripcion|truncatechars:50 }}</small>
+                        <small class="text-muted d-block">{{ producto.descripcion|truncatechars:50 }}</small>
                         {% endif %}
                     </td>
                     <td>

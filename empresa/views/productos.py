@@ -63,6 +63,7 @@ def listar_productos(request):
     # Obtener parámetros de filtro
     buscar = request.GET.get('buscar', '')
     stock_filter = request.GET.get('stock', '')
+    categoria_filter = request.GET.get('categoria', '')
     
     # Filtrar productos
     productos = Producto.objects.filter(empresa=empresa)
@@ -85,8 +86,15 @@ def listar_productos(request):
         elif stock_filter == 'agotado':
             productos = productos.filter(stock=0)
     
+    if categoria_filter:
+        productos = productos.filter(categoria_id=categoria_filter)
+    
     # Ordenar por nombre
     productos = productos.order_by('nombre')
+    
+    # Obtener categorías para el filtro
+    from empresa.models import CategoriaProducto
+    categorias = CategoriaProducto.objects.filter(empresa=empresa, activa=True).order_by('nombre')
     
     # Calcular estadísticas
     total_inventario = sum(p.stock * float(p.precio_unitario) for p in productos)
@@ -95,6 +103,7 @@ def listar_productos(request):
     
     context = {
         'productos': productos,
+        'categorias': categorias,
         'total_inventario': total_inventario,
         'total_pvp': total_pvp,
         'productos_bajo_stock': productos_bajo_stock,
