@@ -2,7 +2,7 @@ from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from empresa.models import Empresa
-from empresa.forms import EmpresaForm, EmpleadoEmpresaForm
+from empresa.forms import EmpresaForm, EmpleadoEmpresaForm, EditarEmpresaForm
 from django.http import JsonResponse
 from empresa.models import Empresa, Usuario, PoderEmpleado
 from django.views.decorators.http import require_http_methods
@@ -186,6 +186,41 @@ def eliminar_empleado(request, empleado_id):
         
     except Usuario.DoesNotExist:
         return JsonResponse({'error': 'Empleado no encontrado.'}, status=404)
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
+
+
+@csrf_exempt
+@login_required
+@require_owner
+@require_http_methods(["POST"])
+def editar_empresa(request):
+    if not request.user.empresa:
+        return JsonResponse({'error': 'No tienes una empresa asociada.'}, status=400)
+    
+    try:
+        data = json.loads(request.body.decode('utf-8'))
+    except Exception:
+        return JsonResponse({'error': 'Datos inválidos.'}, status=400)
+    
+    empresa = request.user.empresa
+    
+    # Validaciones básicas
+    if not data.get('nombre') or not data.get('ruc') or not data.get('direccion'):
+        return JsonResponse({'error': 'Nombre, RUC y dirección son obligatorios.'}, status=400)
+    
+    # Actualizar campos
+    empresa.nombre = data.get('nombre')
+    empresa.ruc = data.get('ruc')
+    empresa.direccion = data.get('direccion')
+    empresa.provincia = data.get('provincia', '')
+    empresa.ciudad = data.get('ciudad', '')
+    empresa.telefono_whatsapp = data.get('telefono_whatsapp', '')
+    empresa.tipo_negocio = data.get('tipo_negocio', '')
+    
+    try:
+        empresa.save()
+        return JsonResponse({'success': True})
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=500)
 

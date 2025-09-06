@@ -39,8 +39,11 @@
         <!-- Información detallada -->
         <div class="col-lg-8">
             <div class="card shadow-sm mb-4">
-                <div class="card-header bg-light border-0">
+                <div class="card-header bg-light border-0 d-flex justify-content-between align-items-center">
                     <h5 class="mb-0 text-dark"><i class="bi bi-info-circle me-2"></i>Información Empresarial</h5>
+                    <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#editarEmpresaModal">
+                        <i class="bi bi-pencil"></i> Editar
+                    </button>
                 </div>
                 <div class="card-body">
                     <div class="row g-4">
@@ -209,6 +212,85 @@
                         <i class="bi bi-chat-dots me-1"></i> Solicitar Ayuda
                     </a>
                 </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Editar Empresa -->
+<div class="modal fade" id="editarEmpresaModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="bi bi-building me-2"></i>Editar Información de la Empresa</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="formEditarEmpresa">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Nombre de la Empresa *</label>
+                            <input type="text" class="form-control" id="empresaNombre" value="{{ empresa.nombre }}" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">RUC/Cédula *</label>
+                            <input type="text" class="form-control" id="empresaRuc" value="{{ empresa.ruc }}" required>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Dirección *</label>
+                        <input type="text" class="form-control" id="empresaDireccion" value="{{ empresa.direccion }}" required>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Provincia</label>
+                            <select class="form-select" id="empresaProvincia">
+                                <option value="azuay" {% if empresa.provincia == 'azuay' %}selected{% endif %}>Azuay</option>
+                                <option value="bolivar" {% if empresa.provincia == 'bolivar' %}selected{% endif %}>Bolívar</option>
+                                <option value="canar" {% if empresa.provincia == 'canar' %}selected{% endif %}>Cañar</option>
+                                <option value="carchi" {% if empresa.provincia == 'carchi' %}selected{% endif %}>Carchi</option>
+                                <option value="chimborazo" {% if empresa.provincia == 'chimborazo' %}selected{% endif %}>Chimborazo</option>
+                                <option value="cotopaxi" {% if empresa.provincia == 'cotopaxi' %}selected{% endif %}>Cotopaxi</option>
+                                <option value="el_oro" {% if empresa.provincia == 'el_oro' %}selected{% endif %}>El Oro</option>
+                                <option value="esmeraldas" {% if empresa.provincia == 'esmeraldas' %}selected{% endif %}>Esmeraldas</option>
+                                <option value="galapagos" {% if empresa.provincia == 'galapagos' %}selected{% endif %}>Galápagos</option>
+                                <option value="guayas" {% if empresa.provincia == 'guayas' %}selected{% endif %}>Guayas</option>
+                                <option value="imbabura" {% if empresa.provincia == 'imbabura' %}selected{% endif %}>Imbabura</option>
+                                <option value="loja" {% if empresa.provincia == 'loja' %}selected{% endif %}>Loja</option>
+                                <option value="los_rios" {% if empresa.provincia == 'los_rios' %}selected{% endif %}>Los Ríos</option>
+                                <option value="manabi" {% if empresa.provincia == 'manabi' %}selected{% endif %}>Manabí</option>
+                                <option value="morona_santiago" {% if empresa.provincia == 'morona_santiago' %}selected{% endif %}>Morona Santiago</option>
+                                <option value="napo" {% if empresa.provincia == 'napo' %}selected{% endif %}>Napo</option>
+                                <option value="orellana" {% if empresa.provincia == 'orellana' %}selected{% endif %}>Orellana</option>
+                                <option value="pastaza" {% if empresa.provincia == 'pastaza' %}selected{% endif %}>Pastaza</option>
+                                <option value="pichincha" {% if empresa.provincia == 'pichincha' %}selected{% endif %}>Pichincha</option>
+                                <option value="santa_elena" {% if empresa.provincia == 'santa_elena' %}selected{% endif %}>Santa Elena</option>
+                                <option value="santo_domingo" {% if empresa.provincia == 'santo_domingo' %}selected{% endif %}>Santo Domingo</option>
+                                <option value="sucumbios" {% if empresa.provincia == 'sucumbios' %}selected{% endif %}>Sucumbíos</option>
+                                <option value="tungurahua" {% if empresa.provincia == 'tungurahua' %}selected{% endif %}>Tungurahua</option>
+                                <option value="zamora_chinchipe" {% if empresa.provincia == 'zamora_chinchipe' %}selected{% endif %}>Zamora Chinchipe</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Ciudad</label>
+                            <input type="text" class="form-control" id="empresaCiudad" value="{{ empresa.ciudad|default:'' }}">
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">WhatsApp</label>
+                            <input type="text" class="form-control" id="empresaWhatsapp" value="{{ empresa.telefono_whatsapp|default:'' }}" placeholder="+593987654321">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Tipo de Negocio</label>
+                            <input type="text" class="form-control" id="empresaTipoNegocio" value="{{ empresa.tipo_negocio|default:'' }}" placeholder="Ej: Panadería, Ferretería...">
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" onclick="guardarEmpresa()">Guardar Cambios</button>
             </div>
         </div>
     </div>
@@ -418,6 +500,46 @@ function eliminarEmpleado(empleadoId, empleadoNombre) {
             alert('Error al eliminar empleado');
         });
     }
+}
+
+function guardarEmpresa() {
+    const datos = {
+        nombre: document.getElementById('empresaNombre').value,
+        ruc: document.getElementById('empresaRuc').value,
+        direccion: document.getElementById('empresaDireccion').value,
+        provincia: document.getElementById('empresaProvincia').value,
+        ciudad: document.getElementById('empresaCiudad').value,
+        telefono_whatsapp: document.getElementById('empresaWhatsapp').value,
+        tipo_negocio: document.getElementById('empresaTipoNegocio').value
+    };
+    
+    if (!datos.nombre || !datos.ruc || !datos.direccion) {
+        alert('Los campos Nombre, RUC y Dirección son obligatorios');
+        return;
+    }
+    
+    fetch('/empresa/editar/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+        },
+        body: JSON.stringify(datos)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            bootstrap.Modal.getInstance(document.getElementById('editarEmpresaModal')).hide();
+            alert('Datos de la empresa actualizados correctamente');
+            location.reload();
+        } else {
+            alert('Error: ' + (data.error || 'No se pudieron actualizar los datos'));
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error al actualizar los datos de la empresa');
+    });
 }
 </script>
 

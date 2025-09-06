@@ -49,6 +49,35 @@ class EmpresaForm(forms.ModelForm):
         return ruc
 
 
+# === FORMULARIO EDITAR EMPRESA ===
+class EditarEmpresaForm(forms.ModelForm):
+    class Meta:
+        model = Empresa
+        fields = ['nombre', 'ruc', 'direccion', 'provincia', 'ciudad', 'telefono_whatsapp', 'tipo_negocio']
+        widgets = {
+            'nombre': forms.TextInput(attrs={'class': 'form-control'}),
+            'ruc': forms.TextInput(attrs={'class': 'form-control'}),
+            'direccion': forms.TextInput(attrs={'class': 'form-control'}),
+            'provincia': forms.Select(attrs={'class': 'form-select'}),
+            'ciudad': forms.TextInput(attrs={'class': 'form-control'}),
+            'telefono_whatsapp': forms.TextInput(attrs={'class': 'form-control'}),
+            'tipo_negocio': forms.TextInput(attrs={'class': 'form-control'}),
+        }
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['provincia'].choices = [
+            ('azuay', 'Azuay'), ('bolivar', 'Bolívar'), ('canar', 'Cañar'),
+            ('carchi', 'Carchi'), ('chimborazo', 'Chimborazo'), ('cotopaxi', 'Cotopaxi'),
+            ('el_oro', 'El Oro'), ('esmeraldas', 'Esmeraldas'), ('galapagos', 'Galápagos'),
+            ('guayas', 'Guayas'), ('imbabura', 'Imbabura'), ('loja', 'Loja'),
+            ('los_rios', 'Los Ríos'), ('manabi', 'Manabí'), ('morona_santiago', 'Morona Santiago'),
+            ('napo', 'Napo'), ('orellana', 'Orellana'), ('pastaza', 'Pastaza'),
+            ('pichincha', 'Pichincha'), ('santa_elena', 'Santa Elena'), ('santo_domingo', 'Santo Domingo'),
+            ('sucumbios', 'Sucumbíos'), ('tungurahua', 'Tungurahua'), ('zamora_chinchipe', 'Zamora Chinchipe')
+        ]
+
+
 # === FORMULARIO GASTO ===
 class GastoForm(forms.ModelForm):
     def __init__(self, *args, empresa=None, **kwargs):
@@ -162,9 +191,12 @@ class ProductoForm(forms.ModelForm):
                     nombre='General',
                     descripcion='Categoría general para productos'
                 )
+            # Configurar queryset y hacer el campo opcional
             self.fields['categoria'].queryset = CategoriaProducto.objects.filter(
                 empresa=empresa, activa=True
             )
+            self.fields['categoria'].required = False
+            self.fields['categoria'].empty_label = "Seleccionar categoría..."
     
     class Meta:
         model = Producto
@@ -267,6 +299,15 @@ class ProductoForm(forms.ModelForm):
         instancia = super().save(commit=False)
         if self.empresa:
             instancia.empresa = self.empresa
+        # Si no se seleccionó categoría, asignar la categoría "General"
+        if not instancia.categoria:
+            from .models import CategoriaProducto
+            categoria_general, created = CategoriaProducto.objects.get_or_create(
+                empresa=self.empresa,
+                nombre='General',
+                defaults={'descripcion': 'Categoría general para productos'}
+            )
+            instancia.categoria = categoria_general
         if commit:
             instancia.save()
         return instancia
