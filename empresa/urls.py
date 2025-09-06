@@ -4,7 +4,7 @@ from rest_framework.routers import DefaultRouter
 from .views.api import ProductoViewSet
 from .views.api_comercio import (
     categorias_api, categoria_delete_api, clientes_api, 
-    proveedores_api, cuentas_cobrar_api, cuentas_pagar_api
+    proveedores_api, cuentas_cobrar_api, cuentas_pagar_api, test_categorias_api
 )
 
 # Importar vistas específicas
@@ -166,6 +166,7 @@ urlpatterns += [
     path('api/validar-codigo-barras/', validar_codigo_barras, name='validar_codigo_barras'),
     
     # APIs de Comercio
+    path('api/test-categorias/', test_categorias_api, name='test_categorias_api'),
     path('api/categorias/', categorias_api, name='categorias_api'),
     path('api/categorias/<int:categoria_id>/', categoria_delete_api, name='categoria_delete_api'),
     path('api/clientes/', clientes_api, name='clientes_api'),

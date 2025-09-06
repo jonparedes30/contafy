@@ -8,8 +8,17 @@ from datetime import date
 from ..models import CategoriaProducto, Cliente, Proveedor, CuentaPorCobrar, CuentaPorPagar
 
 
-@login_required
-@require_http_methods(["GET", "POST"])
+@csrf_exempt
+def test_categorias_api(request):
+    """Endpoint de prueba para verificar conectividad"""
+    return JsonResponse({
+        'status': 'ok',
+        'method': request.method,
+        'user_authenticated': request.user.is_authenticated,
+        'user': str(request.user) if request.user.is_authenticated else 'Anonymous'
+    })
+
+
 @csrf_exempt
 def categorias_api(request):
     try:
