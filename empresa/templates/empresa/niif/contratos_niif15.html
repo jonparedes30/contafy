@@ -1,0 +1,135 @@
+{% extends 'empresa/base.html' %}
+{% load static %}
+
+{% block title %}Contratos NIIF 15 - Contafy{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <i class="fas fa-file-contract"></i>
+                        Gestión de Contratos NIIF 15
+                    </h3>
+                </div>
+                <div class="card-body">
+                    
+                    <!-- Métricas -->
+                    <div class="row mb-4">
+                        <div class="col-md-3">
+                            <div class="info-box">
+                                <span class="info-box-icon bg-info"><i class="fas fa-file-contract"></i></span>
+                                <div class="info-box-content">
+                                    <span class="info-box-text">Total Contratos</span>
+                                    <span class="info-box-number">{{ total_contratos }}</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-3">
+                            <div class="info-box">
+                                <span class="info-box-icon bg-success"><i class="fas fa-check-circle"></i></span>
+                                <div class="info-box-content">
+                                    <span class="info-box-text">Contratos Activos</span>
+                                    <span class="info-box-number">{{ contratos_activos }}</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-3">
+                            <div class="info-box">
+                                <span class="info-box-icon bg-warning"><i class="fas fa-clock"></i></span>
+                                <div class="info-box-content">
+                                    <span class="info-box-text">Ingresos Pendientes</span>
+                                    <span class="info-box-number">${{ ingresos_pendientes|floatformat:2 }}</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-3">
+                            <div class="info-box">
+                                <span class="info-box-icon bg-primary"><i class="fas fa-plus"></i></span>
+                                <div class="info-box-content">
+                                    <span class="info-box-text">Nuevo Contrato</span>
+                                    <button class="btn btn-sm btn-primary">Crear</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Tabla de Contratos -->
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Número</th>
+                                    <th>Cliente</th>
+                                    <th>Fecha Inicio</th>
+                                    <th>Precio Total</th>
+                                    <th>Estado</th>
+                                    <th>Obligaciones</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for contrato in contratos %}
+                                <tr>
+                                    <td>{{ contrato.numero_contrato }}</td>
+                                    <td>{{ contrato.cliente.nombre }}</td>
+                                    <td>{{ contrato.fecha_inicio|date:"d/m/Y" }}</td>
+                                    <td>${{ contrato.precio_total|floatformat:2 }}</td>
+                                    <td>
+                                        <span class="badge badge-{% if contrato.estado == 'activo' %}success{% elif contrato.estado == 'completado' %}primary{% else %}secondary{% endif %}">
+                                            {{ contrato.get_estado_display }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <small>
+                                            {{ contrato.obligaciones.count }} total<br>
+                                            {{ contrato.obligaciones.filter.satisfecha=True.count }} completadas
+                                        </small>
+                                    </td>
+                                    <td>
+                                        <button class="btn btn-sm btn-info" onclick="verDetalles({{ contrato.id }})">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
+                                        {% if contrato.estado == 'activo' %}
+                                        <button class="btn btn-sm btn-success" onclick="procesarContrato({{ contrato.id }})">
+                                            <i class="fas fa-check"></i>
+                                        </button>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="7" class="text-center">
+                                        <i class="fas fa-info-circle"></i>
+                                        No hay contratos NIIF 15 registrados
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function verDetalles(contratoId) {
+    alert('Funcionalidad de detalles en desarrollo');
+}
+
+function procesarContrato(contratoId) {
+    if (confirm('¿Procesar obligaciones de desempeño de este contrato?')) {
+        // Implementar procesamiento
+        alert('Contrato procesado según NIIF 15');
+    }
+}
+</script>
+{% endblock %}

@@ -13,96 +13,56 @@ class ContabilidadService:
     
     @staticmethod
     @transaction.atomic
-    def registrar_venta(venta):
-        """Registra asientos contables para una venta"""
+    def registrar_venta_niif(venta):
+        """Registra venta según NIIF 15 y NIC 2"""
+        from ..models import MovimientoInventario
+        
         try:
-            empresa = venta.empresa
-            
-            # Débito: Caja (Activo)
-            cuenta_caja, _ = CuentaContable.objects.get_or_create(
-                empresa=empresa,
-                nombre="Caja",
-                defaults={'tipo': 'activo'}
+            # Crear movimiento de inventario (salida)
+            MovimientoInventario.objects.create(
+                empresa=venta.empresa,
+                producto=venta.producto,
+                tipo='salida',
+                cantidad=venta.cantidad,
+                costo_unitario=venta.obtener_costo_peps(),
+                referencia=f'Venta #{venta.id}'
             )
             
-            # Crédito: Ventas (Ingreso)
-            cuenta_ventas, _ = CuentaContable.objects.get_or_create(
-                empresa=empresa,
-                nombre="Ventas",
-                defaults={'tipo': 'ingreso'}
-            )
+            # Actualizar deterioro de cuentas por cobrar si es crédito
+            if venta.tipo_pago == 'credito':
+                from ..models import CuentaPorCobrar
+                try:
+                    cuenta = CuentaPorCobrar.objects.get(venta=venta)
+                    cuenta.actualizar_deterioro()
+                except CuentaPorCobrar.DoesNotExist:
+                    pass
             
-            # Crear movimientos
-            MovimientoContable.objects.bulk_create([
-                MovimientoContable(
-                    empresa=empresa,
-                    cuenta_fk=cuenta_caja,
-                    cuenta_text=cuenta_caja.nombre,
-                    tipo='debito',
-                    monto=venta.total,
-                    descripcion=f"Venta {venta.producto.nombre}"
-                ),
-                MovimientoContable(
-                    empresa=empresa,
-                    cuenta_fk=cuenta_ventas,
-                    cuenta_text=cuenta_ventas.nombre,
-                    tipo='credito',
-                    monto=venta.total,
-                    descripcion=f"Venta {venta.producto.nombre}"
-                )
-            ])
-            
-            logger.info(f"Venta registrada contablemente: {venta.id}")
+            logger.info(f"Venta NIIF registrada: {venta.id}")
             
         except Exception as e:
-            logger.error(f"Error registrando venta {venta.id}: {str(e)}")
+            logger.error(f"Error registrando venta NIIF {venta.id}: {str(e)}")
             raise
     
     @staticmethod
-    @transaction.atomic
-    def registrar_gasto(gasto):
-        """Registra asientos contables para un gasto"""
-        try:
-            empresa = gasto.empresa
+    def actualizar_deterioro_masivo(empresa):
+        """Actualiza deterioro de todas las cuentas por cobrar"""
+        from ..models import CuentaPorCobrar
+        
+        cuentas = CuentaPorCobrar.objects.filter(
+            empresa=empresa,
+            estado='pendiente'
+        )
+        
+        actualizadas = 0
+        for cuenta in cuentas:
+            deterioro_anterior = cuenta.deterioro_esperado
+            cuenta.actualizar_deterioro()
             
-            # Débito: Gastos
-            cuenta_gastos, _ = CuentaContable.objects.get_or_create(
-                empresa=empresa,
-                nombre="Gastos Operacionales",
-                defaults={'tipo': 'gasto'}
-            )
-            
-            # Crédito: Caja
-            cuenta_caja, _ = CuentaContable.objects.get_or_create(
-                empresa=empresa,
-                nombre="Caja",
-                defaults={'tipo': 'activo'}
-            )
-            
-            MovimientoContable.objects.bulk_create([
-                MovimientoContable(
-                    empresa=empresa,
-                    cuenta_fk=cuenta_gastos,
-                    cuenta_text=cuenta_gastos.nombre,
-                    tipo='debito',
-                    monto=gasto.monto,
-                    descripcion=gasto.descripcion
-                ),
-                MovimientoContable(
-                    empresa=empresa,
-                    cuenta_fk=cuenta_caja,
-                    cuenta_text=cuenta_caja.nombre,
-                    tipo='credito',
-                    monto=gasto.monto,
-                    descripcion=gasto.descripcion
-                )
-            ])
-            
-            logger.info(f"Gasto registrado contablemente: {gasto.id}")
-            
-        except Exception as e:
-            logger.error(f"Error registrando gasto {gasto.id}: {str(e)}")
-            raise
+            if cuenta.deterioro_esperado != deterioro_anterior:
+                actualizadas += 1
+        
+        logger.info(f"Deterioro actualizado para {actualizadas} cuentas")
+        return actualizadas
     
     @staticmethod
     def calcular_balance_general(empresa):

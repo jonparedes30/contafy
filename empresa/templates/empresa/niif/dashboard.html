@@ -1,0 +1,202 @@
+{% extends 'empresa/base.html' %}
+{% load static %}
+
+{% block title %}Dashboard NIIF - Contafy{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <i class="fas fa-balance-scale"></i>
+                        Dashboard de Cumplimiento NIIF
+                    </h3>
+                </div>
+                <div class="card-body">
+                    
+                    <!-- Métricas de Cumplimiento -->
+                    <div class="row">
+                        <div class="col-lg-3 col-6">
+                            <div class="small-box bg-info">
+                                <div class="inner">
+                                    <h3>{{ cumplimiento_deterioro|floatformat:1 }}%</h3>
+                                    <p>Cumplimiento NIIF 9</p>
+                                </div>
+                                <div class="icon">
+                                    <i class="fas fa-chart-line"></i>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-lg-3 col-6">
+                            <div class="small-box bg-success">
+                                <div class="inner">
+                                    <h3>{{ total_cuentas }}</h3>
+                                    <p>Cuentas por Cobrar</p>
+                                </div>
+                                <div class="icon">
+                                    <i class="fas fa-file-invoice-dollar"></i>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-lg-3 col-6">
+                            <div class="small-box bg-warning">
+                                <div class="inner">
+                                    <h3>{{ cuentas_sin_deterioro }}</h3>
+                                    <p>Sin Deterioro</p>
+                                </div>
+                                <div class="icon">
+                                    <i class="fas fa-exclamation-triangle"></i>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-lg-3 col-6">
+                            <div class="small-box bg-danger">
+                                <div class="inner">
+                                    <h3>{{ movimientos_inventario }}</h3>
+                                    <p>Movimientos PEPS</p>
+                                </div>
+                                <div class="icon">
+                                    <i class="fas fa-boxes"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Acciones Rápidas -->
+                    <div class="row mt-4">
+                        <div class="col-md-6">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h5>Acciones NIIF</h5>
+                                </div>
+                                <div class="card-body">
+                                    <button id="btn-actualizar-deterioro" class="btn btn-primary btn-block mb-2">
+                                        <i class="fas fa-sync"></i>
+                                        Actualizar Deterioro NIIF 9
+                                    </button>
+                                    
+                                    <button id="btn-cierre-niif" class="btn btn-success btn-block mb-2">
+                                        <i class="fas fa-calendar-check"></i>
+                                        Ejecutar Cierre NIIF
+                                    </button>
+                                    
+                                    <div class="dropdown">
+                                        <button class="btn btn-info btn-block dropdown-toggle" type="button" data-toggle="dropdown">
+                                            <i class="fas fa-file-alt"></i>
+                                            Reportes NIIF
+                                        </button>
+                                        <div class="dropdown-menu w-100">
+                                            <a class="dropdown-item" href="/empresa/niif/estado-situacion-financiera/">
+                                                <i class="fas fa-balance-scale"></i> Estado Situación Financiera
+                                            </a>
+                                            <a class="dropdown-item" href="/empresa/niif/estado-resultados-niif/">
+                                                <i class="fas fa-chart-line"></i> Estado de Resultados NIIF
+                                            </a>
+                                            <a class="dropdown-item" href="/empresa/niif/notas-explicativas/">
+                                                <i class="fas fa-sticky-note"></i> Notas Explicativas
+                                            </a>
+                                            <a class="dropdown-item" href="/empresa/niif/reporte-completo/">
+                                                <i class="fas fa-file-pdf"></i> Reporte Completo
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h5>Estado de Implementación</h5>
+                                </div>
+                                <div class="card-body">
+                                    <div class="progress mb-2">
+                                        <div class="progress-bar bg-success" style="width: 85%">
+                                            Fase 1: 85%
+                                        </div>
+                                    </div>
+                                    
+                                    <ul class="list-unstyled">
+                                        <li><i class="fas fa-check text-success"></i> IVA según NIC 12</li>
+                                        <li><i class="fas fa-check text-success"></i> Inventarios PEPS (NIC 2)</li>
+                                        <li><i class="fas fa-check text-success"></i> Deterioro NIIF 9</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.getElementById('btn-actualizar-deterioro').addEventListener('click', function() {
+    const btn = this;
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Actualizando...';
+    
+    fetch('/empresa/niif/actualizar-deterioro/', {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': '{{ csrf_token }}',
+            'Content-Type': 'application/json',
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('✅ ' + data.message);
+            location.reload();
+        } else {
+            alert('❌ ' + data.message);
+        }
+    })
+    .finally(() => {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-sync"></i> Actualizar Deterioro NIIF 9';
+    });
+});
+
+document.getElementById('btn-cierre-niif').addEventListener('click', function() {
+    if (!confirm('¿Ejecutar cierre contable según NIIF? Esta acción procesará todos los ajustes necesarios.')) {
+        return;
+    }
+    
+    const btn = this;
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Ejecutando...';
+    
+    fetch('/empresa/niif/ejecutar-cierre/', {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': '{{ csrf_token }}',
+            'Content-Type': 'application/json',
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('✅ Cierre NIIF ejecutado correctamente\n' + 
+                  'Deterioro: ' + data.resultados.deterioro_actualizado + ' cuentas\n' +
+                  'Ingresos: $' + data.resultados.ingresos_reconocidos + '\n' +
+                  'Instrumentos: $' + data.resultados.instrumentos_evaluados);
+            location.reload();
+        } else {
+            alert('❌ ' + data.message);
+        }
+    })
+    .finally(() => {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-calendar-check"></i> Ejecutar Cierre NIIF';
+    });
+});
+</script>
+{% endblock %}

@@ -1,0 +1,194 @@
+{% extends 'empresa/base.html' %}
+{% load static %}
+
+{% block title %}Estado de Resultados NIIF - Contafy{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <i class="fas fa-chart-line"></i>
+                        Estado de Resultados según NIIF 15
+                    </h3>
+                    <div class="card-tools">
+                        <span class="badge badge-info">{{ reporte.periodo }}</span>
+                    </div>
+                </div>
+                <div class="card-body">
+                    
+                    <div class="row">
+                        <div class="col-md-8 offset-md-2">
+                            
+                            <!-- INGRESOS ORDINARIOS -->
+                            <div class="card">
+                                <div class="card-header bg-success text-white">
+                                    <h5><i class="fas fa-plus-circle"></i> INGRESOS ORDINARIOS</h5>
+                                </div>
+                                <div class="card-body">
+                                    <table class="table table-sm">
+                                        {% for concepto, valor in reporte.ingresos_ordinarios.items %}
+                                        <tr>
+                                            <td>{{ concepto }}</td>
+                                            <td class="text-right">${{ valor|floatformat:2 }}</td>
+                                        </tr>
+                                        {% endfor %}
+                                        <tr class="table-success font-weight-bold">
+                                            <td>Total Ingresos Ordinarios</td>
+                                            <td class="text-right">${{ reporte.totales.ingresos_ordinarios|floatformat:2 }}</td>
+                                        </tr>
+                                    </table>
+                                </div>
+                            </div>
+                            
+                            <!-- COSTOS DE VENTAS -->
+                            <div class="card mt-3">
+                                <div class="card-header bg-warning">
+                                    <h5><i class="fas fa-minus-circle"></i> COSTOS DE VENTAS</h5>
+                                </div>
+                                <div class="card-body">
+                                    <table class="table table-sm">
+                                        {% for concepto, valor in reporte.costos_ventas.items %}
+                                        <tr>
+                                            <td>{{ concepto }}</td>
+                                            <td class="text-right">(${{ valor|floatformat:2 }})</td>
+                                        </tr>
+                                        {% empty %}
+                                        <tr>
+                                            <td colspan="2" class="text-center text-muted">No hay costos de ventas registrados</td>
+                                        </tr>
+                                        {% endfor %}
+                                    </table>
+                                </div>
+                            </div>
+                            
+                            <!-- UTILIDAD BRUTA -->
+                            <div class="card mt-3 border-primary">
+                                <div class="card-body bg-light">
+                                    <div class="row">
+                                        <div class="col-8">
+                                            <h4 class="text-primary">UTILIDAD BRUTA</h4>
+                                        </div>
+                                        <div class="col-4 text-right">
+                                            <h4 class="text-primary">${{ reporte.totales.utilidad_bruta|floatformat:2 }}</h4>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- GASTOS OPERATIVOS -->
+                            <div class="card mt-3">
+                                <div class="card-header bg-danger text-white">
+                                    <h5><i class="fas fa-minus-circle"></i> GASTOS OPERATIVOS</h5>
+                                </div>
+                                <div class="card-body">
+                                    <table class="table table-sm">
+                                        {% for concepto, valor in reporte.gastos_operativos.items %}
+                                        <tr>
+                                            <td>{{ concepto }}</td>
+                                            <td class="text-right">(${{ valor|floatformat:2 }})</td>
+                                        </tr>
+                                        {% empty %}
+                                        <tr>
+                                            <td colspan="2" class="text-center text-muted">No hay gastos operativos registrados</td>
+                                        </tr>
+                                        {% endfor %}
+                                        <tr class="table-danger font-weight-bold">
+                                            <td>Total Gastos Operativos</td>
+                                            <td class="text-right">(${{ reporte.totales.gastos_operativos|floatformat:2 }})</td>
+                                        </tr>
+                                    </table>
+                                </div>
+                            </div>
+                            
+                            <!-- UTILIDAD OPERATIVA -->
+                            <div class="card mt-3 border-info">
+                                <div class="card-body bg-light">
+                                    <div class="row">
+                                        <div class="col-8">
+                                            <h4 class="text-info">UTILIDAD OPERATIVA</h4>
+                                        </div>
+                                        <div class="col-4 text-right">
+                                            <h4 class="text-info">${{ reporte.totales.utilidad_operativa|floatformat:2 }}</h4>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- OTROS INGRESOS/GASTOS -->
+                            {% if reporte.otros_ingresos or reporte.gastos_financieros %}
+                            <div class="card mt-3">
+                                <div class="card-header bg-secondary text-white">
+                                    <h5><i class="fas fa-exchange-alt"></i> OTROS INGRESOS Y GASTOS</h5>
+                                </div>
+                                <div class="card-body">
+                                    <table class="table table-sm">
+                                        {% for concepto, valor in reporte.otros_ingresos.items %}
+                                        <tr>
+                                            <td>{{ concepto }}</td>
+                                            <td class="text-right">${{ valor|floatformat:2 }}</td>
+                                        </tr>
+                                        {% endfor %}
+                                        {% for concepto, valor in reporte.gastos_financieros.items %}
+                                        <tr>
+                                            <td>{{ concepto }}</td>
+                                            <td class="text-right">(${{ valor|floatformat:2 }})</td>
+                                        </tr>
+                                        {% endfor %}
+                                    </table>
+                                </div>
+                            </div>
+                            {% endif %}
+                            
+                            <!-- UTILIDAD NETA -->
+                            <div class="card mt-3 border-{% if reporte.totales.utilidad_neta >= 0 %}success{% else %}danger{% endif %}">
+                                <div class="card-body bg-{% if reporte.totales.utilidad_neta >= 0 %}success{% else %}danger{% endif %} text-white">
+                                    <div class="row">
+                                        <div class="col-8">
+                                            <h3>UTILIDAD NETA</h3>
+                                        </div>
+                                        <div class="col-4 text-right">
+                                            <h3>${{ reporte.totales.utilidad_neta|floatformat:2 }}</h3>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Indicadores -->
+                            <div class="card mt-4">
+                                <div class="card-header">
+                                    <h5><i class="fas fa-calculator"></i> Indicadores Financieros</h5>
+                                </div>
+                                <div class="card-body">
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <strong>Margen Bruto:</strong>
+                                            {% if reporte.totales.ingresos_ordinarios > 0 %}
+                                                {{ reporte.totales.utilidad_bruta|div:reporte.totales.ingresos_ordinarios|mul:100|floatformat:1 }}%
+                                            {% else %}
+                                                0%
+                                            {% endif %}
+                                        </div>
+                                        <div class="col-md-6">
+                                            <strong>Margen Neto:</strong>
+                                            {% if reporte.totales.ingresos_ordinarios > 0 %}
+                                                {{ reporte.totales.utilidad_neta|div:reporte.totales.ingresos_ordinarios|mul:100|floatformat:1 }}%
+                                            {% else %}
+                                                0%
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                        </div>
+                    </div>
+                    
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -16,31 +16,47 @@ def estado_resultados(request):
     from empresa.services.filtros_service import FiltrosFechaService
     fecha_inicio, fecha_fin = FiltrosFechaService.obtener_rango_fechas(request)
     
-    # Obtener datos filtrados por fecha
-    ventas = FiltrosFechaService.obtener_movimientos_contables_por_periodo(
-        empresa, 'Ventas', 'credito', fecha_inicio, fecha_fin
-    )
-    # COSTO DE VENTAS - Usar cuenta contable (ya corregida)
-    costos = FiltrosFechaService.obtener_movimientos_contables_por_periodo(
-        empresa, 'Costo de Ventas', 'debito', fecha_inicio, fecha_fin
-    )
-    gastos = FiltrosFechaService.obtener_movimientos_contables_por_periodo(
-        empresa, 'Gastos', 'debito', fecha_inicio, fecha_fin
-    )
+    # Verificar si se solicita formato NIIF
+    formato_niif = request.GET.get('niif', 'false') == 'true'
     
-    utilidad_bruta = ventas - costos
-    utilidad_neta = utilidad_bruta - gastos  # CORREGIDO: Ventas - Costos - Gastos
+    if formato_niif:
+        # Usar servicio NIIF para reporte mejorado
+        from empresa.services.reportes_niif_service import ReportesNIIFService
+        reporte_niif = ReportesNIIFService.generar_estado_resultados_niif(empresa, fecha_inicio, fecha_fin)
+        
+        contexto = {
+            'reporte_niif': reporte_niif,
+            'formato_niif': True,
+            'fecha_inicio': fecha_inicio,
+            'fecha_fin': fecha_fin,
+        }
+    else:
+        # Lógica original
+        ventas = FiltrosFechaService.obtener_movimientos_contables_por_periodo(
+            empresa, 'Ventas', 'credito', fecha_inicio, fecha_fin
+        )
+        costos = FiltrosFechaService.obtener_movimientos_contables_por_periodo(
+            empresa, 'Costo de Ventas', 'debito', fecha_inicio, fecha_fin
+        )
+        gastos = FiltrosFechaService.obtener_movimientos_contables_por_periodo(
+            empresa, 'Gastos', 'debito', fecha_inicio, fecha_fin
+        )
+        
+        utilidad_bruta = ventas - costos
+        utilidad_neta = utilidad_bruta - gastos
+        
+        contexto = {
+            'ventas': float(ventas),
+            'costos': float(costos),
+            'gastos': float(gastos),
+            'utilidad_bruta': float(utilidad_bruta),
+            'utilidad_operativa': float(utilidad_neta),
+            'utilidad_neta': float(utilidad_neta),
+            'fecha_inicio': fecha_inicio,
+            'fecha_fin': fecha_fin,
+            'formato_niif': False,
+        }
     
-    contexto = {
-        'ventas': float(ventas),
-        'costos': float(costos),
-        'gastos': float(gastos),
-        'utilidad_bruta': float(utilidad_bruta),
-        'utilidad_operativa': float(utilidad_neta),  # CORREGIDO: Utilidad después de gastos
-        'utilidad_neta': float(utilidad_neta),
-        'fecha_inicio': fecha_inicio,
-        'fecha_fin': fecha_fin,
-    }
     return render(request, 'empresa/estado_resultado.html', contexto)
 
 # ======================
@@ -167,81 +183,92 @@ def balance_general(request):
     # Obtener filtros de fecha
     from empresa.services.filtros_service import FiltrosFechaService
     fecha_inicio, fecha_fin = FiltrosFechaService.obtener_rango_fechas(request)
-
-    # Obtener todas las cuentas contables de la empresa
-    cuentas = CuentaContable.objects.filter(empresa=empresa)
     
-    # Obtener todos los movimientos filtrados por fecha
-    movimientos = MovimientoContable.objects.filter(
-        empresa=empresa,
-        fecha__date__gte=fecha_inicio,
-        fecha__date__lte=fecha_fin
-    ).values(
-        'cuenta_fk', 'tipo'
-    ).annotate(
-        total=Sum('monto')
-    )
+    # Verificar si se solicita formato NIIF
+    formato_niif = request.GET.get('niif', 'false') == 'true'
     
-    # Crear diccionario para acceso rápido
-    movimientos_dict = {}
-    for mov in movimientos:
-        key = (mov['cuenta_fk'], mov['tipo'])
-        movimientos_dict[key] = mov['total']
-    
-    activos = []
-    pasivos = []
-    capital = []
-    total_activos = 0
-    total_pasivos = 0
-    total_capital = 0
-
-    for cuenta in cuentas:
-        # Usar el método valor del modelo que ya tiene la lógica correcta
-        try:
-            saldo = cuenta.valor
-        except Exception:
-            # Fallback: calcular manualmente si hay error
-            debitos = movimientos_dict.get((cuenta.id, 'debito'), 0)
-            creditos = movimientos_dict.get((cuenta.id, 'credito'), 0)
-            
-            if cuenta.tipo in ['activo', 'gasto']:
-                saldo = debitos - creditos
-            else:  # pasivo, capital, ingreso
-                saldo = creditos - debitos
-
-        cuenta_dict = {
-            'cuenta_fk__nombre': cuenta.nombre,
-            'valor': saldo
-        }
+    if formato_niif:
+        # Usar servicio NIIF para reporte mejorado
+        from empresa.services.reportes_niif_service import ReportesNIIFService
+        reporte_niif = ReportesNIIFService.generar_estado_situacion_financiera(empresa, fecha_fin)
         
-        # Solo incluir cuentas con saldo diferente de cero
-        if abs(saldo) > 0.01:  # Evitar errores de redondeo
-            if cuenta.tipo == 'activo':
-                activos.append(cuenta_dict)
-                total_activos += saldo
-            elif cuenta.tipo == 'pasivo':
-                pasivos.append(cuenta_dict)
-                total_pasivos += saldo
-            elif cuenta.tipo == 'capital':
-                capital.append(cuenta_dict)
-                total_capital += saldo
+        contexto = {
+            'reporte_niif': reporte_niif,
+            'formato_niif': True,
+            'fecha_inicio': fecha_inicio,
+            'fecha_fin': fecha_fin,
+        }
+    else:
+        # Lógica original
+        cuentas = CuentaContable.objects.filter(empresa=empresa)
+        
+        movimientos = MovimientoContable.objects.filter(
+            empresa=empresa,
+            fecha__date__gte=fecha_inicio,
+            fecha__date__lte=fecha_fin
+        ).values(
+            'cuenta_fk', 'tipo'
+        ).annotate(
+            total=Sum('monto')
+        )
+        
+        movimientos_dict = {}
+        for mov in movimientos:
+            key = (mov['cuenta_fk'], mov['tipo'])
+            movimientos_dict[key] = mov['total']
+        
+        activos = []
+        pasivos = []
+        capital = []
+        total_activos = 0
+        total_pasivos = 0
+        total_capital = 0
 
-    # Cálculo de patrimonio (Activos - Pasivos)
-    total_activos_float = float(total_activos or 0.0)
-    total_pasivos_float = float(total_pasivos or 0.0)
-    total_patrimonio = total_activos_float - total_pasivos_float
+        for cuenta in cuentas:
+            try:
+                saldo = cuenta.valor
+            except Exception:
+                debitos = movimientos_dict.get((cuenta.id, 'debito'), 0)
+                creditos = movimientos_dict.get((cuenta.id, 'credito'), 0)
+                
+                if cuenta.tipo in ['activo', 'gasto']:
+                    saldo = debitos - creditos
+                else:
+                    saldo = creditos - debitos
 
-    contexto = {
-        'activos': activos,
-        'pasivos': pasivos,
-        'capital': capital,
-        'total_activos': total_activos_float,
-        'total_pasivos': total_pasivos_float,
-        'total_capital': float(total_capital or 0.0),
-        'total_patrimonio': total_patrimonio,
-        'fecha_inicio': fecha_inicio,
-        'fecha_fin': fecha_fin,
-    }
+            cuenta_dict = {
+                'cuenta_fk__nombre': cuenta.nombre,
+                'valor': saldo
+            }
+            
+            if abs(saldo) > 0.01:
+                if cuenta.tipo == 'activo':
+                    activos.append(cuenta_dict)
+                    total_activos += saldo
+                elif cuenta.tipo == 'pasivo':
+                    pasivos.append(cuenta_dict)
+                    total_pasivos += saldo
+                elif cuenta.tipo == 'capital':
+                    capital.append(cuenta_dict)
+                    total_capital += saldo
+
+        total_activos_float = float(total_activos or 0.0)
+        total_pasivos_float = float(total_pasivos or 0.0)
+        total_patrimonio = total_activos_float - total_pasivos_float
+
+        contexto = {
+            'activos': activos,
+            'pasivos': pasivos,
+            'capital': capital,
+            'total_activos': total_activos_float,
+            'total_pasivos': total_pasivos_float,
+            'total_capital': float(total_capital or 0.0),
+            'total_patrimonio': total_patrimonio,
+            'fecha_inicio': fecha_inicio,
+            'fecha_fin': fecha_fin,
+            'formato_niif': False,
+        }
+    
     return render(request, 'empresa/balance_general.html', contexto)
 
 # ======================

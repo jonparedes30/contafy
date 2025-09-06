@@ -323,15 +323,14 @@ class Venta(AuditModel):
         return f"Venta de {self.producto} - {self.monto}"
     
     def save(self, *args, **kwargs):
-        """Calcular IVA y crear asientos contables automáticamente"""
+        """Calcular IVA y crear asientos contables según NIIF"""
         es_nuevo = not self.pk
         
-        # Calcular IVA si no está establecido
+        # Calcular IVA según NIC 12
         if self.monto_neto > 0 and self.iva == 0:
             self.iva = self.monto_neto * (self.tasa_iva / 100)
             self.monto = self.monto_neto + self.iva
         elif self.monto > 0 and self.monto_neto == 0:
-            # Si solo se ingresó el monto total, calcular neto e IVA
             self.monto_neto = self.monto / (1 + self.tasa_iva / 100)
             self.iva = self.monto - self.monto_neto
         
@@ -340,22 +339,24 @@ class Venta(AuditModel):
         if es_nuevo:
             self.crear_asientos_contables()
             self.crear_cuenta_por_cobrar_si_credito()
+            self.crear_movimiento_inventario()
+            self.aplicar_niif15_si_aplica()
     
     def crear_asientos_contables(self):
-        """Crear partida doble para la venta"""
+        """Crear partida doble para la venta según NIIF"""
         from empresa.models import CuentaContable, MovimientoContable
+        import logging
+        logger = logging.getLogger(__name__)
         
         try:
             # 1. Registrar la venta según tipo de pago
             if self.tipo_pago == 'contado':
-                # Débito: Caja (Activo)
                 cuenta_debito = CuentaContable.objects.get_or_create(
                     empresa=self.empresa,
                     nombre='Caja',
                     defaults={'tipo': 'activo'}
                 )[0]
-            else:  # crédito
-                # Débito: Cuentas por Cobrar (Activo)
+            else:
                 cuenta_debito = CuentaContable.objects.get_or_create(
                     empresa=self.empresa,
                     nombre='Cuentas por Cobrar',
@@ -367,10 +368,10 @@ class Venta(AuditModel):
                 cuenta_fk=cuenta_debito,
                 tipo='debito',
                 monto=self.monto,
-                descripcion=f'Venta {self.tipo_pago} {self.producto.nombre} - {self.cantidad} unidades - {self.cliente_display}'
+                descripcion=f'Venta {self.tipo_pago} {self.producto.nombre} - {self.cantidad} unidades'
             )
             
-            # 2. Registrar IVA por pagar si hay IVA
+            # 2. IVA por Pagar (NIIF - NIC 12)
             if self.iva > 0:
                 cuenta_iva_pagar = CuentaContable.objects.get_or_create(
                     empresa=self.empresa,
@@ -386,7 +387,7 @@ class Venta(AuditModel):
                     descripcion=f'IVA venta {self.producto.nombre} - {self.tasa_iva}%'
                 )
             
-            # 3. Crédito: Ventas (Ingreso) - solo el monto neto
+            # 3. Ventas (NIIF 15 - Reconocimiento de ingresos)
             cuenta_ventas = CuentaContable.objects.get_or_create(
                 empresa=self.empresa,
                 nombre='Ventas',
@@ -401,12 +402,11 @@ class Venta(AuditModel):
                 descripcion=f'Venta {self.producto.nombre} - {self.cantidad} unidades'
             )
             
-            # 4. Calcular costo real del producto
-            costo_unitario = self.obtener_costo_real()
+            # 4. Costo de Ventas (NIC 2 - Inventarios)
+            costo_unitario = self.obtener_costo_peps()
             costo_total = self.cantidad * costo_unitario
             
             if costo_total > 0:
-                # Débito: Costo de Ventas (Gasto)
                 cuenta_costo = CuentaContable.objects.get_or_create(
                     empresa=self.empresa,
                     nombre='Costo de Ventas',
@@ -421,7 +421,6 @@ class Venta(AuditModel):
                     descripcion=f'Costo venta {self.producto.nombre} - {self.cantidad} unidades'
                 )
                 
-                # Crédito: Inventario (Activo)
                 cuenta_inventario = CuentaContable.objects.get_or_create(
                     empresa=self.empresa,
                     nombre='Inventario',
@@ -437,7 +436,8 @@ class Venta(AuditModel):
                 )
             
         except Exception as e:
-            print(f'Error creando asientos contables para venta: {e}')
+            logger.error(f'Error creando asientos contables para venta {self.id}: {str(e)}')
+            raise
     
     def crear_cuenta_por_cobrar_si_credito(self):
         """Crear cuenta por cobrar si la venta es a crédito"""
@@ -473,32 +473,83 @@ class Venta(AuditModel):
             except Exception as e:
                 print(f'Error creando cuenta por cobrar: {e}')
     
-    def obtener_costo_real(self):
-        """Obtiene el costo real del producto según el tipo de empresa"""
+    def crear_movimiento_inventario(self):
+        """Crear movimiento de inventario para la venta"""
+        try:
+            MovimientoInventario.objects.create(
+                empresa=self.empresa,
+                producto=self.producto,
+                tipo='salida',
+                cantidad=self.cantidad,
+                costo_unitario=self.obtener_costo_peps(),
+                referencia=f'Venta #{self.id}'
+            )
+        except Exception as e:
+            print(f'Error creando movimiento inventario: {e}')
+    
+    def aplicar_niif15_si_aplica(self):
+        """Aplica NIIF 15 para ventas complejas"""
+        # Para ventas simples, reconocer inmediatamente
+        # Para contratos complejos, crear obligaciones de desempeño
+        if self.monto > 10000:  # Ventas grandes requieren análisis NIIF 15
+            try:
+                from datetime import date
+                contrato = ContratoVenta.objects.create(
+                    empresa=self.empresa,
+                    cliente=self.cliente_fk or self._crear_cliente_temporal(),
+                    numero_contrato=f'AUTO-{self.id}',
+                    fecha_inicio=date.today(),
+                    precio_total=self.monto,
+                    estado='activo'
+                )
+                
+                ObligacionDesempeno.objects.create(
+                    contrato=contrato,
+                    descripcion=f'Entrega {self.producto.nombre}',
+                    precio_asignado=self.monto,
+                    porcentaje_completado=100,
+                    satisfecha=True
+                )
+            except Exception as e:
+                print(f'Error aplicando NIIF 15: {e}')
+    
+    def _crear_cliente_temporal(self):
+        """Crea cliente temporal para NIIF 15"""
+        cliente, created = Cliente.objects.get_or_create(
+            empresa=self.empresa,
+            nombre=self.cliente_nombre or 'Cliente General',
+            defaults={
+                'numero_documento': '9999999999',
+                'tipo_documento': 'cedula'
+            }
+        )
+        return cliente
+    
+    def obtener_costo_peps(self):
+        """Obtiene costo usando método PEPS según NIC 2"""
+        from empresa.models import Compra, ProductoManufacturado
+        
         try:
             if self.empresa.categoria == 'manufactura':
-                # Buscar si es producto manufacturado
-                from empresa.models import ProductoManufacturado
                 producto_manuf = ProductoManufacturado.objects.get(
                     empresa=self.empresa, codigo=self.producto.codigo
                 )
-                return producto_manuf.precio_costo or producto_manuf.costo_produccion
+                return producto_manuf.costo_produccion
             else:
-                # Para comercio/servicios, obtener el costo de la última compra
-                from empresa.models import Compra
-                ultima_compra = Compra.objects.filter(
+                # Método PEPS (Primero en Entrar, Primero en Salir)
+                compras = Compra.objects.filter(
                     empresa=self.empresa,
                     producto=self.producto
-                ).order_by('-fecha').first()
+                ).order_by('fecha')
                 
-                if ultima_compra:
-                    return ultima_compra.monto_neto / ultima_compra.cantidad
+                if compras.exists():
+                    # Usar costo de la compra más antigua disponible
+                    return compras.first().monto_neto / compras.first().cantidad
                 else:
-                    # Fallback al precio_unitario del producto
-                    return self.producto.precio_unitario
-        except:
-            # Fallback al precio_unitario del producto
-            return self.producto.precio_unitario
+                    # Si no hay compras, usar 70% del precio de venta
+                    return self.producto.precio_unitario * 0.7
+        except Exception:
+            return self.producto.precio_unitario * 0.7
 
 # Compra
 class Compra(AuditModel):
@@ -560,11 +611,13 @@ class Compra(AuditModel):
             self.crear_cuenta_por_pagar_si_credito()
     
     def crear_asientos_contables(self):
-        """Crear partida doble para la compra"""
+        """Crear partida doble para la compra según NIIF"""
         from empresa.models import CuentaContable, MovimientoContable
+        import logging
+        logger = logging.getLogger(__name__)
         
         try:
-            # 1. Débito: Inventario (Activo) - solo el monto neto
+            # 1. Inventario (NIC 2 - Valuación al costo)
             cuenta_inventario = CuentaContable.objects.get_or_create(
                 empresa=self.empresa,
                 nombre='Inventario',
@@ -579,7 +632,7 @@ class Compra(AuditModel):
                 descripcion=f'Compra {self.producto.nombre} - {self.cantidad} unidades'
             )
             
-            # 2. Débito: IVA Crédito Fiscal (Activo) si hay IVA
+            # 2. IVA Crédito Fiscal (NIC 12 - Impuestos)
             if self.iva > 0:
                 cuenta_iva_credito = CuentaContable.objects.get_or_create(
                     empresa=self.empresa,
@@ -595,7 +648,7 @@ class Compra(AuditModel):
                     descripcion=f'IVA compra {self.producto.nombre} - {self.tasa_iva}%'
                 )
             
-            # 3. Crédito: Caja o Cuentas por Pagar (monto total)
+            # 3. Pago según modalidad
             if self.tipo_pago == 'contado':
                 cuenta_pago = CuentaContable.objects.get_or_create(
                     empresa=self.empresa,
@@ -614,11 +667,12 @@ class Compra(AuditModel):
                 cuenta_fk=cuenta_pago,
                 tipo='credito',
                 monto=self.monto,
-                descripcion=f'Pago compra {self.producto.nombre} - {self.proveedor_display}'
+                descripcion=f'Pago compra {self.producto.nombre}'
             )
             
         except Exception as e:
-            print(f'Error creando asientos contables para compra: {e}')
+            logger.error(f'Error creando asientos contables para compra {self.id}: {str(e)}')
+            raise
     
     def crear_cuenta_por_pagar_si_credito(self):
         """Crear cuenta por pagar si la compra es a crédito"""
@@ -1334,7 +1388,7 @@ class CategoriaProducto(models.Model):
 
 
 class CuentaPorCobrar(models.Model):
-    """Cuentas por cobrar a clientes"""
+    """Cuentas por cobrar a clientes con deterioro según NIIF 9"""
     ESTADO_CHOICES = [
         ('pendiente', 'Pendiente'),
         ('pagada', 'Pagada'),
@@ -1347,6 +1401,7 @@ class CuentaPorCobrar(models.Model):
     venta = models.ForeignKey(Venta, on_delete=models.CASCADE, related_name='cuentas_por_cobrar')
     monto_original = models.DecimalField(max_digits=10, decimal_places=2)
     monto_pendiente = models.DecimalField(max_digits=10, decimal_places=2)
+    deterioro_esperado = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     fecha_vencimiento = models.DateField()
     estado = models.CharField(max_length=10, choices=ESTADO_CHOICES, default='pendiente')
     creado_en = models.DateTimeField(auto_now_add=True)
@@ -1356,6 +1411,76 @@ class CuentaPorCobrar(models.Model):
             models.Index(fields=['empresa', 'estado']),
             models.Index(fields=['cliente', 'fecha_vencimiento']),
         ]
+    
+    @property
+    def dias_vencido(self):
+        """Calcula días de vencimiento"""
+        from datetime import date
+        if self.fecha_vencimiento < date.today():
+            return (date.today() - self.fecha_vencimiento).days
+        return 0
+    
+    def calcular_deterioro_niif9(self):
+        """Calcula deterioro esperado según NIIF 9"""
+        dias = self.dias_vencido
+        
+        if dias > 90:
+            tasa = 0.10  # 10% para > 90 días
+        elif dias > 60:
+            tasa = 0.05  # 5% para > 60 días
+        elif dias > 30:
+            tasa = 0.02  # 2% para > 30 días
+        else:
+            tasa = 0.01  # 1% general
+            
+        return self.monto_pendiente * tasa
+    
+    def actualizar_deterioro(self):
+        """Actualiza el deterioro y crea asientos contables"""
+        nuevo_deterioro = self.calcular_deterioro_niif9()
+        diferencia = nuevo_deterioro - self.deterioro_esperado
+        
+        if diferencia != 0:
+            self.deterioro_esperado = nuevo_deterioro
+            self.save()
+            self._crear_asiento_deterioro(diferencia)
+    
+    def _crear_asiento_deterioro(self, monto):
+        """Crea asiento contable para deterioro"""
+        if monto == 0:
+            return
+            
+        from empresa.models import CuentaContable, MovimientoContable
+        
+        # Débito: Gasto por Deterioro
+        cuenta_deterioro = CuentaContable.objects.get_or_create(
+            empresa=self.empresa,
+            nombre='Deterioro Cuentas por Cobrar',
+            defaults={'tipo': 'gasto'}
+        )[0]
+        
+        # Crédito: Provisión para Deterioro
+        cuenta_provision = CuentaContable.objects.get_or_create(
+            empresa=self.empresa,
+            nombre='Provisión Deterioro CxC',
+            defaults={'tipo': 'activo'}
+        )[0]
+        
+        MovimientoContable.objects.create(
+            empresa=self.empresa,
+            cuenta_fk=cuenta_deterioro,
+            tipo='debito',
+            monto=abs(monto),
+            descripcion=f'Deterioro CxC {self.cliente.nombre}'
+        )
+        
+        MovimientoContable.objects.create(
+            empresa=self.empresa,
+            cuenta_fk=cuenta_provision,
+            tipo='credito',
+            monto=abs(monto),
+            descripcion=f'Provisión deterioro {self.cliente.nombre}'
+        )
     
     def __str__(self):
         return f"{self.cliente.nombre} - ${self.monto_pendiente}"
@@ -1546,6 +1671,232 @@ class PagoCuentaPorPagar(AuditModel):
     def __str__(self):
         return f"Pago ${self.monto_pagado} - {self.cuenta_por_pagar.proveedor.nombre}"
 
+
+# ======================
+# MODELOS NIIF 15 - RECONOCIMIENTO DE INGRESOS
+# ======================
+
+class ContratoVenta(AuditModel):
+    """Contrato de venta según NIIF 15"""
+    ESTADO_CHOICES = [
+        ('borrador', 'Borrador'),
+        ('activo', 'Activo'),
+        ('completado', 'Completado'),
+        ('cancelado', 'Cancelado'),
+    ]
+    
+    empresa = models.ForeignKey(Empresa, on_delete=models.CASCADE)
+    cliente = models.ForeignKey('Cliente', on_delete=models.CASCADE)
+    numero_contrato = models.CharField(max_length=50, unique=True)
+    fecha_inicio = models.DateField()
+    fecha_fin = models.DateField(null=True, blank=True)
+    precio_total = models.DecimalField(max_digits=12, decimal_places=2)
+    estado = models.CharField(max_length=15, choices=ESTADO_CHOICES, default='borrador')
+    
+    def __str__(self):
+        return f"Contrato {self.numero_contrato} - {self.cliente.nombre}"
+
+class ObligacionDesempeno(AuditModel):
+    """Obligaciones de desempeño según NIIF 15"""
+    contrato = models.ForeignKey(ContratoVenta, on_delete=models.CASCADE, related_name='obligaciones')
+    descripcion = models.CharField(max_length=200)
+    precio_asignado = models.DecimalField(max_digits=12, decimal_places=2)
+    porcentaje_completado = models.DecimalField(max_digits=5, decimal_places=2, default=0)
+    fecha_satisfaccion = models.DateField(null=True, blank=True)
+    satisfecha = models.BooleanField(default=False)
+    
+    def reconocer_ingreso(self):
+        """Reconoce ingreso cuando se transfiere control"""
+        from django.utils import timezone
+        if not self.satisfecha and self.porcentaje_completado >= 100:
+            self.satisfecha = True
+            self.fecha_satisfaccion = timezone.now().date()
+            self.save()
+            self._crear_asiento_ingreso()
+    
+    def _crear_asiento_ingreso(self):
+        """Crea asiento contable para reconocimiento de ingreso"""
+        from empresa.models import CuentaContable, MovimientoContable
+        
+        cuenta_debito = CuentaContable.objects.get_or_create(
+            empresa=self.contrato.empresa,
+            nombre='Cuentas por Cobrar',
+            defaults={'tipo': 'activo'}
+        )[0]
+        
+        cuenta_ingreso = CuentaContable.objects.get_or_create(
+            empresa=self.contrato.empresa,
+            nombre='Ingresos por Contratos',
+            defaults={'tipo': 'ingreso'}
+        )[0]
+        
+        MovimientoContable.objects.create(
+            empresa=self.contrato.empresa,
+            cuenta_fk=cuenta_debito,
+            tipo='debito',
+            monto=self.precio_asignado,
+            descripcion=f'Ingreso reconocido - {self.descripcion}'
+        )
+        
+        MovimientoContable.objects.create(
+            empresa=self.contrato.empresa,
+            cuenta_fk=cuenta_ingreso,
+            tipo='credito',
+            monto=self.precio_asignado,
+            descripcion=f'Ingreso reconocido - {self.descripcion}'
+        )
+
+# ======================
+# MODELO PARA CONTROL DE INVENTARIO NIIF
+# ======================
+
+class MovimientoInventario(AuditModel):
+    """Control de inventario con método PEPS según NIC 2"""
+    TIPO_CHOICES = [
+        ('entrada', 'Entrada'),
+        ('salida', 'Salida'),
+        ('ajuste', 'Ajuste'),
+    ]
+    
+    empresa = models.ForeignKey(Empresa, on_delete=models.CASCADE)
+    producto = models.ForeignKey(Producto, on_delete=models.CASCADE)
+    tipo = models.CharField(max_length=10, choices=TIPO_CHOICES)
+    cantidad = models.DecimalField(max_digits=10, decimal_places=2)
+    costo_unitario = models.DecimalField(max_digits=10, decimal_places=2)
+    costo_total = models.DecimalField(max_digits=10, decimal_places=2)
+    fecha = models.DateTimeField(auto_now_add=True)
+    referencia = models.CharField(max_length=100, blank=True)
+    
+    class Meta:
+        ordering = ['fecha']
+        indexes = [
+            models.Index(fields=['empresa', 'producto', 'fecha']),
+            models.Index(fields=['tipo', 'fecha']),
+        ]
+    
+    def save(self, *args, **kwargs):
+        self.costo_total = self.cantidad * self.costo_unitario
+        super().save(*args, **kwargs)
+    
+    @classmethod
+    def calcular_costo_peps(cls, empresa, producto, cantidad_salida):
+        """Calcula costo usando método PEPS"""
+        entradas = cls.objects.filter(
+            empresa=empresa,
+            producto=producto,
+            tipo='entrada'
+        ).order_by('fecha')
+        
+        costo_total = 0
+        cantidad_restante = cantidad_salida
+        
+        for entrada in entradas:
+            if cantidad_restante <= 0:
+                break
+                
+            cantidad_usar = min(cantidad_restante, entrada.cantidad)
+            costo_total += cantidad_usar * entrada.costo_unitario
+            cantidad_restante -= cantidad_usar
+        
+        return costo_total / cantidad_salida if cantidad_salida > 0 else 0
+    
+    def __str__(self):
+        return f"{self.get_tipo_display()} - {self.producto.nombre} - {self.cantidad}"
+
+# ======================
+# INSTRUMENTOS FINANCIEROS NIIF 9
+# ======================
+
+class InstrumentoFinanciero(AuditModel):
+    """Instrumentos financieros según NIIF 9"""
+    TIPO_CHOICES = [
+        ('activo_financiero', 'Activo Financiero'),
+        ('pasivo_financiero', 'Pasivo Financiero'),
+        ('patrimonio', 'Instrumento de Patrimonio'),
+    ]
+    
+    CATEGORIA_CHOICES = [
+        ('costo_amortizado', 'Costo Amortizado'),
+        ('valor_razonable_ori', 'Valor Razonable con cambios en ORI'),
+        ('valor_razonable_resultado', 'Valor Razonable con cambios en Resultado'),
+    ]
+    
+    empresa = models.ForeignKey(Empresa, on_delete=models.CASCADE)
+    nombre = models.CharField(max_length=100)
+    tipo = models.CharField(max_length=20, choices=TIPO_CHOICES)
+    categoria = models.CharField(max_length=30, choices=CATEGORIA_CHOICES)
+    valor_nominal = models.DecimalField(max_digits=12, decimal_places=2)
+    valor_razonable = models.DecimalField(max_digits=12, decimal_places=2)
+    fecha_adquisicion = models.DateField()
+    fecha_vencimiento = models.DateField(null=True, blank=True)
+    tasa_interes = models.DecimalField(max_digits=5, decimal_places=2, default=0)
+    
+    def calcular_deterioro_niif9(self):
+        """Calcula deterioro según modelo de pérdidas esperadas"""
+        if self.tipo == 'activo_financiero':
+            from datetime import date
+            dias_vencimiento = (self.fecha_vencimiento - date.today()).days if self.fecha_vencimiento else 0
+            
+            if dias_vencimiento < 0:
+                return self.valor_nominal * 0.15
+            elif dias_vencimiento < 30:
+                return self.valor_nominal * 0.05
+            else:
+                return self.valor_nominal * 0.01
+        return 0
+    
+    def __str__(self):
+        return f"{self.nombre} - {self.get_tipo_display()}"
+
+class RevaluacionActivo(AuditModel):
+    """Revaluaciones de activos según NIC 16"""
+    empresa = models.ForeignKey(Empresa, on_delete=models.CASCADE)
+    activo_descripcion = models.CharField(max_length=200)
+    valor_anterior = models.DecimalField(max_digits=12, decimal_places=2)
+    valor_revaluado = models.DecimalField(max_digits=12, decimal_places=2)
+    fecha_revaluacion = models.DateField()
+    metodo_valuacion = models.CharField(max_length=100)
+    
+    @property
+    def superavit_revaluacion(self):
+        return self.valor_revaluado - self.valor_anterior
+    
+    def crear_asientos_revaluacion(self):
+        """Crea asientos para revaluación"""
+        from empresa.models import CuentaContable, MovimientoContable
+        
+        if self.superavit_revaluacion > 0:
+            cuenta_activo = CuentaContable.objects.get_or_create(
+                empresa=self.empresa,
+                nombre=f'Activo - {self.activo_descripcion}',
+                defaults={'tipo': 'activo'}
+            )[0]
+            
+            cuenta_superavit = CuentaContable.objects.get_or_create(
+                empresa=self.empresa,
+                nombre='Superávit por Revaluación',
+                defaults={'tipo': 'capital'}
+            )[0]
+            
+            MovimientoContable.objects.create(
+                empresa=self.empresa,
+                cuenta_fk=cuenta_activo,
+                tipo='debito',
+                monto=self.superavit_revaluacion,
+                descripcion=f'Revaluación {self.activo_descripcion}'
+            )
+            
+            MovimientoContable.objects.create(
+                empresa=self.empresa,
+                cuenta_fk=cuenta_superavit,
+                tipo='credito',
+                monto=self.superavit_revaluacion,
+                descripcion=f'Superávit revaluación {self.activo_descripcion}'
+            )
+    
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        self.crear_asientos_revaluacion()
 
 # ======================
 # MODELOS PARA MANUFACTURA

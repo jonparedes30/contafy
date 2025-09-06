@@ -26,6 +26,16 @@
                     <button type="button" class="btn btn-outline-secondary btn-sm" onclick="window.print()">
                         <i class="bi bi-printer"></i> Imprimir
                     </button>
+                    <div class="btn-group ml-2" role="group">
+                        <a href="?{% if request.GET.fecha_inicio %}fecha_inicio={{ request.GET.fecha_inicio }}&fecha_fin={{ request.GET.fecha_fin }}&{% endif %}niif=false" 
+                           class="btn btn-sm {% if not formato_niif %}btn-primary{% else %}btn-outline-primary{% endif %}">
+                            Tradicional
+                        </a>
+                        <a href="?{% if request.GET.fecha_inicio %}fecha_inicio={{ request.GET.fecha_inicio }}&fecha_fin={{ request.GET.fecha_fin }}&{% endif %}niif=true" 
+                           class="btn btn-sm {% if formato_niif %}btn-success{% else %}btn-outline-success{% endif %}">
+                            NIIF
+                        </a>
+                    </div>
                 </form>
             </div>
         </div>
@@ -74,8 +84,96 @@
     <!-- Tabla con desglose y totales al final -->
     <div class="card shadow-sm border-0" style="border-radius:1rem;">
         <div class="card-body p-0">
-            <table class="table mb-0" style="font-size:1.13rem;">
-                <tbody>
+            {% if formato_niif %}
+                <!-- Vista NIIF -->
+                <div class="row">
+                    <div class="col-md-6">
+                        <h4 class="text-primary p-3">ACTIVOS</h4>
+                        <table class="table table-sm">
+                            <tbody>
+                                <tr class="table-light"><td colspan="2"><strong>Activos Corrientes</strong></td></tr>
+                                {% for cuenta, valor in reporte_niif.activos_corrientes.items %}
+                                <tr>
+                                    <td>{{ cuenta }}</td>
+                                    <td class="text-right">${{ valor|floatformat:2 }}</td>
+                                </tr>
+                                {% endfor %}
+                                <tr class="table-info"><td><strong>Total Activos Corrientes</strong></td><td class="text-right"><strong>${{ reporte_niif.totales.activos_corrientes|floatformat:2 }}</strong></td></tr>
+                                
+                                <tr class="table-light"><td colspan="2"><strong>Activos No Corrientes</strong></td></tr>
+                                {% for cuenta, valor in reporte_niif.activos_no_corrientes.items %}
+                                <tr>
+                                    <td>{{ cuenta }}</td>
+                                    <td class="text-right">${{ valor|floatformat:2 }}</td>
+                                </tr>
+                                {% empty %}
+                                <tr><td colspan="2" class="text-center text-muted">No hay activos no corrientes</td></tr>
+                                {% endfor %}
+                                <tr class="table-info"><td><strong>Total Activos No Corrientes</strong></td><td class="text-right"><strong>${{ reporte_niif.totales.activos_no_corrientes|floatformat:2 }}</strong></td></tr>
+                                
+                                <tr class="table-primary"><td><strong>TOTAL ACTIVOS</strong></td><td class="text-right"><strong>${{ reporte_niif.totales.total_activos|floatformat:2 }}</strong></td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <h4 class="text-danger p-3">PASIVOS</h4>
+                        <table class="table table-sm">
+                            <tbody>
+                                <tr class="table-light"><td colspan="2"><strong>Pasivos Corrientes</strong></td></tr>
+                                {% for cuenta, valor in reporte_niif.pasivos_corrientes.items %}
+                                <tr>
+                                    <td>{{ cuenta }}</td>
+                                    <td class="text-right">${{ valor|floatformat:2 }}</td>
+                                </tr>
+                                {% empty %}
+                                <tr><td colspan="2" class="text-center text-muted">No hay pasivos corrientes</td></tr>
+                                {% endfor %}
+                                <tr class="table-warning"><td><strong>Total Pasivos Corrientes</strong></td><td class="text-right"><strong>${{ reporte_niif.totales.pasivos_corrientes|floatformat:2 }}</strong></td></tr>
+                                
+                                <tr class="table-light"><td colspan="2"><strong>Pasivos No Corrientes</strong></td></tr>
+                                {% for cuenta, valor in reporte_niif.pasivos_no_corrientes.items %}
+                                <tr>
+                                    <td>{{ cuenta }}</td>
+                                    <td class="text-right">${{ valor|floatformat:2 }}</td>
+                                </tr>
+                                {% empty %}
+                                <tr><td colspan="2" class="text-center text-muted">No hay pasivos no corrientes</td></tr>
+                                {% endfor %}
+                                <tr class="table-warning"><td><strong>Total Pasivos No Corrientes</strong></td><td class="text-right"><strong>${{ reporte_niif.totales.pasivos_no_corrientes|floatformat:2 }}</strong></td></tr>
+                                
+                                <h4 class="text-success p-3 mt-4">PATRIMONIO</h4>
+                                {% for cuenta, valor in reporte_niif.patrimonio.items %}
+                                <tr>
+                                    <td>{{ cuenta }}</td>
+                                    <td class="text-right">${{ valor|floatformat:2 }}</td>
+                                </tr>
+                                {% empty %}
+                                <tr><td colspan="2" class="text-center text-muted">No hay cuentas de patrimonio</td></tr>
+                                {% endfor %}
+                                <tr class="table-success"><td><strong>Total Patrimonio</strong></td><td class="text-right"><strong>${{ reporte_niif.totales.total_patrimonio|floatformat:2 }}</strong></td></tr>
+                                
+                                <tr class="table-success"><td><strong>TOTAL PASIVOS + PATRIMONIO</strong></td><td class="text-right"><strong>${{ reporte_niif.totales.total_pasivos|add:reporte_niif.totales.total_patrimonio|floatformat:2 }}</strong></td></tr>
+                            </tbody>
+                        </table>
+                        
+                        <!-- Verificación de Balance -->
+                        <div class="alert {% if reporte_niif.totales.total_activos == reporte_niif.totales.total_pasivos|add:reporte_niif.totales.total_patrimonio %}alert-success{% else %}alert-danger{% endif %} mt-3">
+                            <small>
+                                <i class="fas fa-{% if reporte_niif.totales.total_activos == reporte_niif.totales.total_pasivos|add:reporte_niif.totales.total_patrimonio %}check{% else %}exclamation-triangle{% endif %}"></i>
+                                {% if reporte_niif.totales.total_activos == reporte_niif.totales.total_pasivos|add:reporte_niif.totales.total_patrimonio %}
+                                    ✅ Balance cuadrado según NIIF
+                                {% else %}
+                                    ❌ Balance no cuadrado
+                                {% endif %}
+                            </small>
+                        </div>
+                    </div>
+                </div>
+            {% else %}
+                <!-- Vista tradicional -->
+                <table class="table mb-0" style="font-size:1.13rem;">
+                    <tbody>
                     <!-- Activos -->
                     <tr><td colspan="2" class="fw-bold text-primary" style="background:#f8f9fa;">Activos - Recursos y bienes de tu empresa</td></tr>
                     {% for cuenta in activos %}
@@ -120,8 +218,9 @@
                         <td class="align-middle fw-bold">Total Patrimonio</td>
                         <td class="align-middle text-end fw-bold" style="color:#198754;">${{ total_patrimonio|floatformat:2 }}</td>
                     </tr>
-                </tbody>
-            </table>
+                    </tbody>
+                </table>
+            {% endif %}
         </div>
     </div>
 

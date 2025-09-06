@@ -3,10 +3,12 @@
 {% block title %}Registrar Venta{% endblock %}
 
 {% block content %}
-<div class="container mt-5" style="max-width: 600px;">
-    <h2 class="mb-4 text-success text-center">Registrar nueva venta</h2>
-
-    <form method="post" class="border p-4 rounded bg-white shadow-sm">
+<div class="container-fluid mt-4">
+    <div class="row justify-content-center">
+        <div class="col-12 col-xl-10">
+            <h2 class="mb-4 text-success text-center">Registrar nueva venta</h2>
+            
+            <form method="post" class="border rounded bg-white shadow-sm p-4">
         {% csrf_token %}
         {% if form.errors %}
             <div class="alert alert-danger"><ul class="mb-0">
@@ -21,247 +23,275 @@
             </ul></div>
         {% endif %}
 
-        <!-- Código de Barras -->
-        <div class="mb-3">
-            <label for="codigo_barras" class="form-label">Código de Barras:</label>
-            <div class="input-group">
-                <input type="text" id="codigo_barras" class="form-control" placeholder="Escanea o escribe el código">
-                <button type="button" id="btn-scanner" class="btn btn-outline-primary">
-                    📷 Escanear
-                </button>
-            </div>
-            <div id="scanner-status" class="form-text"></div>
-        </div>
-        
-        <!-- Contenedor del escáner -->
-        <div id="scanner-container" class="mb-3" style="display: none;">
-            <div class="card">
-                <div class="card-header d-flex justify-content-between align-items-center">
-                    <span>📷 Escáner Activo</span>
-                    <button type="button" id="btn-stop-scanner" class="btn btn-sm btn-danger">
-                        ❌ Detener
-                    </button>
-                </div>
-                <div class="card-body p-2">
-                    <div id="scanner-viewport" style="width: 100%; height: 240px; background: #000;"></div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Cliente -->
-        <div class="mb-3">
-            <label class="form-label">Cliente</label>
-            {% if es_servicios %}
-                <input type="text" class="form-control" name="cliente_nombre" placeholder="Nombre del cliente (opcional)">
-            {% else %}
-            <div class="input-group">
-                {{ form.cliente_fk }}
-                <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#clienteModal">
-                    <i class="bi bi-plus"></i> Nuevo
-                </button>
-            </div>
-            {% endif %}
-        </div>
-
-        <!-- Servicios (solo para empresas de servicios) -->
-        {% if user.empresa.categoria == 'servicios' %}
-        <div class="mb-3">
-            <label for="servicio_id" class="form-label">Servicio *</label>
-            <select class="form-select" id="servicio_id" name="servicio_id">
-                <option value="">Seleccionar servicio...</option>
-                {% for servicio in servicios %}
-                <option value="{{ servicio.id }}" 
-                        data-precio="{{ servicio.precio_base }}"
-                        data-costo="{{ servicio.costo_directo }}"
-                        data-unidad="{{ servicio.unidad_medida }}">
-                    {{ servicio.nombre }} - ${{ servicio.precio_base }}
-                </option>
-                {% endfor %}
-            </select>
-        </div>
-        {% else %}
-        <!-- Modo de venta -->
-        <div class="mb-3">
-            <div class="btn-group w-100" role="group">
-                <input type="radio" class="btn-check" name="modo_venta" id="modo_simple" value="simple" checked>
-                <label class="btn btn-outline-primary" for="modo_simple">
-                    <i class="bi bi-box"></i> Producto Único
-                </label>
-                <input type="radio" class="btn-check" name="modo_venta" id="modo_multiple" value="multiple">
-                <label class="btn btn-outline-success" for="modo_multiple">
-                    <i class="bi bi-cart-plus"></i> Múltiples Productos
-                </label>
-            </div>
-        </div>
-
-        <!-- Venta simple (original) -->
-        <div id="venta-simple">
-            <!-- Producto (para comercio y manufactura) -->
-            <div class="mb-3">
-                {{ form.producto.label_tag }}
-                {{ form.producto }}
-            </div>
-            {% endif %}
-
-            <!-- Cantidad -->
-            <div class="mb-3">
-                {{ form.cantidad.label_tag }}
-                {{ form.cantidad }}
-            </div>
-
-            <!-- Precio Unitario -->
-            <div class="mb-3">
-                {{ form.precio_unitario.label_tag }}
-                {{ form.precio_unitario }}
-            </div>
-        </div>
-
-        <!-- Venta múltiple -->
-        <div id="venta-multiple" style="display: none;">
-            <div class="card mb-3">
-                <div class="card-header">
-                    <h6 class="mb-0">🛍️ Agregar Productos</h6>
-                </div>
-                <div class="card-body">
-                    <div class="row">
-                        <div class="col-md-5">
-                            <select class="form-select" id="producto-multiple-select">
-                                <option value="">Seleccionar producto...</option>
-                                {% for producto in productos_json %}
-                                <option value="{{ producto.id }}" 
-                                        data-nombre="{{ producto.nombre }}"
-                                        data-precio="{{ producto.precio_venta }}"
-                                        data-stock="{{ producto.stock }}">
-                                    {{ producto.nombre }} - ${{ producto.precio_venta }}
-                                </option>
-                                {% endfor %}
-                                {% for servicio in servicios %}
-                                <option value="serv_{{ servicio.id }}" 
-                                        data-nombre="{{ servicio.nombre }}"
-                                        data-precio="{{ servicio.precio_base }}"
-                                        data-stock="999">
-                                    {{ servicio.nombre }} - ${{ servicio.precio_base }}
-                                </option>
-                                {% endfor %}
-                            </select>
-                        </div>
-                        <div class="col-md-2">
-                            <input type="number" class="form-control" id="cantidad-multiple" placeholder="Cant." min="1" value="1">
-                        </div>
-                        <div class="col-md-2">
-                            <input type="number" class="form-control" id="precio-multiple" placeholder="Precio" step="0.01">
-                        </div>
-                        <div class="col-md-3">
-                            <button type="button" class="btn btn-success" id="agregar-producto-multiple">
-                                ➕ Agregar
+                <!-- Fila 1: Código de Barras y Cliente -->
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <label for="codigo_barras" class="form-label">Código de Barras:</label>
+                        <div class="input-group">
+                            <input type="text" id="codigo_barras" class="form-control" placeholder="Escanea o escribe el código">
+                            <button type="button" id="btn-scanner" class="btn btn-outline-primary">
+                                📷 Escanear
                             </button>
                         </div>
+                        <div id="scanner-status" class="form-text"></div>
                     </div>
-                </div>
-            </div>
-
-            <!-- Lista de productos agregados -->
-            <div class="card mb-3">
-                <div class="card-header">
-                    <h6 class="mb-0">📋 Productos en la Venta</h6>
-                </div>
-                <div class="card-body">
-                    <div class="table-responsive">
-                        <table class="table table-sm" id="tabla-productos-multiple">
-                            <thead>
-                                <tr>
-                                    <th>Producto</th>
-                                    <th>Cant.</th>
-                                    <th>Precio</th>
-                                    <th>Subtotal</th>
-                                    <th>Acción</th>
-                                </tr>
-                            </thead>
-                            <tbody id="productos-tbody-multiple">
-                                <tr id="no-productos-multiple">
-                                    <td colspan="5" class="text-center text-muted">No hay productos agregados</td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Checkbox IVA -->
-        <div class="mb-3">
-            <div class="form-check">
-                <input class="form-check-input" type="checkbox" id="incluirIva">
-                <label class="form-check-label" for="incluirIva">
-                    📊 <strong>Incluir IVA</strong> (desmarcar para productos exentos)
-                </label>
-            </div>
-        </div>
-        
-        <!-- Campos de IVA -->
-        <div id="ivaDetails">
-            <div class="card card-body mb-3">
-                <h6 class="text-info mb-3">💰 Detalles del IVA</h6>
-                <div class="row mb-3">
+                    
                     <div class="col-md-6">
-                        <label for="id_monto_neto" class="form-label">Monto Neto:</label>
-                        {{ form.monto_neto }}
-                    </div>
-                    <div class="col-md-6">
-                        <label for="id_tasa_iva" class="form-label">Tasa IVA (%):</label>
-                        {{ form.tasa_iva }}
-                    </div>
-                </div>
-                <div class="row">
-                    <div class="col-md-6">
-                        <label for="id_iva" class="form-label">IVA:</label>
-                        {{ form.iva }}
-                    </div>
-                    <div class="col-md-6">
-                        <label for="id_monto_total" class="form-label">Total:</label>
-                        {{ form.monto }}
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Tipo de Pago -->
-        <div class="mb-3">
-            {{ form.tipo_pago.label_tag }}
-            {{ form.tipo_pago }}
-        </div>
-        
-        <!-- Calculadora de cambio (solo contado) -->
-        <div id="calculadora-cambio-simple" style="display: none;" class="mb-3">
-            <div class="card bg-light">
-                <div class="card-body">
-                    <h6 class="text-primary">💵 Calculadora de Cambio</h6>
-                    <div class="row">
-                        <div class="col-md-4">
-                            <label class="form-label">Total a cobrar:</label>
-                            <div class="h5 text-info" id="total-cobrar-display">$0.00</div>
+                        <label class="form-label">Cliente</label>
+                        {% if es_servicios %}
+                            <input type="text" class="form-control" name="cliente_nombre" placeholder="Nombre del cliente (opcional)">
+                        {% else %}
+                        <div class="input-group">
+                            {{ form.cliente_fk }}
+                            <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#clienteModal">
+                                <i class="bi bi-plus"></i> Nuevo
+                            </button>
                         </div>
-                        <div class="col-md-4">
-                            <label for="monto-recibido-simple" class="form-label">Monto recibido:</label>
-                            <div class="input-group">
-                                <span class="input-group-text">$</span>
-                                <input type="number" class="form-control" id="monto-recibido-simple" step="0.01" placeholder="0.00">
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <!-- Contenedor del escáner -->
+                <div id="scanner-container" class="mb-4" style="display: none;">
+                    <div class="card">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <span>📷 Escáner Activo</span>
+                            <button type="button" id="btn-stop-scanner" class="btn btn-sm btn-danger">
+                                ❌ Detener
+                            </button>
+                        </div>
+                        <div class="card-body p-2">
+                            <div id="scanner-viewport" style="width: 100%; height: 240px; background: #000;"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Fila 2: Servicios o Modo de Venta -->
+                {% if user.empresa.categoria == 'servicios' %}
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <label for="servicio_id" class="form-label">Servicio *</label>
+                        <select class="form-select" id="servicio_id" name="servicio_id">
+                            <option value="">Seleccionar servicio...</option>
+                            {% for servicio in servicios %}
+                            <option value="{{ servicio.id }}" 
+                                    data-precio="{{ servicio.precio_base }}"
+                                    data-costo="{{ servicio.costo_directo }}"
+                                    data-unidad="{{ servicio.unidad_medida }}">
+                                {{ servicio.nombre }} - ${{ servicio.precio_base }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        {{ form.cantidad.label_tag }}
+                        {{ form.cantidad }}
+                    </div>
+                    <div class="col-md-3">
+                        {{ form.precio_unitario.label_tag }}
+                        {{ form.precio_unitario }}
+                    </div>
+                </div>
+                {% else %}
+                <div class="row mb-4">
+                    <div class="col-12">
+                        <label class="form-label">Modo de venta</label>
+                        <div class="btn-group w-100" role="group">
+                            <input type="radio" class="btn-check" name="modo_venta" id="modo_simple" value="simple" checked>
+                            <label class="btn btn-outline-primary" for="modo_simple">
+                                <i class="bi bi-box"></i> Producto Único
+                            </label>
+                            <input type="radio" class="btn-check" name="modo_venta" id="modo_multiple" value="multiple">
+                            <label class="btn btn-outline-success" for="modo_multiple">
+                                <i class="bi bi-cart-plus"></i> Múltiples Productos
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Venta simple -->
+                <div id="venta-simple">
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            {{ form.producto.label_tag }}
+                            {{ form.producto }}
+                        </div>
+                        <div class="col-md-3">
+                            {{ form.cantidad.label_tag }}
+                            {{ form.cantidad }}
+                        </div>
+                        <div class="col-md-3">
+                            {{ form.precio_unitario.label_tag }}
+                            {{ form.precio_unitario }}
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- Venta múltiple -->
+                <div id="venta-multiple" style="display: none;">
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h6 class="mb-0">🛍️ Agregar Productos</h6>
+                                </div>
+                                <div class="card-body">
+                                    <div class="row">
+                                        <div class="col-md-5">
+                                            <select class="form-select" id="producto-multiple-select">
+                                                <option value="">Seleccionar producto...</option>
+                                                {% for producto in productos_json %}
+                                                <option value="{{ producto.id }}" 
+                                                        data-nombre="{{ producto.nombre }}"
+                                                        data-precio="{{ producto.precio_venta }}"
+                                                        data-stock="{{ producto.stock }}">
+                                                    {{ producto.nombre }} - ${{ producto.precio_venta }}
+                                                </option>
+                                                {% endfor %}
+                                                {% for servicio in servicios %}
+                                                <option value="serv_{{ servicio.id }}" 
+                                                        data-nombre="{{ servicio.nombre }}"
+                                                        data-precio="{{ servicio.precio_base }}"
+                                                        data-stock="999">
+                                                    {{ servicio.nombre }} - ${{ servicio.precio_base }}
+                                                </option>
+                                                {% endfor %}
+                                            </select>
+                                        </div>
+                                        <div class="col-md-2">
+                                            <input type="number" class="form-control" id="cantidad-multiple" placeholder="Cant." min="1" value="1">
+                                        </div>
+                                        <div class="col-md-2">
+                                            <input type="number" class="form-control" id="precio-multiple" placeholder="Precio" step="0.01">
+                                        </div>
+                                        <div class="col-md-3">
+                                            <button type="button" class="btn btn-success w-100" id="agregar-producto-multiple">
+                                                ➕ Agregar
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
-                        <div class="col-md-4">
-                            <label class="form-label">Cambio:</label>
-                            <div class="h5 text-success" id="cambio-display-simple">$0.00</div>
+                    </div>
+
+                    <!-- Lista de productos agregados -->
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h6 class="mb-0">📋 Productos en la Venta</h6>
+                                </div>
+                                <div class="card-body">
+                                    <div class="table-responsive">
+                                        <table class="table table-sm" id="tabla-productos-multiple">
+                                            <thead>
+                                                <tr>
+                                                    <th>Producto</th>
+                                                    <th>Cant.</th>
+                                                    <th>Precio</th>
+                                                    <th>Subtotal</th>
+                                                    <th>Acción</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="productos-tbody-multiple">
+                                                <tr id="no-productos-multiple">
+                                                    <td colspan="5" class="text-center text-muted">No hay productos agregados</td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
-            </div>
+
+                <!-- Fila 3: IVA y Tipo de Pago -->
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <div class="form-check mb-3">
+                            <input class="form-check-input" type="checkbox" id="incluirIva">
+                            <label class="form-check-label" for="incluirIva">
+                                📊 <strong>Incluir IVA</strong> (desmarcar para productos exentos)
+                            </label>
+                        </div>
+                        
+                        <!-- Campos de IVA -->
+                        <div id="ivaDetails">
+                            <div class="card card-body">
+                                <h6 class="text-info mb-3">💰 Detalles del IVA</h6>
+                                <div class="row mb-2">
+                                    <div class="col-6">
+                                        <label for="id_monto_neto" class="form-label">Monto Neto:</label>
+                                        {{ form.monto_neto }}
+                                    </div>
+                                    <div class="col-6">
+                                        <label for="id_tasa_iva" class="form-label">Tasa IVA (%):</label>
+                                        {{ form.tasa_iva }}
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-6">
+                                        <label for="id_iva" class="form-label">IVA:</label>
+                                        {{ form.iva }}
+                                    </div>
+                                    <div class="col-6">
+                                        <label for="id_monto_total" class="form-label">Total:</label>
+                                        {{ form.monto }}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            {{ form.tipo_pago.label_tag }}
+                            {{ form.tipo_pago }}
+                        </div>
+                        
+                        <!-- Stock info -->
+                        <div id="stock-info" class="fw-bold text-center mb-3"></div>
+                    </div>
+                </div>
+                
+                <!-- Calculadora de cambio (solo contado) -->
+                <div id="calculadora-cambio-simple" style="display: none;" class="mb-4">
+                    <div class="card bg-light">
+                        <div class="card-body">
+                            <h6 class="text-primary mb-3">💵 Calculadora de Cambio</h6>
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <label class="form-label">Total a cobrar:</label>
+                                    <div class="h5 text-info" id="total-cobrar-display">$0.00</div>
+                                </div>
+                                <div class="col-md-4">
+                                    <label for="monto-recibido-simple" class="form-label">Monto recibido:</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text">$</span>
+                                        <input type="number" class="form-control" id="monto-recibido-simple" step="0.01" placeholder="0.00">
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">Cambio:</label>
+                                    <div class="h5 text-success" id="cambio-display-simple">$0.00</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Botón de guardar -->
+                <div class="row">
+                    <div class="col-12">
+                        <button type="submit" class="btn btn-success btn-lg w-100">💾 Guardar Venta</button>
+                    </div>
+                </div>
+            </form>
         </div>
-
-        <!-- Stock info -->
-        <div id="stock-info" class="fw-bold mb-3 text-center"></div>
-
-        <button type="submit" class="btn btn-success w-100">Guardar Venta</button>
-    </form>
+    </div>
 </div>
 
 <!-- Cargar librería de escáner -->

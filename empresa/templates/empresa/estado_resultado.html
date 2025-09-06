@@ -26,6 +26,16 @@
                     <button type="button" class="btn btn-outline-secondary btn-sm" onclick="window.print()">
                         <i class="bi bi-printer"></i> Imprimir
                     </button>
+                    <div class="btn-group ml-2" role="group">
+                        <a href="?{% if request.GET.fecha_inicio %}fecha_inicio={{ request.GET.fecha_inicio }}&fecha_fin={{ request.GET.fecha_fin }}&{% endif %}niif=false" 
+                           class="btn btn-sm {% if not formato_niif %}btn-primary{% else %}btn-outline-primary{% endif %}">
+                            Tradicional
+                        </a>
+                        <a href="?{% if request.GET.fecha_inicio %}fecha_inicio={{ request.GET.fecha_inicio }}&fecha_fin={{ request.GET.fecha_fin }}&{% endif %}niif=true" 
+                           class="btn btn-sm {% if formato_niif %}btn-success{% else %}btn-outline-success{% endif %}">
+                            NIIF 15
+                        </a>
+                    </div>
                 </form>
             </div>
         </div>
@@ -61,8 +71,93 @@
     <!-- Tabla visual mejorada -->
     <div class="card shadow-sm border-0" style="border-radius:1rem;">
         <div class="card-body p-0">
-            <table class="table mb-0" style="font-size:1.13rem;">
-                <tbody>
+            {% if formato_niif %}
+                <!-- Vista NIIF 15 -->
+                <div class="alert alert-info m-3">
+                    <i class="fas fa-info-circle"></i> <strong>Estado de Resultados según NIIF 15</strong><br>
+                    <small>Incluye reconocimiento de ingresos por contratos y deterioro NIIF 9</small>
+                </div>
+                
+                <table class="table mb-0" style="font-size:1.13rem;">
+                    <tbody>
+                        <!-- Ingresos Ordinarios -->
+                        <tr class="table-success"><td colspan="2"><strong>INGRESOS ORDINARIOS</strong></td></tr>
+                        {% for concepto, valor in reporte_niif.ingresos_ordinarios.items %}
+                        <tr>
+                            <td class="align-middle">{{ concepto }}</td>
+                            <td class="align-middle text-end fw-bold text-success">${{ valor|floatformat:2 }}</td>
+                        </tr>
+                        {% endfor %}
+                        <tr class="table-success">
+                            <td class="align-middle"><strong>Total Ingresos Ordinarios</strong></td>
+                            <td class="align-middle text-end fw-bold">${{ reporte_niif.totales.ingresos_ordinarios|floatformat:2 }}</td>
+                        </tr>
+                        
+                        <!-- Costos de Ventas -->
+                        <tr class="table-warning"><td colspan="2"><strong>COSTOS DE VENTAS</strong></td></tr>
+                        {% for concepto, valor in reporte_niif.costos_ventas.items %}
+                        <tr>
+                            <td class="align-middle">{{ concepto }}</td>
+                            <td class="align-middle text-end fw-bold text-warning">(${{ valor|floatformat:2 }})</td>
+                        </tr>
+                        {% empty %}
+                        <tr><td colspan="2" class="text-center text-muted">No hay costos de ventas registrados</td></tr>
+                        {% endfor %}
+                        
+                        <!-- Utilidad Bruta -->
+                        <tr class="table-primary">
+                            <td class="align-middle"><strong>UTILIDAD BRUTA</strong></td>
+                            <td class="align-middle text-end fw-bold">${{ reporte_niif.totales.utilidad_bruta|floatformat:2 }}</td>
+                        </tr>
+                        
+                        <!-- Gastos Operativos -->
+                        <tr class="table-danger"><td colspan="2"><strong>GASTOS OPERATIVOS</strong></td></tr>
+                        {% for concepto, valor in reporte_niif.gastos_operativos.items %}
+                        <tr>
+                            <td class="align-middle">{{ concepto }}</td>
+                            <td class="align-middle text-end fw-bold text-danger">(${{ valor|floatformat:2 }})</td>
+                        </tr>
+                        {% empty %}
+                        <tr><td colspan="2" class="text-center text-muted">No hay gastos operativos registrados</td></tr>
+                        {% endfor %}
+                        <tr class="table-danger">
+                            <td class="align-middle"><strong>Total Gastos Operativos</strong></td>
+                            <td class="align-middle text-end fw-bold">(${{ reporte_niif.totales.gastos_operativos|floatformat:2 }})</td>
+                        </tr>
+                        
+                        <!-- Utilidad Neta -->
+                        <tr class="{% if reporte_niif.totales.utilidad_neta >= 0 %}table-success{% else %}table-danger{% endif %}">
+                            <td class="align-middle"><strong>UTILIDAD NETA</strong></td>
+                            <td class="align-middle text-end fw-bold" style="font-size:1.3rem;">${{ reporte_niif.totales.utilidad_neta|floatformat:2 }}</td>
+                        </tr>
+                        
+                        <!-- Indicadores -->
+                        <tr class="table-light">
+                            <td class="align-middle">Margen Bruto</td>
+                            <td class="align-middle text-end">
+                                {% if reporte_niif.totales.ingresos_ordinarios > 0 %}
+                                    {{ reporte_niif.totales.utilidad_bruta|div:reporte_niif.totales.ingresos_ordinarios|mul:100|floatformat:1 }}%
+                                {% else %}
+                                    0%
+                                {% endif %}
+                            </td>
+                        </tr>
+                        <tr class="table-light">
+                            <td class="align-middle">Margen Neto</td>
+                            <td class="align-middle text-end">
+                                {% if reporte_niif.totales.ingresos_ordinarios > 0 %}
+                                    {{ reporte_niif.totales.utilidad_neta|div:reporte_niif.totales.ingresos_ordinarios|mul:100|floatformat:1 }}%
+                                {% else %}
+                                    0%
+                                {% endif %}
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            {% else %}
+                <!-- Vista tradicional -->
+                <table class="table mb-0" style="font-size:1.13rem;">
+                    <tbody>
                     <tr>
                         <td class="align-middle text-muted">Ingresos por Ventas</td>
                         <td class="align-middle text-end fw-bold text-primary">
@@ -97,8 +192,9 @@
                             <span class="badge bg-primary ms-2">Resultado</span>
                         </td>
                     </tr>
-                </tbody>
-            </table>
+                    </tbody>
+                </table>
+            {% endif %}
         </div>
     </div>
 </div>
