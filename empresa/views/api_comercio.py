@@ -19,9 +19,17 @@ def test_categorias_api(request):
     })
 
 
+@login_required
+@require_http_methods(["GET", "POST"])
 @csrf_exempt
 def categorias_api(request):
     try:
+        if not request.user.is_authenticated:
+            return JsonResponse({'success': False, 'error': 'Usuario no autenticado'}, status=401)
+        
+        if not hasattr(request.user, 'empresa') or not request.user.empresa:
+            return JsonResponse({'success': False, 'error': 'Usuario sin empresa asignada'}, status=400)
+        
         empresa = request.user.empresa
         
         if request.method == 'GET':
