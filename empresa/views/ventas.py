@@ -320,7 +320,15 @@ def listar_ventas(request):
     promedio_venta = ventas.aggregate(promedio=Avg('monto'))['promedio'] or 0
 
     # Verificar si el usuario es propietario (no empleado)
-    es_propietario = not hasattr(request.user, 'poderes') or request.user.is_superuser
+    # Si el usuario no tiene atributo 'poderes', es propietario
+    # Si es superuser, también puede editar
+    es_propietario = True  # Por defecto, permitir edición
+    if hasattr(request.user, 'poderes'):
+        # Si tiene poderes, es empleado, no propietario
+        es_propietario = False
+    if request.user.is_superuser:
+        # Superuser siempre puede editar
+        es_propietario = True
 
     contexto = {
         'ventas': ventas,

@@ -97,9 +97,8 @@
                 <th>Total</th>
                 <th>Tipo Pago</th>
                 <th>Cliente</th>
-                {% if es_propietario %}
                 <th>Acciones</th>
-                {% endif %}
+                <!-- Debug: es_propietario = {{ es_propietario }} -->
             </tr>
         </thead>
         <tbody>
@@ -120,7 +119,6 @@
                     {% endif %}
                 </td>
                 <td>{{ venta.cliente_display }}</td>
-                {% if es_propietario %}
                 <td>
                     <div class="btn-group" role="group">
                         <a href="{% url 'empresa:editar_venta' venta.id %}" class="btn btn-sm btn-outline-primary" title="Editar">
@@ -131,10 +129,9 @@
                         </button>
                     </div>
                 </td>
-                {% endif %}
             </tr>
             {% empty %}
-            <tr><td colspan="{% if es_propietario %}10{% else %}9{% endif %}" style="text-align:center; color:#888;">No hay ventas registradas o no hay resultados para los filtros seleccionados.</td></tr>
+            <tr><td colspan="10" style="text-align:center; color:#888;">No hay ventas registradas o no hay resultados para los filtros seleccionados.</td></tr>
             {% endfor %}
         </tbody>
     </table>
