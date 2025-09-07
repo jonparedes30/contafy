@@ -99,6 +99,7 @@ urlpatterns = [
     path('venta/listar/', listar_ventas, name='listar_ventas'),
     path('venta/<int:venta_id>/editar/', editar_venta, name='editar_venta'),
     path('venta/<int:venta_id>/eliminar/', eliminar_venta, name='eliminar_venta'),
+    path('api/venta/<int:venta_id>/eliminar/', eliminar_venta, name='api_eliminar_venta'),
 
     
     # URLs de compras

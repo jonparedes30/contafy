@@ -180,7 +180,7 @@ function confirmarEliminar(ventaId, productoNombre) {
         // Usar AJAX en lugar de formulario
         const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value;
         
-        fetch(`/empresa/venta/${ventaId}/eliminar/`, {
+        fetch(`/empresa/api/venta/${ventaId}/eliminar/`, {
             method: 'POST',
             headers: {
                 'X-CSRFToken': csrfToken,

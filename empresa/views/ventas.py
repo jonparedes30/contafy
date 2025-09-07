@@ -334,6 +334,9 @@ def editar_venta(request, venta_id):
     }
     return render(request, 'empresa/editar_venta.html', context)
 
+from django.views.decorators.csrf import csrf_exempt
+
+@csrf_exempt
 def eliminar_venta(request, venta_id):
     """Eliminar venta - AJAX compatible"""
     from django.shortcuts import get_object_or_404
