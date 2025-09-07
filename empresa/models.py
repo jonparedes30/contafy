@@ -346,99 +346,14 @@ class Venta(AuditModel):
             self.aplicar_niif15_si_aplica()
     
     def crear_asientos_contables(self):
-        """Crear partida doble para la venta según NIIF"""
-        from empresa.models import CuentaContable, MovimientoContable
-        import logging
-        logger = logging.getLogger(__name__)
+        """Crear partida doble para la venta usando servicio centralizado"""
+        from empresa.services.contabilidad_service import ContabilidadService
         
         try:
-            # 1. Registrar la venta según tipo de pago
-            if self.tipo_pago == 'contado':
-                cuenta_debito = CuentaContable.objects.get_or_create(
-                    empresa=self.empresa,
-                    nombre='Caja',
-                    defaults={'tipo': 'activo'}
-                )[0]
-            else:
-                cuenta_debito = CuentaContable.objects.get_or_create(
-                    empresa=self.empresa,
-                    nombre='Cuentas por Cobrar',
-                    defaults={'tipo': 'activo'}
-                )[0]
-            
-            MovimientoContable.objects.create(
-                empresa=self.empresa,
-                cuenta_fk=cuenta_debito,
-                tipo='debito',
-                monto=self.monto,
-                descripcion=f'Venta {self.tipo_pago} {self.producto.nombre} - {self.cantidad} unidades'
-            )
-            
-            # 2. IVA por Pagar (NIIF - NIC 12)
-            if self.iva > 0:
-                cuenta_iva_pagar = CuentaContable.objects.get_or_create(
-                    empresa=self.empresa,
-                    nombre='IVA por Pagar',
-                    defaults={'tipo': 'pasivo'}
-                )[0]
-                
-                MovimientoContable.objects.create(
-                    empresa=self.empresa,
-                    cuenta_fk=cuenta_iva_pagar,
-                    tipo='credito',
-                    monto=self.iva,
-                    descripcion=f'IVA venta {self.producto.nombre} - {self.tasa_iva}%'
-                )
-            
-            # 3. Ventas (NIIF 15 - Reconocimiento de ingresos)
-            cuenta_ventas = CuentaContable.objects.get_or_create(
-                empresa=self.empresa,
-                nombre='Ventas',
-                defaults={'tipo': 'ingreso'}
-            )[0]
-            
-            MovimientoContable.objects.create(
-                empresa=self.empresa,
-                cuenta_fk=cuenta_ventas,
-                tipo='credito',
-                monto=self.monto_neto,
-                descripcion=f'Venta {self.producto.nombre} - {self.cantidad} unidades'
-            )
-            
-            # 4. Costo de Ventas (NIC 2 - Inventarios)
-            costo_unitario = self.obtener_costo_peps()
-            costo_total = self.cantidad * costo_unitario
-            
-            if costo_total > 0:
-                cuenta_costo = CuentaContable.objects.get_or_create(
-                    empresa=self.empresa,
-                    nombre='Costo de Ventas',
-                    defaults={'tipo': 'gasto'}
-                )[0]
-                
-                MovimientoContable.objects.create(
-                    empresa=self.empresa,
-                    cuenta_fk=cuenta_costo,
-                    tipo='debito',
-                    monto=costo_total,
-                    descripcion=f'Costo venta {self.producto.nombre} - {self.cantidad} unidades'
-                )
-                
-                cuenta_inventario = CuentaContable.objects.get_or_create(
-                    empresa=self.empresa,
-                    nombre='Inventario',
-                    defaults={'tipo': 'activo'}
-                )[0]
-                
-                MovimientoContable.objects.create(
-                    empresa=self.empresa,
-                    cuenta_fk=cuenta_inventario,
-                    tipo='credito',
-                    monto=costo_total,
-                    descripcion=f'Salida inventario {self.producto.nombre} - {self.cantidad} unidades'
-                )
-            
+            ContabilidadService.crear_asientos_venta(self.empresa, self)
         except Exception as e:
+            import logging
+            logger = logging.getLogger(__name__)
             logger.error(f'Error creando asientos contables para venta {self.id}: {str(e)}')
             raise
     
@@ -614,66 +529,14 @@ class Compra(AuditModel):
             self.crear_cuenta_por_pagar_si_credito()
     
     def crear_asientos_contables(self):
-        """Crear partida doble para la compra según NIIF"""
-        from empresa.models import CuentaContable, MovimientoContable
-        import logging
-        logger = logging.getLogger(__name__)
+        """Crear partida doble para la compra usando servicio centralizado"""
+        from empresa.services.contabilidad_service import ContabilidadService
         
         try:
-            # 1. Inventario (NIC 2 - Valuación al costo)
-            cuenta_inventario = CuentaContable.objects.get_or_create(
-                empresa=self.empresa,
-                nombre='Inventario',
-                defaults={'tipo': 'activo'}
-            )[0]
-            
-            MovimientoContable.objects.create(
-                empresa=self.empresa,
-                cuenta_fk=cuenta_inventario,
-                tipo='debito',
-                monto=self.monto_neto,
-                descripcion=f'Compra {self.producto.nombre} - {self.cantidad} unidades'
-            )
-            
-            # 2. IVA Crédito Fiscal (NIC 12 - Impuestos)
-            if self.iva > 0:
-                cuenta_iva_credito = CuentaContable.objects.get_or_create(
-                    empresa=self.empresa,
-                    nombre='IVA Crédito Fiscal',
-                    defaults={'tipo': 'activo'}
-                )[0]
-                
-                MovimientoContable.objects.create(
-                    empresa=self.empresa,
-                    cuenta_fk=cuenta_iva_credito,
-                    tipo='debito',
-                    monto=self.iva,
-                    descripcion=f'IVA compra {self.producto.nombre} - {self.tasa_iva}%'
-                )
-            
-            # 3. Pago según modalidad
-            if self.tipo_pago == 'contado':
-                cuenta_pago = CuentaContable.objects.get_or_create(
-                    empresa=self.empresa,
-                    nombre='Caja',
-                    defaults={'tipo': 'activo'}
-                )[0]
-            else:
-                cuenta_pago = CuentaContable.objects.get_or_create(
-                    empresa=self.empresa,
-                    nombre='Cuentas por Pagar',
-                    defaults={'tipo': 'pasivo'}
-                )[0]
-            
-            MovimientoContable.objects.create(
-                empresa=self.empresa,
-                cuenta_fk=cuenta_pago,
-                tipo='credito',
-                monto=self.monto,
-                descripcion=f'Pago compra {self.producto.nombre}'
-            )
-            
+            ContabilidadService.crear_asientos_compra(self.empresa, self)
         except Exception as e:
+            import logging
+            logger = logging.getLogger(__name__)
             logger.error(f'Error creando asientos contables para compra {self.id}: {str(e)}')
             raise
     
@@ -744,49 +607,16 @@ class Gasto(AuditModel):
         self.crear_asientos_contables()
     
     def crear_asientos_contables(self):
-        """Crear partida doble para el gasto"""
-        from empresa.models import CuentaContable, MovimientoContable
+        """Crear partida doble para el gasto usando servicio centralizado"""
+        from empresa.services.contabilidad_service import ContabilidadService
         
         try:
-            # Débito: Gastos (Gasto)
-            cuenta_gastos = CuentaContable.objects.get_or_create(
-                empresa=self.empresa,
-                nombre='Gastos',
-                defaults={'tipo': 'gasto'}
-            )[0]
-            
-            MovimientoContable.objects.create(
-                empresa=self.empresa,
-                cuenta_fk=cuenta_gastos,
-                tipo='debito',
-                monto=self.monto,
-                descripcion=self.descripcion
-            )
-            
-            # Crédito: Caja o Cuentas por Pagar según tipo de pago
-            if self.tipo_pago == 'contado':
-                cuenta_credito = CuentaContable.objects.get_or_create(
-                    empresa=self.empresa,
-                    nombre='Caja/Banco',
-                    defaults={'tipo': 'activo'}
-                )[0]
-            else:
-                cuenta_credito = CuentaContable.objects.get_or_create(
-                    empresa=self.empresa,
-                    nombre='Cuentas por Pagar',
-                    defaults={'tipo': 'pasivo'}
-                )[0]
-            
-            MovimientoContable.objects.create(
-                empresa=self.empresa,
-                cuenta_fk=cuenta_credito,
-                tipo='credito',
-                monto=self.monto,
-                descripcion=f"{self.descripcion} - {self.get_tipo_pago_display()}"
-            )
-            
+            ContabilidadService.crear_asientos_gasto(self.empresa, self)
         except Exception as e:
-            print(f'Error creando asientos contables para gasto: {e}')
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.error(f'Error creando asientos contables para gasto {self.id}: {str(e)}')
+            raise
 
 # Movimiento Contable
 
