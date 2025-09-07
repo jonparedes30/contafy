@@ -112,7 +112,8 @@ class Command(BaseCommand):
             
             ajustes_gasto = MovimientoContable.objects.filter(
                 empresa=empresa,
-                descripcion__icontains='Gasto',
+                descripcion__icontains='Gasto'
+            ).filter(
                 descripcion__icontains='AJUSTE AUTOMÁTICO'
             ).count()
             
