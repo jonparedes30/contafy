@@ -136,7 +136,7 @@
                             <td class="align-middle">Margen Bruto</td>
                             <td class="align-middle text-end">
                                 {% if reporte_niif.totales.ingresos_ordinarios > 0 %}
-                                    {{ reporte_niif.totales.utilidad_bruta|div:reporte_niif.totales.ingresos_ordinarios|mul:100|floatformat:1 }}%
+                                    {% widthratio reporte_niif.totales.utilidad_bruta reporte_niif.totales.ingresos_ordinarios 100 %}%
                                 {% else %}
                                     0%
                                 {% endif %}
@@ -146,7 +146,7 @@
                             <td class="align-middle">Margen Neto</td>
                             <td class="align-middle text-end">
                                 {% if reporte_niif.totales.ingresos_ordinarios > 0 %}
-                                    {{ reporte_niif.totales.utilidad_neta|div:reporte_niif.totales.ingresos_ordinarios|mul:100|floatformat:1 }}%
+                                    {% widthratio reporte_niif.totales.utilidad_neta reporte_niif.totales.ingresos_ordinarios 100 %}%
                                 {% else %}
                                     0%
                                 {% endif %}
