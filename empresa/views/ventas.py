@@ -63,7 +63,11 @@ def crear_venta(request):
                     producto = venta.producto
                     producto.stock -= venta.cantidad
                     producto.save()
-                    # 1. Registrar la venta según tipo de pago
+                    
+                    # Crear asientos contables usando el servicio centralizado
+                    venta.crear_asientos_contables()
+                    
+                    # 1. Registrar la venta según tipo de pago (LEGACY - mantener por compatibilidad)
                     if venta.tipo_pago == 'contado':
                         registrar_movimiento_contable(
                             empresa=empresa,
@@ -143,10 +147,7 @@ def crear_venta(request):
                                 monto=costo_total,
                                 descripcion=f"Costo de venta {venta.producto.nombre} (x{venta.cantidad})"
                             )
-                if empresa.categoria == 'servicios':
-                    messages.success(request, f'Servicio registrado: {venta.producto.nombre} - Venta: ${venta.monto}, Costo: ${costo_total}')
-                else:
-                    messages.success(request, 'Venta registrada correctamente.')
+                messages.success(request, 'Venta registrada correctamente.')
                 return redirect('empresa:home')
             except Exception as e:
                 messages.error(request, f'Error al registrar venta: {e}')
@@ -230,59 +231,7 @@ def procesar_venta_servicio(request, empresa):
         messages.error(request, f'Error al registrar venta de servicio: {str(e)}')
         return redirect('empresa:crear_venta')
 
-def procesar_venta_servicio(request, empresa):
-    """Procesar venta específica de servicio"""
-    try:
-        from empresa.models import TipoServicio, Producto
-        
-        servicio_id = request.POST.get('servicio_id')
-        cliente_nombre = request.POST.get('cliente_nombre', '').strip()
-        cantidad = float(request.POST.get('cantidad', 1))
-        precio_unitario = float(request.POST.get('precio_unitario', 0))
-        tipo_pago = request.POST.get('tipo_pago', 'contado')
-        incluye_iva = request.POST.get('incluye_iva') == 'on'
-        tasa_iva = float(request.POST.get('tasa_iva', 12)) if incluye_iva else 0
-        
-        servicio = TipoServicio.objects.get(id=servicio_id, empresa=empresa)
-        
-        # Calcular montos
-        monto_neto = cantidad * precio_unitario
-        iva = monto_neto * (tasa_iva / 100) if incluye_iva else 0
-        monto_total = monto_neto + iva
-        
-        # Crear o buscar producto equivalente
-        producto, created = Producto.objects.get_or_create(
-            empresa=empresa,
-            codigo=f'SERV-{servicio.id}',
-            defaults={
-                'nombre': servicio.nombre,
-                'descripcion': f'Servicio: {servicio.descripcion}',
-                'precio_unitario': servicio.costo_directo,
-                'pvp': servicio.precio_base,
-                'stock': 999999
-            }
-        )
-        
-        # Crear venta
-        venta = Venta.objects.create(
-            empresa=empresa,
-            cliente_nombre=cliente_nombre or 'Cliente General',
-            producto=producto,
-            cantidad=int(cantidad),
-            precio_unitario=precio_unitario,
-            monto_neto=monto_neto,
-            iva=iva,
-            monto=monto_total,
-            tasa_iva=tasa_iva,
-            tipo_pago=tipo_pago
-        )
-        
-        messages.success(request, f'Venta de servicio "{servicio.nombre}" registrada por ${monto_total:.2f}')
-        return redirect('empresa:home')
-        
-    except Exception as e:
-        messages.error(request, f'Error al registrar venta de servicio: {str(e)}')
-        return redirect('empresa:crear_venta')
+
 
 @login_required
 @require_power('puede_registrar_ventas')
@@ -401,21 +350,27 @@ def eliminar_venta(request, venta_id):
     if request.method == 'POST':
         try:
             with transaction.atomic():
-                # Restaurar stock
-                venta.producto.stock += venta.cantidad
-                venta.producto.save()
+                # Guardar datos antes de eliminar
+                producto_nombre = venta.producto.nombre
+                cantidad_restaurar = venta.cantidad
+                producto = venta.producto
                 
                 # Eliminar cuenta por cobrar si existe
                 from empresa.models import CuentaPorCobrar
                 CuentaPorCobrar.objects.filter(venta=venta).delete()
                 
-                # Eliminar venta
-                producto_nombre = venta.producto.nombre
+                # Eliminar venta primero
                 venta.delete()
+                
+                # Restaurar stock después de eliminar
+                producto.stock += cantidad_restaurar
+                producto.save()
                 
                 messages.success(request, f'Venta de {producto_nombre} eliminada correctamente.')
         except Exception as e:
             messages.error(request, f'Error al eliminar venta: {str(e)}')
+            import logging
+            logging.error(f'Error eliminando venta {venta_id}: {str(e)}')
     
     return redirect('empresa:listar_ventas')
 
