@@ -140,6 +140,9 @@
     </table>
 </div>
 
+<!-- Token CSRF para formularios AJAX -->
+{% csrf_token %}
+
 <script>
 function exportarExcel() {
     // Construir URL con los filtros actuales

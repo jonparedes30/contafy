@@ -1,105 +1,118 @@
 {% extends 'empresa/base.html' %}
 
-{% block title %}Editar Venta - Contafy{% endblock %}
+{% block title %}Editar Venta{% endblock %}
 
 {% block content %}
 <div class="container-fluid mt-4">
+    <div class="animated-header mb-4">
+        <h1 class="h2 mb-1">
+            <i class="bi bi-pencil-square"></i> Editar Venta
+        </h1>
+        <p class="mb-0">Modifica los datos de la venta seleccionada</p>
+    </div>
+
     <div class="row">
-        <div class="col-md-8 offset-md-2">
-            <div class="card">
-                <div class="card-header">
-                    <h3 class="card-title">
-                        <i class="bi bi-pencil"></i>
-                        Editar Venta
-                    </h3>
+        <div class="col-md-8">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="bi bi-cart-check"></i> Datos de la Venta</h5>
                 </div>
                 <div class="card-body">
-                    <form method="POST">
+                    <form method="post">
                         {% csrf_token %}
                         
-                        <div class="row">
+                        <div class="row mb-3">
                             <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label for="cliente_nombre" class="form-label">Cliente</label>
-                                    <input type="text" class="form-control" id="cliente_nombre" name="cliente_nombre" 
-                                           value="{{ venta.cliente_nombre }}" placeholder="Nombre del cliente">
-                                </div>
+                                <label for="producto" class="form-label">Producto</label>
+                                <select name="producto_id" id="producto" class="form-select" disabled>
+                                    <option value="{{ venta.producto.id }}" selected>{{ venta.producto.nombre }}</option>
+                                </select>
+                                <small class="text-muted">El producto no se puede cambiar</small>
                             </div>
-                            
                             <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label for="producto" class="form-label">Producto</label>
-                                    <select class="form-control" id="producto" name="producto" disabled>
-                                        <option value="{{ venta.producto.id }}" selected>
-                                            {{ venta.producto.nombre }} ({{ venta.producto.descripcion }})
-                                        </option>
-                                    </select>
-                                    <small class="text-muted">El producto no se puede cambiar al editar</small>
-                                </div>
+                                <label for="cliente_nombre" class="form-label">Cliente</label>
+                                <input type="text" name="cliente_nombre" id="cliente_nombre" 
+                                       class="form-control" value="{{ venta.cliente_nombre }}" 
+                                       placeholder="Nombre del cliente">
                             </div>
                         </div>
-                        
-                        <div class="row">
+
+                        <div class="row mb-3">
                             <div class="col-md-4">
-                                <div class="mb-3">
-                                    <label for="cantidad" class="form-label">Cantidad</label>
-                                    <input type="number" class="form-control" id="cantidad" name="cantidad" 
-                                           value="{{ venta.cantidad }}" min="1" required>
-                                    <small class="text-muted">Stock disponible: {{ venta.producto.stock|add:venta.cantidad }}</small>
-                                </div>
+                                <label for="cantidad" class="form-label">Cantidad</label>
+                                <input type="number" name="cantidad" id="cantidad" 
+                                       class="form-control" value="{{ venta.cantidad }}" 
+                                       min="1" max="{{ venta.producto.stock|add:venta.cantidad }}" required>
+                                <small class="text-muted">Stock disponible: {{ venta.producto.stock|add:venta.cantidad }}</small>
                             </div>
-                            
                             <div class="col-md-4">
-                                <div class="mb-3">
-                                    <label for="precio_unitario" class="form-label">Precio Unitario</label>
-                                    <input type="number" class="form-control" id="precio_unitario" name="precio_unitario" 
-                                           value="{{ venta.precio_unitario }}" step="0.01" min="0" required>
-                                </div>
+                                <label for="precio_unitario" class="form-label">Precio Unitario</label>
+                                <input type="number" name="precio_unitario" id="precio_unitario" 
+                                       class="form-control" value="{{ venta.precio_unitario }}" 
+                                       step="0.01" min="0.01" required>
                             </div>
-                            
                             <div class="col-md-4">
-                                <div class="mb-3">
-                                    <label for="tipo_pago" class="form-label">Tipo de Pago</label>
-                                    <select class="form-control" id="tipo_pago" name="tipo_pago" disabled>
-                                        <option value="{{ venta.tipo_pago }}" selected>{{ venta.get_tipo_pago_display }}</option>
-                                    </select>
-                                    <small class="text-muted">El tipo de pago no se puede cambiar</small>
-                                </div>
+                                <label for="tipo_pago" class="form-label">Tipo de Pago</label>
+                                <select name="tipo_pago" id="tipo_pago" class="form-select" disabled>
+                                    <option value="{{ venta.tipo_pago }}" selected>{{ venta.get_tipo_pago_display }}</option>
+                                </select>
+                                <small class="text-muted">El tipo de pago no se puede cambiar</small>
                             </div>
                         </div>
-                        
-                        <!-- Resumen de cálculos -->
-                        <div class="card bg-light">
-                            <div class="card-body">
-                                <h6>Resumen de la Venta</h6>
-                                <div class="row">
-                                    <div class="col-md-3">
-                                        <strong>Subtotal:</strong>
-                                        <div id="subtotal">${{ venta.monto_neto|floatformat:2 }}</div>
-                                    </div>
-                                    <div class="col-md-3">
-                                        <strong>IVA ({{ venta.tasa_iva }}%):</strong>
-                                        <div id="iva">${{ venta.iva|floatformat:2 }}</div>
-                                    </div>
-                                    <div class="col-md-3">
-                                        <strong>Total:</strong>
-                                        <div id="total" class="text-primary fw-bold">${{ venta.monto|floatformat:2 }}</div>
-                                    </div>
-                                </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-4">
+                                <label class="form-label">Subtotal</label>
+                                <input type="text" id="subtotal" class="form-control" readonly>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">IVA ({{ venta.tasa_iva }}%)</label>
+                                <input type="text" id="iva" class="form-control" readonly>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Total</label>
+                                <input type="text" id="total" class="form-control fw-bold" readonly>
                             </div>
                         </div>
-                        
-                        <div class="mt-4">
+
+                        <div class="d-flex gap-2">
                             <button type="submit" class="btn btn-primary">
-                                <i class="bi bi-check-circle"></i>
-                                Actualizar Venta
+                                <i class="bi bi-check-lg"></i> Actualizar Venta
                             </button>
                             <a href="{% url 'empresa:listar_ventas' %}" class="btn btn-secondary">
-                                <i class="bi bi-arrow-left"></i>
-                                Cancelar
+                                <i class="bi bi-arrow-left"></i> Cancelar
                             </a>
                         </div>
                     </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-info text-white">
+                    <h6 class="mb-0"><i class="bi bi-info-circle"></i> Información Original</h6>
+                </div>
+                <div class="card-body">
+                    <p><strong>Fecha:</strong> {{ venta.fecha|date:'d/m/Y H:i' }}</p>
+                    <p><strong>Producto:</strong> {{ venta.producto.nombre }}</p>
+                    <p><strong>Cantidad Original:</strong> {{ venta.cantidad }}</p>
+                    <p><strong>Precio Original:</strong> ${{ venta.precio_unitario }}</p>
+                    <p><strong>Total Original:</strong> ${{ venta.monto }}</p>
+                    <p><strong>Tipo de Pago:</strong> {{ venta.get_tipo_pago_display }}</p>
+                </div>
+            </div>
+
+            <div class="card border-0 shadow-sm mt-3">
+                <div class="card-header bg-warning text-dark">
+                    <h6 class="mb-0"><i class="bi bi-exclamation-triangle"></i> Advertencias</h6>
+                </div>
+                <div class="card-body">
+                    <ul class="mb-0">
+                        <li>Al cambiar la cantidad, se ajustará automáticamente el stock del producto.</li>
+                        <li>El producto y tipo de pago no se pueden modificar.</li>
+                        <li>Los movimientos contables se mantendrán con los valores originales.</li>
+                    </ul>
                 </div>
             </div>
         </div>
@@ -110,9 +123,13 @@
 document.addEventListener('DOMContentLoaded', function() {
     const cantidadInput = document.getElementById('cantidad');
     const precioInput = document.getElementById('precio_unitario');
+    const subtotalInput = document.getElementById('subtotal');
+    const ivaInput = document.getElementById('iva');
+    const totalInput = document.getElementById('total');
+    
     const tasaIva = {{ venta.tasa_iva }};
     
-    function actualizarCalculos() {
+    function calcularTotales() {
         const cantidad = parseFloat(cantidadInput.value) || 0;
         const precio = parseFloat(precioInput.value) || 0;
         
@@ -120,13 +137,16 @@ document.addEventListener('DOMContentLoaded', function() {
         const iva = subtotal * (tasaIva / 100);
         const total = subtotal + iva;
         
-        document.getElementById('subtotal').textContent = '$' + subtotal.toFixed(2);
-        document.getElementById('iva').textContent = '$' + iva.toFixed(2);
-        document.getElementById('total').textContent = '$' + total.toFixed(2);
+        subtotalInput.value = '$' + subtotal.toFixed(2);
+        ivaInput.value = '$' + iva.toFixed(2);
+        totalInput.value = '$' + total.toFixed(2);
     }
     
-    cantidadInput.addEventListener('input', actualizarCalculos);
-    precioInput.addEventListener('input', actualizarCalculos);
+    cantidadInput.addEventListener('input', calcularTotales);
+    precioInput.addEventListener('input', calcularTotales);
+    
+    // Calcular totales iniciales
+    calcularTotales();
 });
 </script>
 {% endblock %}
