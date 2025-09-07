@@ -97,6 +97,9 @@
                 <th>Total</th>
                 <th>Tipo Pago</th>
                 <th>Cliente</th>
+                {% if es_propietario %}
+                <th>Acciones</th>
+                {% endif %}
             </tr>
         </thead>
         <tbody>
@@ -117,9 +120,21 @@
                     {% endif %}
                 </td>
                 <td>{{ venta.cliente_display }}</td>
+                {% if es_propietario %}
+                <td>
+                    <div class="btn-group" role="group">
+                        <a href="{% url 'empresa:editar_venta' venta.id %}" class="btn btn-sm btn-outline-primary" title="Editar">
+                            <i class="bi bi-pencil"></i>
+                        </a>
+                        <button type="button" class="btn btn-sm btn-outline-danger" onclick="confirmarEliminar({{ venta.id }}, '{{ venta.producto.nombre }}')" title="Eliminar">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </div>
+                </td>
+                {% endif %}
             </tr>
             {% empty %}
-            <tr><td colspan="9" style="text-align:center; color:#888;">No hay ventas registradas o no hay resultados para los filtros seleccionados.</td></tr>
+            <tr><td colspan="{% if es_propietario %}10{% else %}9{% endif %}" style="text-align:center; color:#888;">No hay ventas registradas o no hay resultados para los filtros seleccionados.</td></tr>
             {% endfor %}
         </tbody>
     </table>
@@ -178,5 +193,25 @@ document.addEventListener('DOMContentLoaded', function() {
             document.getElementById('clientesDeudores').innerHTML = '<p class="text-danger mb-0 p-2">Error cargando datos</p>';
         });
 });
+
+function confirmarEliminar(ventaId, productoNombre) {
+    if (confirm(`¿Estás seguro de eliminar la venta de "${productoNombre}"?\n\nEsta acción no se puede deshacer y restaurará el stock del producto.`)) {
+        // Crear formulario para enviar POST
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = `/empresa/venta/${ventaId}/eliminar/`;
+        
+        // Agregar token CSRF
+        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value || '{{ csrf_token }}';
+        const csrfInput = document.createElement('input');
+        csrfInput.type = 'hidden';
+        csrfInput.name = 'csrfmiddlewaretoken';
+        csrfInput.value = csrfToken;
+        form.appendChild(csrfInput);
+        
+        document.body.appendChild(form);
+        form.submit();
+    }
+}
 </script>
 {% endblock %}

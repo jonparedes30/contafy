@@ -97,6 +97,8 @@ urlpatterns = [
     path('venta/crear/', crear_venta, name='crear_venta'),
     path('venta/multiple/', crear_venta_multiple, name='crear_venta_multiple'),
     path('venta/listar/', listar_ventas, name='listar_ventas'),
+    path('venta/<int:venta_id>/editar/', lambda request, venta_id: __import__('empresa.views.ventas', fromlist=['editar_venta']).editar_venta(request, venta_id), name='editar_venta'),
+    path('venta/<int:venta_id>/eliminar/', lambda request, venta_id: __import__('empresa.views.ventas', fromlist=['eliminar_venta']).eliminar_venta(request, venta_id), name='eliminar_venta'),
     
     # URLs de compras
     path('compra/crear/', crear_compra, name='crear_compra'),

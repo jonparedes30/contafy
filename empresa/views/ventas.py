@@ -160,7 +160,7 @@ def crear_venta(request):
             'id': p.id,
             'codigo': p.codigo,
             'codigo_barras': p.codigo_barras or '',
-            'nombre': p.nombre,
+            'nombre': f"{p.nombre} ({p.descripcion})" if p.descripcion else p.nombre,
             'descripcion': p.descripcion or '',
             'precio_costo': float(p.precio_unitario),  # Precio de costo
             'precio_venta': float(p.pvp) if p.pvp else float(p.precio_unitario),  # PVP o precio_unitario como fallback
@@ -319,13 +319,97 @@ def listar_ventas(request):
     total_transacciones = ventas.count()
     promedio_venta = ventas.aggregate(promedio=Avg('monto'))['promedio'] or 0
 
+    # Verificar si el usuario es propietario (no empleado)
+    es_propietario = not hasattr(request.user, 'poderes') or request.user.is_superuser
+
     contexto = {
         'ventas': ventas,
         'total_ventas': total_ventas,
         'total_transacciones': total_transacciones,
         'promedio_venta': promedio_venta,
+        'es_propietario': es_propietario,
     }
     return render(request, 'empresa/listar_ventas.html', contexto)
+
+@login_required
+def editar_venta(request, venta_id):
+    """Editar venta - solo para propietarios"""
+    from django.shortcuts import get_object_or_404
+    
+    # Verificar que sea propietario (no empleado)
+    if hasattr(request.user, 'poderes') and not request.user.is_superuser:
+        messages.error(request, 'Solo el propietario puede editar ventas.')
+        return redirect('empresa:listar_ventas')
+    
+    empresa = request.user.empresa
+    venta = get_object_or_404(Venta, id=venta_id, empresa=empresa)
+    
+    if request.method == 'POST':
+        try:
+            with transaction.atomic():
+                # Restaurar stock anterior
+                venta.producto.stock += venta.cantidad
+                
+                # Actualizar datos
+                venta.cliente_nombre = request.POST.get('cliente_nombre', venta.cliente_nombre)
+                venta.cantidad = int(request.POST.get('cantidad', venta.cantidad))
+                venta.precio_unitario = float(request.POST.get('precio_unitario', venta.precio_unitario))
+                
+                # Recalcular montos
+                venta.monto_neto = venta.cantidad * venta.precio_unitario
+                venta.iva = venta.monto_neto * (venta.tasa_iva / 100)
+                venta.monto = venta.monto_neto + venta.iva
+                
+                # Actualizar stock nuevo
+                venta.producto.stock -= venta.cantidad
+                venta.producto.save()
+                venta.save()
+                
+                messages.success(request, 'Venta actualizada correctamente.')
+                return redirect('empresa:listar_ventas')
+        except Exception as e:
+            messages.error(request, f'Error al actualizar venta: {str(e)}')
+    
+    productos = Producto.objects.filter(empresa=empresa)
+    context = {
+        'venta': venta,
+        'productos': productos
+    }
+    return render(request, 'empresa/editar_venta.html', context)
+
+@login_required
+def eliminar_venta(request, venta_id):
+    """Eliminar venta - solo para propietarios"""
+    from django.shortcuts import get_object_or_404
+    
+    # Verificar que sea propietario (no empleado)
+    if hasattr(request.user, 'poderes') and not request.user.is_superuser:
+        messages.error(request, 'Solo el propietario puede eliminar ventas.')
+        return redirect('empresa:listar_ventas')
+    
+    empresa = request.user.empresa
+    venta = get_object_or_404(Venta, id=venta_id, empresa=empresa)
+    
+    if request.method == 'POST':
+        try:
+            with transaction.atomic():
+                # Restaurar stock
+                venta.producto.stock += venta.cantidad
+                venta.producto.save()
+                
+                # Eliminar cuenta por cobrar si existe
+                from empresa.models import CuentaPorCobrar
+                CuentaPorCobrar.objects.filter(venta=venta).delete()
+                
+                # Eliminar venta
+                producto_nombre = venta.producto.nombre
+                venta.delete()
+                
+                messages.success(request, f'Venta de {producto_nombre} eliminada correctamente.')
+        except Exception as e:
+            messages.error(request, f'Error al eliminar venta: {str(e)}')
+    
+    return redirect('empresa:listar_ventas')
 
 @login_required
 @require_power('puede_registrar_ventas')

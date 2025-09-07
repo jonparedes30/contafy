@@ -1,0 +1,132 @@
+{% extends 'empresa/base.html' %}
+
+{% block title %}Editar Venta - Contafy{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row">
+        <div class="col-md-8 offset-md-2">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <i class="bi bi-pencil"></i>
+                        Editar Venta
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <form method="POST">
+                        {% csrf_token %}
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="cliente_nombre" class="form-label">Cliente</label>
+                                    <input type="text" class="form-control" id="cliente_nombre" name="cliente_nombre" 
+                                           value="{{ venta.cliente_nombre }}" placeholder="Nombre del cliente">
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="producto" class="form-label">Producto</label>
+                                    <select class="form-control" id="producto" name="producto" disabled>
+                                        <option value="{{ venta.producto.id }}" selected>
+                                            {{ venta.producto.nombre }} ({{ venta.producto.descripcion }})
+                                        </option>
+                                    </select>
+                                    <small class="text-muted">El producto no se puede cambiar al editar</small>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label for="cantidad" class="form-label">Cantidad</label>
+                                    <input type="number" class="form-control" id="cantidad" name="cantidad" 
+                                           value="{{ venta.cantidad }}" min="1" required>
+                                    <small class="text-muted">Stock disponible: {{ venta.producto.stock|add:venta.cantidad }}</small>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label for="precio_unitario" class="form-label">Precio Unitario</label>
+                                    <input type="number" class="form-control" id="precio_unitario" name="precio_unitario" 
+                                           value="{{ venta.precio_unitario }}" step="0.01" min="0" required>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label for="tipo_pago" class="form-label">Tipo de Pago</label>
+                                    <select class="form-control" id="tipo_pago" name="tipo_pago" disabled>
+                                        <option value="{{ venta.tipo_pago }}" selected>{{ venta.get_tipo_pago_display }}</option>
+                                    </select>
+                                    <small class="text-muted">El tipo de pago no se puede cambiar</small>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Resumen de cálculos -->
+                        <div class="card bg-light">
+                            <div class="card-body">
+                                <h6>Resumen de la Venta</h6>
+                                <div class="row">
+                                    <div class="col-md-3">
+                                        <strong>Subtotal:</strong>
+                                        <div id="subtotal">${{ venta.monto_neto|floatformat:2 }}</div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <strong>IVA ({{ venta.tasa_iva }}%):</strong>
+                                        <div id="iva">${{ venta.iva|floatformat:2 }}</div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <strong>Total:</strong>
+                                        <div id="total" class="text-primary fw-bold">${{ venta.monto|floatformat:2 }}</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="mt-4">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-check-circle"></i>
+                                Actualizar Venta
+                            </button>
+                            <a href="{% url 'empresa:listar_ventas' %}" class="btn btn-secondary">
+                                <i class="bi bi-arrow-left"></i>
+                                Cancelar
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const cantidadInput = document.getElementById('cantidad');
+    const precioInput = document.getElementById('precio_unitario');
+    const tasaIva = {{ venta.tasa_iva }};
+    
+    function actualizarCalculos() {
+        const cantidad = parseFloat(cantidadInput.value) || 0;
+        const precio = parseFloat(precioInput.value) || 0;
+        
+        const subtotal = cantidad * precio;
+        const iva = subtotal * (tasaIva / 100);
+        const total = subtotal + iva;
+        
+        document.getElementById('subtotal').textContent = '$' + subtotal.toFixed(2);
+        document.getElementById('iva').textContent = '$' + iva.toFixed(2);
+        document.getElementById('total').textContent = '$' + total.toFixed(2);
+    }
+    
+    cantidadInput.addEventListener('input', actualizarCalculos);
+    precioInput.addEventListener('input', actualizarCalculos);
+});
+</script>
+{% endblock %}
