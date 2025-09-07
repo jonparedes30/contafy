@@ -336,71 +336,42 @@ def editar_venta(request, venta_id):
 
 @login_required
 def eliminar_venta(request, venta_id):
-    """Eliminar venta - solo para propietarios"""
+    """Eliminar venta - versión simplificada"""
     from django.shortcuts import get_object_or_404
-    import logging
-    logger = logging.getLogger(__name__)
+    from django.http import HttpResponse
     
-    logger.info(f"DEBUG: Iniciando eliminación de venta {venta_id}")
-    logger.info(f"DEBUG: Método HTTP: {request.method}")
-    logger.info(f"DEBUG: Usuario: {request.user.username}")
-    
-    # Verificar que sea propietario (no empleado)
+    # Verificar permisos
     if hasattr(request.user, 'poderes') and not request.user.is_superuser:
-        logger.warning(f"DEBUG: Usuario {request.user.username} no tiene permisos")
         messages.error(request, 'Solo el propietario puede eliminar ventas.')
         return redirect('empresa:home')
     
+    # Obtener venta
     empresa = request.user.empresa
-    logger.info(f"DEBUG: Empresa: {empresa.nombre}")
-    
-    try:
-        venta = get_object_or_404(Venta, id=venta_id, empresa=empresa)
-        logger.info(f"DEBUG: Venta encontrada: {venta.producto.nombre} - ${venta.monto}")
-    except Exception as e:
-        logger.error(f"DEBUG: Error obteniendo venta: {str(e)}")
-        messages.error(request, f'Venta no encontrada: {str(e)}')
-        return redirect('empresa:home')
+    venta = get_object_or_404(Venta, id=venta_id, empresa=empresa)
     
     if request.method == 'POST':
-        logger.info("DEBUG: Procesando eliminación POST")
         try:
-            with transaction.atomic():
-                # Guardar datos antes de eliminar
-                producto_nombre = venta.producto.nombre
-                cantidad_restaurar = venta.cantidad
-                producto = venta.producto
-                stock_anterior = producto.stock
-                
-                logger.info(f"DEBUG: Producto: {producto_nombre}, Stock anterior: {stock_anterior}, Cantidad a restaurar: {cantidad_restaurar}")
-                
-                # Eliminar cuenta por cobrar si existe
-                from empresa.models import CuentaPorCobrar
-                cuentas_eliminadas = CuentaPorCobrar.objects.filter(venta=venta).count()
-                CuentaPorCobrar.objects.filter(venta=venta).delete()
-                logger.info(f"DEBUG: Cuentas por cobrar eliminadas: {cuentas_eliminadas}")
-                
-                # Eliminar venta primero
-                logger.info(f"DEBUG: Eliminando venta ID {venta.id}")
-                venta.delete()
-                logger.info("DEBUG: Venta eliminada exitosamente")
-                
-                # Restaurar stock después de eliminar
-                producto.stock += cantidad_restaurar
-                producto.save()
-                stock_nuevo = producto.stock
-                logger.info(f"DEBUG: Stock actualizado: {stock_anterior} + {cantidad_restaurar} = {stock_nuevo}")
-                
-                logger.info("DEBUG: Transacción completada exitosamente")
-                messages.success(request, f'Venta de {producto_nombre} eliminada correctamente.')
-                
+            # Guardar datos
+            producto_nombre = venta.producto.nombre
+            cantidad = venta.cantidad
+            producto = venta.producto
+            
+            # Eliminar cuentas por cobrar
+            from empresa.models import CuentaPorCobrar
+            CuentaPorCobrar.objects.filter(venta=venta).delete()
+            
+            # Eliminar venta
+            venta.delete()
+            
+            # Restaurar stock
+            producto.stock += cantidad
+            producto.save()
+            
+            messages.success(request, f'Venta de {producto_nombre} eliminada correctamente.')
+            
         except Exception as e:
-            logger.error(f'DEBUG: Error en transacción: {str(e)}', exc_info=True)
-            messages.error(request, f'Error al eliminar venta: {str(e)}')
-    else:
-        logger.info("DEBUG: Método no es POST, redirigiendo")
+            messages.error(request, f'Error: {str(e)}')
     
-    logger.info("DEBUG: Redirigiendo al home")
     return redirect('empresa:home')
 
 @login_required
