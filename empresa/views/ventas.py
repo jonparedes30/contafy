@@ -336,41 +336,44 @@ def editar_venta(request, venta_id):
 
 @login_required
 def eliminar_venta(request, venta_id):
-    """Eliminar venta - versión simplificada"""
-    from django.shortcuts import get_object_or_404
+    """Eliminar venta - versión de prueba"""
     from django.http import HttpResponse
+    from django.shortcuts import get_object_or_404
+    
+    # Respuesta de prueba para verificar que la URL funciona
+    if request.method == 'GET':
+        return HttpResponse(f"Vista eliminar_venta funciona. Venta ID: {venta_id}. Método: {request.method}")
     
     # Verificar permisos
     if hasattr(request.user, 'poderes') and not request.user.is_superuser:
         messages.error(request, 'Solo el propietario puede eliminar ventas.')
         return redirect('empresa:home')
     
-    # Obtener venta
-    empresa = request.user.empresa
-    venta = get_object_or_404(Venta, id=venta_id, empresa=empresa)
-    
-    if request.method == 'POST':
-        try:
-            # Guardar datos
-            producto_nombre = venta.producto.nombre
-            cantidad = venta.cantidad
-            producto = venta.producto
-            
-            # Eliminar cuentas por cobrar
-            from empresa.models import CuentaPorCobrar
-            CuentaPorCobrar.objects.filter(venta=venta).delete()
-            
-            # Eliminar venta
-            venta.delete()
-            
-            # Restaurar stock
-            producto.stock += cantidad
-            producto.save()
-            
-            messages.success(request, f'Venta de {producto_nombre} eliminada correctamente.')
-            
-        except Exception as e:
-            messages.error(request, f'Error: {str(e)}')
+    try:
+        # Obtener venta
+        empresa = request.user.empresa
+        venta = get_object_or_404(Venta, id=venta_id, empresa=empresa)
+        
+        # Guardar datos
+        producto_nombre = venta.producto.nombre
+        cantidad = venta.cantidad
+        producto = venta.producto
+        
+        # Eliminar cuentas por cobrar
+        from empresa.models import CuentaPorCobrar
+        CuentaPorCobrar.objects.filter(venta=venta).delete()
+        
+        # Eliminar venta
+        venta.delete()
+        
+        # Restaurar stock
+        producto.stock += cantidad
+        producto.save()
+        
+        messages.success(request, f'Venta de {producto_nombre} eliminada correctamente.')
+        
+    except Exception as e:
+        messages.error(request, f'Error: {str(e)}')
     
     return redirect('empresa:home')
 
