@@ -367,13 +367,12 @@ def eliminar_venta(request, venta_id):
                 producto.save()
                 
                 messages.success(request, f'Venta de {producto_nombre} eliminada correctamente.')
-                return redirect('empresa:home')
         except Exception as e:
             messages.error(request, f'Error al eliminar venta: {str(e)}')
             import logging
             logging.error(f'Error eliminando venta {venta_id}: {str(e)}')
     
-    return redirect('empresa:listar_ventas')
+    return redirect('empresa:home')
 
 @login_required
 @require_power('puede_registrar_ventas')
