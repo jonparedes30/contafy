@@ -230,19 +230,62 @@ def balance_general(request):
         total_activos_float = float(total_activos or 0.0)
         total_pasivos_float = float(total_pasivos or 0.0)
         total_patrimonio = total_activos_float - total_pasivos_float
-
-        contexto = {
-            'activos': activos,
-            'pasivos': pasivos,
-            'capital': capital,
-            'total_activos': total_activos_float,
-            'total_pasivos': total_pasivos_float,
-            'total_capital': float(total_capital or 0.0),
-            'total_patrimonio': total_patrimonio,
-            'fecha_inicio': fecha_inicio,
-            'fecha_fin': fecha_fin,
-            'formato_niif': False,
-        }
+        
+        # Verificar si se solicita formato NIIF
+        formato_niif = request.GET.get('niif', 'false') == 'true'
+        
+        if formato_niif:
+            # Estructurar datos según NIIF para Estado de Situación Financiera
+            reporte_niif = {
+                'activos_corrientes': {},
+                'activos_no_corrientes': {},
+                'pasivos_corrientes': {},
+                'pasivos_no_corrientes': {},
+                'patrimonio': {},
+                'totales': {
+                    'activos_corrientes': 0,
+                    'activos_no_corrientes': 0,
+                    'total_activos': total_activos_float,
+                    'pasivos_corrientes': 0,
+                    'pasivos_no_corrientes': 0,
+                    'total_pasivos': total_pasivos_float,
+                    'total_patrimonio': total_patrimonio,
+                }
+            }
+            
+            # Clasificar activos (por simplicidad, todos como corrientes)
+            for activo in activos:
+                reporte_niif['activos_corrientes'][activo['cuenta_fk__nombre']] = activo['valor']
+                reporte_niif['totales']['activos_corrientes'] += activo['valor']
+            
+            # Clasificar pasivos (por simplicidad, todos como corrientes)
+            for pasivo in pasivos:
+                reporte_niif['pasivos_corrientes'][pasivo['cuenta_fk__nombre']] = pasivo['valor']
+                reporte_niif['totales']['pasivos_corrientes'] += pasivo['valor']
+            
+            # Clasificar patrimonio
+            for cap in capital:
+                reporte_niif['patrimonio'][cap['cuenta_fk__nombre']] = cap['valor']
+            
+            contexto = {
+                'reporte_niif': reporte_niif,
+                'formato_niif': True,
+                'fecha_inicio': fecha_inicio,
+                'fecha_fin': fecha_fin,
+            }
+        else:
+            contexto = {
+                'activos': activos,
+                'pasivos': pasivos,
+                'capital': capital,
+                'total_activos': total_activos_float,
+                'total_pasivos': total_pasivos_float,
+                'total_capital': float(total_capital or 0.0),
+                'total_patrimonio': total_patrimonio,
+                'fecha_inicio': fecha_inicio,
+                'fecha_fin': fecha_fin,
+                'formato_niif': False,
+            }
         
         return render(request, 'empresa/balance_general.html', contexto)
         
