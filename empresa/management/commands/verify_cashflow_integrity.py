@@ -106,7 +106,8 @@ class Command(BaseCommand):
             # Contar por tipo de ajuste
             ajustes_venta = MovimientoContable.objects.filter(
                 empresa=empresa,
-                descripcion__icontains='Venta',
+                descripcion__icontains='Venta'
+            ).filter(
                 descripcion__icontains='AJUSTE AUTOMÁTICO'
             ).count()
             
