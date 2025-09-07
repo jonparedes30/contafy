@@ -378,6 +378,32 @@ def eliminar_venta(request, venta_id):
     return redirect('empresa:home')
 
 @login_required
+def test_eliminar_venta(request, venta_id):
+    """Vista de prueba simple sin decoradores"""
+    from django.http import JsonResponse
+    
+    if request.method == 'POST':
+        try:
+            empresa = request.user.empresa
+            venta = Venta.objects.get(id=venta_id, empresa=empresa)
+            producto_nombre = venta.producto.nombre
+            
+            # Eliminar venta
+            venta.delete()
+            
+            return JsonResponse({
+                'success': True, 
+                'message': f'Venta {producto_nombre} eliminada correctamente'
+            })
+        except Exception as e:
+            return JsonResponse({
+                'success': False, 
+                'error': str(e)
+            })
+    
+    return JsonResponse({'method': request.method, 'venta_id': venta_id})
+
+@login_required
 @require_power('puede_registrar_ventas')
 def crear_venta_multiple(request):
     """Vista para crear ventas múltiples"""
