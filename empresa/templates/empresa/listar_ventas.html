@@ -124,7 +124,7 @@
                         <a href="{% url 'empresa:editar_venta' venta.id %}" class="btn btn-sm btn-outline-primary" title="Editar">
                             <i class="bi bi-pencil"></i>
                         </a>
-                        <button type="button" class="btn btn-sm btn-outline-danger" onclick="confirmarEliminar({{ venta.id }}, '{{ venta.producto.nombre }}')" title="Eliminar">
+                        <button type="button" class="btn btn-sm btn-outline-danger" onclick="confirmarEliminar({{ venta.id }}, '{{ venta.producto.nombre|escapejs }}')" title="Eliminar" data-venta-id="{{ venta.id }}">
                             <i class="bi bi-trash"></i>
                         </button>
                     </div>
@@ -195,14 +195,23 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 function confirmarEliminar(ventaId, productoNombre) {
+    console.log('DEBUG JS: Iniciando eliminación de venta', ventaId, productoNombre);
+    
     if (confirm(`¿Estás seguro de eliminar la venta de "${productoNombre}"?\n\nEsta acción no se puede deshacer y restaurará el stock del producto.`)) {
+        console.log('DEBUG JS: Usuario confirmó eliminación');
+        
         // Crear formulario para enviar POST
         const form = document.createElement('form');
         form.method = 'POST';
         form.action = `/empresa/venta/${ventaId}/eliminar/`;
+        form.style.display = 'none';
+        
+        console.log('DEBUG JS: Formulario creado con action:', form.action);
         
         // Agregar token CSRF
         const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value || '{{ csrf_token }}';
+        console.log('DEBUG JS: Token CSRF obtenido:', csrfToken ? 'Sí' : 'No');
+        
         const csrfInput = document.createElement('input');
         csrfInput.type = 'hidden';
         csrfInput.name = 'csrfmiddlewaretoken';
@@ -210,7 +219,10 @@ function confirmarEliminar(ventaId, productoNombre) {
         form.appendChild(csrfInput);
         
         document.body.appendChild(form);
+        console.log('DEBUG JS: Enviando formulario...');
         form.submit();
+    } else {
+        console.log('DEBUG JS: Usuario canceló eliminación');
     }
 }
 </script>
