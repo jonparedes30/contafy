@@ -323,7 +323,7 @@ def editar_venta(request, venta_id):
                 venta.save()
                 
                 messages.success(request, 'Venta actualizada correctamente.')
-                return redirect('empresa:listar_ventas')
+                return redirect('empresa:home')
         except Exception as e:
             messages.error(request, f'Error al actualizar venta: {str(e)}')
     
@@ -367,6 +367,7 @@ def eliminar_venta(request, venta_id):
                 producto.save()
                 
                 messages.success(request, f'Venta de {producto_nombre} eliminada correctamente.')
+                return redirect('empresa:home')
         except Exception as e:
             messages.error(request, f'Error al eliminar venta: {str(e)}')
             import logging
