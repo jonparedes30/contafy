@@ -3,6 +3,10 @@
 
 {% block title %}Ventas Registradas{% endblock %}
 
+{% block extra_css %}
+<link rel="stylesheet" href="{% load static %}{% static 'empresa/css/high-contrast-fix.css' %}">
+{% endblock %}
+
 {% block content %}
 <div class="container-fluid mt-4">
     <div class="animated-header mb-4 d-flex flex-wrap align-items-center">
