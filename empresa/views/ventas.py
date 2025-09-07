@@ -334,74 +334,43 @@ def editar_venta(request, venta_id):
     }
     return render(request, 'empresa/editar_venta.html', context)
 
-@login_required
 def eliminar_venta(request, venta_id):
-    """Eliminar venta - versión de prueba"""
-    from django.http import HttpResponse
+    """Eliminar venta - sin decoradores problemáticos"""
     from django.shortcuts import get_object_or_404
     
-    # Respuesta de prueba para verificar que la URL funciona
-    if request.method == 'GET':
-        return HttpResponse(f"Vista eliminar_venta funciona. Venta ID: {venta_id}. Método: {request.method}")
+    if not request.user.is_authenticated:
+        messages.error(request, 'Debes iniciar sesión.')
+        return redirect('empresa:login')
     
-    # Verificar permisos
     if hasattr(request.user, 'poderes') and not request.user.is_superuser:
         messages.error(request, 'Solo el propietario puede eliminar ventas.')
         return redirect('empresa:home')
     
-    try:
-        # Obtener venta
-        empresa = request.user.empresa
-        venta = get_object_or_404(Venta, id=venta_id, empresa=empresa)
-        
-        # Guardar datos
-        producto_nombre = venta.producto.nombre
-        cantidad = venta.cantidad
-        producto = venta.producto
-        
-        # Eliminar cuentas por cobrar
-        from empresa.models import CuentaPorCobrar
-        CuentaPorCobrar.objects.filter(venta=venta).delete()
-        
-        # Eliminar venta
-        venta.delete()
-        
-        # Restaurar stock
-        producto.stock += cantidad
-        producto.save()
-        
-        messages.success(request, f'Venta de {producto_nombre} eliminada correctamente.')
-        
-    except Exception as e:
-        messages.error(request, f'Error: {str(e)}')
-    
-    return redirect('empresa:home')
-
-@login_required
-def test_eliminar_venta(request, venta_id):
-    """Vista de prueba simple sin decoradores"""
-    from django.http import JsonResponse
-    
     if request.method == 'POST':
         try:
             empresa = request.user.empresa
-            venta = Venta.objects.get(id=venta_id, empresa=empresa)
-            producto_nombre = venta.producto.nombre
+            venta = get_object_or_404(Venta, id=venta_id, empresa=empresa)
             
-            # Eliminar venta
+            producto_nombre = venta.producto.nombre
+            cantidad = venta.cantidad
+            producto = venta.producto
+            
+            from empresa.models import CuentaPorCobrar
+            CuentaPorCobrar.objects.filter(venta=venta).delete()
+            
             venta.delete()
             
-            return JsonResponse({
-                'success': True, 
-                'message': f'Venta {producto_nombre} eliminada correctamente'
-            })
+            producto.stock += cantidad
+            producto.save()
+            
+            messages.success(request, f'Venta de {producto_nombre} eliminada correctamente.')
+            
         except Exception as e:
-            return JsonResponse({
-                'success': False, 
-                'error': str(e)
-            })
+            messages.error(request, f'Error: {str(e)}')
     
-    return JsonResponse({'method': request.method, 'venta_id': venta_id})
+    return redirect('empresa:home')
+
+
 
 @login_required
 @require_power('puede_registrar_ventas')
