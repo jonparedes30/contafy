@@ -335,16 +335,15 @@ def editar_venta(request, venta_id):
     return render(request, 'empresa/editar_venta.html', context)
 
 def eliminar_venta(request, venta_id):
-    """Eliminar venta - sin decoradores problemáticos"""
+    """Eliminar venta - AJAX compatible"""
     from django.shortcuts import get_object_or_404
+    from django.http import JsonResponse
     
     if not request.user.is_authenticated:
-        messages.error(request, 'Debes iniciar sesión.')
-        return redirect('empresa:login')
+        return JsonResponse({'error': 'No autenticado'}, status=401)
     
     if hasattr(request.user, 'poderes') and not request.user.is_superuser:
-        messages.error(request, 'Solo el propietario puede eliminar ventas.')
-        return redirect('empresa:home')
+        return JsonResponse({'error': 'Sin permisos'}, status=403)
     
     if request.method == 'POST':
         try:
@@ -364,11 +363,12 @@ def eliminar_venta(request, venta_id):
             producto.save()
             
             messages.success(request, f'Venta de {producto_nombre} eliminada correctamente.')
+            return JsonResponse({'success': True, 'message': f'Venta de {producto_nombre} eliminada'})
             
         except Exception as e:
-            messages.error(request, f'Error: {str(e)}')
+            return JsonResponse({'error': str(e)}, status=500)
     
-    return redirect('empresa:home')
+    return JsonResponse({'error': 'Método no permitido'}, status=405)
 
 
 

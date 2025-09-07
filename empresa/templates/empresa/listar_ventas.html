@@ -175,34 +175,30 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 function confirmarEliminar(ventaId, productoNombre) {
-    console.log('DEBUG JS: Iniciando eliminación de venta', ventaId, productoNombre);
-    
     if (confirm(`¿Estás seguro de eliminar la venta de "${productoNombre}"?\n\nEsta acción no se puede deshacer y restaurará el stock del producto.`)) {
-        console.log('DEBUG JS: Usuario confirmó eliminación');
         
-        // Crear formulario para enviar POST
-        const form = document.createElement('form');
-        form.method = 'POST';
-        form.action = `/empresa/venta/${ventaId}/eliminar/`;
-        form.style.display = 'none';
+        // Usar AJAX en lugar de formulario
+        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value;
         
-        console.log('DEBUG JS: Formulario creado con action:', form.action);
-        
-        // Agregar token CSRF
-        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value || '{{ csrf_token }}';
-        console.log('DEBUG JS: Token CSRF obtenido:', csrfToken ? 'Sí' : 'No');
-        
-        const csrfInput = document.createElement('input');
-        csrfInput.type = 'hidden';
-        csrfInput.name = 'csrfmiddlewaretoken';
-        csrfInput.value = csrfToken;
-        form.appendChild(csrfInput);
-        
-        document.body.appendChild(form);
-        console.log('DEBUG JS: Enviando formulario...');
-        form.submit();
-    } else {
-        console.log('DEBUG JS: Usuario canceló eliminación');
+        fetch(`/empresa/venta/${ventaId}/eliminar/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': csrfToken,
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({})
+        })
+        .then(response => {
+            if (response.ok) {
+                window.location.href = '/empresa/home/';
+            } else {
+                alert('Error al eliminar la venta');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error al eliminar la venta');
+        });
     }
 }
 </script>
