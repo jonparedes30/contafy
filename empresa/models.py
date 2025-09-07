@@ -807,6 +807,40 @@ class MovimientoContable(AuditModel):
     monto       = models.DecimalField(max_digits=12, decimal_places=2)
     descripcion = models.TextField()
     fecha       = models.DateTimeField(auto_now_add=True)
+    transaccion_id = models.CharField(
+        max_length=50,
+        null=True,
+        blank=True,
+        help_text="ID único para agrupar movimientos de la misma transacción"
+    )
+
+    def save(self, *args, **kwargs):
+        # Asegurar que siempre tenga cuenta_fk
+        if not self.cuenta_fk and self.cuenta_text:
+            cuenta, created = CuentaContable.objects.get_or_create(
+                empresa=self.empresa,
+                nombre=self.cuenta_text,
+                defaults={'tipo': 'activo'}  # Tipo por defecto
+            )
+            self.cuenta_fk = cuenta
+        
+        # Generar transaccion_id si no existe
+        if not self.transaccion_id:
+            import uuid
+            self.transaccion_id = str(uuid.uuid4())[:8]
+        
+        super().save(*args, **kwargs)
+    
+    def clean(self):
+        from django.core.exceptions import ValidationError
+        
+        # Validar que el monto sea positivo
+        if self.monto <= 0:
+            raise ValidationError('El monto debe ser mayor a cero')
+        
+        # Validar que tenga cuenta_fk o cuenta_text
+        if not self.cuenta_fk and not self.cuenta_text:
+            raise ValidationError('Debe especificar una cuenta contable')
 
     def __str__(self):
         return f"{self.cuenta_fk or self.cuenta_text} - {self.tipo} - {self.monto}"
