@@ -1,15 +1,26 @@
 from django.shortcuts import render
 from django.contrib.auth.decorators import login_required
 from datetime import datetime
-import logging
-
-logger = logging.getLogger(__name__)
 
 @login_required
 def estado_resultados_simple(request):
+    from django.http import HttpResponse
+    
+    debug_info = []
+    debug_info.append(f"DEBUG: Usuario autenticado: {request.user.is_authenticated}")
+    debug_info.append(f"DEBUG: Username: {request.user.username}")
+    debug_info.append(f"DEBUG: User ID: {request.user.id}")
+    
     try:
-        logger.info(f"Estado resultados - Usuario: {request.user.username}")
-        logger.info(f"Estado resultados - Empresa: {getattr(request.user, 'empresa', 'No tiene')}")
+        empresa = getattr(request.user, 'empresa', None)
+        debug_info.append(f"DEBUG: Empresa: {empresa}")
+        debug_info.append(f"DEBUG: Tiene empresa: {empresa is not None}")
+        
+        if empresa:
+            debug_info.append(f"DEBUG: Empresa ID: {empresa.id}")
+            debug_info.append(f"DEBUG: Empresa nombre: {empresa.nombre}")
+        
+        debug_info.append("DEBUG: Creando context...")
         
         context = {
             'ventas': 2500.00,
@@ -23,14 +34,20 @@ def estado_resultados_simple(request):
             'formato_niif': False,
         }
         
-        logger.info(f"Estado resultados - Context: {context}")
-        logger.info("Estado resultados - Renderizando template")
+        debug_info.append(f"DEBUG: Context creado: {context}")
+        debug_info.append("DEBUG: Intentando renderizar template...")
         
-        return render(request, 'empresa/estado_resultado.html', context)
+        # Intentar renderizar
+        response = render(request, 'empresa/estado_resultado.html', context)
+        debug_info.append("DEBUG: Template renderizado exitosamente!")
+        return response
         
     except Exception as e:
-        logger.error(f"Error en estado_resultados_simple: {str(e)}")
-        logger.error(f"Tipo de error: {type(e).__name__}")
+        debug_info.append(f"ERROR: {str(e)}")
+        debug_info.append(f"ERROR Tipo: {type(e).__name__}")
         import traceback
-        logger.error(f"Traceback: {traceback.format_exc()}")
-        raise
+        debug_info.append(f"ERROR Traceback: {traceback.format_exc()}")
+        
+        # Retornar debug info como HTML
+        debug_html = "<h1>DEBUG Estado Resultados</h1><pre>" + "\n".join(debug_info) + "</pre>"
+        return HttpResponse(debug_html, content_type="text/html")
