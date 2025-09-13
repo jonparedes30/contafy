@@ -1,901 +1,273 @@
-{% extends 'empresa/base.html' %}
+{% extends 'base.html' %}
 {% load static %}
 
 {% block title %}{{ leccion.titulo }} - Academia CONTAFY{% endblock %}
 
 {% block extra_css %}
 <link rel="stylesheet" href="{% static 'empresa/css/aprendizaje.css' %}">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 {% endblock %}
 
 {% block content %}
-<div class="lesson-container">
-<div class="container-fluid">
-    <!-- Progress Bar -->
-    <div class="row mb-3">
-        <div class="col-12">
-            <div class="progress" style="height: 12px; border-radius: 10px;">
-                <div class="progress-bar-custom" id="progressBar" style="width: 0%"></div>
+<div class="academia-container">
+    <!-- Header con progreso -->
+    <div class="academia-header">
+        <div class="d-flex align-items-center">
+            <a href="{% url 'empresa:aprendizaje' %}" class="btn btn-outline-secondary me-3">
+                <i class="fas fa-arrow-left"></i>
+            </a>
+            <h4 class="mb-0">{{ leccion.titulo }}</h4>
+        </div>
+        
+        <div class="progress-bar">
+            <div class="progress-fill" style="width: 0%"></div>
+        </div>
+        
+        <div class="xp-counter">
+            <i class="fas fa-star"></i>
+            <span>{{ user.perfil_aprendizaje.xp_total|default:0 }}</span>
+        </div>
+    </div>
+
+    <!-- Información de la lección -->
+    <div class="leccion-info mb-4">
+        <div class="row">
+            <div class="col-md-8">
+                <p class="text-muted">{{ leccion.contenido }}</p>
             </div>
-            <div class="d-flex justify-content-between align-items-center mt-2">
-                <small class="text-muted">Progreso</small>
-                <div class="d-flex align-items-center">
-                    <div id="stepIndicators" class="d-flex me-3"></div>
-                    <small class="text-muted"><span id="currentStep">1</span> de <span id="totalSteps">4</span></small>
+            <div class="col-md-4 text-end">
+                <div class="leccion-meta">
+                    <span class="badge bg-primary me-2">
+                        <i class="fas fa-clock"></i> {{ leccion.tiempo_estimado }} min
+                    </span>
+                    <span class="badge bg-success">
+                        <i class="fas fa-star"></i> {{ leccion.puntos_xp }} XP
+                    </span>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Lesson Content -->
-    <div class="row justify-content-center">
-        <div class="col-lg-8">
-            <div class="card lesson-card shadow-lg border-0">
-                <div class="card-body p-5">
-                    
-                    <!-- Step 1: Theory -->
-                    <div class="lesson-step" id="step-theory">
-                        <div class="text-center mb-4">
-                            <div class="lesson-icon">
-                                <i class="fas fa-lightbulb fa-3x text-warning"></i>
-                            </div>
-                            <h2 class="mt-3">💡 Aprende el Concepto</h2>
-                        </div>
-                        
-                        <div class="theory-content bg-light p-4 rounded">
-                            <p class="lead" id="theoryText"></p>
-                        </div>
-                        
-                        <div class="text-center mt-4">
-                            <button class="btn btn-duolingo btn-lg" onclick="nextStep()">
-                                <i class="fas fa-arrow-right"></i> ¡Entendido!
-                            </button>
-                        </div>
-                    </div>
-
-                    <!-- Step 2: Practice Steps -->
-                    <div class="lesson-step d-none" id="step-practice">
-                        <div class="text-center mb-4">
-                            <div class="lesson-icon">
-                                <i class="fas fa-hands-helping fa-3x text-success"></i>
-                            </div>
-                            <h2 class="mt-3">🎯 Practica en CONTAFY</h2>
-                        </div>
-                        
-                        <div class="mb-3">
-                            <label for="selectSimulacion" class="form-label">Ejecutar simulación (sandbox)</label>
-                            <div class="d-flex gap-2">
-                                <select id="selectSimulacion" class="form-select w-auto">
-                                    <option value="">-- Seleccionar --</option>
-                                </select>
-                                <select id="selectEscenario" class="form-select w-auto d-none">
-                                    <option value="">-- Escenario --</option>
-                                </select>
-                                <button id="btnStartSim" class="btn btn-outline-secondary" onclick="startSimulacion()">Iniciar</button>
-                            </div>
-                        </div>
-
-                        <div id="practiceContent">
-                            <!-- Dynamic practice steps -->
-                        </div>
-                        
-                        <div class="text-center mt-4">
-                            <button class="btn btn-success btn-lg" onclick="nextStep()">
-                                <i class="fas fa-check"></i> ¡Completado!
-                            </button>
-                        </div>
-                    </div>
-
-                    <!-- Step 3: Quiz -->
-                    <div class="lesson-step d-none" id="step-quiz">
-                        <div class="text-center mb-4">
-                            <div class="lesson-icon">
-                                <i class="fas fa-brain fa-3x text-info"></i>
-                            </div>
-                            <h2 class="mt-3">🧠 Demuestra lo que Sabes</h2>
-                        </div>
-                        
-                        <div id="quizContent">
-                            <!-- Dynamic quiz questions -->
-                        </div>
-                    </div>
-
-                    <!-- Step 4: Completion -->
-                    <div class="lesson-step d-none" id="step-completion">
-                        <div class="completion-celebration">
-                            <div class="completion-animation">
-                                <i class="fas fa-trophy fa-4x text-warning mb-3 trophy-icon"></i>
-                            </div>
-                            <h2 class="text-success">🎉 ¡Lección Completada!</h2>
-                            <p class="lead">Has ganado <strong id="xpEarned">50</strong> puntos XP</p>
-                            
-                            <div class="mt-4">
-                                <button class="btn btn-primary btn-lg me-3" onclick="completeLesson()">
-                                    <i class="fas fa-arrow-right"></i> Siguiente Lección
-                                </button>
-                                <button class="btn btn-outline-secondary" onclick="goToModule()">
-                                    <i class="fas fa-list"></i> Ver Módulo
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-
+    <!-- Pasos de la lección -->
+    <div class="pasos-container">
+        {% for paso in leccion.pasos %}
+        <div class="paso-item" data-step="{{ forloop.counter0 }}">
+            <div class="paso-header">
+                <div class="paso-numero pendiente">
+                    {{ forloop.counter }}
                 </div>
+                <div class="paso-titulo">
+                    {{ paso.titulo }}
+                </div>
+                <div class="paso-check">
+                    <i class="fas fa-check"></i>
+                </div>
+            </div>
+            
+            <div class="paso-contenido">
+                <div class="paso-descripcion mb-3">
+                    {{ paso.descripcion }}
+                </div>
+                
+                {% if paso.accion == 'leer' %}
+                    <div class="paso-lectura">
+                        <p>{{ paso.contenido|default:"Contenido de lectura aquí." }}</p>
+                        <button type="button" class="btn-duolingo btn-primary" onclick="academia.markStepCompleted({{ forloop.counter0 }})">
+                            Continuar
+                        </button>
+                    </div>
+                
+                {% elif paso.accion == 'quiz' %}
+                    <div class="paso-quiz">
+                        <div class="quiz-pregunta mb-3">
+                            <h5>{{ paso.datos.pregunta }}</h5>
+                        </div>
+                        <div class="quiz-opciones">
+                            {% for opcion in paso.datos.opciones %}
+                            <button type="button" class="btn btn-outline-primary d-block w-100 mb-2 quiz-opcion" 
+                                    data-correcta="{{ forloop.counter0 == paso.datos.correcta }}"
+                                    onclick="academia.handleQuizAnswer(this, {{ forloop.counter0 }})">
+                                {{ opcion }}
+                            </button>
+                            {% endfor %}
+                        </div>
+                    </div>
+                
+                {% elif paso.accion == 'simulacion' %}
+                    <div class="paso-simulacion">
+                        <div class="sandbox-badge">
+                            <i class="fas fa-shield-alt"></i>
+                            Práctica (Sandbox)
+                        </div>
+                        <p class="mb-3">Esta simulación se ejecuta en un entorno seguro. Tus acciones no afectarán datos reales.</p>
+                        
+                        {% if paso.datos.tipo == 'venta' %}
+                            <button type="button" class="btn-duolingo btn-secondary" 
+                                    data-action="start-simulation"
+                                    data-tipo-simulacion="1"
+                                    data-leccion-id="{{ leccion.id }}">
+                                <i class="fas fa-cash-register"></i>
+                                Iniciar Simulación de Venta
+                            </button>
+                        {% elif paso.datos.tipo == 'receta' %}
+                            <button type="button" class="btn-duolingo btn-secondary" 
+                                    data-action="start-simulation"
+                                    data-tipo-simulacion="2"
+                                    data-leccion-id="{{ leccion.id }}">
+                                <i class="fas fa-clipboard-list"></i>
+                                Iniciar Simulación de Receta
+                            </button>
+                        {% elif paso.datos.tipo == 'servicio' %}
+                            <button type="button" class="btn-duolingo btn-secondary" 
+                                    data-action="start-simulation"
+                                    data-tipo-simulacion="3"
+                                    data-leccion-id="{{ leccion.id }}">
+                                <i class="fas fa-handshake"></i>
+                                Iniciar Simulación de Servicio
+                            </button>
+                        {% endif %}
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Botones de navegación -->
+    <div class="navegacion-leccion mt-4">
+        <div class="row">
+            <div class="col-6">
+                {% if leccion_anterior %}
+                <a href="{% url 'empresa:leccion_interactiva' leccion_anterior.id %}" class="btn btn-outline-secondary">
+                    <i class="fas fa-chevron-left"></i> Anterior
+                </a>
+                {% endif %}
+            </div>
+            <div class="col-6 text-end">
+                {% if leccion_siguiente %}
+                <a href="{% url 'empresa:leccion_interactiva' leccion_siguiente.id %}" class="btn-duolingo btn-primary">
+                    Siguiente <i class="fas fa-chevron-right"></i>
+                </a>
+                {% else %}
+                <button type="button" class="btn-duolingo btn-success" onclick="academia.completarLeccion()">
+                    <i class="fas fa-trophy"></i> Completar Lección
+                </button>
+                {% endif %}
             </div>
         </div>
     </div>
-</div>
 
-<style>
-.lesson-step {
-    min-height: 400px;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-}
-
-.lesson-icon {
-    animation: bounce 2s infinite;
-}
-
-@keyframes bounce {
-    0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
-    40% { transform: translateY(-10px); }
-    60% { transform: translateY(-5px); }
-}
-
-.btn {
-    transition: all 0.3s ease;
-    transform: scale(1);
-}
-
-.btn:hover {
-    transform: scale(1.05);
-    box-shadow: 0 8px 25px rgba(0,0,0,0.15);
-}
-
-.card {
-    border-radius: 20px;
-    box-shadow: 0 10px 40px rgba(0,0,0,0.1);
-}
-
-.progress {
-    border-radius: 10px;
-    background: #e9ecef;
-}
-
-.progress-bar {
-    border-radius: 10px;
-    transition: width 0.6s ease;
-}
-
-.completion-animation {
-    animation: pulse 1.5s infinite;
-}
-
-@keyframes pulse {
-    0% { transform: scale(1); }
-    50% { transform: scale(1.1); }
-    100% { transform: scale(1); }
-}
-
-.practice-step {
-    background: linear-gradient(135deg, #e3f2fd 0%, #f3e5f5 100%);
-    border-radius: 15px;
-    padding: 20px;
-    margin: 15px 0;
-    border-left: 5px solid #2196f3;
-}
-
-.quiz-option {
-    background: #f8f9fa;
-    border: 2px solid #dee2e6;
-    border-radius: 10px;
-    padding: 15px;
-    margin: 10px 0;
-    cursor: pointer;
-    transition: all 0.3s;
-}
-
-.quiz-option:hover {
-    background: #e9ecef;
-    border-color: #007bff;
-}
-
-.quiz-option.correct {
-    background: #d4edda;
-    border-color: #28a745;
-}
-
-.quiz-option.incorrect {
-    background: #f8d7da;
-    border-color: #dc3545;
-}
-</style>
-
-<script>
-let currentStep = 1;
-let totalSteps = 4;
-let lessonData = null;
-let currentQuiz = 0;
-let score = 0;
-
-document.addEventListener('DOMContentLoaded', function() {
-    // Cargar datos de la lección proporcionados por el servidor
-    // Variables inyectadas desde Django
-    const pasosServer = {{ leccion_pasos_json|default:'null'|safe }};
-    const contenidoTeoria = {{ leccion_contenido_js|default:'""'|safe }};
-    if (pasosServer && Array.isArray(pasosServer) && pasosServer.length > 0) {
-        lessonData = {
-            teoria: contenidoTeoria || 'Lee la teoría proporcionada en la lección.',
-            pasos: pasosServer.filter(p => p.tipo === 'practica' || p.tipo === 'teoria'),
-            quiz: pasosServer.filter(p => p.tipo === 'quiz')
-        };
-        totalSteps = pasosServer.length + 1;
-    } else {
-        lessonData = {
-            teoria: contenidoTeoria || 'Lee la teoría proporcionada en la lección.',
-            pasos: [],
-            quiz: []
-        };
-    }
-
-    // Si la lección incluye un bloque quiz dentro de pasos, intentar mapearlo
-    // (puede extenderse más tarde para campos específicos)
-    // Inicializar
-    initializeLesson();
-    // Request available simulation types to populate selector
-    fetch('{% url "empresa:simulacion_tipos_api" %}')
-        .then(r => r.json())
-        .then(data => {
-            if (data && data.ok && Array.isArray(data.tipos)) {
-                populateSimulaciones(data.tipos);
-                // add the change handler once to avoid duplicates
-                const sel = document.getElementById('selectSimulacion');
-                if (sel && !sel._simChangeAttached) {
-                    sel._simChangeAttached = true;
-                    sel.addEventListener('change', function() {
-                        const val = sel.value;
-                        const esc = document.getElementById('selectEscenario');
-                        if (!val) { esc.classList.add('d-none'); return; }
-                        // Request escenarios for selected tipo
-                        fetch('{% url "empresa:simulacion_escenarios_api" %}?tipo_id=' + val)
-                            .then(r => r.json())
-                            .then(data => {
-                                esc.innerHTML = '<option value="">-- Escenario --</option>';
-                                if (data && data.ok && Array.isArray(data.escenarios)) {
-                                    data.escenarios.forEach(e => {
-                                        const o = document.createElement('option'); o.value = e.id; o.textContent = e.nombre; esc.appendChild(o);
-                                    });
-                                    esc.classList.remove('d-none');
-                                } else {
-                                    esc.classList.add('d-none');
-                                }
-                            }).catch(() => esc.classList.add('d-none'));
-                    });
-                }
-            }
-        }).catch(() => {});
-});
-
-function initializeLesson() {
-    // Set theory content
-    document.getElementById('theoryText').textContent = lessonData.teoria;
-    
-    // Set XP
-    document.getElementById('xpEarned').textContent = '{{ leccion.puntos_xp }}';
-    
-    // Initialize step indicators
-    initializeStepIndicators();
-    
-    updateProgress();
-}
-
-function initializeStepIndicators() {
-    const container = document.getElementById('stepIndicators');
-    container.innerHTML = '';
-    
-    for (let i = 1; i <= totalSteps; i++) {
-        const indicator = document.createElement('div');
-        indicator.className = 'step-indicator';
-        indicator.id = `step-indicator-${i}`;
-        indicator.textContent = i;
-        
-        if (i === 1) {
-            indicator.classList.add('active');
-        }
-        
-        container.appendChild(indicator);
-    }
-}
-
-function nextStep() {
-    // Hide current step
-    document.getElementById(`step-${getStepName(currentStep)}`).classList.add('d-none');
-    
-    currentStep++;
-    
-    if (currentStep === 2) {
-        showPracticeStep();
-    } else if (currentStep === 3) {
-        showQuizStep();
-    } else if (currentStep === 4) {
-        showCompletionStep();
-    }
-    
-    updateProgress();
-}
-
-function getStepName(step) {
-    const steps = ['', 'theory', 'practice', 'quiz', 'completion'];
-    return steps[step];
-}
-
-function showPracticeStep() {
-    const practiceDiv = document.getElementById('practiceContent');
-    let html = '';
-    
-    lessonData.pasos.forEach((paso, index) => {
-        html += `
-            <div class="practice-step">
-                <h4><i class="fas fa-play-circle text-primary"></i> ${paso.titulo}</h4>
-                <p>${paso.descripcion}</p>
-                <div class="alert alert-info">
-                    <strong>En CONTAFY:</strong> ${getPracticeInstructions(paso)}
-                </div>
-                <div class="d-flex justify-content-end">
-                    <button id="marcar-paso-${index}" class="btn btn-outline-primary btn-sm" onclick="marcarPaso(${index})">Marcar paso completado</button>
-                </div>
-            </div>
-        `;
-    });
-    
-    practiceDiv.innerHTML = html;
-    document.getElementById('step-practice').classList.remove('d-none');
-}
-
-function mostrarToast(message, type = 'success') {
-    const el = document.createElement('div');
-    el.className = `alert toast-${type}`;
-    el.style.position = 'fixed';
-    el.style.bottom = '20px';
-    el.style.right = '20px';
-    el.style.zIndex = 1050;
-    el.style.padding = '15px 20px';
-    el.style.borderRadius = '15px';
-    el.style.boxShadow = '0 8px 25px rgba(0,0,0,0.15)';
-    el.innerHTML = `<i class="fas fa-${type === 'success' ? 'check' : 'times'} me-2"></i>${message}`;
-    document.body.appendChild(el);
-    
-    // Add sound effect (optional)
-    if (type === 'success') {
-        playSuccessSound();
-    }
-    
-    setTimeout(() => {
-        el.style.opacity = '0';
-        el.style.transform = 'translateY(20px)';
-        setTimeout(() => el.remove(), 300);
-    }, 3000);
-}
-
-function playSuccessSound() {
-    // Create a simple success sound using Web Audio API
-    try {
-        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-        const oscillator = audioContext.createOscillator();
-        const gainNode = audioContext.createGain();
-        
-        oscillator.connect(gainNode);
-        gainNode.connect(audioContext.destination);
-        
-        oscillator.frequency.setValueAtTime(800, audioContext.currentTime);
-        oscillator.frequency.setValueAtTime(1000, audioContext.currentTime + 0.1);
-        
-        gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
-        gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.2);
-        
-        oscillator.start(audioContext.currentTime);
-        oscillator.stop(audioContext.currentTime + 0.2);
-    } catch (e) {
-        // Fallback: no sound if Web Audio API not supported
-    }
-}
-
-function createConfetti() {
-    for (let i = 0; i < 50; i++) {
-        setTimeout(() => {
-            const confetti = document.createElement('div');
-            confetti.className = 'confetti';
-            confetti.style.left = Math.random() * 100 + 'vw';
-            confetti.style.backgroundColor = ['#f39c12', '#e74c3c', '#3498db', '#2ecc71', '#9b59b6'][Math.floor(Math.random() * 5)];
-            confetti.style.animationDelay = Math.random() * 2 + 's';
-            document.body.appendChild(confetti);
-            
-            setTimeout(() => confetti.remove(), 3000);
-        }, i * 50);
-    }
-}
-
-function marcarPaso(pasoIndex) {
-    const url = '{% url "empresa:aprendizaje_paso_completado" %}';
-    const payload = {
-        leccion_id: '{{ leccion.id }}',
-        paso_index: pasoIndex,
-        micro_xp: 5
-    };
-
-    fetch(url, {
-        method: 'POST',
-        headers: {
-            'X-CSRFToken': getCookie('csrftoken'),
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(payload)
-    }).then(r => r.json()).then(data => {
-        if (data.ok) {
-            mostrarToast('Paso registrado. +'+(data.resultado ? data.resultado.xp_otorgada : 5)+' XP');
-            // Desactivar botón
-            try {
-                const btn = document.getElementById(`marcar-paso-${pasoIndex}`);
-                if (btn) {
-                    btn.disabled = true;
-                    btn.textContent = 'Completado';
-                    btn.classList.remove('btn-outline-primary');
-                    btn.classList.add('btn-success');
-                }
-            } catch (e) {}
-        } else {
-            mostrarToast(data.message || 'Paso ya registrado');
-        }
-    }).catch(() => mostrarToast('Error al registrar paso'));
-}
-
-function getPracticeInstructions(paso) {
-    try {
-        const datos = paso.datos || {};
-        if (paso.accion === 'crear_producto') {
-            const nombre = datos.nombre || 'Nuevo Producto';
-            const codigo = datos.codigo || 'AUTO';
-            const precio = datos.precio_venta ? `$${datos.precio_venta}` : 'establece un precio';
-            return `Ve a "Inventario > + Nuevo Producto" y crea: ${nombre}, código ${codigo}, precio ${precio}`;
-        } else if (paso.accion === 'crear_venta') {
-            const cantidad = datos.cantidad || 1;
-            const producto = datos.producto || 'el producto creado';
-            return `Ve a "Transacciones > + Nueva Venta" y vende ${cantidad} unidades de ${producto}`;
-        }
-    } catch (e) {
-        return 'Sigue las instrucciones en CONTAFY';
-    }
-    return 'Sigue las instrucciones en CONTAFY';
-}
-
-function showQuizStep() {
-    const quizDiv = document.getElementById('quizContent');
-    const question = (lessonData && lessonData.quiz) ? lessonData.quiz[currentQuiz] : null;
-    if (!question) {
-        // No hay preguntas definidas: saltar al siguiente paso
-        nextStep();
-        return;
-    }
-
-    let html = `
-        <div class="quiz-question">
-            <h4 class="mb-4">${question.pregunta}</h4>
-            <div class="quiz-options">
-    `;
-
-    (question.opciones || []).forEach((opcion, index) => {
-        html += `
-            <div class="quiz-option" onclick="selectAnswer(${index})">
-                <i class="fas fa-circle me-2"></i> ${opcion}
-            </div>
-        `;
-    });
-
-    html += `
-            </div>
-        </div>
-    `;
-
-    quizDiv.innerHTML = html;
-    document.getElementById('step-quiz').classList.remove('d-none');
-}
-
-// --- Simulation sandbox helpers ---
-function populateSimulaciones(simList) {
-    const sel = document.getElementById('selectSimulacion');
-    sel.innerHTML = '<option value="">-- Seleccionar --</option>';
-    simList.forEach(s => {
-        const opt = document.createElement('option');
-        opt.value = s.id;
-        opt.textContent = s.nombre + ' (' + s.categoria + ')';
-        sel.appendChild(opt);
-    });
-    sel.addEventListener('change', function() {
-        const val = sel.value;
-        const esc = document.getElementById('selectEscenario');
-        if (!val) { esc.classList.add('d-none'); return; }
-        // Request escenarios for selected tipo
-            .then(r => r.json())
-                .then(data => {
-                    esc.innerHTML = '<option value="">-- Escenario --</option>';
-                    if (data && data.ok && Array.isArray(data.escenarios)) {
-                        data.escenarios.forEach(e => {
-                            const o = document.createElement('option'); o.value = e.id; o.textContent = e.nombre; esc.appendChild(o);
-                        });
-                        esc.classList.remove('d-none');
-                    } else {
-                        esc.classList.add('d-none');
-                    }
-                }).catch(() => esc.classList.add('d-none'));
-    });
-}
-
-function startSimulacion() {
-    const tipo = document.getElementById('selectSimulacion').value;
-    const escenario = document.getElementById('selectEscenario').value || null;
-    if (!tipo) { mostrarToast('Selecciona una simulación'); return; }
-    const url = '{% url "empresa:simulacion_start_api" %}';
-    const payload = { tipo_id: tipo, escenario_id: escenario, leccion_id: '{{ leccion.id }}' };
-    fetch(url, {
-        method: 'POST',
-        headers: { 'X-CSRFToken': getCookie('csrftoken'), 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-    }).then(r => r.json()).then(data => {
-        if (data && data.ok) {
-            mostrarToast('Simulación iniciada');
-            // Open a minimal modal with simulation id and data
-            openSimModal(data.simulacion_id, data.datos_iniciales || {});
-        } else {
-            mostrarToast((data && (data.error || data.message)) || 'No se pudo iniciar la simulación');
-        }
-    }).catch(() => mostrarToast('Error al iniciar simulación'));
-}
-
-function getCookie(name) {
-    const value = `; ${document.cookie}`;
-    const parts = value.split(`; ${name}=`);
-    if (parts.length === 2) return parts.pop().split(';').shift();
-}
-
-let currentSimulation = null;
-let simCurrentStep = 1;
-let simTotalSteps = 3;
-
-function openSimModal(id, datos) {
-    currentSimulation = { id, datos, step: 1 };
-    
-    // Initialize simulation modal
-    document.getElementById('simCurrentStep').textContent = '1';
-    document.getElementById('simTotalSteps').textContent = simTotalSteps;
-    document.getElementById('simProgressBar').style.width = '33%';
-    
-    // Load first simulation step
-    loadSimulationStep(1, datos);
-    
-    // Show modal
-    if (window.bootstrap && document.getElementById('simModal')) {
-        const bsModal = new bootstrap.Modal(document.getElementById('simModal'));
-        bsModal.show();
-    }
-}
-
-function loadSimulationStep(step, datos) {
-    const content = document.getElementById('simContent');
-    
-    switch(step) {
-        case 1:
-            content.innerHTML = `
-                <div class="simulation-step">
-                    <h5><i class="fas fa-info-circle text-info"></i> Paso 1: Configuración Inicial</h5>
-                    <p>Revisa los datos iniciales de la simulación:</p>
-                    <div class="card bg-light">
-                        <div class="card-body">
-                            <pre>${JSON.stringify(datos, null, 2)}</pre>
-                        </div>
-                    </div>
-                    <div class="mt-3">
-                        <label class="form-label">Ajusta el presupuesto inicial:</label>
-                        <input type="number" class="form-control" id="simBudget" value="${datos.presupuesto || 1000}" min="100" max="10000">
-                    </div>
-                </div>
-            `;
-            break;
-            
-        case 2:
-            content.innerHTML = `
-                <div class="simulation-step">
-                    <h5><i class="fas fa-calculator text-success"></i> Paso 2: Realizar Cálculos</h5>
-                    <p>Completa los cálculos necesarios:</p>
-                    <div class="row">
-                        <div class="col-md-6">
-                            <label class="form-label">Cantidad de productos:</label>
-                            <input type="number" class="form-control" id="simQuantity" value="5" min="1" max="100">
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label">Precio unitario:</label>
-                            <input type="number" class="form-control" id="simPrice" value="15" min="1" max="1000" step="0.01">
-                        </div>
-                    </div>
-                    <div class="mt-3">
-                        <div class="alert alert-info">
-                            <strong>Total calculado:</strong> $<span id="simTotal">75</span>
-                        </div>
-                    </div>
-                </div>
-            `;
-            
-            // Add event listeners for real-time calculation
-            document.getElementById('simQuantity').addEventListener('input', updateSimTotal);
-            document.getElementById('simPrice').addEventListener('input', updateSimTotal);
-            break;
-            
-        case 3:
-            content.innerHTML = `
-                <div class="simulation-step">
-                    <h5><i class="fas fa-check-circle text-success"></i> Paso 3: Confirmación</h5>
-                    <p>Revisa y confirma tu simulación:</p>
-                    <div class="card">
-                        <div class="card-body">
-                            <h6>Resumen de la Simulación:</h6>
-                            <ul class="list-unstyled">
-                                <li><strong>Presupuesto:</strong> $<span id="simSummaryBudget">1000</span></li>
-                                <li><strong>Cantidad:</strong> <span id="simSummaryQuantity">5</span> productos</li>
-                                <li><strong>Precio unitario:</strong> $<span id="simSummaryPrice">15</span></li>
-                                <li><strong>Total:</strong> $<span id="simSummaryTotal">75</span></li>
-                            </ul>
-                        </div>
-                    </div>
-                </div>
-            `;
-            
-            // Populate summary
-            document.getElementById('simSummaryBudget').textContent = document.getElementById('simBudget')?.value || '1000';
-            document.getElementById('simSummaryQuantity').textContent = document.getElementById('simQuantity')?.value || '5';
-            document.getElementById('simSummaryPrice').textContent = document.getElementById('simPrice')?.value || '15';
-            updateSimTotal();
-            
-            // Show complete button
-            document.getElementById('simNextBtn').classList.add('d-none');
-            document.getElementById('simCompleteBtn').classList.remove('d-none');
-            break;
-    }
-}
-
-function updateSimTotal() {
-    const quantity = parseFloat(document.getElementById('simQuantity')?.value || 0);
-    const price = parseFloat(document.getElementById('simPrice')?.value || 0);
-    const total = quantity * price;
-    
-    const totalElements = document.querySelectorAll('#simTotal, #simSummaryTotal');
-    totalElements.forEach(el => {
-        if (el) el.textContent = total.toFixed(2);
-    });
-}
-
-function nextSimStep() {
-    if (simCurrentStep < simTotalSteps) {
-        simCurrentStep++;
-        
-        // Update progress
-        const progress = (simCurrentStep / simTotalSteps) * 100;
-        document.getElementById('simProgressBar').style.width = progress + '%';
-        document.getElementById('simCurrentStep').textContent = simCurrentStep;
-        
-        // Load next step
-        loadSimulationStep(simCurrentStep, currentSimulation.datos);
-        
-        // Send step data to server
-        if (currentSimulation) {
-            sendSimulationStep(simCurrentStep - 1);
-        }
-    }
-}
-
-function sendSimulationStep(step) {
-    const stepData = {
-        accion: `step_${step}`,
-        datos: {
-            budget: document.getElementById('simBudget')?.value,
-            quantity: document.getElementById('simQuantity')?.value,
-            price: document.getElementById('simPrice')?.value
-        }
-    };
-    
-    fetch(`/app-beta-2024/api/simulacion/${currentSimulation.id}/step/`, {
-        method: 'POST',
-        headers: {
-            'X-CSRFToken': getCookie('csrftoken'),
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(stepData)
-    }).then(r => r.json()).then(data => {
-        if (data.ok) {
-            console.log('Step saved:', data.resultado);
-        }
-    }).catch(console.error);
-}
-
-function completeSimulation() {
-    if (!currentSimulation) return;
-    
-    // Calculate final score
-    const quantity = parseFloat(document.getElementById('simQuantity')?.value || 0);
-    const price = parseFloat(document.getElementById('simPrice')?.value || 0);
-    const total = quantity * price;
-    const budget = parseFloat(document.getElementById('simBudget')?.value || 1000);
-    
-    let score = 50; // Base score
-    if (total > 0 && total <= budget) score += 30;
-    if (quantity >= 3 && quantity <= 10) score += 20;
-    
-    // Show results
-    document.getElementById('simContent').classList.add('d-none');
-    document.getElementById('simResults').classList.remove('d-none');
-    document.getElementById('simScore').textContent = score;
-    document.getElementById('simFeedback').innerHTML = `
-        <p>Excelente trabajo completando la simulación.</p>
-        <p><strong>Puntos obtenidos:</strong> ${score}/100</p>
-    `;
-    
-    // Hide complete button
-    document.getElementById('simCompleteBtn').classList.add('d-none');
-    
-    // Award XP
-    mostrarToast(`¡Simulación completada! +${score} XP`);
-    
-    // Send completion to server
-    sendSimulationStep('complete');
-}
-
-
-function selectAnswer(selectedIndex) {
-    const question = (lessonData && lessonData.quiz) ? lessonData.quiz[currentQuiz] : null;
-    if (!question) return;
-    const options = document.querySelectorAll('.quiz-option');
-    
-    options.forEach((option, index) => {
-        if (index === question.respuesta) {
-            option.classList.add('correct');
-            option.innerHTML = '<i class="fas fa-check me-2"></i>' + question.opciones[index];
-        } else if (index === selectedIndex && index !== question.respuesta) {
-            option.classList.add('incorrect');
-            option.innerHTML = '<i class="fas fa-times me-2"></i>' + question.opciones[index];
-        }
-        option.style.pointerEvents = 'none';
-    });
-    
-    if (selectedIndex === question.respuesta) {
-        score++;
-    }
-    
-    setTimeout(() => {
-        currentQuiz++;
-        if (currentQuiz < lessonData.quiz.length) {
-            showQuizStep();
-        } else {
-            nextStep();
-        }
-    }, 1500);
-}
-
-function showCompletionStep() {
-    document.getElementById('step-completion').classList.remove('d-none');
-    // Trigger confetti celebration
-    createConfetti();
-    // Play celebration sound
-    playSuccessSound();
-}
-
-function updateProgress() {
-    const progress = (currentStep / totalSteps) * 100;
-    document.getElementById('progressBar').style.width = progress + '%';
-    document.getElementById('currentStep').textContent = currentStep;
-    
-    // Update step indicators
-    for (let i = 1; i <= totalSteps; i++) {
-        const indicator = document.getElementById(`step-indicator-${i}`);
-        if (indicator) {
-            indicator.classList.remove('active', 'completed');
-            
-            if (i < currentStep) {
-                indicator.classList.add('completed');
-                indicator.innerHTML = '<i class="fas fa-check"></i>';
-            } else if (i === currentStep) {
-                indicator.classList.add('active');
-                indicator.textContent = i;
-            } else {
-                indicator.textContent = i;
-            }
-        }
-    }
-}
-
-function completeLesson() {
-    // Submit completion to Django
-    fetch('', {
-        method: 'POST',
-        headers: {
-            'X-CSRFToken': getCookie('csrftoken'),
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-            'completed': true,
-            'score': score
-        })
-    }).then(() => {
-        window.location.href = '{% url "empresa:aprendizaje_modulo" leccion.modulo.id %}';
-    });
-}
-
-function goToModule() {
-    window.location.href = '{% url "empresa:aprendizaje_modulo" leccion.modulo.id %}';
-}
-<!-- Data bridge for JS -->
-<div id="lessonData" style="display:none;"
-    data-leccion-id="{{ leccion.id }}"
-    data-leccion-pasos='{{ leccion_pasos_json|default:"null"|safe }}'
-    data-leccion-contenido='{{ leccion_contenido_js|default:""|safe }}'
-    data-leccion-xp='{{ leccion.puntos_xp }}'
-    data-url-paso="{% url 'empresa:aprendizaje_paso_completado' %}"
-    data-url-simulacion-tipos="{% url 'empresa:simulacion_tipos_api' %}"
-    data-url-simulacion-escenarios="{% url 'empresa:simulacion_escenarios_api' %}"
-    data-url-simulacion-start="{% url 'empresa:simulacion_start_api' %}"
-    data-url-modulo="{% url 'empresa:aprendizaje_modulo' leccion.modulo.id %}">
-</div>
-
-<!-- Toast container -->
-<div id="toastContainer" class="position-fixed bottom-0 end-0 p-3" style="z-index: 1080;"></div>
-
-<script src="{% static 'empresa/js/aprendizaje.js' %}"></script>
-    <div class="modal-dialog modal-xl modal-dialog-centered">
-        <div class="modal-content">
-            <div class="modal-header bg-primary text-white">
-                <h5 class="modal-title" id="simModalLabel">
-                    <i class="fas fa-play-circle me-2"></i>Simulación Interactiva
+    <!-- Recomendaciones -->
+    <div class="recomendaciones mt-5" id="recomendaciones" style="display: none;">
+        <div class="card">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-lightbulb"></i>
+                    ¿Qué sigue?
                 </h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <div class="modal-body p-4">
-                <!-- Simulation Progress -->
-                <div class="row mb-4">
-                    <div class="col-12">
-                        <div class="progress" style="height: 8px;">
-                            <div class="progress-bar bg-info" id="simProgressBar" style="width: 0%"></div>
-                        </div>
-                        <div class="d-flex justify-content-between mt-2">
-                            <small class="text-muted">Progreso de Simulación</small>
-                            <small class="text-muted">Paso <span id="simCurrentStep">1</span> de <span id="simTotalSteps">3</span></small>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Simulation Content -->
-                <div id="simContent">
-                    <!-- Dynamic simulation steps will be loaded here -->
-                </div>
-                
-                <!-- Simulation Results -->
-                <div id="simResults" class="d-none">
-                    <div class="alert alert-success text-center">
-                        <i class="fas fa-trophy fa-2x mb-3"></i>
-                        <h4>¡Simulación Completada!</h4>
-                        <p>Puntuación: <strong id="simScore">0</strong>/100</p>
-                        <div id="simFeedback"></div>
-                    </div>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
-                <button type="button" class="btn btn-primary" id="simNextBtn" onclick="nextSimStep()">
-                    <i class="fas fa-arrow-right"></i> Siguiente
-                </button>
-                <button type="button" class="btn btn-success d-none" id="simCompleteBtn" onclick="completeSimulation()">
-                    <i class="fas fa-check"></i> Completar
-                </button>
+            <div class="card-body" id="recomendaciones-content">
+                <!-- Contenido dinámico -->
             </div>
         </div>
     </div>
 </div>
-</div>
+
+<!-- CSRF Token -->
+{% csrf_token %}
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'empresa/js/aprendizaje.js' %}"></script>
+<script>
+// Extender funcionalidad específica de la lección
+academia.handleQuizAnswer = function(button, stepIndex) {
+    const isCorrect = button.dataset.correcta === 'true';
+    const opciones = button.parentElement.querySelectorAll('.quiz-opcion');
+    
+    // Deshabilitar todas las opciones
+    opciones.forEach(opcion => {
+        opcion.disabled = true;
+        if (opcion.dataset.correcta === 'true') {
+            opcion.classList.remove('btn-outline-primary');
+            opcion.classList.add('btn-success');
+        } else if (opcion === button && !isCorrect) {
+            opcion.classList.remove('btn-outline-primary');
+            opcion.classList.add('btn-danger');
+        }
+    });
+    
+    // Mostrar feedback
+    const feedback = document.createElement('div');
+    feedback.className = isCorrect ? 'feedback-correcto' : 'feedback-incorrecto';
+    feedback.innerHTML = isCorrect ? 
+        '<i class="fas fa-check"></i> ¡Correcto! Bien hecho.' : 
+        '<i class="fas fa-times"></i> Incorrecto. La respuesta correcta está marcada en verde.';
+    
+    button.parentElement.appendChild(feedback);
+    
+    // Continuar automáticamente si es correcto
+    if (isCorrect) {
+        setTimeout(() => {
+            this.markStepCompleted(stepIndex);
+        }, 1500);
+    } else {
+        // Mostrar botón para continuar
+        const continueBtn = document.createElement('button');
+        continueBtn.className = 'btn-duolingo btn-primary mt-3';
+        continueBtn.textContent = 'Continuar';
+        continueBtn.onclick = () => this.markStepCompleted(stepIndex);
+        button.parentElement.appendChild(continueBtn);
+    }
+};
+
+academia.completarLeccion = function() {
+    // Marcar lección como completada
+    fetch('{% url "empresa:marcar_leccion_completada" leccion.id %}', {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': this.getCSRFToken(),
+            'Content-Type': 'application/json'
+        }
+    }).then(response => {
+        if (response.ok) {
+            this.showSuccess('¡Lección completada! Has ganado {{ leccion.puntos_xp }} XP');
+            this.showXPGain({{ leccion.puntos_xp }});
+            
+            // Cargar recomendaciones
+            this.loadRecommendations();
+        }
+    }).catch(error => {
+        this.showError('Error al completar lección');
+    });
+};
+
+academia.loadRecommendations = function() {
+    fetch('/api/academia/recomendaciones/?limite=2')
+        .then(response => response.json())
+        .then(data => {
+            if (data.length > 0) {
+                const container = document.getElementById('recomendaciones-content');
+                container.innerHTML = data.map(rec => `
+                    <div class="recomendacion-item mb-3">
+                        <h6>${rec.leccion.titulo}</h6>
+                        <p class="text-muted">${rec.razon}</p>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <small class="text-muted">
+                                <i class="fas fa-star"></i> ${rec.xp_estimado} XP
+                                <span class="ms-2">Dificultad: ${rec.dificultad}/3</span>
+                            </small>
+                            <a href="/aprendizaje/leccion/${rec.leccion.id}/" class="btn btn-sm btn-primary">
+                                Comenzar
+                            </a>
+                        </div>
+                    </div>
+                `).join('');
+                
+                document.getElementById('recomendaciones').style.display = 'block';
+            }
+        })
+        .catch(error => console.warn('Error cargando recomendaciones:', error));
+};
+</script>
 {% endblock %}

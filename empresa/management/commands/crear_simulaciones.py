@@ -49,5 +49,5 @@ class Command(BaseCommand):
             TipoSimulacion.objects.create(**sim_data)
         
         self.stdout.write(
-            self.style.SUCCESS(f'✓ Creados {len(simulaciones)} tipos de simulación')
+            self.style.SUCCESS(f'[OK] Creados {len(simulaciones)} tipos de simulación')
         )

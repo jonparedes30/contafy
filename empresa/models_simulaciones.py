@@ -33,6 +33,7 @@ class SimulacionUsuario(models.Model):
     usuario = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='simulaciones')
     tipo_simulacion = models.ForeignKey(TipoSimulacion, on_delete=models.CASCADE)
     leccion = models.ForeignKey('empresa.Leccion', on_delete=models.CASCADE, null=True, blank=True)
+    escenario = models.ForeignKey('EscenarioSimulacion', on_delete=models.CASCADE, null=True, blank=True)
     estado = models.CharField(max_length=20, choices=ESTADO_CHOICES, default='iniciada')
     datos_entrada = models.JSONField(default=dict, help_text="Datos ingresados por el usuario")
     resultado = models.JSONField(default=dict, help_text="Resultado de la simulación")

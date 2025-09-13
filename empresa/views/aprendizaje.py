@@ -8,7 +8,7 @@ from empresa.models_aprendizaje import PasoCompletado
 from django.db import transaction, IntegrityError
 from empresa.services.gamificacion_service import GamificacionService
 from empresa.services.simulacion_service import SimulacionService
-from empresa.services.recomendacion_service import RecomendacionService
+from empresa.services.recommendation_service import RecommendationService
 from empresa.services.social_service import SocialService
 from empresa.models_simulaciones import TipoSimulacion, SimulacionUsuario, EscenarioSimulacion
 import json
@@ -19,11 +19,19 @@ def dashboard_aprendizaje(request):
     usuario = request.user
     
     # Obtener estadísticas completas del usuario
-    estadisticas = GamificacionService.obtener_estadisticas_usuario(usuario)
-    perfil = estadisticas['perfil']
+    try:
+        estadisticas = GamificacionService.obtener_estadisticas_usuario(usuario)
+        perfil = estadisticas['perfil']
+    except Exception:
+        from empresa.models_aprendizaje import PerfilAprendizaje
+        perfil, _ = PerfilAprendizaje.objects.get_or_create(usuario=usuario)
+        estadisticas = {'perfil': perfil, 'lecciones_completadas': 0, 'tiempo_total': 0}
     
     # Obtener módulos según el tipo de empresa del usuario
-    tipo_empresa = usuario.empresa.categoria if usuario.empresa else 'comercial'
+    try:
+        tipo_empresa = usuario.empresa.categoria if hasattr(usuario, 'empresa') and usuario.empresa else 'comercial'
+    except Exception:
+        tipo_empresa = 'comercial'
     modulos = ModuloAprendizaje.objects.filter(
         tipo_empresa=tipo_empresa,
         activo=True
@@ -58,7 +66,10 @@ def dashboard_aprendizaje(request):
         })
     
     # Obtener recomendaciones personalizadas
-    recomendaciones = RecomendacionService.obtener_recomendaciones_dashboard(usuario)
+    try:
+        recomendaciones = RecommendationService.obtener_recomendaciones_personalizadas(usuario, limite=3)
+    except Exception:
+        recomendaciones = []
     
     context = {
         'perfil': perfil,

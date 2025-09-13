@@ -43,6 +43,11 @@ class ContabilidadService:
         # Generar ID único para la transacción
         transaccion_id = str(uuid.uuid4())[:12]
         
+        # Convertir todos los montos a Decimal para precisión
+        for asiento in asientos:
+            if not isinstance(asiento['monto'], Decimal):
+                asiento['monto'] = Decimal(str(asiento['monto']))
+        
         # Validar que la transacción esté balanceada
         total_debitos = sum(
             asiento['monto'] for asiento in asientos 

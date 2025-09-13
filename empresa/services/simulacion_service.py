@@ -5,6 +5,8 @@ import json
 from empresa.models_simulaciones import TipoSimulacion, SimulacionUsuario, EscenarioSimulacion
 from empresa.services.gamificacion_service import GamificacionService
 from empresa.sandbox_mode import enable as enable_sandbox, disable as disable_sandbox
+# Importar patches para bloquear side-effects
+import empresa.sandbox_patches
 
 class SimulacionService:
     
@@ -124,17 +126,61 @@ class SimulacionService:
 
             # Ejecutar side-effects en savepoint si es sandbox
             if modo_sandbox:
-                sp = transaction.savepoint()
-                try:
-                    # Habilitar el modo sandbox para que cualquier llamada a
-                    # notificaciones, HTTP externo, o encolado se silencie.
-                    enable_sandbox()
-                    # aqui podr\u00edan ejecutarse rutinas que crean Venta/MovimientoContable
-                    pass
-                finally:
-                    # Deshabilitar sandbox y revertir el savepoint
-                    disable_sandbox()
-                    transaction.savepoint_rollback(sp)
+                with transaction.atomic():
+                    sp = transaction.savepoint()
+                    try:
+                        enable_sandbox()
+                        # Simular creación de venta y asientos contables
+                        from empresa.services.contabilidad_service import ContabilidadService
+                        from decimal import Decimal
+                        
+                        # Crear asientos de prueba para validar balance
+                        asientos_test = [
+                            {
+                                'cuenta': 'Caja',
+                                'tipo_cuenta': 'activo',
+                                'tipo_movimiento': 'debito',
+                                'monto': Decimal(str(total)),
+                                'descripcion': f'Venta sandbox {producto}'
+                            },
+                            {
+                                'cuenta': 'Ventas',
+                                'tipo_cuenta': 'ingreso', 
+                                'tipo_movimiento': 'credito',
+                                'monto': Decimal(str(subtotal)),
+                                'descripcion': f'Venta sandbox {producto}'
+                            },
+                            {
+                                'cuenta': 'IVA por Pagar',
+                                'tipo_cuenta': 'pasivo',
+                                'tipo_movimiento': 'credito', 
+                                'monto': Decimal(str(iva)),
+                                'descripcion': f'IVA sandbox {producto}'
+                            }
+                        ]
+                        
+                        # Crear AsientoAudit en lugar de transacción real
+                        from empresa.models_audit import AsientoAudit
+                        transaccion_id = f"sandbox_{simulacion.id}"
+                        
+                        AsientoAudit.crear_desde_asientos(
+                            simulacion,
+                            asientos_test,
+                            transaccion_id
+                        )
+                        
+                        # Validar balance en audit
+                        balance = AsientoAudit.validar_balance(simulacion)
+                        if not balance['balanceado']:
+                            raise ValueError(f"Asientos desbalanceados: {balance['diferencia']}")
+                        
+                        resultado['balance_audit'] = balance
+                        
+                    except Exception as e:
+                        resultado['sandbox_error'] = str(e)
+                    finally:
+                        disable_sandbox()
+                        transaction.savepoint_rollback(sp)
 
             # Persistir metadatos de la simulación
             simulacion.datos_entrada = datos_usuario
@@ -230,15 +276,22 @@ class SimulacionService:
                 'feedback': feedback,
                 'exito': puntuacion >= 60
             }
-            # Sandbox execution pattern as in venta: run business effects inside a savepoint
-            # then rollback them, and persist simulation meta outside the savepoint.
+            # Sandbox execution pattern: validar contabilidad sin persistir
             if modo_sandbox:
-                sp = transaction.savepoint()
-                try:
-                    # placeholder for business side-effects in sandbox
-                    pass
-                finally:
-                    transaction.savepoint_rollback(sp)
+                with transaction.atomic():
+                    sp = transaction.savepoint()
+                    try:
+                        enable_sandbox()
+                        # Validar cálculos de costos en sandbox
+                        from decimal import Decimal
+                        costo_decimal = Decimal(str(costo_total))
+                        if costo_decimal <= 0:
+                            raise ValueError("Costo total debe ser mayor a 0")
+                    except Exception as e:
+                        resultado['sandbox_error'] = str(e)
+                    finally:
+                        disable_sandbox()
+                        transaction.savepoint_rollback(sp)
 
             simulacion.datos_entrada = datos_usuario
             simulacion.resultado = resultado
@@ -334,15 +387,25 @@ class SimulacionService:
                 'feedback': feedback,
                 'exito': puntuacion >= 60
             }
-            # Sandbox execution pattern as in venta: run business effects inside a savepoint
-            # then rollback and persist simulation meta.
+            # Sandbox execution: validar cálculos de servicios
             if modo_sandbox:
-                sp = transaction.savepoint()
-                try:
-                    # placeholder for business side-effects in sandbox
-                    pass
-                finally:
-                    transaction.savepoint_rollback(sp)
+                with transaction.atomic():
+                    sp = transaction.savepoint()
+                    try:
+                        enable_sandbox()
+                        # Validar cálculos con Decimal para precisión
+                        from decimal import Decimal
+                        subtotal_d = Decimal(str(subtotal_total))
+                        iva_d = Decimal(str(iva))
+                        total_d = Decimal(str(total))
+                        
+                        if abs(subtotal_d + iva_d - total_d) > Decimal('0.01'):
+                            raise ValueError("Error en cálculos de servicio")
+                    except Exception as e:
+                        resultado['sandbox_error'] = str(e)
+                    finally:
+                        disable_sandbox()
+                        transaction.savepoint_rollback(sp)
 
             simulacion.datos_entrada = datos_usuario
             simulacion.resultado = resultado

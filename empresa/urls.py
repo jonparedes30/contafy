@@ -257,6 +257,13 @@ urlpatterns += [
     path('aprendizaje/perfil/', perfil_usuario, name='aprendizaje_perfil'),
     path('aprendizaje/paso-completado/', paso_completado, name='aprendizaje_paso_completado'),
     
+    # URLs de Academia UX Duolingo (Fase 4)
+    path('aprendizaje/leccion/<int:leccion_id>/interactiva/', lambda request, leccion_id: __import__('empresa.views.aprendizaje_views', fromlist=['leccion_interactiva']).leccion_interactiva(request, leccion_id), name='leccion_interactiva'),
+    path('aprendizaje/leccion/<int:leccion_id>/completar/', lambda request, leccion_id: __import__('empresa.views.aprendizaje_views', fromlist=['marcar_leccion_completada']).marcar_leccion_completada(request, leccion_id), name='marcar_leccion_completada'),
+    path('aprendizaje/leccion/<int:leccion_id>/paso/<int:paso_index>/completar/', lambda request, leccion_id, paso_index: __import__('empresa.views.aprendizaje_views', fromlist=['marcar_paso_completado']).marcar_paso_completado(request, leccion_id, paso_index), name='marcar_paso_completado'),
+    path('aprendizaje/modulo/<int:modulo_id>/detalle/', lambda request, modulo_id: __import__('empresa.views.aprendizaje_views', fromlist=['modulo_detalle']).modulo_detalle(request, modulo_id), name='modulo_detalle_ux'),
+    path('aprendizaje/perfil-ux/', lambda request: __import__('empresa.views.aprendizaje_views', fromlist=['perfil_aprendizaje']).perfil_aprendizaje(request), name='perfil_aprendizaje_ux'),
+    
     # URLs Sociales (Fase 5)
     path('aprendizaje/social/', social.dashboard_social, name='social_dashboard'),
     path('aprendizaje/social/crear-reto/', social.crear_reto, name='crear_reto'),

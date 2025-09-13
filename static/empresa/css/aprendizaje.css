@@ -1,0 +1,156 @@
+/* Academia CONTAFY - Estilo Duolingo */
+
+:root {
+    --primary-green: #58cc02;
+    --primary-blue: #1cb0f6;
+    --primary-red: #ff4b4b;
+    --primary-yellow: #ffc800;
+    --gray-100: #f7f7f7;
+    --gray-200: #e5e5e5;
+    --gray-300: #afafaf;
+    --gray-700: #4b4b4b;
+    --shadow: 0 2px 8px rgba(0,0,0,0.1);
+    --border-radius: 12px;
+}
+
+.academia-container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+.academia-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 30px;
+    padding: 15px 20px;
+    background: white;
+    border-radius: var(--border-radius);
+    box-shadow: var(--shadow);
+}
+
+.progress-bar {
+    flex: 1;
+    height: 12px;
+    background: var(--gray-200);
+    border-radius: 6px;
+    margin: 0 20px;
+    overflow: hidden;
+}
+
+.progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--primary-green), #7ed321);
+    border-radius: 6px;
+    transition: width 0.5s ease;
+}
+
+.xp-counter {
+    display: flex;
+    align-items: center;
+    font-weight: bold;
+    color: var(--primary-yellow);
+}
+
+.paso-item {
+    background: white;
+    border-radius: var(--border-radius);
+    box-shadow: var(--shadow);
+    margin-bottom: 20px;
+    overflow: hidden;
+    transition: transform 0.2s ease;
+}
+
+.paso-item:hover {
+    transform: translateY(-2px);
+}
+
+.paso-header {
+    display: flex;
+    align-items: center;
+    padding: 20px;
+    cursor: pointer;
+}
+
+.paso-numero {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    color: white;
+    margin-right: 15px;
+    transition: all 0.3s ease;
+}
+
+.paso-numero.pendiente { background: var(--gray-300); }
+.paso-numero.completado { background: var(--primary-green); }
+.paso-numero.activo { background: var(--primary-blue); }
+
+.paso-titulo {
+    flex: 1;
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--gray-700);
+}
+
+.btn-duolingo {
+    border: none;
+    border-radius: var(--border-radius);
+    padding: 15px 30px;
+    font-size: 16px;
+    font-weight: bold;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 4px 0 rgba(0,0,0,0.2);
+}
+
+.btn-duolingo:active {
+    transform: translateY(2px);
+    box-shadow: 0 2px 0 rgba(0,0,0,0.2);
+}
+
+.btn-primary { background: var(--primary-green); color: white; }
+.btn-secondary { background: var(--primary-blue); color: white; }
+.btn-danger { background: var(--primary-red); color: white; }
+
+.sandbox-badge {
+    display: inline-flex;
+    align-items: center;
+    background: var(--primary-yellow);
+    color: var(--gray-700);
+    padding: 8px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: bold;
+    text-transform: uppercase;
+    margin-bottom: 15px;
+}
+
+.toast-xp {
+    background: linear-gradient(135deg, var(--primary-green), #7ed321);
+    color: white;
+    border: none;
+    border-radius: var(--border-radius);
+}
+
+.xp-animation {
+    display: inline-block;
+    animation: bounceIn 0.6s ease;
+}
+
+@keyframes bounceIn {
+    0% { transform: scale(0.3); opacity: 0; }
+    50% { transform: scale(1.05); }
+    100% { transform: scale(1); opacity: 1; }
+}
+
+@media (max-width: 768px) {
+    .academia-container { padding: 10px; }
+    .academia-header { flex-direction: column; gap: 15px; }
+    .btn-duolingo { width: 100%; margin-bottom: 10px; }
+}

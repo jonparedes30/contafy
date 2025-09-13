@@ -1,334 +1,243 @@
-{% extends 'empresa/base.html' %}
+{% extends 'base.html' %}
 {% load static %}
 
-{% block title %}Academia CONTAFY{% endblock %}
+{% block title %}Academia CONTAFY - Dashboard{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'empresa/css/aprendizaje.css' %}">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+{% endblock %}
 
 {% block content %}
-<div class="container-fluid">
-    <!-- Header de la Academia -->
-    <div class="row mb-3">
-        <div class="col-12">
-            <div class="card bg-gradient-primary text-white">
-                <div class="card-body p-3">
-                    <div class="row align-items-center">
-                        <div class="col-12 col-md-8 mb-2 mb-md-0">
-                            <h2 class="mb-1"><i class="bi bi-graduation-cap"></i> Academia CONTAFY</h2>
-                            <p class="mb-0 small">Aprende contabilidad para {{ tipo_empresa|title }}</p>
-                        </div>
-                        <div class="col-12 col-md-4 mobile-text-center">
-                            <div class="user-stats">
-                                <div class="level-badge bg-warning text-dark px-2 py-1 rounded-pill mb-1 d-inline-block">
-                                    <i class="bi bi-star-fill"></i> Nivel {{ perfil.nivel }}
-                                </div>
-                                <div class="xp-info mb-2">
-                                    <small>{{ perfil.xp_total }} XP</small>
-                                    <div class="progress mt-1" style="height: 6px;">
-                                        <div class="progress-bar bg-warning" style="width: {{ perfil.xp_porcentaje }}%"></div>
-                                    </div>
-                                </div>
-                                <a href="{% url 'empresa:social_dashboard' %}" class="btn btn-outline-light btn-sm">
-                                    <i class="bi bi-trophy"></i> <span class="mobile-hide">Social</span>
-                                </a>
-                            </div>
-                        </div>
-                    </div>
+<div class="academia-container">
+    <!-- Header principal -->
+    <div class="academia-header">
+        <div>
+            <h2 class="mb-0">Academia CONTAFY</h2>
+            <p class="text-muted mb-0">Aprende contabilidad de manera práctica</p>
+        </div>
+        
+        <div class="xp-counter">
+            <i class="fas fa-star"></i>
+            <span>{{ perfil.xp_total|default:0 }}</span>
+        </div>
+    </div>
+
+    <!-- Estadísticas del usuario -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <i class="fas fa-trophy text-warning fa-2x mb-2"></i>
+                    <h5>Nivel {{ perfil.nivel|default:1 }}</h5>
+                    <small class="text-muted">{{ perfil.xp_total|default:0 }} XP total</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <i class="fas fa-fire text-danger fa-2x mb-2"></i>
+                    <h5>{{ perfil.racha_dias|default:0 }} días</h5>
+                    <small class="text-muted">Racha actual</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <i class="fas fa-check-circle text-success fa-2x mb-2"></i>
+                    <h5>{{ estadisticas.lecciones_completadas|default:0 }}</h5>
+                    <small class="text-muted">Lecciones completadas</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <i class="fas fa-clock text-info fa-2x mb-2"></i>
+                    <h5>{{ estadisticas.tiempo_total|default:0 }}h</h5>
+                    <small class="text-muted">Tiempo estudiado</small>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Panel de Recomendaciones -->
+    <!-- Recomendaciones personalizadas -->
     {% if recomendaciones %}
-    <div class="row mb-4">
-        <div class="col-lg-8">
-            <div class="card border-0 shadow-sm">
-                <div class="card-body">
-                    <h5 class="card-title">
-                        <i class="fas fa-robot text-info"></i> Recomendaciones Personalizadas
-                    </h5>
-                    <p class="text-muted mb-3">{{ recomendaciones.mensaje_motivacional }}</p>
-                    
-                    {% if recomendaciones.siguiente_leccion %}
-                    <div class="recommended-lesson p-3 bg-light rounded mb-3">
-                        <h6><i class="fas fa-arrow-right text-success"></i> Siguiente Lección Recomendada</h6>
-                        <div class="d-flex justify-content-between align-items-center">
-                            <div>
-                                <strong>{{ recomendaciones.siguiente_leccion.titulo }}</strong>
-                                <br><small class="text-muted">{{ recomendaciones.siguiente_leccion.modulo.nombre }}</small>
+    <div class="card mb-4">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">
+                <i class="fas fa-lightbulb"></i>
+                Recomendado para ti
+            </h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                {% for rec in recomendaciones %}
+                <div class="col-md-4 mb-3">
+                    <div class="card h-100">
+                        <div class="card-body">
+                            <h6 class="card-title">{{ rec.leccion.titulo }}</h6>
+                            <p class="card-text text-muted">{{ rec.razon }}</p>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <small class="text-muted">
+                                    <i class="fas fa-star"></i> {{ rec.xp_estimado }} XP
+                                </small>
+                                <span class="badge bg-{{ rec.tipo|yesno:'success,warning,info' }}">
+                                    {{ rec.tipo|title }}
+                                </span>
                             </div>
-                            <a href="{% url 'empresa:aprendizaje_leccion' recomendaciones.siguiente_leccion.id %}" 
-                               class="btn btn-success btn-sm">
-                                <i class="fas fa-play"></i> Comenzar
+                        </div>
+                        <div class="card-footer">
+                            <a href="{% url 'empresa:leccion_interactiva' rec.leccion.id %}" 
+                               class="btn-duolingo btn-primary w-100">
+                                Comenzar
                             </a>
                         </div>
                     </div>
-                    {% endif %}
-                    
-                    <!-- Sugerencias -->
-                    <div class="suggestions">
-                        <h6>Sugerencias para ti:</h6>
-                        <div class="row">
-                            {% for sugerencia in recomendaciones.sugerencias %}
-                            <div class="col-md-6 mb-2">
-                                <div class="suggestion-item p-2 border rounded">
-                                    <i class="{{ sugerencia.icono }} text-primary me-2"></i>
-                                    <strong>{{ sugerencia.titulo }}</strong>
-                                    <br><small class="text-muted">{{ sugerencia.descripcion }}</small>
-                                </div>
-                            </div>
-                            {% endfor %}
-                        </div>
-                    </div>
                 </div>
-            </div>
-        </div>
-        
-        <div class="col-lg-4">
-            <div class="card border-0 shadow-sm">
-                <div class="card-body text-center">
-                    <h5 class="card-title">
-                        <i class="fas fa-chart-line text-success"></i> Tu Progreso
-                    </h5>
-                    
-                    <!-- Progreso Global -->
-                    <div class="progress-circle mb-3">
-                        <div class="progress-value">
-                            <span class="h3 text-primary">{{ recomendaciones.progreso_global.porcentaje }}%</span>
-                        </div>
-                    </div>
-                    
-                    <p class="text-muted mb-3">
-                        {{ recomendaciones.progreso_global.completadas }} de {{ recomendaciones.progreso_global.total }} lecciones
-                    </p>
-                    
-                    <!-- Estadísticas de Rendimiento -->
-                    <div class="stats-grid">
-                        <div class="stat-item">
-                            <div class="stat-value">{{ recomendaciones.rendimiento.promedio_puntuacion|floatformat:0 }}%</div>
-                            <div class="stat-label">Puntuación Promedio</div>
-                        </div>
-                        <div class="stat-item">
-                            <div class="stat-value">{{ recomendaciones.rendimiento.total_simulaciones }}</div>
-                            <div class="stat-label">Simulaciones</div>
-                        </div>
-                    </div>
-                </div>
+                {% endfor %}
             </div>
         </div>
     </div>
     {% endif %}
-    
-    <!-- Módulos de Aprendizaje -->
-    <div class="row">
-        <div class="col-12">
-            <h4 class="mb-3">Módulos para {{ tipo_empresa|title }}</h4>
+
+    <!-- Módulos de aprendizaje -->
+    <div class="modulos-container">
+        <h4 class="mb-4">Rutas de Aprendizaje - {{ tipo_empresa|title }}</h4>
+        
+        <div class="row">
+            {% for modulo in modulos %}
+            <div class="col-md-6 mb-4">
+                <div class="card modulo-card h-100">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center mb-3">
+                            <div class="modulo-icono me-3">
+                                <i class="{{ modulo.icono }} fa-2x text-primary"></i>
+                            </div>
+                            <div>
+                                <h5 class="card-title mb-1">{{ modulo.nombre }}</h5>
+                                <small class="text-muted">Nivel {{ modulo.nivel }}</small>
+                            </div>
+                        </div>
+                        
+                        <p class="card-text">{{ modulo.descripcion }}</p>
+                        
+                        <!-- Barra de progreso -->
+                        <div class="progress mb-3" style="height: 8px;">
+                            <div class="progress-bar bg-success" 
+                                 style="width: {{ modulo.progreso.porcentaje }}%"
+                                 role="progressbar">
+                            </div>
+                        </div>
+                        
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <small class="text-muted">
+                                {{ modulo.progreso.completadas }}/{{ modulo.progreso.total }} lecciones
+                            </small>
+                            <small class="text-success">
+                                {{ modulo.progreso.porcentaje }}% completado
+                            </small>
+                        </div>
+                        
+                        <div class="d-flex gap-2">
+                            <a href="{% url 'empresa:aprendizaje_modulo' modulo.id %}" 
+                               class="btn-duolingo btn-primary flex-fill">
+                                <i class="fas fa-play"></i>
+                                Continuar
+                            </a>
+                            <a href="{% url 'empresa:aprendizaje_modulo' modulo.id %}" 
+                               class="btn btn-outline-secondary">
+                                <i class="fas fa-list"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
         </div>
     </div>
 
-    <div class="row">
-        {% for modulo in modulos %}
-        <div class="col-12 col-md-6 col-lg-4 mb-3">
-            <div class="card h-100 shadow-sm module-card">
-                <div class="card-body text-center p-3">
-                    <div class="module-icon mb-2">
-                        <i class="{{ modulo.icono|default:'bi bi-book' }} text-primary" style="font-size: 2rem;"></i>
-                    </div>
-                    <h6 class="card-title">{{ modulo.nombre }}</h6>
-                    <p class="card-text text-muted small">{{ modulo.descripcion|truncatechars:60 }}</p>
-                    
-                    <!-- Progreso del módulo -->
-                    <div class="progress mb-2" style="height: 6px;">
-                        <div class="progress-bar bg-success" 
-                             style="width: {{ modulo.progreso.porcentaje }}%">
-                        </div>
-                    </div>
-                    
-                    <div class="module-stats mb-2">
-                        <small class="text-muted">
-                            {{ modulo.progreso.completadas }}/{{ modulo.progreso.total }} lecciones
-                        </small>
-                    </div>
-                    
-                    <div class="module-level mb-2">
-                        <span class="badge bg-info">Nivel {{ modulo.nivel|default:1 }}</span>
-                    </div>
+    <!-- Acceso rápido a simulaciones -->
+    <div class="card mt-4">
+        <div class="card-header bg-warning text-dark">
+            <h5 class="mb-0">
+                <i class="fas fa-flask"></i>
+                Simulaciones Rápidas
+            </h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-4">
+                    <button type="button" class="btn-duolingo btn-secondary w-100 mb-2" 
+                            data-action="start-simulation" 
+                            data-tipo-simulacion="1">
+                        <i class="fas fa-cash-register"></i>
+                        Simulación de Venta
+                    </button>
                 </div>
-                
-                <div class="card-footer bg-transparent p-2">
-                    <a href="{% url 'empresa:aprendizaje_modulo' modulo.id %}" 
-                       class="btn btn-primary w-100 btn-sm">
-                        <i class="bi bi-play-fill"></i> Comenzar
-                    </a>
+                <div class="col-md-4">
+                    <button type="button" class="btn-duolingo btn-secondary w-100 mb-2" 
+                            data-action="start-simulation" 
+                            data-tipo-simulacion="2">
+                        <i class="fas fa-clipboard-list"></i>
+                        Simulación de Receta
+                    </button>
+                </div>
+                <div class="col-md-4">
+                    <button type="button" class="btn-duolingo btn-secondary w-100 mb-2" 
+                            data-action="start-simulation" 
+                            data-tipo-simulacion="3">
+                        <i class="fas fa-handshake"></i>
+                        Simulación de Servicio
+                    </button>
                 </div>
             </div>
         </div>
-        {% empty %}
-        <div class="col-12">
-            <div class="alert alert-info text-center p-3">
-                <i class="bi bi-info-circle" style="font-size: 2rem;"></i>
-                <h5 class="mt-2">¡Próximamente!</h5>
-                <p class="mb-0">Los módulos estarán disponibles pronto.</p>
-            </div>
+    </div>
+
+    <!-- Enlaces adicionales -->
+    <div class="row mt-4">
+        <div class="col-md-6">
+            <a href="{% url 'empresa:aprendizaje_perfil' %}" class="btn btn-outline-primary w-100">
+                <i class="fas fa-user"></i>
+                Mi Perfil de Aprendizaje
+            </a>
         </div>
-        {% endfor %}
+        <div class="col-md-6">
+            <a href="{% url 'empresa:social_dashboard' %}" class="btn btn-outline-info w-100">
+                <i class="fas fa-users"></i>
+                Comunidad y Ranking
+            </a>
+        </div>
     </div>
 </div>
 
+<!-- CSRF Token -->
+{% csrf_token %}
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'empresa/js/aprendizaje.js' %}"></script>
 <style>
-.bg-gradient-primary {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+.modulo-card {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
-.module-card {
-    transition: transform 0.3s ease, box-shadow 0.3s ease;
-}
-
-.module-card:hover {
+.modulo-card:hover {
     transform: translateY(-5px);
-    box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.15);
 }
 
-.module-icon {
-    height: 80px;
+.modulo-icono {
+    width: 60px;
+    height: 60px;
     display: flex;
     align-items: center;
     justify-content: center;
-}
-
-<script>
-// Actualizar recomendaciones dinámicamente
-function actualizarRecomendaciones() {
-    fetch('/app-beta-2024/api/recomendaciones/')
-        .then(r => r.json())
-        .then(data => {
-            if (data.ok && data.recomendaciones) {
-                actualizarPanelRecomendaciones(data.recomendaciones);
-            }
-        })
-        .catch(console.error);
-}
-
-function actualizarPanelRecomendaciones(recomendaciones) {
-    // Actualizar mensaje motivacional
-    const mensajeEl = document.querySelector('.card-body p.text-muted');
-    if (mensajeEl) {
-        mensajeEl.textContent = recomendaciones.mensaje_motivacional;
-    }
-    
-    // Actualizar progreso global
-    const progresoEl = document.querySelector('.progress-value .h3');
-    if (progresoEl) {
-        progresoEl.textContent = recomendaciones.progreso_global.porcentaje + '%';
-    }
-    
-    // Actualizar estadísticas
-    const statValues = document.querySelectorAll('.stat-value');
-    if (statValues.length >= 2) {
-        statValues[0].textContent = Math.round(recomendaciones.rendimiento.promedio_puntuacion) + '%';
-        statValues[1].textContent = recomendaciones.rendimiento.total_simulaciones;
-    }
-}
-
-function registrarInteraccion(tipo, datos = {}) {
-    fetch('/app-beta-2024/api/recomendaciones/interaccion/', {
-        method: 'POST',
-        headers: {
-            'X-CSRFToken': getCookie('csrftoken'),
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-            tipo: tipo,
-            datos: datos
-        })
-    }).catch(console.error);
-}
-
-function getCookie(name) {
-    const value = `; ${document.cookie}`;
-    const parts = value.split(`; ${name}=`);
-    if (parts.length === 2) return parts.pop().split(';').shift();
-}
-
-// Registrar interacciones cuando el usuario hace clic en módulos
-document.addEventListener('DOMContentLoaded', function() {
-    // Actualizar recomendaciones cada 5 minutos
-    setInterval(actualizarRecomendaciones, 5 * 60 * 1000);
-    
-    // Registrar clics en módulos
-    document.querySelectorAll('.module-card a').forEach(link => {
-        link.addEventListener('click', function() {
-            const moduloId = this.href.split('/').slice(-2, -1)[0];
-            registrarInteraccion('modulo_click', { modulo_id: moduloId });
-        });
-    });
-    
-    // Registrar clic en lección recomendada
-    const recomendadaLink = document.querySelector('.recommended-lesson a');
-    if (recomendadaLink) {
-        recomendadaLink.addEventListener('click', function() {
-            registrarInteraccion('leccion_recomendada_click');
-        });
-    }
-});
-</script>
-
-.recommended-lesson {
-    border-left: 4px solid #28a745;
-}
-
-.suggestion-item {
-    transition: all 0.3s ease;
-}
-
-.suggestion-item:hover {
-    background-color: #f8f9fa;
-    border-color: #007bff !important;
-}
-
-.progress-circle {
-    width: 120px;
-    height: 120px;
-    border-radius: 50%;
-    background: conic-gradient(#007bff {{ recomendaciones.progreso_global.porcentaje }}%, #e9ecef 0%);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin: 0 auto;
-    position: relative;
-}
-
-.progress-circle::before {
-    content: '';
-    width: 90px;
-    height: 90px;
-    border-radius: 50%;
-    background: white;
-    position: absolute;
-}
-
-.progress-value {
-    z-index: 1;
-}
-
-.stats-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 15px;
-}
-
-.stat-item {
-    text-align: center;
-}
-
-.stat-value {
-    font-size: 1.5rem;
-    font-weight: bold;
-    color: #007bff;
-}
-
-.stat-label {
-    font-size: 0.8rem;
-    color: #6c757d;
+    background: var(--gray-100);
+    border-radius: 12px;
 }
 </style>
 {% endblock %}
