@@ -20,23 +20,36 @@ def crear_cuenta_contable(request):
             cuenta_data = form.cleaned_data.copy()
             cuenta_data['monto_inicial'] = float(cuenta_data['monto_inicial'])  # Corregir serialización
             request.session['cuenta_data'] = cuenta_data
-            # Obtener cuentas existentes
+
+            
+            # Obtener contrapartidas sugeridas (crear automáticamente si no existen)
+            from empresa.services.accounting_setup import ensure_contrapartidas_for_account
+            
+            # Crear cuenta temporal para generar sugerencias
+            cuenta_temp = CuentaContable(empresa=empresa, nombre=cuenta_data['nombre'], tipo=cuenta_data['tipo'])
+            contrapartidas_creadas = ensure_contrapartidas_for_account(cuenta_temp)
+            
+            # Obtener cuentas existentes después de crear contrapartidas
             cuentas_existentes = CuentaContable.objects.filter(empresa=empresa).exclude(nombre=cuenta_data['nombre'])
             
-            # Si no hay cuentas, crear las cuentas por defecto
+            # Si aún no hay cuentas, crear las cuentas por defecto
             if not cuentas_existentes.exists():
                 CuentasDefaultService.crear_cuentas_default(empresa)
                 cuentas_existentes = CuentaContable.objects.filter(empresa=empresa).exclude(nombre=cuenta_data['nombre'])
             
-            # Obtener contrapartidas sugeridas
+            # Combinar con sugerencias del servicio existente
             contrapartidas_sugeridas = CuentasDefaultService.obtener_contrapartidas_sugeridas(
                 cuenta_data['tipo'], empresa.categoria
             )
             
+            # Agregar nombres de contrapartidas creadas automáticamente
+            nombres_creadas = [c.nombre for c in contrapartidas_creadas]
+            contrapartidas_sugeridas.extend(nombres_creadas)
+            
             return render(request, 'empresa/partida_doble_confirmar.html', {
                 'cuenta_data': cuenta_data,
                 'cuentas': cuentas_existentes,
-                'contrapartidas_sugeridas': contrapartidas_sugeridas,
+                'contrapartidas_sugeridas': list(set(contrapartidas_sugeridas)),  # Eliminar duplicados
             })
         else:
             messages.error(request, '❌ Corrige los errores en el formulario.')

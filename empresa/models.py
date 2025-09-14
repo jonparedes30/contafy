@@ -818,12 +818,30 @@ class Capital(AuditModel):
     
     def save(self, *args, **kwargs):
         """Crear asientos contables automáticamente"""
+        es_nuevo = not self.pk
         super().save(*args, **kwargs)
+        
+        # Crear contrapartidas automáticamente para nuevos usuarios
+        if es_nuevo:
+            self.crear_contrapartidas_si_no_existen()
+        
         self.crear_asientos_contables()
+    
+    def crear_contrapartidas_si_no_existen(self):
+        """Crear contrapartidas básicas si no existen cuentas"""
+        from empresa.services.accounting_setup import ensure_contrapartidas_for_account
+        
+        # Verificar si ya existen cuentas contables
+        cuentas_existentes = CuentaContable.objects.filter(empresa=self.empresa).count()
+        
+        if cuentas_existentes == 0:
+            # Crear cuenta temporal para generar contrapartidas
+            cuenta_temp = CuentaContable(empresa=self.empresa, nombre='Capital', tipo='capital')
+            ensure_contrapartidas_for_account(cuenta_temp)
     
     def crear_asientos_contables(self):
         """Crear partida doble para el capital"""
-        from empresa.models import CuentaContable, MovimientoContable
+        from empresa.models import MovimientoContable
         
         try:
             if self.tipo == 'aporte':

@@ -14,11 +14,12 @@
             <label for="contrapartida" class="form-label">Selecciona la cuenta contrapartida:</label>
             
             {% if contrapartidas_sugeridas %}
-            <div class="alert alert-light mb-2">
-                <small class="text-muted">
-                    <i class="fas fa-lightbulb"></i> 
-                    <strong>Sugeridas para {{ cuenta_data.tipo }}:</strong> 
+            <div class="alert alert-success mb-2">
+                <small>
+                    <i class="fas fa-magic"></i> 
+                    <strong>Contrapartidas recomendadas:</strong> 
                     {{ contrapartidas_sugeridas|join:", " }}
+                    <br><small class="text-muted">Se han creado automáticamente para facilitar tu selección</small>
                 </small>
             </div>
             {% endif %}
@@ -28,18 +29,20 @@
                 
                 {% comment %} Mostrar primero las sugeridas {% endcomment %}
                 {% if contrapartidas_sugeridas %}
-                    <optgroup label="Recomendadas">
+                    <optgroup label="✨ Recomendadas">
                     {% for cuenta in cuentas %}
                         {% if cuenta.nombre in contrapartidas_sugeridas %}
-                        <option value="{{ cuenta.id }}" class="fw-bold">{{ cuenta.nombre }} ({{ cuenta.tipo|title }}) ⭐</option>
+                        <option value="{{ cuenta.id }}" class="fw-bold text-success">{{ cuenta.nombre }} ({{ cuenta.tipo|title }}) ⭐</option>
                         {% endif %}
                     {% endfor %}
                     </optgroup>
                 {% endif %}
                 
-                <optgroup label="Todas las cuentas">
+                <optgroup label="Otras cuentas disponibles">
                 {% for cuenta in cuentas %}
-                <option value="{{ cuenta.id }}">{{ cuenta.nombre }} ({{ cuenta.tipo|title }})</option>
+                    {% if cuenta.nombre not in contrapartidas_sugeridas %}
+                    <option value="{{ cuenta.id }}">{{ cuenta.nombre }} ({{ cuenta.tipo|title }})</option>
+                    {% endif %}
                 {% endfor %}
                 </optgroup>
             </select>

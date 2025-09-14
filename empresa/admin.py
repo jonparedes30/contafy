@@ -12,6 +12,7 @@ from .models_simulaciones import (
     TipoSimulacion, SimulacionUsuario, EscenarioSimulacion
 )
 from .models_audit import AsientoAudit
+from empresa.services.accounting_setup import ensure_contrapartidas_for_account
 
 # Configuración básica del admin - solo campos seguros
 @admin.register(Usuario)
@@ -47,9 +48,18 @@ class ProductoAdmin(admin.ModelAdmin):
 
 @admin.register(CuentaContable)
 class CuentaContableAdmin(admin.ModelAdmin):
-    list_display = ['nombre', 'empresa']
-    list_filter = ['empresa']
+    list_display = ['nombre', 'empresa', 'tipo']
+    list_filter = ['empresa', 'tipo']
     search_fields = ['nombre']
+    actions = ['action_create_contrapartidas']
+
+    def action_create_contrapartidas(self, request, queryset):
+        total = 0
+        for cuenta in queryset:
+            created = ensure_contrapartidas_for_account(cuenta)
+            total += len(created)
+        self.message_user(request, f"Se crearon {total} contrapartidas para las cuentas seleccionadas")
+    action_create_contrapartidas.short_description = "Crear contrapartidas recomendadas para la(s) cuenta(s)"
 
 # Registrar otros modelos con configuración básica
 admin.site.register(Capital)

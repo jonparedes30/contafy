@@ -6,4 +6,4 @@ class EmpresaConfig(AppConfig):
     name = 'empresa'
     
     def ready(self):
-        pass
+        import empresa.signals
