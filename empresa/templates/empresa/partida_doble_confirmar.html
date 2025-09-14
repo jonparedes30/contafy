@@ -12,11 +12,36 @@
         <input type="hidden" name="paso" value="partida_doble">
         <div class="mb-3">
             <label for="contrapartida" class="form-label">Selecciona la cuenta contrapartida:</label>
+            
+            {% if contrapartidas_sugeridas %}
+            <div class="alert alert-light mb-2">
+                <small class="text-muted">
+                    <i class="fas fa-lightbulb"></i> 
+                    <strong>Sugeridas para {{ cuenta_data.tipo }}:</strong> 
+                    {{ contrapartidas_sugeridas|join:", " }}
+                </small>
+            </div>
+            {% endif %}
+            
             <select name="contrapartida" id="contrapartida" class="form-select" required>
                 <option value="">-- Selecciona una cuenta --</option>
+                
+                {% comment %} Mostrar primero las sugeridas {% endcomment %}
+                {% if contrapartidas_sugeridas %}
+                    <optgroup label="Recomendadas">
+                    {% for cuenta in cuentas %}
+                        {% if cuenta.nombre in contrapartidas_sugeridas %}
+                        <option value="{{ cuenta.id }}" class="fw-bold">{{ cuenta.nombre }} ({{ cuenta.tipo|title }}) ⭐</option>
+                        {% endif %}
+                    {% endfor %}
+                    </optgroup>
+                {% endif %}
+                
+                <optgroup label="Todas las cuentas">
                 {% for cuenta in cuentas %}
                 <option value="{{ cuenta.id }}">{{ cuenta.nombre }} ({{ cuenta.tipo|title }})</option>
                 {% endfor %}
+                </optgroup>
             </select>
             {% if error %}<div class="text-danger mt-1">{{ error }}</div>{% endif %}
         </div>

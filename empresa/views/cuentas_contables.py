@@ -6,6 +6,7 @@ from django.contrib import messages
 
 from empresa.forms import CuentaContableForm
 from empresa.models import CuentaContable, MovimientoContable
+from empresa.services.cuentas_default_service import CuentasDefaultService
 from django.db import transaction
 
 @login_required
@@ -19,11 +20,23 @@ def crear_cuenta_contable(request):
             cuenta_data = form.cleaned_data.copy()
             cuenta_data['monto_inicial'] = float(cuenta_data['monto_inicial'])  # Corregir serialización
             request.session['cuenta_data'] = cuenta_data
-            # Mostrar pantalla de contrapartida
-            cuentas = CuentaContable.objects.filter(empresa=empresa).exclude(nombre=cuenta_data['nombre'])
+            # Obtener cuentas existentes
+            cuentas_existentes = CuentaContable.objects.filter(empresa=empresa).exclude(nombre=cuenta_data['nombre'])
+            
+            # Si no hay cuentas, crear las cuentas por defecto
+            if not cuentas_existentes.exists():
+                CuentasDefaultService.crear_cuentas_default(empresa)
+                cuentas_existentes = CuentaContable.objects.filter(empresa=empresa).exclude(nombre=cuenta_data['nombre'])
+            
+            # Obtener contrapartidas sugeridas
+            contrapartidas_sugeridas = CuentasDefaultService.obtener_contrapartidas_sugeridas(
+                cuenta_data['tipo'], empresa.categoria
+            )
+            
             return render(request, 'empresa/partida_doble_confirmar.html', {
                 'cuenta_data': cuenta_data,
-                'cuentas': cuentas,
+                'cuentas': cuentas_existentes,
+                'contrapartidas_sugeridas': contrapartidas_sugeridas,
             })
         else:
             messages.error(request, '❌ Corrige los errores en el formulario.')
