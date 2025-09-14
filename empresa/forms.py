@@ -1,6 +1,6 @@
 from django import forms
 from django.contrib.auth.forms import UserCreationForm
-from .models import CuentaContable, Capital, Empresa, Usuario
+from .models import CuentaContable, Capital, Empresa, Usuario, Producto, Venta, Gasto, Compra
 from .services.accounting_setup import DEFAULT_CONTRAPARTIDAS, ensure_contrapartidas_for_account
 
 class CuentaContableForm(forms.ModelForm):
@@ -84,3 +84,48 @@ class RegistroForm(UserCreationForm):
         if commit:
             user.save()
         return user
+
+class ProductoForm(forms.ModelForm):
+    class Meta:
+        model = Producto
+        fields = ['codigo', 'nombre', 'descripcion', 'precio_unitario', 'stock']
+        widgets = {
+            'codigo': forms.TextInput(attrs={'class': 'form-control'}),
+            'nombre': forms.TextInput(attrs={'class': 'form-control'}),
+            'descripcion': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
+            'precio_unitario': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01'}),
+            'stock': forms.NumberInput(attrs={'class': 'form-control'}),
+        }
+
+class VentaForm(forms.ModelForm):
+    class Meta:
+        model = Venta
+        fields = ['producto', 'cantidad', 'precio_unitario', 'tipo_pago']
+        widgets = {
+            'producto': forms.Select(attrs={'class': 'form-select'}),
+            'cantidad': forms.NumberInput(attrs={'class': 'form-control'}),
+            'precio_unitario': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01'}),
+            'tipo_pago': forms.Select(attrs={'class': 'form-select'}),
+        }
+
+class GastoForm(forms.ModelForm):
+    class Meta:
+        model = Gasto
+        fields = ['descripcion', 'monto', 'categoria', 'tipo_pago']
+        widgets = {
+            'descripcion': forms.TextInput(attrs={'class': 'form-control'}),
+            'monto': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01'}),
+            'categoria': forms.Select(attrs={'class': 'form-select'}),
+            'tipo_pago': forms.Select(attrs={'class': 'form-select'}),
+        }
+
+class CompraForm(forms.ModelForm):
+    class Meta:
+        model = Compra
+        fields = ['producto', 'cantidad', 'monto', 'tipo_pago']
+        widgets = {
+            'producto': forms.Select(attrs={'class': 'form-select'}),
+            'cantidad': forms.NumberInput(attrs={'class': 'form-control'}),
+            'monto': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01'}),
+            'tipo_pago': forms.Select(attrs={'class': 'form-select'}),
+        }
