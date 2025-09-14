@@ -129,3 +129,14 @@ class CompraForm(forms.ModelForm):
             'monto': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01'}),
             'tipo_pago': forms.Select(attrs={'class': 'form-select'}),
         }
+
+class SaldosInicialesForm(forms.Form):
+    producto = forms.ModelChoiceField(queryset=None, widget=forms.Select(attrs={'class': 'form-select'}))
+    cantidad = forms.DecimalField(widget=forms.NumberInput(attrs={'class': 'form-control'}))
+    costo_unitario = forms.DecimalField(widget=forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01'}))
+    
+    def __init__(self, *args, **kwargs):
+        empresa = kwargs.pop('empresa', None)
+        super().__init__(*args, **kwargs)
+        if empresa:
+            self.fields['producto'].queryset = Producto.objects.filter(empresa=empresa)
