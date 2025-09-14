@@ -255,9 +255,9 @@
       {% if is_owner or user_powers.puede_registrar_ventas %}
       <li class="nav-item">
         {% if user.empresa.categoria == 'manufactura' %}
-        <a class="nav-link" href="{% url 'empresa:crear_venta_manufactura' %}">
+        <!-- <a class="nav-link" href="{% url 'empresa:crear_venta_manufactura' %}">
           <i class="bi bi-plus-circle me-2"></i>Nueva Venta
-        </a>
+        </a> -->
         {% else %}
         <a class="nav-link" href="{% url 'empresa:crear_venta' %}">
           <i class="bi bi-plus-circle me-2"></i>Nueva Venta
@@ -432,15 +432,15 @@
           </a>
           <div class="collapse" id="materiasMenu">
             <ul class="nav flex-column ms-3">
-              <li><a class="nav-link" href="{% url 'empresa:listar_materias_primas' %}">
+              <!-- <li><a class="nav-link" href="{% url 'empresa:listar_materias_primas' %}">
                 <i class="bi bi-list-ul me-2"></i>Ver Materias Primas
-              </a></li>
-              <li><a class="nav-link" href="{% url 'empresa:crear_materia_prima' %}">
+              </a></li> -->
+              <!-- <li><a class="nav-link" href="{% url 'empresa:crear_materia_prima' %}">
                 <i class="bi bi-plus-circle me-2"></i>+ Nueva Materia Prima
               </a></li>
               <li><a class="nav-link" href="{% url 'empresa:listar_proveedores' %}">
                 <i class="bi bi-truck me-2"></i>Proveedores
-              </a></li>
+              </a></li> -->
             </ul>
           </div>
         </li>
@@ -453,14 +453,14 @@
           </a>
           <div class="collapse" id="catalogoMenu">
             <ul class="nav flex-column ms-3">
-              <li><a class="nav-link" href="{% url 'empresa:listar_productos_manufacturados' %}">
+              <!-- <li><a class="nav-link" href="{% url 'empresa:listar_productos_manufacturados' %}">
                 <i class="bi bi-list-ul me-2"></i>Ver Catálogo
               </a></li>
               {% if is_owner or user_powers.puede_editar_productos %}
               <li><a class="nav-link" href="{% url 'empresa:crear_producto_manufacturado' %}">
                 <i class="bi bi-plus-circle me-2"></i>+ Nuevo Producto
               </a></li>
-              {% endif %}
+              {% endif %} -->
             </ul>
           </div>
         </li>
@@ -473,12 +473,12 @@
           </a>
           <div class="collapse" id="ventasManufMenu">
             <ul class="nav flex-column ms-3">
-              <li><a class="nav-link" href="{% url 'empresa:listar_ventas_manufactura' %}">
+              <!-- <li><a class="nav-link" href="{% url 'empresa:listar_ventas_manufactura' %}">
                 <i class="bi bi-list-ul me-2"></i>Ver Ventas
               </a></li>
               <li><a class="nav-link" href="{% url 'empresa:crear_venta_manufactura' %}">
                 <i class="bi bi-plus-circle me-2"></i>+ Nueva Venta
-              </a></li>
+              </a></li> -->
             </ul>
           </div>
         </li>
