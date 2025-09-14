@@ -8,46 +8,57 @@ from django.views.decorators.csrf import csrf_exempt
 from decimal import Decimal
 from datetime import date, timedelta
 from empresa.models import CuentaPorCobrar, CuentaPorPagar, PagoCuentaPorCobrar, PagoCuentaPorPagar
+import logging
+
+logger = logging.getLogger(__name__)
 
 @login_required
 def gestion_deudas(request):
     """Vista principal para gestión de deudas (cuentas por cobrar y pagar)"""
-    empresa = request.user.empresa
+    try:
+        empresa = request.user.empresa
+        
+        # Cuentas por cobrar
+        cuentas_cobrar = CuentaPorCobrar.objects.filter(
+            empresa=empresa,
+            estado__in=['pendiente', 'vencida'],
+            monto_pendiente__gt=0
+        ).select_related('cliente', 'venta').order_by('fecha_vencimiento')
+        
+        # Cuentas por pagar
+        cuentas_pagar = CuentaPorPagar.objects.filter(
+            empresa=empresa,
+            estado__in=['pendiente', 'vencida'],
+            monto_pendiente__gt=0
+        ).select_related('proveedor', 'compra').order_by('fecha_vencimiento')
+        
+        # Totales
+        total_por_cobrar = cuentas_cobrar.aggregate(total=Sum('monto_pendiente'))['total'] or 0
+        total_por_pagar = cuentas_pagar.aggregate(total=Sum('monto_pendiente'))['total'] or 0
+        
+        # Vencidas
+        hoy = date.today()
+        cobrar_vencidas = cuentas_cobrar.filter(fecha_vencimiento__lt=hoy).count()
+        pagar_vencidas = cuentas_pagar.filter(fecha_vencimiento__lt=hoy).count()
+        
+        context = {
+            'cuentas_cobrar': cuentas_cobrar,
+            'cuentas_pagar': cuentas_pagar,
+            'total_por_cobrar': total_por_cobrar,
+            'total_por_pagar': total_por_pagar,
+            'cobrar_vencidas': cobrar_vencidas,
+            'pagar_vencidas': pagar_vencidas,
+            'balance_neto': total_por_cobrar - total_por_pagar,
+            'today': hoy,
+        }
+        
+        return render(request, 'empresa/gestion_deudas.html', context)
     
-    # Cuentas por cobrar
-    cuentas_cobrar = CuentaPorCobrar.objects.filter(
-        empresa=empresa,
-        estado__in=['pendiente', 'vencida'],
-        monto_pendiente__gt=0
-    ).select_related('cliente', 'venta').order_by('fecha_vencimiento')
-    
-    # Cuentas por pagar
-    cuentas_pagar = CuentaPorPagar.objects.filter(
-        empresa=empresa,
-        estado__in=['pendiente', 'vencida'],
-        monto_pendiente__gt=0
-    ).select_related('proveedor', 'compra').order_by('fecha_vencimiento')
-    
-    # Totales
-    total_por_cobrar = cuentas_cobrar.aggregate(total=Sum('monto_pendiente'))['total'] or 0
-    total_por_pagar = cuentas_pagar.aggregate(total=Sum('monto_pendiente'))['total'] or 0
-    
-    # Vencidas
-    hoy = date.today()
-    cobrar_vencidas = cuentas_cobrar.filter(fecha_vencimiento__lt=hoy).count()
-    pagar_vencidas = cuentas_pagar.filter(fecha_vencimiento__lt=hoy).count()
-    
-    context = {
-        'cuentas_cobrar': cuentas_cobrar,
-        'cuentas_pagar': cuentas_pagar,
-        'total_por_cobrar': total_por_cobrar,
-        'total_por_pagar': total_por_pagar,
-        'cobrar_vencidas': cobrar_vencidas,
-        'pagar_vencidas': pagar_vencidas,
-        'balance_neto': total_por_cobrar - total_por_pagar,
-    }
-    
-    return render(request, 'empresa/gestion_deudas.html', context)
+    except Exception as exc:
+        logger.exception("Error en gestion_deudas: %s", exc)
+        return render(request, 'empresa/error_resumen.html', {
+            "mensaje": "Error al cargar la gestión de deudas. El equipo técnico ha sido notificado."
+        }, status=500)
 
 @login_required
 @csrf_exempt
