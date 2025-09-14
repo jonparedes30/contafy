@@ -140,3 +140,32 @@ class SaldosInicialesForm(forms.Form):
         super().__init__(*args, **kwargs)
         if empresa:
             self.fields['producto'].queryset = Producto.objects.filter(empresa=empresa)
+
+class MateriaPrimaForm(forms.ModelForm):
+    class Meta:
+        model = Producto  # Usando Producto como placeholder
+        fields = ['nombre', 'descripcion', 'precio_unitario']
+        widgets = {
+            'nombre': forms.TextInput(attrs={'class': 'form-control'}),
+            'descripcion': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
+            'precio_unitario': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01'}),
+        }
+
+class ProductoManufacturadoForm(forms.ModelForm):
+    class Meta:
+        model = Producto  # Usando Producto como placeholder
+        fields = ['nombre', 'descripcion', 'precio_unitario']
+        widgets = {
+            'nombre': forms.TextInput(attrs={'class': 'form-control'}),
+            'descripcion': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
+            'precio_unitario': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01'}),
+        }
+
+class OrdenProduccionForm(forms.ModelForm):
+    class Meta:
+        model = Producto  # Usando Producto como placeholder
+        fields = ['nombre', 'descripcion']
+        widgets = {
+            'nombre': forms.TextInput(attrs={'class': 'form-control'}),
+            'descripcion': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
+        }
