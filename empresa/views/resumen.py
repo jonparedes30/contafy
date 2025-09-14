@@ -258,80 +258,73 @@ def resumen_financiero(request):
         empresa = getattr(request.user, 'empresa', None)
         if empresa:
             totales = obtener_totales_contables(empresa)
-    
-
-    
-    productos_vendidos = []
-    gastos_por_categoria = []
-    
-    try:
+        
+        productos_vendidos = []
+        gastos_por_categoria = []
+        
         if empresa:
-            productos_vendidos = obtener_productos_mas_vendidos(empresa)
-            gastos_por_categoria = obtener_gastos_por_categoria(empresa)
-    except Exception as e:
-        print(f"Error obteniendo productos/gastos: {e}")
+            try:
+                productos_vendidos = obtener_productos_mas_vendidos(empresa)
+                gastos_por_categoria = obtener_gastos_por_categoria(empresa)
+            except Exception as e:
+                print(f"Error obteniendo productos/gastos: {e}")
     
-    # 5. Generar recomendaciones automáticas
-    recomendaciones = generar_recomendaciones(
-        totales['ventas'],
-        totales['gastos'],
-        totales['utilidad_neta'],
-        []
-    )
-    
-    # 6. Generar conclusión ejecutiva
-    conclusion = generar_conclusion_ejecutiva(
-        totales['ventas'],
-        totales['utilidad_neta']
-    )
-    
-    # 7. Calcular indicadores financieros
-    total_capital = total_activos = total_pasivos = 0
-    liquidez = endeudamiento = roe = margen_neto = margen_bruto = ratio_gastos_ventas = ratio_costos = rotacion_activos = 0
-    
-    try:
+        # 5. Generar recomendaciones automáticas
+        recomendaciones = generar_recomendaciones(
+            totales['ventas'],
+            totales['gastos'],
+            totales['utilidad_neta'],
+            []
+        )
+        
+        # 6. Generar conclusión ejecutiva
+        conclusion = generar_conclusion_ejecutiva(
+            totales['ventas'],
+            totales['utilidad_neta']
+        )
+        
+        # 7. Calcular indicadores financieros
+        total_capital = total_activos = total_pasivos = 0
+        liquidez = endeudamiento = roe = margen_neto = margen_bruto = ratio_gastos_ventas = ratio_costos = rotacion_activos = 0
+        
         if empresa:
-            total_activos = sum(float(getattr(c, 'valor', 0) or 0) for c in CuentaContable.objects.filter(empresa=empresa, tipo='activo'))
-            total_pasivos = sum(float(getattr(c, 'valor', 0) or 0) for c in CuentaContable.objects.filter(empresa=empresa, tipo='pasivo'))
-            total_capital = sum(float(getattr(c, 'valor', 0) or 0) for c in CuentaContable.objects.filter(empresa=empresa, tipo='capital'))
-            
-            liquidez = (total_activos / total_pasivos) if total_pasivos > 0 else 0
-            endeudamiento = (total_pasivos / total_activos) if total_activos > 0 else 0
-            roe = (totales['utilidad_neta'] / total_capital * 100) if total_capital > 0 else 0
-            margen_neto = (totales['utilidad_neta'] / totales['ventas'] * 100) if totales['ventas'] > 0 else 0
-            margen_bruto = (totales['utilidad_bruta'] / totales['ventas'] * 100) if totales['ventas'] > 0 else 0
-            ratio_gastos_ventas = (totales['gastos'] / totales['ventas'] * 100) if totales['ventas'] > 0 else 0
-            ratio_costos = (totales['compras'] / totales['ventas'] * 100) if totales['ventas'] > 0 else 0
-            rotacion_activos = (totales['ventas'] / total_activos) if total_activos > 0 else 0
-    except Exception as e:
-        print(f"Error calculando indicadores: {e}")
+            try:
+                total_activos = sum(float(getattr(c, 'valor', 0) or 0) for c in CuentaContable.objects.filter(empresa=empresa, tipo='activo'))
+                total_pasivos = sum(float(getattr(c, 'valor', 0) or 0) for c in CuentaContable.objects.filter(empresa=empresa, tipo='pasivo'))
+                total_capital = sum(float(getattr(c, 'valor', 0) or 0) for c in CuentaContable.objects.filter(empresa=empresa, tipo='capital'))
+                
+                liquidez = (total_activos / total_pasivos) if total_pasivos > 0 else 0
+                endeudamiento = (total_pasivos / total_activos) if total_activos > 0 else 0
+                roe = (totales['utilidad_neta'] / total_capital * 100) if total_capital > 0 else 0
+                margen_neto = (totales['utilidad_neta'] / totales['ventas'] * 100) if totales['ventas'] > 0 else 0
+                margen_bruto = (totales['utilidad_bruta'] / totales['ventas'] * 100) if totales['ventas'] > 0 else 0
+                ratio_gastos_ventas = (totales['gastos'] / totales['ventas'] * 100) if totales['ventas'] > 0 else 0
+                ratio_costos = (totales['compras'] / totales['ventas'] * 100) if totales['ventas'] > 0 else 0
+                rotacion_activos = (totales['ventas'] / total_activos) if total_activos > 0 else 0
+            except Exception as e:
+                print(f"Error calculando indicadores: {e}")
 
-    # 8. Preparar contexto para el template
-    contexto = {
-        'ventas': totales.get('ventas', 0),
-        'compras': totales.get('compras', 0),
-        'gastos': totales.get('gastos', 0),
-        'utilidad_bruta': totales.get('utilidad_bruta', 0),
-        'utilidad_neta': totales.get('utilidad_neta', 0),
-        'productos_vendidos': productos_vendidos,
-        'gastos_por_categoria': gastos_por_categoria,
-        'recomendaciones': recomendaciones,
-        'conclusion': conclusion,
-        'roe': round(float(roe), 2),
-        'liquidez': round(float(liquidez), 2),
-        'endeudamiento': round(float(endeudamiento), 2),
-        'margen_neto': round(float(margen_neto), 2),
-        'margen_bruto': round(float(margen_bruto), 2),
-        'ratio_gastos_ventas': round(float(ratio_gastos_ventas), 2),
-        'ratio_costos': round(float(ratio_costos), 2),
-        'rotacion_activos': round(float(rotacion_activos), 2),
-        'analisis_predictivo': {}
-    }
-    
-
-    
-        # Deshabilitar análisis predictivo por ahora
-        contexto['analisis_predictivo'] = {}
+        # 8. Preparar contexto para el template
+        contexto = {
+            'ventas': totales.get('ventas', 0),
+            'compras': totales.get('compras', 0),
+            'gastos': totales.get('gastos', 0),
+            'utilidad_bruta': totales.get('utilidad_bruta', 0),
+            'utilidad_neta': totales.get('utilidad_neta', 0),
+            'productos_vendidos': productos_vendidos,
+            'gastos_por_categoria': gastos_por_categoria,
+            'recomendaciones': recomendaciones,
+            'conclusion': conclusion,
+            'roe': round(float(roe), 2),
+            'liquidez': round(float(liquidez), 2),
+            'endeudamiento': round(float(endeudamiento), 2),
+            'margen_neto': round(float(margen_neto), 2),
+            'margen_bruto': round(float(margen_bruto), 2),
+            'ratio_gastos_ventas': round(float(ratio_gastos_ventas), 2),
+            'ratio_costos': round(float(ratio_costos), 2),
+            'rotacion_activos': round(float(rotacion_activos), 2),
+            'analisis_predictivo': {}
+        }
         
         return render(request, 'empresa/resumen.html', contexto)
     
