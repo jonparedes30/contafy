@@ -1,0 +1,11 @@
+{% extends 'empresa/base.html' %}
+{% block title %}Error - Resumen{% endblock %}
+{% block content %}
+<div class="container mt-5">
+    <div class="alert alert-danger">
+        <h4><i class="fas fa-exclamation-triangle"></i> Error Temporal</h4>
+        <p>{{ mensaje }}</p>
+        <a href="{% url 'empresa:dashboard' %}" class="btn btn-primary">Volver al Dashboard</a>
+    </div>
+</div>
+{% endblock %}

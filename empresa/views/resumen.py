@@ -7,6 +7,9 @@ from django.db.models import Sum
 from datetime import datetime, timedelta
 import calendar
 import json
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 def obtener_totales_contables(empresa):
@@ -242,22 +245,19 @@ def generar_conclusion_ejecutiva(ventas, utilidad_neta):
 @login_required
 def resumen_financiero(request):
     """Vista principal del resumen financiero"""
-    
-    # Datos por defecto
-    totales = {
-        'ventas': 0,
-        'compras': 0, 
-        'gastos': 0,
-        'utilidad_bruta': 0,
-        'utilidad_neta': 0
-    }
-    
     try:
+        # Datos por defecto
+        totales = {
+            'ventas': 0,
+            'compras': 0, 
+            'gastos': 0,
+            'utilidad_bruta': 0,
+            'utilidad_neta': 0
+        }
+        
         empresa = getattr(request.user, 'empresa', None)
         if empresa:
             totales = obtener_totales_contables(empresa)
-    except Exception as e:
-        print(f"Error obteniendo totales: {e}")
     
 
     
@@ -330,10 +330,18 @@ def resumen_financiero(request):
     
 
     
-    # Deshabilitar análisis predictivo por ahora
-    contexto['analisis_predictivo'] = {}
+        # Deshabilitar análisis predictivo por ahora
+        contexto['analisis_predictivo'] = {}
+        
+        return render(request, 'empresa/resumen.html', contexto)
     
-    return render(request, 'empresa/resumen.html', contexto)
+    except Exception as exc:
+        # Log completo con traceback
+        logger.exception("Error en vista resumen_financiero: %s", exc)
+        # Respuesta controlada para el usuario
+        return render(request, 'empresa/error_resumen.html', {
+            "mensaje": "Error al generar el resumen financiero. El equipo técnico ha sido notificado."
+        }, status=500)
 
 @login_required
 def estado_resultados(request):
