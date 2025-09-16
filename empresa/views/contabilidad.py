@@ -148,14 +148,6 @@ def balance_general(request):
         # Obtener cuentas contables
         cuentas = CuentaContable.objects.filter(empresa=empresa)
         
-        # Agregar caja del modelo Capital (aportes aumentan caja)
-        if capital_neto > 0:
-            activos.append({
-                'cuenta_fk__nombre': 'Caja (Capital)',
-                'valor': capital_neto
-            })
-            total_activos += capital_neto
-        
         activos = []
         pasivos = []
         capital = []
@@ -170,6 +162,14 @@ def balance_general(request):
         capital_neto = capital_aportes - capital_retiros
         
         if capital_neto > 0:
+            # Agregar a activos (caja)
+            activos.append({
+                'cuenta_fk__nombre': 'Caja (Capital)',
+                'valor': capital_neto
+            })
+            total_activos += capital_neto
+            
+            # Agregar a capital
             capital.append({
                 'cuenta_fk__nombre': 'Capital Social',
                 'valor': capital_neto
