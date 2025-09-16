@@ -101,6 +101,11 @@ else:
 
 DATABASES['default']['ATOMIC_REQUESTS'] = True
 
+# Configuración de respaldos automáticos
+BACKUP_ENABLED = env.bool('BACKUP_ENABLED', default=True)
+BACKUP_RETENTION_DAYS = env.int('BACKUP_RETENTION_DAYS', default=30)
+BACKUP_SCHEDULE = env('BACKUP_SCHEDULE', default='daily')  # daily, weekly, monthly
+
 # Configuración de caché
 CACHES = {
     'default': {
@@ -203,6 +208,12 @@ TWILIO_AUTH_TOKEN = env('TWILIO_AUTH_TOKEN', default='')
 # Configuración de APIs de IA
 OPENAI_API_KEY = env('OPENAI_API_KEY', default='')
 GEMINI_API_KEY = env('GEMINI_API_KEY', default='')
+
+# Configuración de sesiones persistentes
+SESSION_ENGINE = 'django.contrib.sessions.backends.db'
+SESSION_COOKIE_AGE = 86400  # 24 horas
+SESSION_SAVE_EVERY_REQUEST = True
+SESSION_EXPIRE_AT_BROWSER_CLOSE = False
 
 # Configuración de logging simplificada para Heroku
 LOGGING = {

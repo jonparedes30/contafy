@@ -106,6 +106,14 @@ class Empresa(models.Model):
         blank=True,
         help_text="Longitud GPS del negocio"
     )
+    propietario = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name='empresas_propias',
+        help_text="Usuario propietario de la empresa"
+    )
 
     class Meta:
         indexes = [

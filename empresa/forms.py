@@ -72,17 +72,169 @@ class EditarEmpresaForm(forms.ModelForm):
         }
 
 class RegistroForm(UserCreationForm):
-    email = forms.EmailField(required=True)
+    # Datos personales
+    first_name = forms.CharField(
+        max_length=30, 
+        required=True,
+        widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ej: Juan'})
+    )
+    last_name = forms.CharField(
+        max_length=30, 
+        required=True,
+        widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ej: Pérez García'})
+    )
+    email = forms.EmailField(
+        required=True,
+        widget=forms.EmailInput(attrs={'class': 'form-control', 'placeholder': 'tu@email.com'})
+    )
+    
+    # Datos de la empresa
+    nombre_empresa = forms.CharField(
+        max_length=200, 
+        required=True,
+        widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ej: Mi Negocio S.A.'})
+    )
+    ruc = forms.CharField(
+        max_length=13, 
+        required=True,
+        widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ej: 1234567890001'}),
+        help_text='RUC de la empresa o cédula del propietario'
+    )
+    direccion = forms.CharField(
+        max_length=300, 
+        required=True,
+        widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ej: Av. Principal 123 y Secundaria'})
+    )
+    
+    # Categoría y tipo de negocio
+    CATEGORIA_CHOICES = [
+        ('comercial', 'Comercial - Compra y venta'),
+        ('manufactura', 'Manufactura - Producción'),
+        ('servicios', 'Servicios - Prestación de servicios')
+    ]
+    categoria = forms.ChoiceField(
+        choices=CATEGORIA_CHOICES,
+        required=True,
+        widget=forms.Select(attrs={'class': 'form-select'})
+    )
+    tipo_negocio = forms.CharField(
+        max_length=100,
+        required=True,
+        widget=forms.TextInput(attrs={
+            'class': 'form-control', 
+            'placeholder': 'Ej: Minimarket, Panadería, Consultorio',
+            'list': 'sugerencias_negocio'
+        }),
+        help_text='Describe específicamente tu tipo de negocio'
+    )
+    
+    # Ubicación
+    PROVINCIAS_ECUADOR = [
+        ('azuay', 'Azuay'), ('bolivar', 'Bolívar'), ('canar', 'Cañar'),
+        ('carchi', 'Carchi'), ('chimborazo', 'Chimborazo'), ('cotopaxi', 'Cotopaxi'),
+        ('el_oro', 'El Oro'), ('esmeraldas', 'Esmeraldas'), ('galapagos', 'Galápagos'),
+        ('guayas', 'Guayas'), ('imbabura', 'Imbabura'), ('loja', 'Loja'),
+        ('los_rios', 'Los Ríos'), ('manabi', 'Manabí'), ('morona_santiago', 'Morona Santiago'),
+        ('napo', 'Napo'), ('orellana', 'Orellana'), ('pastaza', 'Pastaza'),
+        ('pichincha', 'Pichincha'), ('santa_elena', 'Santa Elena'), ('santo_domingo', 'Santo Domingo'),
+        ('sucumbios', 'Sucumbíos'), ('tungurahua', 'Tungurahua'), ('zamora_chinchipe', 'Zamora Chinchipe')
+    ]
+    provincia = forms.ChoiceField(
+        choices=PROVINCIAS_ECUADOR,
+        required=True,
+        widget=forms.Select(attrs={'class': 'form-select'})
+    )
+    ciudad = forms.CharField(
+        max_length=100,
+        required=True,
+        widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ej: Quito, Guayaquil, Cuenca'})
+    )
+    
+    # Contacto opcional
+    telefono_whatsapp = forms.CharField(
+        max_length=15,
+        required=False,
+        widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ej: +593987654321'}),
+        help_text='Formato: +593987654321 (opcional)'
+    )
+    
+    # GPS (opcional)
+    latitud = forms.DecimalField(
+        max_digits=10, 
+        decimal_places=7, 
+        required=False,
+        widget=forms.HiddenInput()
+    )
+    longitud = forms.DecimalField(
+        max_digits=10, 
+        decimal_places=7, 
+        required=False,
+        widget=forms.HiddenInput()
+    )
     
     class Meta:
         model = Usuario
-        fields = ('username', 'email', 'password1', 'password2')
-        
+        fields = ('username', 'first_name', 'last_name', 'email', 'password1', 'password2')
+        widgets = {
+            'username': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ej: juanperez'}),
+            'password1': forms.PasswordInput(attrs={'class': 'form-control'}),
+            'password2': forms.PasswordInput(attrs={'class': 'form-control'}),
+        }
+    
+    def clean_ruc(self):
+        ruc = self.cleaned_data.get('ruc')
+        if ruc:
+            # Validación básica de RUC ecuatoriano
+            if not ruc.isdigit() or len(ruc) not in [10, 13]:
+                raise forms.ValidationError('RUC debe tener 10 o 13 dígitos')
+        return ruc
+    
+    def clean_telefono_whatsapp(self):
+        telefono = self.cleaned_data.get('telefono_whatsapp')
+        if telefono:
+            # Limpiar formato
+            telefono = telefono.replace(' ', '').replace('-', '').replace('(', '').replace(')', '')
+            if not telefono.startswith('+593'):
+                if telefono.startswith('0'):
+                    telefono = '+593' + telefono[1:]
+                elif telefono.startswith('593'):
+                    telefono = '+' + telefono
+                else:
+                    telefono = '+593' + telefono
+        return telefono
+    
     def save(self, commit=True):
+        from empresa.models import Empresa
+        from django.db import transaction
+        
         user = super().save(commit=False)
+        user.first_name = self.cleaned_data['first_name']
+        user.last_name = self.cleaned_data['last_name']
         user.email = self.cleaned_data['email']
+        
         if commit:
-            user.save()
+            with transaction.atomic():
+                user.save()
+                
+                # Crear empresa
+                empresa = Empresa.objects.create(
+                    nombre=self.cleaned_data['nombre_empresa'],
+                    ruc=self.cleaned_data['ruc'],
+                    direccion=self.cleaned_data['direccion'],
+                    categoria=self.cleaned_data['categoria'],
+                    tipo_negocio=self.cleaned_data['tipo_negocio'],
+                    provincia=self.cleaned_data['provincia'],
+                    ciudad=self.cleaned_data['ciudad'],
+                    telefono_whatsapp=self.cleaned_data.get('telefono_whatsapp', ''),
+                    latitud=self.cleaned_data.get('latitud'),
+                    longitud=self.cleaned_data.get('longitud'),
+                    propietario=user
+                )
+                
+                # Asignar empresa al usuario
+                user.empresa = empresa
+                user.save()
+                
         return user
 
 class ProductoForm(forms.ModelForm):
