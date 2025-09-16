@@ -34,9 +34,42 @@ def crear_cuenta_contable(request):
                 # Obtener cuentas existentes para contrapartida
                 cuentas = CuentaContable.objects.filter(empresa=empresa)
                 
+                # Sugerencias inteligentes según el tipo de cuenta
+                sugerencias = {
+                    'activo': [
+                        {'nombre': 'Capital', 'descripcion': 'Aporte de los socios o propietario'},
+                        {'nombre': 'Préstamo Bancario', 'descripcion': 'Dinero prestado por el banco'},
+                        {'nombre': 'Cuentas por Pagar', 'descripcion': 'Dinero que debes a proveedores'},
+                        {'nombre': 'Bancos', 'descripcion': 'Transferencia entre cuentas bancarias'}
+                    ],
+                    'pasivo': [
+                        {'nombre': 'Caja', 'descripcion': 'Dinero en efectivo recibido'},
+                        {'nombre': 'Bancos', 'descripcion': 'Dinero depositado en el banco'},
+                        {'nombre': 'Equipos', 'descripcion': 'Compra de equipos a crédito'}
+                    ],
+                    'capital': [
+                        {'nombre': 'Caja', 'descripcion': 'Aporte en efectivo'},
+                        {'nombre': 'Bancos', 'descripcion': 'Aporte depositado en banco'},
+                        {'nombre': 'Equipos', 'descripcion': 'Aporte de equipos o activos'}
+                    ],
+                    'ingreso': [
+                        {'nombre': 'Caja', 'descripcion': 'Cobro en efectivo'},
+                        {'nombre': 'Bancos', 'descripcion': 'Cobro por transferencia'},
+                        {'nombre': 'Cuentas por Cobrar', 'descripcion': 'Venta a crédito'}
+                    ],
+                    'gasto': [
+                        {'nombre': 'Caja', 'descripcion': 'Pago en efectivo'},
+                        {'nombre': 'Bancos', 'descripcion': 'Pago por transferencia'},
+                        {'nombre': 'Cuentas por Pagar', 'descripcion': 'Compra a crédito'}
+                    ]
+                }
+                
+                contrapartidas_sugeridas = sugerencias.get(tipo, [])
+                
                 return render(request, 'empresa/partida_doble_confirmar.html', {
                     'cuenta_data': request.session['cuenta_data'],
                     'cuentas': cuentas,
+                    'contrapartidas_sugeridas': contrapartidas_sugeridas,
                 })
             except ValueError:
                 messages.error(request, 'El monto inicial debe ser un número válido.')

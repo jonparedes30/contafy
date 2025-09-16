@@ -1,11 +1,22 @@
 {% extends 'empresa/base.html' %}
 {% block title %}Confirmar Partida Doble{% endblock %}
 {% block content %}
-<div class="container mt-5" style="max-width: 600px;">
-    <h2 class="mb-4 text-primary text-center">Partida Doble - Confirmación</h2>
-    <div class="alert alert-info">
-        <strong>Nueva cuenta:</strong> {{ cuenta_data.nombre }} ({{ cuenta_data.tipo|title }})<br>
-        <strong>Valor:</strong> ${{ cuenta_data.monto_inicial }}
+<div class="container mt-5" style="max-width: 700px;">
+    <h2 class="mb-4 text-primary text-center">Completar Registro Contable</h2>
+    
+    <div class="alert alert-success mb-4">
+        <h5><i class="fas fa-check-circle"></i> Nueva cuenta: {{ cuenta_data.nombre }}</h5>
+        <p class="mb-1"><strong>Tipo:</strong> {{ cuenta_data.tipo|title }} | <strong>Valor:</strong> ${{ cuenta_data.monto_inicial }}</p>
+    </div>
+    
+    <div class="alert alert-light border mb-4">
+        <h6><i class="fas fa-info-circle text-info"></i> ¿Qué es esto?</h6>
+        <p class="mb-2 small">En contabilidad, cada movimiento afecta al menos 2 cuentas. Por ejemplo:</p>
+        <ul class="small mb-0">
+            <li>Si compras un equipo → aumenta "Equipos" y disminuye "Caja"</li>
+            <li>Si recibes un préstamo → aumenta "Caja" y aumenta "Préstamos por Pagar"</li>
+            <li>Si aportas capital → aumenta "Caja" y aumenta "Capital"</li>
+        </ul>
     </div>
     <form method="post">
         {% csrf_token %}
@@ -16,7 +27,21 @@
             {% if contrapartidas_sugeridas %}
             <div class="alert alert-info mb-3">
                 <i class="fas fa-lightbulb"></i> 
-                <strong>Sugerencias:</strong> {{ contrapartidas_sugeridas|join:", " }}
+                <strong>Sugerencias para tu cuenta "{{ cuenta_data.nombre }}":</strong>
+                <div class="mt-2">
+                    {% for sugerencia in contrapartidas_sugeridas %}
+                    <div class="mb-2">
+                        <button type="button" class="btn btn-outline-primary btn-sm me-2 sugerencia-btn" 
+                                data-nombre="{{ sugerencia.nombre }}">
+                            {{ sugerencia.nombre }}
+                        </button>
+                        <small class="text-muted">{{ sugerencia.descripcion }}</small>
+                    </div>
+                    {% endfor %}
+                </div>
+                <small class="text-info mt-2 d-block">
+                    <i class="fas fa-info-circle"></i> Haz clic en una sugerencia para usarla como contrapartida
+                </small>
             </div>
             {% endif %}
             
@@ -146,5 +171,45 @@ function actualizarResumen() {
 
 selectContrapartida.addEventListener('change', actualizarResumen);
 inputNueva.addEventListener('input', actualizarResumen);
+
+// Manejar clics en sugerencias
+document.querySelectorAll('.sugerencia-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+        const nombre = this.getAttribute('data-nombre');
+        
+        // Verificar si la cuenta ya existe
+        const existeEnSelect = Array.from(selectContrapartida.options).some(option => 
+            option.text.toLowerCase().includes(nombre.toLowerCase())
+        );
+        
+        if (existeEnSelect) {
+            // Seleccionar cuenta existente
+            radioExistente.checked = true;
+            radioExistente.dispatchEvent(new Event('change'));
+            
+            // Buscar y seleccionar la opción
+            for (let option of selectContrapartida.options) {
+                if (option.text.toLowerCase().includes(nombre.toLowerCase())) {
+                    selectContrapartida.value = option.value;
+                    break;
+                }
+            }
+        } else {
+            // Crear nueva cuenta
+            radioNueva.checked = true;
+            radioNueva.dispatchEvent(new Event('change'));
+            inputNueva.value = nombre;
+        }
+        
+        // Actualizar resumen
+        actualizarResumen();
+        
+        // Resaltar el botón seleccionado
+        document.querySelectorAll('.sugerencia-btn').forEach(b => b.classList.remove('btn-primary'));
+        document.querySelectorAll('.sugerencia-btn').forEach(b => b.classList.add('btn-outline-primary'));
+        this.classList.remove('btn-outline-primary');
+        this.classList.add('btn-primary');
+    });
+});
 </script>
 {% endblock %} 
