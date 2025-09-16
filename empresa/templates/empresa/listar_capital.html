@@ -5,25 +5,55 @@
 <div class="container mt-5">
     <h2 class="mb-4 text-center text-success">Historial de Capital Social</h2>
 
-    {% if movimientos %}
+    {% if movimientos_capital %}
         <table class="table table-bordered table-hover">
             <thead class="table-success">
                 <tr>
                     <th>Fecha</th>
                     <th>Descripción</th>
                     <th>Monto</th>
+                    <th>Tipo</th>
                 </tr>
             </thead>
             <tbody>
-                {% for m in movimientos %}
+                {% for m in movimientos_capital %}
                 <tr>
-                    <td>{{ m.fecha|date:"d/m/Y" }}</td>
+                    <td>{{ m.fecha|date:"d/m/Y H:i" }}</td>
                     <td>{{ m.descripcion }}</td>
                     <td>{% load currency_filters %}{{ m.monto|currency }}</td>
+                    <td><span class="badge bg-{% if m.tipo == 'aporte' %}success{% else %}danger{% endif %}">{{ m.get_tipo_display }}</span></td>
                 </tr>
                 {% endfor %}
             </tbody>
         </table>
+        
+        <!-- Estadísticas -->
+        <div class="row mt-4">
+            <div class="col-md-4">
+                <div class="card bg-success text-white">
+                    <div class="card-body text-center">
+                        <h5>Total Aportes</h5>
+                        <h3>{% load currency_filters %}{{ total_aportes|currency }}</h3>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card bg-danger text-white">
+                    <div class="card-body text-center">
+                        <h5>Total Retiros</h5>
+                        <h3>{% load currency_filters %}{{ total_retiros|currency }}</h3>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card bg-primary text-white">
+                    <div class="card-body text-center">
+                        <h5>Capital Neto</h5>
+                        <h3>{% load currency_filters %}{{ capital_neto|currency }}</h3>
+                    </div>
+                </div>
+            </div>
+        </div>
     {% else %}
         <div class="alert alert-info text-center">No se han registrado movimientos de capital aún.</div>
     {% endif %}
