@@ -36,7 +36,7 @@ def debug_datos(request):
     """
     
     for cuenta in cuentas:
-        html += f"<li>{cuenta.nombre} ({cuenta.tipo}) - Valor: ${cuenta.valor}</li>"
+        html += f"<li>{cuenta.nombre} ({cuenta.tipo})</li>"
     
     html += f"""
     </ul>

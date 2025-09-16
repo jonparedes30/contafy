@@ -47,10 +47,6 @@ def crear_capital(request):
                     transaccion_id = str(uuid.uuid4())[:8]
                     descripcion = capital.descripcion
                     
-                    # Debug: Verificar que las cuentas se crearon
-                    print(f"DEBUG: Cuenta Caja creada - ID: {cuenta_caja.id}, Nombre: {cuenta_caja.nombre}")
-                    print(f"DEBUG: Cuenta Capital creada - ID: {cuenta_capital.id}, Nombre: {cuenta_capital.nombre}")
-                    
                     if capital.tipo == 'aporte':
                         # Débito: Caja (Activo aumenta)
                         MovimientoContable.objects.create(
@@ -65,7 +61,7 @@ def crear_capital(request):
                         )
                         
                         # Crédito: Capital (Capital aumenta)
-                        mov_credito = MovimientoContable.objects.create(
+                        MovimientoContable.objects.create(
                             empresa=request.user.empresa,
                             cuenta_fk=cuenta_capital,
                             cuenta_text='Capital',
@@ -75,13 +71,6 @@ def crear_capital(request):
                             estado='confirmado',
                             transaccion_id=transaccion_id
                         )
-                        
-                        # Debug: Verificar que los asientos se crearon
-                        print(f"DEBUG: Asiento crédito creado - ID: {mov_credito.id}, Monto: {mov_credito.monto}")
-                        
-                        # Verificar total de movimientos
-                        total_movimientos = MovimientoContable.objects.filter(empresa=request.user.empresa).count()
-                        print(f"DEBUG: Total movimientos en BD: {total_movimientos}")
                     else:  # retiro
                         # Débito: Capital (Capital disminuye)
                         MovimientoContable.objects.create(
@@ -96,7 +85,7 @@ def crear_capital(request):
                         )
                         
                         # Crédito: Caja (Activo disminuye)
-                        mov_credito = MovimientoContable.objects.create(
+                        MovimientoContable.objects.create(
                             empresa=request.user.empresa,
                             cuenta_fk=cuenta_caja,
                             cuenta_text='Caja',
@@ -106,13 +95,6 @@ def crear_capital(request):
                             estado='confirmado',
                             transaccion_id=transaccion_id
                         )
-                        
-                        # Debug: Verificar que los asientos se crearon
-                        print(f"DEBUG: Asiento crédito creado - ID: {mov_credito.id}, Monto: {mov_credito.monto}")
-                        
-                        # Verificar total de movimientos
-                        total_movimientos = MovimientoContable.objects.filter(empresa=request.user.empresa).count()
-                        print(f"DEBUG: Total movimientos en BD: {total_movimientos}")
                     
                     tipo_texto = "aporte" if capital.tipo == 'aporte' else "retiro"
                     messages.success(request, f'{tipo_texto.title()} de capital registrado: ${capital.monto} (con asientos contables)')
