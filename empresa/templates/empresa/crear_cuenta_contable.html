@@ -3,53 +3,47 @@
 {% block title %}Crear Cuenta Contable{% endblock %}
 
 {% block content %}
-<div class="container mt-5" style="max-width: 600px;">
-    <h2 class="mb-4 text-primary text-center">Nueva Cuenta Contable</h2>
-
-    <form method="post" id="cuenta-contable-form">
-        {% csrf_token %}
-        <div class="mb-3">
-            {{ form.tipo.label_tag }}
-            {{ form.tipo }}
-            <div id="tipo-ayuda" class="form-text text-info mt-1"></div>
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h4>Nueva Cuenta Contable</h4>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        <div class="mb-3">
+                            <label for="id_nombre" class="form-label">Nombre de la Cuenta</label>
+                            <input type="text" class="form-control" id="id_nombre" name="nombre" required>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="id_tipo" class="form-label">Tipo de Cuenta</label>
+                            <select class="form-select" id="id_tipo" name="tipo" required>
+                                <option value="">Selecciona un tipo</option>
+                                <option value="activo">Activo</option>
+                                <option value="pasivo">Pasivo</option>
+                                <option value="capital">Capital</option>
+                                <option value="ingreso">Ingreso</option>
+                                <option value="gasto">Gasto</option>
+                            </select>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="id_monto_inicial" class="form-label">Monto Inicial</label>
+                            <input type="number" step="0.01" class="form-control" id="id_monto_inicial" name="monto_inicial" value="0.00">
+                        </div>
+                        
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary">Crear Cuenta</button>
+                            <a href="{% url 'empresa:listar_cuentas_contables' %}" class="btn btn-secondary">Cancelar</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
         </div>
-
-        <div class="mb-3">
-            {{ form.nombre.label_tag }}
-            {{ form.nombre }}
-        </div>
-
-        <div class="mb-3">
-            {{ form.monto_inicial.label_tag }}
-            {{ form.monto_inicial }}
-            <div class="form-text">Ejemplo: el valor de adquisición del activo, monto del préstamo, etc.</div>
-        </div>
-
-        <div class="text-end">
-            <button type="submit" class="btn btn-success">Guardar cuenta</button>
-            <a href="{% url 'empresa:balance_general' %}" class="btn btn-secondary ms-2">Cancelar</a>
-        </div>
-    </form>
+    </div>
 </div>
-
-<script>
-// Ayuda contextual para el tipo de cuenta
-const ayudaPorTipo = {
-    'activo': 'Activo: Lo que posee la empresa (caja, bancos, equipos, inventario, etc.).',
-    'pasivo': 'Pasivo: Deudas y obligaciones (préstamos, cuentas por pagar, etc.).',
-    'capital': 'Capital: Aportes de los socios o utilidades retenidas.',
-    'ingreso': 'Ingreso: Dinero que entra por ventas o servicios.',
-    'gasto': 'Gasto: Salidas de dinero por operaciones, compras, servicios, etc.'
-};
-const selectTipo = document.getElementById('id_tipo');
-const ayudaDiv = document.getElementById('tipo-ayuda');
-if (selectTipo && ayudaDiv) {
-    function mostrarAyuda() {
-        const val = selectTipo.value;
-        ayudaDiv.textContent = ayudaPorTipo[val] || '';
-    }
-    selectTipo.addEventListener('change', mostrarAyuda);
-    mostrarAyuda();
-}
-</script>
 {% endblock %}
