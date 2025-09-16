@@ -70,8 +70,7 @@ class CuentasDefaultService:
                 empresa=empresa,
                 nombre=cuenta_data['nombre'],
                 defaults={
-                    'tipo': cuenta_data['tipo'],
-                    'descripcion': f"Cuenta {cuenta_data['categoria']} por defecto"
+                    'tipo': cuenta_data['tipo']
                 }
             )
             if created:
