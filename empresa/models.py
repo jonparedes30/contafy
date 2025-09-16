@@ -826,18 +826,43 @@ class Capital(AuditModel):
     
     def save(self, *args, **kwargs):
         """Crear asientos contables automáticamente"""
+        import logging
+        logger = logging.getLogger(__name__)
+        
+        logger.info(f"Capital.save() iniciado - monto: {self.monto}, tipo: {self.tipo}")
+        logger.info(f"Descripción original: '{self.descripcion}' (len={len(self.descripcion)})")
+        
         # Truncar descripción si es muy larga
         if len(self.descripcion) > 100:
             self.descripcion = self.descripcion[:97] + '...'
+            logger.info(f"Descripción truncada: '{self.descripcion}' (len={len(self.descripcion)})")
         
         es_nuevo = not self.pk
-        super().save(*args, **kwargs)
+        logger.info(f"Es nuevo registro: {es_nuevo}")
+        
+        try:
+            super().save(*args, **kwargs)
+            logger.info(f"Capital guardado en BD exitosamente. ID: {self.pk}")
+        except Exception as e:
+            logger.error(f"Error en super().save(): {str(e)}")
+            raise
         
         # Crear contrapartidas automáticamente para nuevos usuarios
         if es_nuevo:
-            self.crear_contrapartidas_si_no_existen()
+            try:
+                logger.info("Creando contrapartidas...")
+                self.crear_contrapartidas_si_no_existen()
+                logger.info("Contrapartidas creadas exitosamente")
+            except Exception as e:
+                logger.error(f"Error creando contrapartidas: {str(e)}")
         
-        self.crear_asientos_contables()
+        try:
+            logger.info("Creando asientos contables...")
+            self.crear_asientos_contables()
+            logger.info("Asientos contables creados exitosamente")
+        except Exception as e:
+            logger.error(f"Error creando asientos contables: {str(e)}")
+            raise
     
     def crear_contrapartidas_si_no_existen(self):
         """Crear contrapartidas básicas si no existen cuentas"""
@@ -854,8 +879,12 @@ class Capital(AuditModel):
     def crear_asientos_contables(self):
         """Crear partida doble para el capital"""
         from empresa.models import MovimientoContable
+        import logging
+        logger = logging.getLogger(__name__)
         
         try:
+            logger.info(f"Iniciando creación de asientos para {self.tipo}")
+            
             if self.tipo == 'aporte':
                 # Débito: Caja/Banco (Activo)
                 cuenta_caja = CuentaContable.objects.get_or_create(
@@ -866,6 +895,8 @@ class Capital(AuditModel):
                 
                 # Truncar descripción si es muy larga
                 descripcion_truncada = self.descripcion[:97] + '...' if len(self.descripcion) > 100 else self.descripcion
+                logger.info(f"Creando movimiento débito - Cuenta: Caja/Banco, Monto: {self.monto}")
+                logger.info(f"Descripción para movimiento: '{descripcion_truncada}' (len={len(descripcion_truncada)})")
                 
                 MovimientoContable.objects.create(
                     empresa=self.empresa,
@@ -875,6 +906,7 @@ class Capital(AuditModel):
                     monto=self.monto,
                     descripcion=descripcion_truncada
                 )
+                logger.info("Movimiento débito creado exitosamente")
                 
                 # Crédito: Capital (Capital)
                 cuenta_capital = CuentaContable.objects.get_or_create(
@@ -882,6 +914,8 @@ class Capital(AuditModel):
                     nombre='Capital',
                     defaults={'tipo': 'capital'}
                 )[0]
+                
+                logger.info(f"Creando movimiento crédito - Cuenta: Capital, Monto: {self.monto}")
                 
                 MovimientoContable.objects.create(
                     empresa=self.empresa,
@@ -891,6 +925,7 @@ class Capital(AuditModel):
                     monto=self.monto,
                     descripcion=descripcion_truncada
                 )
+                logger.info("Movimiento crédito creado exitosamente")
             else:  # retiro
                 # Débito: Capital (Capital)
                 cuenta_capital = CuentaContable.objects.get_or_create(
