@@ -629,6 +629,12 @@ class Gasto(AuditModel):
 # Movimiento Contable
 
 class MovimientoContable(AuditModel):
+    ESTADO_CHOICES = [
+        ('borrador', 'Borrador'),
+        ('confirmado', 'Confirmado'),
+        ('anulado', 'Anulado'),
+    ]
+    
     empresa     = models.ForeignKey(Empresa, on_delete=models.CASCADE)
     cuenta_text = models.CharField(max_length=100)
     cuenta_fk   = models.ForeignKey(
@@ -645,6 +651,12 @@ class MovimientoContable(AuditModel):
     monto       = models.DecimalField(max_digits=12, decimal_places=2)
     descripcion = models.TextField()
     fecha       = models.DateTimeField(auto_now_add=True)
+    estado      = models.CharField(
+        max_length=15,
+        choices=ESTADO_CHOICES,
+        default='confirmado',
+        help_text="Estado del asiento contable"
+    )
     transaccion_id = models.CharField(
         max_length=50,
         null=True,

@@ -11,41 +11,48 @@
         {% csrf_token %}
         <input type="hidden" name="paso" value="partida_doble">
         <div class="mb-3">
-            <label for="contrapartida" class="form-label">Selecciona la cuenta contrapartida:</label>
+            <label class="form-label">Selecciona o crea la cuenta contrapartida:</label>
             
             {% if contrapartidas_sugeridas %}
-            <div class="alert alert-success mb-2">
-                <small>
-                    <i class="fas fa-magic"></i> 
-                    <strong>Contrapartidas recomendadas:</strong> 
-                    {{ contrapartidas_sugeridas|join:", " }}
-                    <br><small class="text-muted">Se han creado automáticamente para facilitar tu selección</small>
-                </small>
+            <div class="alert alert-info mb-3">
+                <i class="fas fa-lightbulb"></i> 
+                <strong>Sugerencias:</strong> {{ contrapartidas_sugeridas|join:", " }}
             </div>
             {% endif %}
             
-            <select name="contrapartida" id="contrapartida" class="form-select" required>
-                <option value="">-- Selecciona una cuenta --</option>
-                
-                {% comment %} Mostrar primero las sugeridas {% endcomment %}
-                {% if contrapartidas_sugeridas %}
-                    <optgroup label="✨ Recomendadas">
+            <!-- Opción 1: Seleccionar cuenta existente -->
+            <div class="mb-3">
+                <div class="form-check">
+                    <input class="form-check-input" type="radio" name="opcion_contrapartida" id="usar_existente" value="existente" checked>
+                    <label class="form-check-label" for="usar_existente">
+                        Usar cuenta existente
+                    </label>
+                </div>
+                <select name="contrapartida" id="contrapartida" class="form-select mt-2">
+                    <option value="">-- Selecciona una cuenta --</option>
                     {% for cuenta in cuentas %}
-                        {% if cuenta.nombre in contrapartidas_sugeridas %}
-                        <option value="{{ cuenta.id }}" class="fw-bold text-success">{{ cuenta.nombre }} ({{ cuenta.tipo|title }}) ⭐</option>
-                        {% endif %}
+                        <option value="{{ cuenta.id }}" 
+                                {% if cuenta.nombre in contrapartidas_sugeridas %}class="fw-bold text-primary"{% endif %}>
+                            {{ cuenta.nombre }} ({{ cuenta.tipo|title }})
+                            {% if cuenta.nombre in contrapartidas_sugeridas %} ⭐{% endif %}
+                        </option>
                     {% endfor %}
-                    </optgroup>
-                {% endif %}
-                
-                <optgroup label="Otras cuentas disponibles">
-                {% for cuenta in cuentas %}
-                    {% if cuenta.nombre not in contrapartidas_sugeridas %}
-                    <option value="{{ cuenta.id }}">{{ cuenta.nombre }} ({{ cuenta.tipo|title }})</option>
-                    {% endif %}
-                {% endfor %}
-                </optgroup>
-            </select>
+                </select>
+            </div>
+            
+            <!-- Opción 2: Crear nueva cuenta -->
+            <div class="mb-3">
+                <div class="form-check">
+                    <input class="form-check-input" type="radio" name="opcion_contrapartida" id="crear_nueva" value="nueva">
+                    <label class="form-check-label" for="crear_nueva">
+                        Crear nueva cuenta contrapartida
+                    </label>
+                </div>
+                <input type="text" name="nueva_contrapartida" id="nueva_contrapartida" 
+                       class="form-control mt-2" placeholder="Nombre de la nueva cuenta" disabled>
+                <small class="text-muted">Se creará automáticamente con el tipo apropiado</small>
+            </div>
+            
             {% if error %}<div class="text-danger mt-1">{{ error }}</div>{% endif %}
         </div>
         <div class="mb-4">
@@ -92,14 +99,52 @@
     </form>
 </div>
 <script>
-// Mostrar el nombre de la cuenta contrapartida seleccionada en el resumen
-const select = document.getElementById('contrapartida');
-const span = document.getElementById('contrapartida_nombre');
-if (select && span) {
-    select.addEventListener('change', function() {
-        const selected = select.options[select.selectedIndex];
-        span.textContent = selected.value ? selected.text : '(Selecciona una cuenta)';
-    });
+// Manejar opciones de contrapartida
+const radioExistente = document.getElementById('usar_existente');
+const radioNueva = document.getElementById('crear_nueva');
+const selectContrapartida = document.getElementById('contrapartida');
+const inputNueva = document.getElementById('nueva_contrapartida');
+const spanNombre = document.getElementById('contrapartida_nombre');
+
+// Alternar entre opciones
+radioExistente.addEventListener('change', function() {
+    if (this.checked) {
+        selectContrapartida.disabled = false;
+        selectContrapartida.required = true;
+        inputNueva.disabled = true;
+        inputNueva.required = false;
+        inputNueva.value = '';
+    }
+});
+
+radioNueva.addEventListener('change', function() {
+    if (this.checked) {
+        selectContrapartida.disabled = true;
+        selectContrapartida.required = false;
+        selectContrapartida.value = '';
+        inputNueva.disabled = false;
+        inputNueva.required = true;
+        inputNueva.focus();
+    }
+});
+
+// Actualizar resumen
+function actualizarResumen() {
+    let nombre = '(Selecciona una cuenta)';
+    
+    if (radioExistente.checked && selectContrapartida.value) {
+        const selected = selectContrapartida.options[selectContrapartida.selectedIndex];
+        nombre = selected.text;
+    } else if (radioNueva.checked && inputNueva.value.trim()) {
+        nombre = inputNueva.value.trim() + ' (Nueva cuenta)';
+    }
+    
+    if (spanNombre) {
+        spanNombre.textContent = nombre;
+    }
 }
+
+selectContrapartida.addEventListener('change', actualizarResumen);
+inputNueva.addEventListener('input', actualizarResumen);
 </script>
 {% endblock %} 

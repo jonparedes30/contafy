@@ -18,38 +18,30 @@ def crear_cuenta_contable(request):
         form = CuentaContableForm(request.POST, empresa=empresa)
         if form.is_valid():
             cuenta_data = form.cleaned_data.copy()
-            cuenta_data['monto_inicial'] = float(cuenta_data['monto_inicial'])  # Corregir serialización
+            cuenta_data['monto_inicial'] = float(cuenta_data['monto_inicial'])
             request.session['cuenta_data'] = cuenta_data
 
+            # Obtener cuentas existentes
+            cuentas_existentes = CuentaContable.objects.filter(empresa=empresa)
             
-            # Obtener contrapartidas sugeridas (crear automáticamente si no existen)
-            from empresa.services.accounting_setup import ensure_contrapartidas_for_account
-            
-            # Crear cuenta temporal para generar sugerencias
-            cuenta_temp = CuentaContable(empresa=empresa, nombre=cuenta_data['nombre'], tipo=cuenta_data['tipo'])
-            contrapartidas_creadas = ensure_contrapartidas_for_account(cuenta_temp)
-            
-            # Obtener cuentas existentes después de crear contrapartidas
-            cuentas_existentes = CuentaContable.objects.filter(empresa=empresa).exclude(nombre=cuenta_data['nombre'])
-            
-            # Si aún no hay cuentas, crear las cuentas por defecto
+            # Si no hay cuentas, crear las básicas
             if not cuentas_existentes.exists():
                 CuentasDefaultService.crear_cuentas_default(empresa)
-                cuentas_existentes = CuentaContable.objects.filter(empresa=empresa).exclude(nombre=cuenta_data['nombre'])
+                cuentas_existentes = CuentaContable.objects.filter(empresa=empresa)
             
-            # Combinar con sugerencias del servicio existente
-            contrapartidas_sugeridas = CuentasDefaultService.obtener_contrapartidas_sugeridas(
-                cuenta_data['tipo'], empresa.categoria
-            )
-            
-            # Agregar nombres de contrapartidas creadas automáticamente
-            nombres_creadas = [c.nombre for c in contrapartidas_creadas]
-            contrapartidas_sugeridas.extend(nombres_creadas)
+            # Sugerencias de contrapartidas según tipo de cuenta
+            contrapartidas_sugeridas = {
+                'activo': ['Capital', 'Cuentas por Pagar', 'Préstamos Bancarios'],
+                'pasivo': ['Caja', 'Bancos', 'Capital'],
+                'capital': ['Caja', 'Bancos', 'Activos Fijos'],
+                'ingreso': ['Caja', 'Bancos', 'Cuentas por Cobrar'],
+                'gasto': ['Caja', 'Bancos', 'Cuentas por Pagar']
+            }.get(cuenta_data['tipo'], ['Caja', 'Capital'])
             
             return render(request, 'empresa/partida_doble_confirmar.html', {
                 'cuenta_data': cuenta_data,
                 'cuentas': cuentas_existentes,
-                'contrapartidas_sugeridas': list(set(contrapartidas_sugeridas)),  # Eliminar duplicados
+                'contrapartidas_sugeridas': contrapartidas_sugeridas,
             })
         else:
             messages.error(request, '❌ Corrige los errores en el formulario.')
@@ -57,42 +49,72 @@ def crear_cuenta_contable(request):
     elif request.method == 'POST' and request.POST.get('paso') == 'partida_doble':
         cuenta_data = request.session.get('cuenta_data')
         contrapartida_id = request.POST.get('contrapartida')
-        contrapartida = CuentaContable.objects.filter(id=contrapartida_id, empresa=empresa).first()
+        nueva_contrapartida = request.POST.get('nueva_contrapartida', '').strip()
+        
+        # Determinar contrapartida (existente o nueva)
+        if contrapartida_id:
+            contrapartida = CuentaContable.objects.filter(id=contrapartida_id, empresa=empresa).first()
+        elif nueva_contrapartida:
+            # Crear nueva cuenta contrapartida
+            tipo_contrapartida = 'activo' if cuenta_data['tipo'] in ['pasivo', 'capital'] else 'capital'
+            contrapartida = CuentaContable.objects.create(
+                empresa=empresa,
+                nombre=nueva_contrapartida,
+                tipo=tipo_contrapartida
+            )
+        else:
+            contrapartida = None
+            
         if not contrapartida:
-            messages.error(request, 'Debes seleccionar una cuenta contrapartida válida.')
+            messages.error(request, 'Debes seleccionar o crear una cuenta contrapartida.')
             cuentas = CuentaContable.objects.filter(empresa=empresa)
             return render(request, 'empresa/partida_doble_confirmar.html', {
                 'cuenta_data': cuenta_data,
                 'cuentas': cuentas,
-                'error': 'Selecciona una cuenta contrapartida.'
             })
-        # Validar y guardar partida doble
+            
+        # Crear cuenta y asientos con estado
         with transaction.atomic():
+            import uuid
+            transaccion_id = str(uuid.uuid4())[:8]
+            
             cuenta = CuentaContable.objects.create(
                 empresa=empresa,
                 nombre=cuenta_data['nombre'],
-                tipo=cuenta_data['tipo']
+                tipo=cuenta_data['tipo'],
+                monto_inicial=cuenta_data['monto_inicial']
             )
+            
             monto = cuenta_data['monto_inicial']
-            descripcion = f"Apertura de cuenta '{cuenta.nombre}' con contrapartida '{contrapartida.nombre}'"
-            # Determinar debe/haber según tipo
+            descripcion = f"Apertura cuenta: {cuenta.nombre}"
+            
+            # Crear asientos con estado confirmado
             if cuenta.tipo in ['activo', 'gasto']:
                 MovimientoContable.objects.create(
-                    empresa=empresa, cuenta_fk=cuenta, cuenta_text=cuenta.nombre, tipo='debito', monto=monto, descripcion=descripcion
+                    empresa=empresa, cuenta_fk=cuenta, cuenta_text=cuenta.nombre, 
+                    tipo='debito', monto=monto, descripcion=descripcion,
+                    estado='confirmado', transaccion_id=transaccion_id
                 )
                 MovimientoContable.objects.create(
-                    empresa=empresa, cuenta_fk=contrapartida, cuenta_text=contrapartida.nombre, tipo='credito', monto=monto, descripcion=descripcion
+                    empresa=empresa, cuenta_fk=contrapartida, cuenta_text=contrapartida.nombre, 
+                    tipo='credito', monto=monto, descripcion=descripcion,
+                    estado='confirmado', transaccion_id=transaccion_id
                 )
             else:
                 MovimientoContable.objects.create(
-                    empresa=empresa, cuenta_fk=cuenta, cuenta_text=cuenta.nombre, tipo='credito', monto=monto, descripcion=descripcion
+                    empresa=empresa, cuenta_fk=cuenta, cuenta_text=cuenta.nombre, 
+                    tipo='credito', monto=monto, descripcion=descripcion,
+                    estado='confirmado', transaccion_id=transaccion_id
                 )
                 MovimientoContable.objects.create(
-                    empresa=empresa, cuenta_fk=contrapartida, cuenta_text=contrapartida.nombre, tipo='debito', monto=monto, descripcion=descripcion
+                    empresa=empresa, cuenta_fk=contrapartida, cuenta_text=contrapartida.nombre, 
+                    tipo='debito', monto=monto, descripcion=descripcion,
+                    estado='confirmado', transaccion_id=transaccion_id
                 )
-            messages.success(request, '✅ Cuenta y asiento contable creados correctamente.')
+                
+            messages.success(request, f'✅ Cuenta "{cuenta.nombre}" creada con asiento contable confirmado.')
             request.session.pop('cuenta_data', None)
-            return redirect('empresa:dashboard')
+            return redirect('empresa:listar_cuentas_contables')
     else:
         form = CuentaContableForm(empresa=empresa)
 
