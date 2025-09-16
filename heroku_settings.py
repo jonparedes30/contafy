@@ -97,7 +97,10 @@ LOGIN_REDIRECT_URL = '/app-beta-2024/home/'
 LOGOUT_REDIRECT_URL = '/app-beta-2024/login/'
 
 # CSRF
-CSRF_TRUSTED_ORIGINS = ['https://*.herokuapp.com']
+CSRF_TRUSTED_ORIGINS = [
+    'https://*.herokuapp.com',
+    'https://contafy-pruebas-30fdb804cc25.herokuapp.com',
+]
 
 # Security for production
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')

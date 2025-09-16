@@ -154,6 +154,7 @@ CSRF_TRUSTED_ORIGINS = [
     'http://localhost:8000',
     'http://127.0.0.1:8000',
     'https://*.herokuapp.com',
+    'https://contafy-pruebas-30fdb804cc25.herokuapp.com',
 ]
 
 # Configuración para proxy de Heroku
