@@ -7,9 +7,7 @@ from django.db.models import Sum
 
 from empresa.forms import CuentaContableForm
 from empresa.models import CuentaContable, MovimientoContable
-from empresa.services.cuentas_default_service import CuentasDefaultService
 from django.db import transaction
-from empresa.models import MovimientoContable
 
 @login_required
 def crear_cuenta_contable(request):
@@ -86,85 +84,90 @@ def crear_cuenta_contable(request):
         contrapartida_id = request.POST.get('contrapartida')
         nueva_contrapartida = request.POST.get('nueva_contrapartida', '').strip()
         
-        # Crear la cuenta principal
-        cuenta = CuentaContable.objects.create(
-            empresa=empresa,
-            nombre=cuenta_data['nombre'],
-            tipo=cuenta_data['tipo'],
-            monto_inicial=cuenta_data['monto_inicial']
-        )
-        
-        # Crear asientos si hay monto inicial
-        if cuenta_data['monto_inicial'] > 0:
-            if contrapartida_id:
-                contrapartida = CuentaContable.objects.get(id=contrapartida_id, empresa=empresa)
-            elif nueva_contrapartida:
-                tipo_contrapartida = 'capital' if cuenta_data['tipo'] == 'activo' else 'activo'
-                contrapartida = CuentaContable.objects.create(
-                    empresa=empresa,
-                    nombre=nueva_contrapartida,
-                    tipo=tipo_contrapartida
-                )
-            else:
-                # Crear contrapartida por defecto
-                contrapartida = CuentaContable.objects.get_or_create(
-                    empresa=empresa,
-                    nombre='Capital',
-                    defaults={'tipo': 'capital'}
-                )[0]
+        try:
+            # Crear la cuenta principal
+            cuenta = CuentaContable.objects.create(
+                empresa=empresa,
+                nombre=cuenta_data['nombre'],
+                tipo=cuenta_data['tipo'],
+                monto_inicial=cuenta_data['monto_inicial']
+            )
             
-            # Crear movimientos contables
-            import uuid
-            transaccion_id = str(uuid.uuid4())[:8]
+            # Crear asientos si hay monto inicial
+            if cuenta_data['monto_inicial'] > 0:
+                if contrapartida_id:
+                    contrapartida = CuentaContable.objects.get(id=contrapartida_id, empresa=empresa)
+                elif nueva_contrapartida:
+                    tipo_contrapartida = 'capital' if cuenta_data['tipo'] == 'activo' else 'activo'
+                    contrapartida = CuentaContable.objects.create(
+                        empresa=empresa,
+                        nombre=nueva_contrapartida,
+                        tipo=tipo_contrapartida
+                    )
+                else:
+                    # Crear contrapartida por defecto
+                    contrapartida = CuentaContable.objects.get_or_create(
+                        empresa=empresa,
+                        nombre='Capital',
+                        defaults={'tipo': 'capital'}
+                    )[0]
+                
+                # Crear movimientos contables
+                import uuid
+                transaccion_id = str(uuid.uuid4())[:8]
+                
+                if cuenta.tipo in ['activo', 'gasto']:
+                    # Débito en la cuenta nueva
+                    MovimientoContable.objects.create(
+                        empresa=empresa,
+                        cuenta_fk=cuenta,
+                        cuenta_text=cuenta.nombre,
+                        tipo='debito',
+                        monto=cuenta_data['monto_inicial'],
+                        descripcion=f'Apertura cuenta {cuenta.nombre}',
+                        transaccion_id=transaccion_id
+                    )
+                    # Crédito en contrapartida
+                    MovimientoContable.objects.create(
+                        empresa=empresa,
+                        cuenta_fk=contrapartida,
+                        cuenta_text=contrapartida.nombre,
+                        tipo='credito',
+                        monto=cuenta_data['monto_inicial'],
+                        descripcion=f'Apertura cuenta {cuenta.nombre}',
+                        transaccion_id=transaccion_id
+                    )
+                else:
+                    # Crédito en la cuenta nueva
+                    MovimientoContable.objects.create(
+                        empresa=empresa,
+                        cuenta_fk=cuenta,
+                        cuenta_text=cuenta.nombre,
+                        tipo='credito',
+                        monto=cuenta_data['monto_inicial'],
+                        descripcion=f'Apertura cuenta {cuenta.nombre}',
+                        transaccion_id=transaccion_id
+                    )
+                    # Débito en contrapartida
+                    MovimientoContable.objects.create(
+                        empresa=empresa,
+                        cuenta_fk=contrapartida,
+                        cuenta_text=contrapartida.nombre,
+                        tipo='debito',
+                        monto=cuenta_data['monto_inicial'],
+                        descripcion=f'Apertura cuenta {cuenta.nombre}',
+                        transaccion_id=transaccion_id
+                    )
             
-            if cuenta.tipo in ['activo', 'gasto']:
-                # Débito en la cuenta nueva
-                MovimientoContable.objects.create(
-                    empresa=empresa,
-                    cuenta_fk=cuenta,
-                    cuenta_text=cuenta.nombre,
-                    tipo='debito',
-                    monto=cuenta_data['monto_inicial'],
-                    descripcion=f'Apertura cuenta {cuenta.nombre}',
-                    transaccion_id=transaccion_id
-                )
-                # Crédito en contrapartida
-                MovimientoContable.objects.create(
-                    empresa=empresa,
-                    cuenta_fk=contrapartida,
-                    cuenta_text=contrapartida.nombre,
-                    tipo='credito',
-                    monto=cuenta_data['monto_inicial'],
-                    descripcion=f'Apertura cuenta {cuenta.nombre}',
-                    transaccion_id=transaccion_id
-                )
-            else:
-                # Crédito en la cuenta nueva
-                MovimientoContable.objects.create(
-                    empresa=empresa,
-                    cuenta_fk=cuenta,
-                    cuenta_text=cuenta.nombre,
-                    tipo='credito',
-                    monto=cuenta_data['monto_inicial'],
-                    descripcion=f'Apertura cuenta {cuenta.nombre}',
-                    transaccion_id=transaccion_id
-                )
-                # Débito en contrapartida
-                MovimientoContable.objects.create(
-                    empresa=empresa,
-                    cuenta_fk=contrapartida,
-                    cuenta_text=contrapartida.nombre,
-                    tipo='debito',
-                    monto=cuenta_data['monto_inicial'],
-                    descripcion=f'Apertura cuenta {cuenta.nombre}',
-                    transaccion_id=transaccion_id
-                )
-        
-        # Limpiar sesión
-        request.session.pop('cuenta_data', None)
-        
-        messages.success(request, f'Cuenta "{cuenta.nombre}" creada con asientos contables.')
-        return redirect('empresa:listar_cuentas_contables')
+            # Limpiar sesión
+            request.session.pop('cuenta_data', None)
+            
+            messages.success(request, f'Cuenta "{cuenta.nombre}" creada exitosamente.')
+            return redirect('empresa:listar_cuentas_contables')
+            
+        except Exception as e:
+            messages.error(request, f'Error al crear la cuenta: {str(e)}')
+            return redirect('empresa:crear_cuenta_contable')
     
     # Mostrar formulario inicial
     return render(request, 'empresa/crear_cuenta_contable.html', {})
