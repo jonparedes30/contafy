@@ -14,94 +14,50 @@ def crear_capital(request):
     if request.method == 'POST':
         form = CapitalForm(request.POST, empresa=request.user.empresa)
         if form.is_valid():
-            from django.db import transaction
-            from empresa.models import CuentaContable, MovimientoContable
-            import uuid
+            capital = form.save(commit=False)
+            capital.empresa = request.user.empresa
+            capital.creado_por = request.user
             
+            # Truncar descripción si es muy larga
+            if len(capital.descripcion) > 100:
+                capital.descripcion = capital.descripcion[:97] + '...'
+            
+            capital.save()
+            
+            # Crear asientos contables usando la función existente
             try:
-                with transaction.atomic():
-                    capital = form.save(commit=False)
-                    capital.empresa = request.user.empresa
-                    capital.creado_por = request.user
-                    
-                    # Truncar descripción si es muy larga
-                    if len(capital.descripcion) > 100:
-                        capital.descripcion = capital.descripcion[:97] + '...'
-                    
-                    capital.save()
-                    
-                    # Crear cuentas básicas si no existen
-                    cuenta_caja, _ = CuentaContable.objects.get_or_create(
+                from empresa.views.contabilidad import registrar_movimiento_contable
+                
+                if capital.tipo == 'aporte':
+                    # Aporte: Caja (Débito) / Capital (Crédito)
+                    registrar_movimiento_contable(
                         empresa=request.user.empresa,
-                        nombre='Caja',
-                        defaults={'tipo': 'activo'}
+                        cuenta_debito_nombre='Caja',
+                        cuenta_credito_nombre='Capital',
+                        monto=capital.monto,
+                        descripcion=capital.descripcion,
+                        tipo_cuenta_debito='activo',
+                        tipo_cuenta_credito='capital'
                     )
-                    
-                    cuenta_capital, _ = CuentaContable.objects.get_or_create(
+                else:
+                    # Retiro: Capital (Débito) / Caja (Crédito)
+                    registrar_movimiento_contable(
                         empresa=request.user.empresa,
-                        nombre='Capital',
-                        defaults={'tipo': 'capital'}
+                        cuenta_debito_nombre='Capital',
+                        cuenta_credito_nombre='Caja',
+                        monto=capital.monto,
+                        descripcion=capital.descripcion,
+                        tipo_cuenta_debito='capital',
+                        tipo_cuenta_credito='activo'
                     )
-                    
-                    # Crear asientos contables manualmente
-                    transaccion_id = str(uuid.uuid4())[:8]
-                    descripcion = capital.descripcion
-                    
-                    if capital.tipo == 'aporte':
-                        # Débito: Caja (Activo aumenta)
-                        MovimientoContable.objects.create(
-                            empresa=request.user.empresa,
-                            cuenta_fk=cuenta_caja,
-                            cuenta_text='Caja',
-                            tipo='debito',
-                            monto=capital.monto,
-                            descripcion=descripcion,
-                            estado='confirmado',
-                            transaccion_id=transaccion_id
-                        )
-                        
-                        # Crédito: Capital (Capital aumenta)
-                        MovimientoContable.objects.create(
-                            empresa=request.user.empresa,
-                            cuenta_fk=cuenta_capital,
-                            cuenta_text='Capital',
-                            tipo='credito',
-                            monto=capital.monto,
-                            descripcion=descripcion,
-                            estado='confirmado',
-                            transaccion_id=transaccion_id
-                        )
-                    else:  # retiro
-                        # Débito: Capital (Capital disminuye)
-                        MovimientoContable.objects.create(
-                            empresa=request.user.empresa,
-                            cuenta_fk=cuenta_capital,
-                            cuenta_text='Capital',
-                            tipo='debito',
-                            monto=capital.monto,
-                            descripcion=descripcion,
-                            estado='confirmado',
-                            transaccion_id=transaccion_id
-                        )
-                        
-                        # Crédito: Caja (Activo disminuye)
-                        MovimientoContable.objects.create(
-                            empresa=request.user.empresa,
-                            cuenta_fk=cuenta_caja,
-                            cuenta_text='Caja',
-                            tipo='credito',
-                            monto=capital.monto,
-                            descripcion=descripcion,
-                            estado='confirmado',
-                            transaccion_id=transaccion_id
-                        )
-                    
-                    tipo_texto = "aporte" if capital.tipo == 'aporte' else "retiro"
-                    messages.success(request, f'{tipo_texto.title()} de capital registrado: ${capital.monto} (con asientos contables)')
-                    return redirect('empresa:listar_capital')
-                    
+                
+                tipo_texto = "aporte" if capital.tipo == 'aporte' else "retiro"
+                messages.success(request, f'{tipo_texto.title()} de capital registrado: ${capital.monto}')
+                
             except Exception as e:
-                messages.error(request, f'Error al registrar capital: {str(e)}')
+                messages.warning(request, f'Capital registrado, pero error en asientos: {str(e)}')
+            
+            return redirect('empresa:listar_capital')
         else:
             messages.error(request, 'Por favor corrige los errores en el formulario')
     else:
