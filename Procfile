@@ -1,2 +1,2 @@
-release: python manage.py migrate --settings=heroku_settings
-web: gunicorn core.wsgi --log-file - --settings=heroku_settings
+release: python manage.py migrate
+web: gunicorn core.wsgi --log-file -
