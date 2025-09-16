@@ -76,34 +76,64 @@ class RegistroForm(UserCreationForm):
     first_name = forms.CharField(
         max_length=30, 
         required=True,
-        widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ej: Juan'})
+        label='Nombres',
+        widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ej: Juan Carlos'}),
+        error_messages={
+            'required': 'El nombre es obligatorio.',
+            'max_length': 'El nombre no puede exceder 30 caracteres.'
+        }
     )
     last_name = forms.CharField(
         max_length=30, 
         required=True,
-        widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ej: Pérez García'})
+        label='Apellidos',
+        widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ej: Pérez García'}),
+        error_messages={
+            'required': 'Los apellidos son obligatorios.',
+            'max_length': 'Los apellidos no pueden exceder 30 caracteres.'
+        }
     )
     email = forms.EmailField(
         required=True,
-        widget=forms.EmailInput(attrs={'class': 'form-control', 'placeholder': 'tu@email.com'})
+        label='Correo Electrónico',
+        widget=forms.EmailInput(attrs={'class': 'form-control', 'placeholder': 'tu@email.com'}),
+        error_messages={
+            'required': 'El correo electrónico es obligatorio.',
+            'invalid': 'Ingrese un correo electrónico válido.'
+        }
     )
     
     # Datos de la empresa
     nombre_empresa = forms.CharField(
         max_length=200, 
         required=True,
-        widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ej: Mi Negocio S.A.'})
+        label='Nombre de la Empresa',
+        widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ej: Mi Negocio S.A.'}),
+        error_messages={
+            'required': 'El nombre de la empresa es obligatorio.',
+            'max_length': 'El nombre no puede exceder 200 caracteres.'
+        }
     )
     ruc = forms.CharField(
         max_length=13, 
         required=True,
+        label='RUC o Cédula',
         widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ej: 1234567890001'}),
-        help_text='RUC de la empresa o cédula del propietario'
+        help_text='RUC de la empresa (13 dígitos) o cédula del propietario (10 dígitos)',
+        error_messages={
+            'required': 'El RUC o cédula es obligatorio.',
+            'max_length': 'El RUC no puede exceder 13 dígitos.'
+        }
     )
     direccion = forms.CharField(
         max_length=300, 
         required=True,
-        widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ej: Av. Principal 123 y Secundaria'})
+        label='Dirección de la Empresa',
+        widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ej: Av. Principal 123 y Secundaria'}),
+        error_messages={
+            'required': 'La dirección es obligatoria.',
+            'max_length': 'La dirección no puede exceder 300 caracteres.'
+        }
     )
     
     # Categoría y tipo de negocio
@@ -115,17 +145,26 @@ class RegistroForm(UserCreationForm):
     categoria = forms.ChoiceField(
         choices=CATEGORIA_CHOICES,
         required=True,
-        widget=forms.Select(attrs={'class': 'form-select'})
+        label='Categoría del Negocio',
+        widget=forms.Select(attrs={'class': 'form-select'}),
+        error_messages={
+            'required': 'Debe seleccionar una categoría de negocio.'
+        }
     )
     tipo_negocio = forms.CharField(
         max_length=100,
         required=True,
+        label='Tipo Específico de Negocio',
         widget=forms.TextInput(attrs={
             'class': 'form-control', 
             'placeholder': 'Ej: Minimarket, Panadería, Consultorio',
             'list': 'sugerencias_negocio'
         }),
-        help_text='Describe específicamente tu tipo de negocio'
+        help_text='Describe específicamente tu tipo de negocio',
+        error_messages={
+            'required': 'El tipo de negocio es obligatorio.',
+            'max_length': 'El tipo de negocio no puede exceder 100 caracteres.'
+        }
     )
     
     # Ubicación
@@ -142,20 +181,33 @@ class RegistroForm(UserCreationForm):
     provincia = forms.ChoiceField(
         choices=PROVINCIAS_ECUADOR,
         required=True,
-        widget=forms.Select(attrs={'class': 'form-select'})
+        label='Provincia',
+        widget=forms.Select(attrs={'class': 'form-select'}),
+        error_messages={
+            'required': 'Debe seleccionar una provincia.'
+        }
     )
     ciudad = forms.CharField(
         max_length=100,
         required=True,
-        widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ej: Quito, Guayaquil, Cuenca'})
+        label='Ciudad',
+        widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ej: Quito, Guayaquil, Cuenca'}),
+        error_messages={
+            'required': 'La ciudad es obligatoria.',
+            'max_length': 'El nombre de la ciudad no puede exceder 100 caracteres.'
+        }
     )
     
     # Contacto opcional
     telefono_whatsapp = forms.CharField(
         max_length=15,
         required=False,
+        label='Número de WhatsApp (Opcional)',
         widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ej: +593987654321'}),
-        help_text='Formato: +593987654321 (opcional)'
+        help_text='Formato: +593987654321 (opcional para notificaciones)',
+        error_messages={
+            'max_length': 'El número no puede exceder 15 caracteres.'
+        }
     )
     
     # GPS (opcional)
@@ -180,13 +232,36 @@ class RegistroForm(UserCreationForm):
             'password1': forms.PasswordInput(attrs={'class': 'form-control'}),
             'password2': forms.PasswordInput(attrs={'class': 'form-control'}),
         }
+        labels = {
+            'username': 'Nombre de Usuario',
+            'password1': 'Contraseña',
+            'password2': 'Confirmar Contraseña',
+        }
+        error_messages = {
+            'username': {
+                'required': 'El nombre de usuario es obligatorio.',
+                'unique': 'Este nombre de usuario ya está en uso.',
+            }
+        }
     
     def clean_ruc(self):
         ruc = self.cleaned_data.get('ruc')
         if ruc:
+            # Limpiar espacios y caracteres especiales
+            ruc = ruc.replace(' ', '').replace('-', '')
+            
             # Validación básica de RUC ecuatoriano
-            if not ruc.isdigit() or len(ruc) not in [10, 13]:
-                raise forms.ValidationError('RUC debe tener 10 o 13 dígitos')
+            if not ruc.isdigit():
+                raise forms.ValidationError('El RUC/Cédula debe contener solo números.')
+            
+            if len(ruc) not in [10, 13]:
+                raise forms.ValidationError('El RUC debe tener 13 dígitos o la cédula 10 dígitos.')
+            
+            # Verificar que no exista otra empresa con el mismo RUC
+            from empresa.models import Empresa
+            if Empresa.objects.filter(ruc=ruc).exists():
+                raise forms.ValidationError('Ya existe una empresa registrada con este RUC/Cédula.')
+                
         return ruc
     
     def clean_telefono_whatsapp(self):
@@ -194,6 +269,12 @@ class RegistroForm(UserCreationForm):
         if telefono:
             # Limpiar formato
             telefono = telefono.replace(' ', '').replace('-', '').replace('(', '').replace(')', '')
+            
+            # Validar que contenga solo números y el signo +
+            if not all(c.isdigit() or c == '+' for c in telefono):
+                raise forms.ValidationError('El número de WhatsApp debe contener solo números.')
+            
+            # Formatear número ecuatoriano
             if not telefono.startswith('+593'):
                 if telefono.startswith('0'):
                     telefono = '+593' + telefono[1:]
@@ -201,11 +282,43 @@ class RegistroForm(UserCreationForm):
                     telefono = '+' + telefono
                 else:
                     telefono = '+593' + telefono
+            
+            # Validar longitud final
+            if len(telefono) != 13:  # +593 + 9 dígitos
+                raise forms.ValidationError('El número de WhatsApp debe tener 9 dígitos después del código de país.')
+                
         return telefono
+    
+    def clean_email(self):
+        email = self.cleaned_data.get('email')
+        if email:
+            from empresa.models import Usuario
+            if Usuario.objects.filter(email=email).exists():
+                raise forms.ValidationError('Ya existe un usuario registrado con este correo electrónico.')
+        return email
+    
+    def clean_username(self):
+        username = self.cleaned_data.get('username')
+        if username:
+            from empresa.models import Usuario
+            if Usuario.objects.filter(username=username).exists():
+                raise forms.ValidationError('Este nombre de usuario ya está en uso. Elija otro.')
+            
+            # Validar formato del username
+            if len(username) < 3:
+                raise forms.ValidationError('El nombre de usuario debe tener al menos 3 caracteres.')
+                
+            if not username.replace('_', '').replace('.', '').isalnum():
+                raise forms.ValidationError('El nombre de usuario solo puede contener letras, números, puntos y guiones bajos.')
+                
+        return username
     
     def save(self, commit=True):
         from empresa.models import Empresa
         from django.db import transaction
+        import logging
+        
+        logger = logging.getLogger(__name__)
         
         user = super().save(commit=False)
         user.first_name = self.cleaned_data['first_name']
@@ -213,27 +326,35 @@ class RegistroForm(UserCreationForm):
         user.email = self.cleaned_data['email']
         
         if commit:
-            with transaction.atomic():
-                user.save()
-                
-                # Crear empresa
-                empresa = Empresa.objects.create(
-                    nombre=self.cleaned_data['nombre_empresa'],
-                    ruc=self.cleaned_data['ruc'],
-                    direccion=self.cleaned_data['direccion'],
-                    categoria=self.cleaned_data['categoria'],
-                    tipo_negocio=self.cleaned_data['tipo_negocio'],
-                    provincia=self.cleaned_data['provincia'],
-                    ciudad=self.cleaned_data['ciudad'],
-                    telefono_whatsapp=self.cleaned_data.get('telefono_whatsapp', ''),
-                    latitud=self.cleaned_data.get('latitud'),
-                    longitud=self.cleaned_data.get('longitud'),
-                    propietario=user
-                )
-                
-                # Asignar empresa al usuario
-                user.empresa = empresa
-                user.save()
+            try:
+                with transaction.atomic():
+                    user.save()
+                    logger.info(f'Usuario creado: {user.username}')
+                    
+                    # Crear empresa
+                    empresa = Empresa.objects.create(
+                        nombre=self.cleaned_data['nombre_empresa'],
+                        ruc=self.cleaned_data['ruc'],
+                        direccion=self.cleaned_data['direccion'],
+                        categoria=self.cleaned_data['categoria'],
+                        tipo_negocio=self.cleaned_data['tipo_negocio'],
+                        provincia=self.cleaned_data['provincia'],
+                        ciudad=self.cleaned_data['ciudad'],
+                        telefono_whatsapp=self.cleaned_data.get('telefono_whatsapp', ''),
+                        latitud=self.cleaned_data.get('latitud'),
+                        longitud=self.cleaned_data.get('longitud'),
+                        propietario=user
+                    )
+                    logger.info(f'Empresa creada: {empresa.nombre}')
+                    
+                    # Asignar empresa al usuario
+                    user.empresa = empresa
+                    user.save()
+                    logger.info(f'Usuario {user.username} asociado a empresa {empresa.nombre}')
+                    
+            except Exception as e:
+                logger.error(f'Error en save del formulario: {str(e)}')
+                raise forms.ValidationError(f'Error al crear la cuenta: {str(e)}')
                 
         return user
 

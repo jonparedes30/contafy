@@ -85,14 +85,18 @@ from django.db import transaction
 
 def registrar_usuario(request):
     if request.method == 'POST':
-        codigo_invitacion = request.POST.get('codigo_invitacion')
+        codigo_invitacion = request.POST.get('codigo_invitacion', '').strip()
         
-        # Verificar código de invitación
+        # Verificar código de invitación primero
+        if not codigo_invitacion:
+            messages.error(request, 'El código de invitación es obligatorio.')
+            return render(request, 'empresa/registro.html', {'form': RegistroForm()})
+        
         try:
             from empresa.models import CodigoInvitacion
             codigo = CodigoInvitacion.objects.get(codigo=codigo_invitacion, usado=False)
         except CodigoInvitacion.DoesNotExist:
-            messages.error(request, 'Código de invitación inválido o ya usado')
+            messages.error(request, 'Código de invitación inválido o ya utilizado. Verifique el código e intente nuevamente.')
             return render(request, 'empresa/registro.html', {'form': RegistroForm()})
         
         form = RegistroForm(request.POST)
@@ -100,27 +104,37 @@ def registrar_usuario(request):
             try:
                 with transaction.atomic():
                     user = form.save()  # El formulario ya maneja el orden correcto
-                    logger.info(f"Usuario creado: {user.username}, Empresa: {user.empresa}")
+                    logger.info(f"Usuario creado exitosamente: {user.username}, Empresa: {user.empresa.nombre}")
                     
                     # Marcar código como usado
                     codigo.usado = True
                     codigo.usado_por = user
                     codigo.save()
                     
-                    messages.success(request, 'Cuenta y empresa creadas exitosamente.')
+                    messages.success(request, f'¡Registro exitoso! Bienvenido {user.first_name}. Tu cuenta y empresa "{user.empresa.nombre}" han sido creadas correctamente.')
                     return redirect('empresa:login')
             except Exception as e:
-                logger.error(f"Error al crear usuario: {str(e)}")
-                messages.error(request, f'Error al crear la cuenta: {str(e)}')
+                logger.error(f"Error crítico al crear usuario: {str(e)}")
+                messages.error(request, f'Error interno del sistema. Por favor contacte al soporte técnico. Detalle: {str(e)}')
         else:
-            logger.error(f"Errores del formulario: {form.errors}")
-            messages.error(request, 'Por favor corrige los siguientes errores:')
-            for field, errors in form.errors.items():
-                field_name = form.fields[field].label or field
+            logger.error(f"Errores de validación en formulario: {form.errors}")
+            
+            # Mostrar errores específicos por campo
+            error_count = 0
+            for field_name, errors in form.errors.items():
+                field_label = form.fields.get(field_name, {}).label or field_name.replace('_', ' ').title()
                 for error in errors:
-                    messages.error(request, f'{field_name}: {error}')
+                    error_count += 1
+                    if field_name == '__all__':
+                        messages.error(request, f'Error general: {error}')
+                    else:
+                        messages.error(request, f'{field_label}: {error}')
+            
+            if error_count == 0:
+                messages.error(request, 'Hay errores en el formulario. Por favor revise todos los campos.')
     else:
         form = RegistroForm()
+    
     return render(request, 'empresa/registro.html', {
         'form': form,
     })
