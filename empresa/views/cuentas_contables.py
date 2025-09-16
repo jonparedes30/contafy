@@ -3,6 +3,7 @@
 from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
+from django.db.models import Sum
 
 from empresa.forms import CuentaContableForm
 from empresa.models import CuentaContable, MovimientoContable
@@ -125,7 +126,26 @@ def crear_cuenta_contable(request):
 @login_required
 def listar_cuentas_contables(request):
     empresa = request.user.empresa
-    cuentas = CuentaContable.objects.filter(empresa=empresa).order_by('nombre')
+    cuentas = list(CuentaContable.objects.filter(empresa=empresa).order_by('nombre'))
+    
+    # Agregar cuentas virtuales del capital
+    from empresa.models import Capital
+    capital_aportes = Capital.objects.filter(empresa=empresa, tipo='aporte').aggregate(total=Sum('monto'))['total'] or 0
+    capital_retiros = Capital.objects.filter(empresa=empresa, tipo='retiro').aggregate(total=Sum('monto'))['total'] or 0
+    capital_neto = capital_aportes - capital_retiros
+    
+    if capital_neto > 0:
+        # Crear objetos virtuales para mostrar en la lista
+        class CuentaVirtual:
+            def __init__(self, nombre, tipo, valor):
+                self.nombre = nombre
+                self.tipo = tipo
+                self.valor = valor
+                self.id = f'virtual_{nombre.lower().replace(" ", "_")}'
+        
+        cuentas.append(CuentaVirtual('Caja (Capital)', 'activo', capital_neto))
+        cuentas.append(CuentaVirtual('Capital Social', 'capital', capital_neto))
+    
     return render(request, 'empresa/listar_cuentas_contables.html', {
         'cuentas': cuentas
     })
