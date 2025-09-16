@@ -864,12 +864,16 @@ class Capital(AuditModel):
                     defaults={'tipo': 'activo'}
                 )[0]
                 
+                # Truncar descripción si es muy larga
+                descripcion_truncada = self.descripcion[:97] + '...' if len(self.descripcion) > 100 else self.descripcion
+                
                 MovimientoContable.objects.create(
                     empresa=self.empresa,
                     cuenta_fk=cuenta_caja,
+                    cuenta_text='Caja/Banco',
                     tipo='debito',
                     monto=self.monto,
-                    descripcion=self.descripcion
+                    descripcion=descripcion_truncada
                 )
                 
                 # Crédito: Capital (Capital)
@@ -882,9 +886,10 @@ class Capital(AuditModel):
                 MovimientoContable.objects.create(
                     empresa=self.empresa,
                     cuenta_fk=cuenta_capital,
+                    cuenta_text='Capital',
                     tipo='credito',
                     monto=self.monto,
-                    descripcion=self.descripcion
+                    descripcion=descripcion_truncada
                 )
             else:  # retiro
                 # Débito: Capital (Capital)
@@ -897,9 +902,10 @@ class Capital(AuditModel):
                 MovimientoContable.objects.create(
                     empresa=self.empresa,
                     cuenta_fk=cuenta_capital,
+                    cuenta_text='Capital',
                     tipo='debito',
                     monto=self.monto,
-                    descripcion=self.descripcion
+                    descripcion=descripcion_truncada
                 )
                 
                 # Crédito: Caja/Banco (Activo)
@@ -912,9 +918,10 @@ class Capital(AuditModel):
                 MovimientoContable.objects.create(
                     empresa=self.empresa,
                     cuenta_fk=cuenta_caja,
+                    cuenta_text='Caja/Banco',
                     tipo='credito',
                     monto=self.monto,
-                    descripcion=self.descripcion
+                    descripcion=descripcion_truncada
                 )
                 
         except Exception as e:

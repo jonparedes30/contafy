@@ -28,6 +28,10 @@ def ensure_contrapartidas_for_account(cuenta):
             base_nombre = getattr(cuenta, "nombre", "Cuenta")
             proposed_nombre = conf["nombre_tpl"].format(base_nombre=base_nombre)
             
+            # Truncar si excede 100 caracteres
+            if len(proposed_nombre) > 100:
+                proposed_nombre = proposed_nombre[:97] + '...'
+            
             # normalizar para evitar duplicados en distinta compañía
             obj, is_created = CuentaContable.objects.get_or_create(
                 empresa=cuenta.empresa,
