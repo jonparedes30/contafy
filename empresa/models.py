@@ -837,13 +837,17 @@ class Capital(AuditModel):
         return f"{self.get_tipo_display()}: {self.monto} - {self.empresa}"
     
     def save(self, *args, **kwargs):
-        """Guardar capital sin asientos automáticos"""
+        """Crear asientos contables automáticamente"""
         # Truncar descripción si es muy larga
         if len(self.descripcion) > 100:
             self.descripcion = self.descripcion[:97] + '...'
         
-        # Solo guardar el capital, sin asientos automáticos
+        es_nuevo = not self.pk
         super().save(*args, **kwargs)
+        
+        # Crear asientos contables para que aparezca en balance
+        if es_nuevo:
+            self.crear_asientos_contables()
     
     def crear_contrapartidas_si_no_existen(self):
         """Crear contrapartidas básicas si no existen cuentas"""
@@ -863,9 +867,77 @@ class Capital(AuditModel):
             print(f'Error creando cuentas básicas: {e}')
     
     def crear_asientos_contables(self):
-        """Método simplificado - no crear asientos automáticamente"""
-        # Deshabilitado temporalmente para evitar errores
-        pass
+        """Crear partida doble para el capital"""
+        try:
+            import uuid
+            transaccion_id = str(uuid.uuid4())[:8]
+            
+            # Crear cuentas básicas si no existen
+            cuenta_caja, _ = CuentaContable.objects.get_or_create(
+                empresa=self.empresa,
+                nombre='Caja',
+                defaults={'tipo': 'activo'}
+            )
+            
+            cuenta_capital, _ = CuentaContable.objects.get_or_create(
+                empresa=self.empresa,
+                nombre='Capital',
+                defaults={'tipo': 'capital'}
+            )
+            
+            descripcion = self.descripcion[:100]  # Asegurar límite
+            
+            if self.tipo == 'aporte':
+                # Débito: Caja (Activo aumenta)
+                MovimientoContable.objects.create(
+                    empresa=self.empresa,
+                    cuenta_fk=cuenta_caja,
+                    cuenta_text='Caja',
+                    tipo='debito',
+                    monto=self.monto,
+                    descripcion=descripcion,
+                    estado='confirmado',
+                    transaccion_id=transaccion_id
+                )
+                
+                # Crédito: Capital (Capital aumenta)
+                MovimientoContable.objects.create(
+                    empresa=self.empresa,
+                    cuenta_fk=cuenta_capital,
+                    cuenta_text='Capital',
+                    tipo='credito',
+                    monto=self.monto,
+                    descripcion=descripcion,
+                    estado='confirmado',
+                    transaccion_id=transaccion_id
+                )
+            else:  # retiro
+                # Débito: Capital (Capital disminuye)
+                MovimientoContable.objects.create(
+                    empresa=self.empresa,
+                    cuenta_fk=cuenta_capital,
+                    cuenta_text='Capital',
+                    tipo='debito',
+                    monto=self.monto,
+                    descripcion=descripcion,
+                    estado='confirmado',
+                    transaccion_id=transaccion_id
+                )
+                
+                # Crédito: Caja (Activo disminuye)
+                MovimientoContable.objects.create(
+                    empresa=self.empresa,
+                    cuenta_fk=cuenta_caja,
+                    cuenta_text='Caja',
+                    tipo='credito',
+                    monto=self.monto,
+                    descripcion=descripcion,
+                    estado='confirmado',
+                    transaccion_id=transaccion_id
+                )
+                
+        except Exception as e:
+            print(f'Error creando asientos para capital: {e}')
 
 # Meta Financiera
 class MetaFinanciera(models.Model):
