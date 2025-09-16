@@ -18,45 +18,13 @@ def crear_capital(request):
             capital.empresa = request.user.empresa
             capital.creado_por = request.user
             
-            # Truncar descripción si es muy larga
             if len(capital.descripcion) > 100:
                 capital.descripcion = capital.descripcion[:97] + '...'
             
             capital.save()
             
-            # Crear asientos contables usando la función existente
-            try:
-                from empresa.views.contabilidad import registrar_movimiento_contable
-                
-                if capital.tipo == 'aporte':
-                    # Aporte: Caja (Débito) / Capital (Crédito)
-                    registrar_movimiento_contable(
-                        empresa=request.user.empresa,
-                        cuenta_debito_nombre='Caja',
-                        cuenta_credito_nombre='Capital',
-                        monto=capital.monto,
-                        descripcion=capital.descripcion,
-                        tipo_cuenta_debito='activo',
-                        tipo_cuenta_credito='capital'
-                    )
-                else:
-                    # Retiro: Capital (Débito) / Caja (Crédito)
-                    registrar_movimiento_contable(
-                        empresa=request.user.empresa,
-                        cuenta_debito_nombre='Capital',
-                        cuenta_credito_nombre='Caja',
-                        monto=capital.monto,
-                        descripcion=capital.descripcion,
-                        tipo_cuenta_debito='capital',
-                        tipo_cuenta_credito='activo'
-                    )
-                
-                tipo_texto = "aporte" if capital.tipo == 'aporte' else "retiro"
-                messages.success(request, f'{tipo_texto.title()} de capital registrado: ${capital.monto}')
-                
-            except Exception as e:
-                messages.warning(request, f'Capital registrado, pero error en asientos: {str(e)}')
-            
+            tipo_texto = "aporte" if capital.tipo == 'aporte' else "retiro"
+            messages.success(request, f'{tipo_texto.title()} de capital registrado: ${capital.monto}')
             return redirect('empresa:listar_capital')
         else:
             messages.error(request, 'Por favor corrige los errores en el formulario')
@@ -71,7 +39,6 @@ def listar_capital(request):
     empresa = request.user.empresa
     movimientos_capital = Capital.objects.filter(empresa=empresa).order_by('-fecha')
     
-    # Estadísticas
     total_aportes = movimientos_capital.filter(tipo='aporte').aggregate(total=Sum('monto'))['total'] or 0
     total_retiros = movimientos_capital.filter(tipo='retiro').aggregate(total=Sum('monto'))['total'] or 0
     capital_neto = total_aportes - total_retiros
