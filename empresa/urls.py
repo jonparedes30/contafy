@@ -325,6 +325,9 @@ urlpatterns += [
     path('admin-simple/', admin_dashboard, name='admin_simple'),
     path('admin-simple/crear-codigo/', crear_codigo_invitacion, name='crear_codigo_invitacion'),
     
+    # URL de debug
+    path('debug/datos/', lambda request: __import__('empresa.views.debug_datos', fromlist=['debug_datos']).debug_datos(request), name='debug_datos'),
+    
     # URLs de mensajería (deshabilitadas hasta migrar DB)
     # path('bandeja/', lambda request: __import__('empresa.views.mensajeria', fromlist=['bandeja_entrada']).bandeja_entrada(request), name='bandeja_entrada'),
     # path('conversacion/<int:conversacion_id>/', lambda request, conversacion_id: __import__('empresa.views.mensajeria', fromlist=['ver_conversacion']).ver_conversacion(request, conversacion_id), name='ver_conversacion'),
