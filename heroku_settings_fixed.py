@@ -2,17 +2,20 @@ import os
 import dj_database_url
 from pathlib import Path
 
+# Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent
 
-# Security
+# SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = os.environ.get('SECRET_KEY')
 if not SECRET_KEY:
     raise ValueError("SECRET_KEY environment variable is required")
 
+# SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = False
+
 ALLOWED_HOSTS = ['*']
 
-# Apps
+# Application definition
 INSTALLED_APPS = [
     'jazzmin',
     'django.contrib.admin',
@@ -83,23 +86,28 @@ TIME_ZONE = 'America/Guayaquil'
 USE_I18N = True
 USE_TZ = True
 
-# Static files
+# Static files (CSS, JavaScript, Images)
 STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedStaticFilesStorage'
 
+# Default primary key field type
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# Custom user model
 AUTH_USER_MODEL = 'empresa.Usuario'
 
-# URLs
+# Login URLs
 LOGIN_URL = '/app-beta-2024/login/'
 LOGIN_REDIRECT_URL = '/app-beta-2024/home/'
 LOGOUT_REDIRECT_URL = '/app-beta-2024/login/'
 
-# CSRF
-CSRF_TRUSTED_ORIGINS = ['https://*.herokuapp.com']
+# CSRF settings
+CSRF_TRUSTED_ORIGINS = [
+    'https://*.herokuapp.com',
+]
 
-# Security for production
+# Security settings for production
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 SECURE_SSL_REDIRECT = True
 SECURE_HSTS_SECONDS = 31536000
@@ -144,9 +152,16 @@ LOGGING = {
         'handlers': ['console'],
         'level': 'INFO',
     },
+    'loggers': {
+        'django': {
+            'handlers': ['console'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+    },
 }
 
-# Currency
+# Currency settings
 CURRENCY_SYMBOL = '$'
 CURRENCY_CODE = 'USD'
 CURRENCY_NAME = 'Dólares Americanos'
