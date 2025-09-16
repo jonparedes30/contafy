@@ -818,7 +818,7 @@ class Capital(AuditModel):
     empresa = models.ForeignKey(Empresa, on_delete=models.CASCADE)
     monto = models.DecimalField(max_digits=12, decimal_places=2)
     tipo = models.CharField(max_length=10, choices=TIPO_CHOICES, default='aporte')
-    descripcion = models.CharField(max_length=200, default='Aporte de capital')
+    descripcion = models.CharField(max_length=100, default='Aporte de capital')
     fecha = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
@@ -826,6 +826,10 @@ class Capital(AuditModel):
     
     def save(self, *args, **kwargs):
         """Crear asientos contables automáticamente"""
+        # Truncar descripción si es muy larga
+        if len(self.descripcion) > 100:
+            self.descripcion = self.descripcion[:97] + '...'
+        
         es_nuevo = not self.pk
         super().save(*args, **kwargs)
         
