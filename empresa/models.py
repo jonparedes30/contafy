@@ -717,13 +717,12 @@ class CuentaContable(models.Model):
         return f"{self.nombre} ({self.tipo})"
     
     def save(self, *args, **kwargs):
-        es_nuevo = not self.pk
+        # Temporalmente deshabilitado para evitar bucle infinito
         super().save(*args, **kwargs)
-        
-        # Si es una cuenta nueva de pasivo con monto inicial, crear asientos y cuenta por pagar
-        if es_nuevo and self.tipo == 'pasivo' and self.monto_inicial > 0:
-            self.crear_asientos_iniciales()
-            self.crear_cuenta_por_pagar_si_aplica()
+        # es_nuevo = not self.pk
+        # if es_nuevo and self.tipo == 'pasivo' and self.monto_inicial > 0:
+        #     self.crear_asientos_iniciales()
+        #     self.crear_cuenta_por_pagar_si_aplica()
     
     def crear_asientos_iniciales(self):
         """Crear asientos contables iniciales para la cuenta"""
