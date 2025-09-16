@@ -259,7 +259,7 @@ def exportar_excel_ventas(request):
             output.read(),
             content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
         )
-        response['Content-Disposition'] = f'attachment; filename="ventas_filtradas_{empresa.nombre}_{datetime.now().strftime('%Y%m%d')}.xlsx"'
+        response['Content-Disposition'] = f'attachment; filename="ventas_filtradas_{empresa.nombre}_{datetime.now().strftime("%Y%m%d")}.xlsx"'
         return response
     except Exception as e:
         print(f"Error general en exportar_excel: {e}")
@@ -500,7 +500,7 @@ def exportar_excel_compras(request):
             output.read(),
             content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
         )
-        response['Content-Disposition'] = f'attachment; filename="compras_filtradas_{empresa.nombre}_{datetime.now().strftime('%Y%m%d')}.xlsx"'
+        response['Content-Disposition'] = f'attachment; filename="compras_filtradas_{empresa.nombre}_{datetime.now().strftime("%Y%m%d")}.xlsx"'
         return response
     except Exception as e:
         print(f"Error general en exportar_excel_compras: {e}")
@@ -732,7 +732,7 @@ def exportar_excel_gastos(request):
             output.read(),
             content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
         )
-        response['Content-Disposition'] = f'attachment; filename="gastos_filtrados_{empresa.nombre}_{datetime.now().strftime('%Y%m%d')}.xlsx"'
+        response['Content-Disposition'] = f'attachment; filename="gastos_filtrados_{empresa.nombre}_{datetime.now().strftime("%Y%m%d")}.xlsx"'
         return response
     except Exception as e:
         print(f"Error general en exportar_excel_gastos: {e}")
@@ -1688,7 +1688,7 @@ def exportar_excel_inventario(request):
             output.read(),
             content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
         )
-        response['Content-Disposition'] = f'attachment; filename="inventario_{empresa.nombre}_{datetime.now().strftime('%Y%m%d')}.xlsx"'
+        response['Content-Disposition'] = f'attachment; filename="inventario_{empresa.nombre}_{datetime.now().strftime("%Y%m%d")}.xlsx"'
         return response
         
     except Exception as e:
@@ -2425,7 +2425,8 @@ def exportar_excel_completo(request):
             output.getvalue(),
             content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
         )
-        response['Content-Disposition'] = f'attachment; filename="reporte_completo_{empresa.nombre}_{datetime.now().strftime("%Y%m%d")}.xlsx"'
+        fecha_str = datetime.now().strftime("%Y%m%d")
+        response['Content-Disposition'] = f'attachment; filename="reporte_completo_{empresa.nombre}_{fecha_str}.xlsx"'
         return response
         
     except IndexError as e:
