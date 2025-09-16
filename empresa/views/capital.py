@@ -11,37 +11,27 @@ from django.db.models import Sum
 @login_required
 @require_power('puede_gestionar_cuentas')
 def crear_capital(request):
-    import logging
-    logger = logging.getLogger(__name__)
-    
     if request.method == 'POST':
-        logger.info(f"POST data recibido: {request.POST}")
-        
         form = CapitalForm(request.POST, empresa=request.user.empresa)
         if form.is_valid():
             try:
-                logger.info(f"Formulario válido. Datos: {form.cleaned_data}")
-                
                 capital = form.save(commit=False)
                 capital.empresa = request.user.empresa
                 capital.creado_por = request.user
                 
-                logger.info(f"Capital antes de save: monto={capital.monto}, tipo={capital.tipo}, descripcion='{capital.descripcion}' (len={len(capital.descripcion)})")
+                # Truncar descripción antes de guardar
+                if len(capital.descripcion) > 100:
+                    capital.descripcion = capital.descripcion[:97] + '...'
                 
-                capital.save()  # Los asientos contables se crean automáticamente
-                
-                logger.info(f"Capital guardado exitosamente: ID={capital.id}")
+                capital.save()
                 
                 tipo_texto = "aporte" if capital.tipo == 'aporte' else "retiro"
                 messages.success(request, f'{tipo_texto.title()} de capital registrado: ${capital.monto}')
                 return redirect('empresa:listar_capital')
                 
             except Exception as e:
-                logger.error(f"Error al guardar capital: {str(e)}")
-                logger.error(f"Tipo de error: {type(e).__name__}")
-                messages.error(request, f'Error al registrar capital: {str(e)}')
+                messages.error(request, f'Error al registrar capital. Inténtalo nuevamente.')
         else:
-            logger.error(f"Formulario inválido. Errores: {form.errors}")
             messages.error(request, 'Por favor corrige los errores en el formulario')
     else:
         form = CapitalForm(empresa=request.user.empresa)
