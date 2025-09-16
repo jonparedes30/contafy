@@ -846,8 +846,9 @@ class Capital(AuditModel):
         super().save(*args, **kwargs)
         
         # Crear asientos contables para que aparezca en balance
-        if es_nuevo:
-            self.crear_asientos_contables()
+        # Temporalmente deshabilitado para evitar bucle infinito
+        # if es_nuevo:
+        #     self.crear_asientos_contables()
     
     def crear_contrapartidas_si_no_existen(self):
         """Crear contrapartidas básicas si no existen cuentas"""
