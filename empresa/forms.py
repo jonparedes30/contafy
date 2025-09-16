@@ -152,18 +152,19 @@ class RegistroForm(UserCreationForm):
         }
     )
     tipo_negocio = forms.CharField(
-        max_length=100,
+        max_length=50,
         required=True,
         label='Tipo Específico de Negocio',
         widget=forms.TextInput(attrs={
             'class': 'form-control', 
             'placeholder': 'Ej: Minimarket, Panadería, Consultorio',
-            'list': 'sugerencias_negocio'
+            'list': 'sugerencias_negocio',
+            'maxlength': '50'
         }),
-        help_text='Describe específicamente tu tipo de negocio',
+        help_text='Describe específicamente tu tipo de negocio (máx. 50 caracteres)',
         error_messages={
             'required': 'El tipo de negocio es obligatorio.',
-            'max_length': 'El tipo de negocio no puede exceder 100 caracteres.'
+            'max_length': 'El tipo de negocio no puede exceder 50 caracteres.'
         }
     )
     
@@ -188,13 +189,13 @@ class RegistroForm(UserCreationForm):
         }
     )
     ciudad = forms.CharField(
-        max_length=100,
+        max_length=50,
         required=True,
         label='Ciudad',
-        widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ej: Quito, Guayaquil, Cuenca'}),
+        widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ej: Quito, Guayaquil, Cuenca', 'maxlength': '50'}),
         error_messages={
             'required': 'La ciudad es obligatoria.',
-            'max_length': 'El nombre de la ciudad no puede exceder 100 caracteres.'
+            'max_length': 'El nombre de la ciudad no puede exceder 50 caracteres.'
         }
     )
     
