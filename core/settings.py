@@ -114,9 +114,9 @@ CACHES = {
     'default': {
         'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
         'LOCATION': 'contafy-cache',
-        'TIMEOUT': 600,  # 10 minutos
+        'TIMEOUT': 300,
         'OPTIONS': {
-            'MAX_ENTRIES': 5000,  # Más entradas
+            'MAX_ENTRIES': 1000,
         }
     }
 }
@@ -223,7 +223,7 @@ GEMINI_API_KEY = env('GEMINI_API_KEY', default='')
 # Configuración de sesiones persistentes
 SESSION_ENGINE = 'django.contrib.sessions.backends.db'
 SESSION_COOKIE_AGE = 86400  # 24 horas
-SESSION_SAVE_EVERY_REQUEST = False  # Solo guardar cuando cambie
+SESSION_SAVE_EVERY_REQUEST = True
 SESSION_EXPIRE_AT_BROWSER_CLOSE = False
 
 # Configuración de logging simplificada para Heroku
@@ -238,24 +238,24 @@ LOGGING = {
     },
     'handlers': {
         'console': {
-            'level': 'WARNING',  # Solo warnings y errores
+            'level': 'INFO',
             'class': 'logging.StreamHandler',
             'formatter': 'verbose',
         },
     },
     'root': {
         'handlers': ['console'],
-        'level': 'WARNING',
+        'level': 'INFO',
     },
     'loggers': {
         'django': {
             'handlers': ['console'],
-            'level': 'WARNING',
+            'level': 'INFO',
             'propagate': False,
         },
         'empresa': {
             'handlers': ['console'],
-            'level': 'WARNING',
+            'level': 'INFO',
             'propagate': False,
         },
     },
@@ -283,4 +283,4 @@ if 'RENDER' in os.environ:
     ]
     
     # Logging para Render
-    LOGGING['handlers']['console']['level'] = 'WARNING'
+    LOGGING['handlers']['console']['level'] = 'INFO'

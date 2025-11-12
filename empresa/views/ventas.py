@@ -23,9 +23,7 @@ def crear_venta(request):
     servicios = []
     if empresa.categoria == 'servicios':
         from empresa.models import TipoServicio
-        servicios_queryset = TipoServicio.objects.filter(
-            empresa=empresa, activo=True
-        ).only('id', 'nombre', 'precio_base', 'costo_directo', 'unidad_medida')
+        servicios_queryset = TipoServicio.objects.filter(empresa=empresa, activo=True)
         servicios = [{
             'id': s.id,
             'nombre': s.nombre,
@@ -46,31 +44,118 @@ def crear_venta(request):
                     venta = form.save(commit=False)
                     venta.empresa = empresa
                     venta.creado_por = request.user
-                    
-                    # Validar stock
-                    if venta.producto.stock < venta.cantidad:
-                        messages.error(request, f'Stock insuficiente. Disponible: {venta.producto.stock}')
-                        return render(request, 'empresa/crear_venta.html', context)
-                    
-                    # Actualizar stock
-                    venta.producto.stock -= venta.cantidad
-                    venta.producto.save()
-                    
-                    # Guardar venta (los asientos se crean automáticamente pero no bloquean)
                     venta.save()
                     
+                    # Crear cuenta por cobrar si es crédito
+                    if venta.tipo_pago == 'credito' and venta.cliente_fk:
+                        from empresa.models import CuentaPorCobrar
+                        from datetime import date, timedelta
+                        CuentaPorCobrar.objects.create(
+                            empresa=venta.empresa,
+                            cliente=venta.cliente_fk,
+                            venta=venta,
+                            monto_original=venta.monto,
+                            monto_pendiente=venta.monto,
+                            fecha_vencimiento=date.today() + timedelta(days=30)
+                        )
+                    
+                    # Actualizar stock del producto
+                    producto = venta.producto
+                    producto.stock -= venta.cantidad
+                    producto.save()
+                    
+                    # Crear asientos contables usando el servicio centralizado
+                    venta.crear_asientos_contables()
+                    
+                    # 1. Registrar la venta según tipo de pago (LEGACY - mantener por compatibilidad)
+                    if venta.tipo_pago == 'contado':
+                        registrar_movimiento_contable(
+                            empresa=empresa,
+                            cuenta_debito_nombre='Caja',
+                            cuenta_credito_nombre='Ventas',
+                            monto=venta.monto,
+                            descripcion=f"Venta contado {venta.producto.nombre} (x{venta.cantidad})",
+                            tipo_cuenta_debito='activo',
+                            tipo_cuenta_credito='ingreso'
+                        )
+                    elif venta.tipo_pago == 'transferencia':
+                        registrar_movimiento_contable(
+                            empresa=empresa,
+                            cuenta_debito_nombre='Banco',
+                            cuenta_credito_nombre='Ventas',
+                            monto=venta.monto,
+                            descripcion=f"Venta transferencia {venta.producto.nombre} (x{venta.cantidad})",
+                            tipo_cuenta_debito='activo',
+                            tipo_cuenta_credito='ingreso'
+                        )
+                    elif venta.tipo_pago == 'tarjeta':
+                        registrar_movimiento_contable(
+                            empresa=empresa,
+                            cuenta_debito_nombre='Cuentas por Cobrar - Tarjetas',
+                            cuenta_credito_nombre='Ventas',
+                            monto=venta.monto,
+                            descripcion=f"Venta tarjeta {venta.producto.nombre} (x{venta.cantidad})",
+                            tipo_cuenta_debito='activo',
+                            tipo_cuenta_credito='ingreso'
+                        )
+                    else:  # crédito
+                        registrar_movimiento_contable(
+                            empresa=empresa,
+                            cuenta_debito_nombre='Cuentas por Cobrar',
+                            cuenta_credito_nombre='Ventas',
+                            monto=venta.monto,
+                            descripcion=f"Venta crédito {venta.producto.nombre} (x{venta.cantidad}) - {venta.cliente_display}",
+                            tipo_cuenta_debito='activo',
+                            tipo_cuenta_credito='ingreso'
+                        )
+                    
+                    # 2. Calcular costo REAL del producto
+                    # Para productos manufacturados, usar precio_costo calculado
+                    # Para productos comerciales, usar precio_unitario (costo de compra)
+                    if empresa.categoria == 'manufactura':
+                        # Buscar si es producto manufacturado
+                        try:
+                            from empresa.models import ProductoManufacturado
+                            producto_manuf = ProductoManufacturado.objects.get(
+                                empresa=empresa, codigo=venta.producto.codigo
+                            )
+                            costo_unitario = producto_manuf.precio_costo or producto_manuf.costo_produccion
+                        except ProductoManufacturado.DoesNotExist:
+                            costo_unitario = venta.producto.precio_unitario
+                    else:
+                        # Para comercio/servicios, usar precio_unitario como costo
+                        costo_unitario = venta.producto.precio_unitario
+                    
+                    costo_total = venta.cantidad * costo_unitario
+                    
+                    if costo_total > 0:  # Solo registrar si hay costo
+                        if empresa.categoria == 'servicios':
+                            # SERVICIOS: Débito Costo Ventas + Crédito Caja (costo directo)
+                            registrar_movimiento_contable(
+                                empresa=empresa,
+                                cuenta_debito_nombre='Costo de Ventas',
+                                cuenta_credito_nombre='Caja/Banco',
+                                monto=costo_total,
+                                descripcion=f"Costo directo servicio {venta.producto.nombre} (x{venta.cantidad})"
+                            )
+                        else:
+                            # COMERCIO: Débito Costo Ventas + Crédito Inventario
+                            registrar_movimiento_contable(
+                                empresa=empresa,
+                                cuenta_debito_nombre='Costo de Ventas',
+                                cuenta_credito_nombre='Inventario',
+                                monto=costo_total,
+                                descripcion=f"Costo de venta {venta.producto.nombre} (x{venta.cantidad})"
+                            )
                 messages.success(request, 'Venta registrada correctamente.')
                 return redirect('empresa:home')
             except Exception as e:
-                messages.error(request, f'Error al registrar venta: {str(e)}')
+                messages.error(request, f'Error al registrar venta: {e}')
     else:
         form = VentaForm()
 
     # 📦 Preparamos la lista de productos con id, código, precio y stock
-    productos = Producto.objects.filter(empresa=empresa).only(
-        'id', 'codigo', 'codigo_barras', 'nombre', 'descripcion', 
-        'precio_unitario', 'pvp', 'stock'
-    )
+    productos = Producto.objects.filter(empresa=empresa)
     productos_json = [
         {
             'id': p.id,
@@ -78,21 +163,8 @@ def crear_venta(request):
             'codigo_barras': p.codigo_barras or '',
             'nombre': f"{p.nombre} ({p.descripcion})" if p.descripcion else p.nombre,
             'descripcion': p.descripcion or '',
-            'precio_costo': float(p.precio_unitario),
-            'precio_venta': float(p.pvp) if p.pvp else float(p.precio_unitario),
-            'stock': p.stock,
-        }
-        for p in productos
-    ]
-    productos_json = [
-        {
-            'id': p.id,
-            'codigo': p.codigo,
-            'codigo_barras': p.codigo_barras or '',
-            'nombre': f"{p.nombre} ({p.descripcion})" if p.descripcion else p.nombre,
-            'descripcion': p.descripcion or '',
-            'precio_costo': float(p.precio_unitario),
-            'precio_venta': float(p.pvp) if p.pvp else float(p.precio_unitario),
+            'precio_costo': float(p.precio_unitario),  # Precio de costo
+            'precio_venta': float(p.pvp) if p.pvp else float(p.precio_unitario),  # PVP o precio_unitario como fallback
             'stock': p.stock,
         }
         for p in productos
@@ -165,9 +237,7 @@ def procesar_venta_servicio(request, empresa):
 @require_power('puede_registrar_ventas')
 def listar_ventas(request):
     empresa = request.user.empresa
-    ventas = Venta.objects.filter(empresa=empresa).select_related(
-        'producto', 'cliente_fk'
-    ).order_by('-fecha')
+    ventas = Venta.objects.filter(empresa=empresa).order_by('-fecha')
 
     # Filtros avanzados
     buscar = request.GET.get('buscar', '').strip()

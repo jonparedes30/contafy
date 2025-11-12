@@ -371,43 +371,22 @@ class Venta(AuditModel):
         super().save(*args, **kwargs)
         
         if es_nuevo:
-            # Ejecutar operaciones post-save de forma segura
-            try:
-                self.crear_asientos_contables()
-            except Exception as e:
-                import logging
-                logging.getLogger(__name__).error(f'Error en asientos contables: {e}')
-            
-            try:
-                self.crear_cuenta_por_cobrar_si_credito()
-            except Exception as e:
-                import logging
-                logging.getLogger(__name__).error(f'Error en cuenta por cobrar: {e}')
-            
-            try:
-                self.crear_movimiento_inventario()
-            except Exception as e:
-                import logging
-                logging.getLogger(__name__).error(f'Error en movimiento inventario: {e}')
-            
-            try:
-                self.aplicar_niif15_si_aplica()
-            except Exception as e:
-                import logging
-                logging.getLogger(__name__).error(f'Error en NIIF15: {e}')
+            self.crear_asientos_contables()
+            self.crear_cuenta_por_cobrar_si_credito()
+            self.crear_movimiento_inventario()
+            self.aplicar_niif15_si_aplica()
     
     def crear_asientos_contables(self):
         """Crear partida doble para la venta usando servicio centralizado"""
         from empresa.services.contabilidad_service import ContabilidadService
-        import logging
-        logger = logging.getLogger(__name__)
         
         try:
             ContabilidadService.crear_asientos_venta(self.empresa, self)
         except Exception as e:
-            # Loguear pero NO fallar - la venta se guarda aunque fallen los asientos
+            import logging
+            logger = logging.getLogger(__name__)
             logger.error(f'Error creando asientos contables para venta {self.id}: {str(e)}')
-            # No hacer raise - permitir que la venta se guarde
+            raise
     
     def crear_cuenta_por_cobrar_si_credito(self):
         """Crear cuenta por cobrar si la venta es a crédito"""
