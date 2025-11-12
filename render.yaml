@@ -1,11 +1,13 @@
-# Render Blueprint para CONTAFY
+# Render Blueprint para CONTAFY - Academia Duolingo
 services:
   - type: web
     name: contafy
     env: docker
     plan: starter
+    region: oregon
     dockerfilePath: ./Dockerfile
     healthCheckPath: /health/
+    autoDeploy: true
     envVars:
       - key: SECRET_KEY
         generateValue: true
@@ -27,9 +29,14 @@ services:
         value: admin@contafy.com
       - key: ADMIN_PASSWORD
         sync: false
+      - key: CONN_MAX_AGE
+        value: "600"
+      - key: LOG_LEVEL
+        value: "INFO"
 
 databases:
   - name: contafy-db
     databaseName: contafy
     user: contafy
     plan: starter
+    region: oregon
