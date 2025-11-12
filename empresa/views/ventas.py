@@ -37,7 +37,7 @@ def crear_venta(request):
         if empresa.categoria == 'servicios' and request.POST.get('servicio_id'):
             return procesar_venta_servicio(request, empresa)
         # Manejar venta de producto normal
-        form = VentaForm(request.POST, empresa=empresa)
+        form = VentaForm(request.POST)
         if form.is_valid():
             try:
                 with transaction.atomic():
@@ -152,7 +152,7 @@ def crear_venta(request):
             except Exception as e:
                 messages.error(request, f'Error al registrar venta: {e}')
     else:
-        form = VentaForm(empresa=empresa)
+        form = VentaForm()
 
     # 📦 Preparamos la lista de productos con id, código, precio y stock
     productos = Producto.objects.filter(empresa=empresa)
