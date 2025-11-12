@@ -425,26 +425,34 @@
     if (selectServicio) {
         selectServicio.addEventListener('change', actualizarVenta);
     }
-    inputCantidad.addEventListener('input', function() {
-        if (modoSimple.checked) calcularIVA();
-    });
-    inputPrecio.addEventListener('input', function() {
-        if (modoSimple.checked) calcularIVA();
-    });
-    inputTasaIva.addEventListener('input', function() {
-        if (modoSimple.checked) {
-            calcularIVA();
-        } else {
-            calcularTotalMultiple();
-        }
-    });
-    checkboxIva.addEventListener('change', function() {
-        if (modoSimple.checked) {
-            calcularIVA();
-        } else {
-            calcularTotalMultiple();
-        }
-    });
+    if (inputCantidad) {
+        inputCantidad.addEventListener('input', function() {
+            if (modoSimple && modoSimple.checked) calcularIVA();
+        });
+    }
+    if (inputPrecio) {
+        inputPrecio.addEventListener('input', function() {
+            if (modoSimple && modoSimple.checked) calcularIVA();
+        });
+    }
+    if (inputTasaIva) {
+        inputTasaIva.addEventListener('input', function() {
+            if (modoSimple && modoSimple.checked) {
+                calcularIVA();
+            } else {
+                calcularTotalMultiple();
+            }
+        });
+    }
+    if (checkboxIva) {
+        checkboxIva.addEventListener('change', function() {
+            if (modoSimple && modoSimple.checked) {
+                calcularIVA();
+            } else {
+                calcularTotalMultiple();
+            }
+        });
+    }
     
     // Calculadora de cambio para venta simple
     const tipoPagoSelect = document.getElementById('id_tipo_pago');
@@ -510,8 +518,8 @@
         }
     }
     
-    modoSimple.addEventListener('change', cambiarModoVenta);
-    modoMultiple.addEventListener('change', cambiarModoVenta);
+    if (modoSimple) modoSimple.addEventListener('change', cambiarModoVenta);
+    if (modoMultiple) modoMultiple.addEventListener('change', cambiarModoVenta);
     
     // Funciones para venta múltiple
     const productoMultipleSelect = document.getElementById('producto-multiple-select');
@@ -625,7 +633,7 @@
         });
     }
     
-    agregarProductoBtn.addEventListener('click', function() {
+    if (agregarProductoBtn) agregarProductoBtn.addEventListener('click', function() {
         const option = productoMultipleSelect.options[productoMultipleSelect.selectedIndex];
         const cantidad = parseInt(cantidadMultiple.value) || 1;
         let precio = parseFloat(precioMultiple.value) || 0;
@@ -677,6 +685,7 @@
         cantidadMultiple.value = '1';
         precioMultiple.value = '';
     });
+    }
     
     function actualizarTablaMultiple() {
         const tbody = document.getElementById('productos-tbody-multiple');
@@ -752,12 +761,14 @@
     
     // Modificar el envío del formulario para venta múltiple
     const form = document.querySelector('form');
-    form.addEventListener('submit', function(e) {
-        if (modoMultiple.checked && productosMultiple.length > 0) {
-            e.preventDefault();
-            procesarVentaMultiple();
-        }
-    });
+    if (form) {
+        form.addEventListener('submit', function(e) {
+            if (modoMultiple && modoMultiple.checked && productosMultiple.length > 0) {
+                e.preventDefault();
+                procesarVentaMultiple();
+            }
+        });
+    }
     
     function procesarVentaMultiple() {
         const ventaData = {
@@ -922,17 +933,29 @@
         });
     }
     
+    // Verificar que los elementos críticos existan antes de continuar
+    if (!inputCantidad || !inputPrecio || !inputMontoNeto || !inputTasaIva || !inputIva || !inputTotal) {
+        console.warn('Algunos elementos del formulario no están disponibles');
+    }
+    
     // Hacer funciones globales
     window.cambiarCantidadMultiple = cambiarCantidadMultiple;
     window.eliminarProductoMultiple = eliminarProductoMultiple;
     
     // Inicializar estado de IVA al cargar la página
-    document.addEventListener('DOMContentLoaded', function() {
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', function() {
+            actualizarVenta();
+            calcularIVA();
+            mostrarCalculadoraCambio();
+            cambiarModoVenta();
+        });
+    } else {
         actualizarVenta();
-        calcularIVA(); // Asegurar que los detalles de IVA estén ocultos inicialmente
+        calcularIVA();
         mostrarCalculadoraCambio();
         cambiarModoVenta();
-    });
+    }
 
     // Buscar producto por código (mejorado con API)
     async function buscarProductoPorCodigo(codigo) {
@@ -968,9 +991,11 @@
     }
     
     // Evento de búsqueda manual
-    inputCodigo.addEventListener('blur', () => {
-        buscarProductoPorCodigo(inputCodigo.value);
-    });
+    if (inputCodigo) {
+        inputCodigo.addEventListener('blur', () => {
+            buscarProductoPorCodigo(inputCodigo.value);
+        });
+    }
     
     // Escáner de cámara
     const btnScanner = document.getElementById('btn-scanner');
@@ -978,7 +1003,7 @@
     const scannerContainer = document.getElementById('scanner-container');
     const scannerStatus = document.getElementById('scanner-status');
     
-    btnScanner.addEventListener('click', async () => {
+    if (btnScanner) btnScanner.addEventListener('click', async () => {
         try {
             scannerStatus.textContent = 'Iniciando escáner...';
             scannerStatus.className = 'form-text text-info';
@@ -1006,7 +1031,7 @@
         }
     });
     
-    btnStopScanner.addEventListener('click', () => {
+    if (btnStopScanner) btnStopScanner.addEventListener('click', () => {
         if (scanner) {
             scanner.stop();
             scanner = null;

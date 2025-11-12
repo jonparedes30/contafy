@@ -17,8 +17,6 @@ class CurrentUserMiddleware(MiddlewareMixin):
     def process_request(self, request):
         try:
             _user.value = request.user if request.user.is_authenticated else None
-            if request.user.is_authenticated:
-                logger.info(f"Usuario {request.user.username} accedió a {request.path}")
         except Exception as e:
             logger.error(f"Error en CurrentUserMiddleware: {str(e)}")
             _user.value = None
@@ -37,27 +35,12 @@ class CurrentUserMiddleware(MiddlewareMixin):
 class SecurityMiddleware(MiddlewareMixin):
     """Middleware de seguridad adicional"""
     
+    # Patrones sospechosos como atributo de clase (más eficiente)
+    SUSPICIOUS_PATTERNS = frozenset(['wp-admin', 'phpmyadmin', '.env', 'config.php'])
+    
     def process_request(self, request):
-        # Rate limiting básico por IP
-        ip = self.get_client_ip(request)
-        
-        # Log de intentos sospechosos
-        if self.is_suspicious_request(request):
-            logger.warning(f"Solicitud sospechosa desde {ip}: {request.path}")
-        
-        return None
-    
-    def get_client_ip(self, request):
-        x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
-        if x_forwarded_for:
-            ip = x_forwarded_for.split(',')[0]
-        else:
-            ip = request.META.get('REMOTE_ADDR')
-        return ip
-    
-    def is_suspicious_request(self, request):
-        """Detecta patrones sospechosos"""
-        suspicious_patterns = [
-            'admin', 'wp-admin', 'phpmyadmin', '.env', 'config'
-        ]
-        return any(pattern in request.path.lower() for pattern in suspicious_patterns) 
+        # Solo verificar rutas sospechosas (más rápido)
+        path_lower = request.path.lower()
+        if any(pattern in path_lower for pattern in self.SUSPICIOUS_PATTERNS):
+            logger.warning(f"Solicitud sospechosa: {request.path}")
+        return None 

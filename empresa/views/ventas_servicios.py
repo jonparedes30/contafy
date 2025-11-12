@@ -10,11 +10,11 @@ from empresa.decorators import empresa_required
 def crear_venta_servicio(request):
     """Crear venta específica para servicios"""
     
-    # Obtener servicios de la empresa
+    # Obtener servicios de la empresa (optimizado)
     servicios = TipoServicio.objects.filter(
         empresa=request.user.empresa,
         activo=True
-    ).order_by('nombre')
+    ).only('id', 'nombre', 'descripcion', 'precio_base', 'costo_directo').order_by('nombre')
     
     if request.method == 'POST':
         try:
