@@ -16,9 +16,12 @@ env = environ.Env(
 environ.Env.read_env(os.path.join(BASE_DIR, '.env'))
 
 DEBUG = env('DEBUG')
-SECRET_KEY = env('SECRET_KEY')
-if not SECRET_KEY or SECRET_KEY == 'clave_de_prueba_contafy':
-    raise ValueError("SECRET_KEY debe ser configurada en .env")
+SECRET_KEY = env('SECRET_KEY', default=None)
+if not SECRET_KEY:
+    import secrets
+    SECRET_KEY = secrets.token_urlsafe(50)
+    if not DEBUG:
+        raise ValueError("SECRET_KEY debe ser configurada en producción")
 
 ALLOWED_HOSTS = env.list('ALLOWED_HOSTS', default=['localhost', '127.0.0.1', '.herokuapp.com'])
 
