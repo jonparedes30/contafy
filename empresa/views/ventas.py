@@ -46,7 +46,7 @@ def crear_venta(request):
                     venta = form.save(commit=False)
                     venta.empresa = empresa
                     venta.creado_por = request.user
-                    venta.save()
+                    venta.save()  # Esto crea automáticamente los asientos contables
                     
                     # Crear cuenta por cobrar si es crédito
                     if venta.tipo_pago == 'credito' and venta.cliente_fk:
@@ -61,10 +61,12 @@ def crear_venta(request):
                             fecha_vencimiento=date.today() + timedelta(days=30)
                         )
                     
-                    # Actualizar stock del producto
+                    # El modelo Venta.save() ya crea los asientos contables automáticamente
+                    # Solo necesitamos actualizar el stock
                     producto = venta.producto
                     producto.stock -= venta.cantidad
                     producto.save()
+                    
                 messages.success(request, 'Venta registrada correctamente.')
                 return redirect('empresa:home')
             except Exception as e:
