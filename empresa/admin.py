@@ -3,7 +3,7 @@ from .models import (
     Usuario, Empresa, Venta, Gasto, Producto, CuentaContable,
     Capital, Compra, MateriaPrima, ProductoManufacturado, 
     OrdenProduccion, TipoServicio, Proveedor, Cliente,
-    CuentaPorCobrar, CuentaPorPagar, MetaFinanciera
+    CuentaPorCobrar, CuentaPorPagar, MetaFinanciera, CodigoInvitacion
 )
 from .models_aprendizaje import (
     ModuloAprendizaje, Leccion, ProgresoUsuario, PerfilAprendizaje, PasoCompletado
@@ -20,6 +20,19 @@ class UsuarioAdmin(admin.ModelAdmin):
     list_display = ['username', 'email', 'is_superuser', 'is_active']
     list_filter = ['is_superuser', 'is_active']
     search_fields = ['username', 'email']
+
+@admin.register(CodigoInvitacion)
+class CodigoInvitacionAdmin(admin.ModelAdmin):
+    list_display = ['codigo', 'usado', 'fecha_creacion', 'usado_por']
+    list_filter = ['usado', 'fecha_creacion']
+    search_fields = ['codigo', 'usado_por__username']
+    readonly_fields = ['fecha_creacion']
+    actions = ['marcar_como_no_usado']
+    
+    def marcar_como_no_usado(self, request, queryset):
+        updated = queryset.update(usado=False, usado_por=None)
+        self.message_user(request, f'{updated} códigos marcados como disponibles')
+    marcar_como_no_usado.short_description = 'Marcar como no usado'
 
 @admin.register(Empresa)
 class EmpresaAdmin(admin.ModelAdmin):
