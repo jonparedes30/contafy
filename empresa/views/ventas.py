@@ -46,31 +46,23 @@ def crear_venta(request):
                     venta = form.save(commit=False)
                     venta.empresa = empresa
                     venta.creado_por = request.user
-                    venta.save()  # Esto crea automáticamente los asientos contables
                     
-                    # Crear cuenta por cobrar si es crédito
-                    if venta.tipo_pago == 'credito' and venta.cliente_fk:
-                        from empresa.models import CuentaPorCobrar
-                        from datetime import date, timedelta
-                        CuentaPorCobrar.objects.create(
-                            empresa=venta.empresa,
-                            cliente=venta.cliente_fk,
-                            venta=venta,
-                            monto_original=venta.monto,
-                            monto_pendiente=venta.monto,
-                            fecha_vencimiento=date.today() + timedelta(days=30)
-                        )
+                    # Validar stock
+                    if venta.producto.stock < venta.cantidad:
+                        messages.error(request, f'Stock insuficiente. Disponible: {venta.producto.stock}')
+                        return render(request, 'empresa/crear_venta.html', context)
                     
-                    # El modelo Venta.save() ya crea los asientos contables automáticamente
-                    # Solo necesitamos actualizar el stock
-                    producto = venta.producto
-                    producto.stock -= venta.cantidad
-                    producto.save()
+                    # Actualizar stock
+                    venta.producto.stock -= venta.cantidad
+                    venta.producto.save()
+                    
+                    # Guardar venta (los asientos se crean automáticamente pero no bloquean)
+                    venta.save()
                     
                 messages.success(request, 'Venta registrada correctamente.')
                 return redirect('empresa:home')
             except Exception as e:
-                messages.error(request, f'Error al registrar venta: {e}')
+                messages.error(request, f'Error al registrar venta: {str(e)}')
     else:
         form = VentaForm()
 
@@ -79,6 +71,19 @@ def crear_venta(request):
         'id', 'codigo', 'codigo_barras', 'nombre', 'descripcion', 
         'precio_unitario', 'pvp', 'stock'
     )
+    productos_json = [
+        {
+            'id': p.id,
+            'codigo': p.codigo,
+            'codigo_barras': p.codigo_barras or '',
+            'nombre': f"{p.nombre} ({p.descripcion})" if p.descripcion else p.nombre,
+            'descripcion': p.descripcion or '',
+            'precio_costo': float(p.precio_unitario),
+            'precio_venta': float(p.pvp) if p.pvp else float(p.precio_unitario),
+            'stock': p.stock,
+        }
+        for p in productos
+    ]
     productos_json = [
         {
             'id': p.id,
