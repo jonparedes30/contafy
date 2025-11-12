@@ -48,7 +48,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
-    'whitenoise.middleware.WhiteNoiseMiddleware',
+    # WhiteNoise se añade condicionalmente más abajo si está instalado
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -141,8 +141,16 @@ CURRENCY_NAME = 'Dólares Americanos'
 STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
-# Storage para estáticos
-STATICFILES_STORAGE = 'whitenoise.storage.CompressedStaticFilesStorage'
+# Storage para estáticos (usar WhiteNoise si está instalado)
+try:
+    import importlib.util
+    if importlib.util.find_spec('whitenoise'):
+        # Insertar WhiteNoise justo después de SecurityMiddleware
+        MIDDLEWARE.insert(1, 'whitenoise.middleware.WhiteNoiseMiddleware')
+        STATICFILES_STORAGE = 'whitenoise.storage.CompressedStaticFilesStorage'
+except Exception:
+    # Entornos de prueba/minimos pueden no tener whitenoise instalado
+    pass
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
@@ -249,3 +257,27 @@ LOGGING = {
         },
     },
 }
+
+# Configuración específica para Render
+if 'RENDER' in os.environ:
+    DEBUG = False
+    
+    # Allowed hosts para Render
+    ALLOWED_HOSTS = env.list('ALLOWED_HOSTS', default=[
+        '.onrender.com',
+        'localhost',
+        '127.0.0.1'
+    ])
+    
+    # Seguridad para producción
+    SECURE_SSL_REDIRECT = True
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+    
+    # CSRF trusted origins para Render
+    CSRF_TRUSTED_ORIGINS = [
+        'https://*.onrender.com',
+    ]
+    
+    # Logging para Render
+    LOGGING['handlers']['console']['level'] = 'INFO'

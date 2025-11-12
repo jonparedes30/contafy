@@ -18,15 +18,18 @@ def crear_cuenta_contable(request):
         nombre = request.POST.get('nombre', '').strip()
         tipo = request.POST.get('tipo', '')
         monto_inicial = request.POST.get('monto_inicial', '0')
-        
+
         if nombre and tipo:
             try:
-                monto_inicial = float(monto_inicial)
-                # Guardar datos en sesión
+                # Use Decimal for monetary inputs
+                from empresa.utils.money import to_decimal, quantize_currency
+                monto_inicial = to_decimal(monto_inicial)
+                # Guardar datos en sesión (serializable types)
                 request.session['cuenta_data'] = {
                     'nombre': nombre,
                     'tipo': tipo,
-                    'monto_inicial': monto_inicial
+                    # store as float for session serialization but keep Decimal usage below
+                    'monto_inicial': float(monto_inicial)
                 }
                 
                 # Obtener cuentas existentes para contrapartida
@@ -95,27 +98,31 @@ def crear_cuenta_contable(request):
             
             # Crear asientos si hay monto inicial
             if cuenta_data['monto_inicial'] > 0:
+                # Obtener o crear contrapartida de forma segura
                 if contrapartida_id:
                     contrapartida = CuentaContable.objects.get(id=contrapartida_id, empresa=empresa)
                 elif nueva_contrapartida:
                     tipo_contrapartida = 'capital' if cuenta_data['tipo'] == 'activo' else 'activo'
-                    contrapartida = CuentaContable.objects.create(
+                    contrapartida, _ = CuentaContable.objects.get_or_create(
                         empresa=empresa,
                         nombre=nueva_contrapartida,
-                        tipo=tipo_contrapartida
+                        defaults={'tipo': tipo_contrapartida}
                     )
                 else:
-                    # Crear contrapartida por defecto
-                    contrapartida = CuentaContable.objects.get_or_create(
+                    # Crear o recuperar contrapartida por defecto 'Capital'
+                    contrapartida, _ = CuentaContable.objects.get_or_create(
                         empresa=empresa,
                         nombre='Capital',
                         defaults={'tipo': 'capital'}
-                    )[0]
+                    )
                 
                 # Crear movimientos contables
                 import uuid
                 transaccion_id = str(uuid.uuid4())[:8]
                 
+                from empresa.utils.money import to_decimal, quantize_currency
+                monto = to_decimal(cuenta_data['monto_inicial'])
+
                 if cuenta.tipo in ['activo', 'gasto']:
                     # Débito en la cuenta nueva
                     MovimientoContable.objects.create(
@@ -123,7 +130,7 @@ def crear_cuenta_contable(request):
                         cuenta_fk=cuenta,
                         cuenta_text=cuenta.nombre,
                         tipo='debito',
-                        monto=cuenta_data['monto_inicial'],
+                        monto=float(monto),
                         descripcion=f'Apertura cuenta {cuenta.nombre}',
                         transaccion_id=transaccion_id
                     )
@@ -133,7 +140,7 @@ def crear_cuenta_contable(request):
                         cuenta_fk=contrapartida,
                         cuenta_text=contrapartida.nombre,
                         tipo='credito',
-                        monto=cuenta_data['monto_inicial'],
+                        monto=float(monto),
                         descripcion=f'Apertura cuenta {cuenta.nombre}',
                         transaccion_id=transaccion_id
                     )
@@ -144,7 +151,7 @@ def crear_cuenta_contable(request):
                         cuenta_fk=cuenta,
                         cuenta_text=cuenta.nombre,
                         tipo='credito',
-                        monto=cuenta_data['monto_inicial'],
+                        monto=float(monto),
                         descripcion=f'Apertura cuenta {cuenta.nombre}',
                         transaccion_id=transaccion_id
                     )
@@ -154,7 +161,7 @@ def crear_cuenta_contable(request):
                         cuenta_fk=contrapartida,
                         cuenta_text=contrapartida.nombre,
                         tipo='debito',
-                        monto=cuenta_data['monto_inicial'],
+                        monto=float(monto),
                         descripcion=f'Apertura cuenta {cuenta.nombre}',
                         transaccion_id=transaccion_id
                     )

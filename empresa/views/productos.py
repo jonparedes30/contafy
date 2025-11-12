@@ -96,9 +96,12 @@ def listar_productos(request):
     from empresa.models import CategoriaProducto
     categorias = CategoriaProducto.objects.filter(empresa=empresa, activa=True).order_by('nombre')
     
-    # Calcular estadísticas
-    total_inventario = sum(p.stock * float(p.precio_unitario) for p in productos)
-    total_pvp = sum(p.stock * float(p.pvp or 0) for p in productos)
+    # Calcular estadísticas (usar Decimal para evitar errores de precisión)
+    from empresa.utils.money import to_decimal, quantize_currency
+    total_inventario = sum((to_decimal(p.stock) * to_decimal(p.precio_unitario)) for p in productos)
+    total_inventario = quantize_currency(total_inventario)
+    total_pvp = sum((to_decimal(p.stock) * to_decimal(p.pvp or 0)) for p in productos)
+    total_pvp = quantize_currency(total_pvp)
     productos_bajo_stock = productos.filter(stock__lte=10).count()
     
     context = {

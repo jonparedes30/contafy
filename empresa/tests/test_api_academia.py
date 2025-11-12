@@ -50,8 +50,14 @@ class AcademiaAPITests(TestCase):
         response = self.client.get(url, {'tipo_empresa': 'comercial'})
         
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(response.data), 1)
-        self.assertEqual(response.data[0]['nombre'], 'Módulo Test')
+        # Con paginación, la respuesta tiene estructura diferente
+        if 'results' in response.data:
+            self.assertEqual(len(response.data['results']), 1)
+            self.assertEqual(response.data['results'][0]['nombre'], 'Módulo Test')
+        else:
+            # Fallback sin paginación
+            self.assertEqual(len(response.data), 1)
+            self.assertEqual(response.data[0]['nombre'], 'Módulo Test')
     
     def test_lecciones_list_api(self):
         """Test API de lista de lecciones"""
@@ -59,8 +65,14 @@ class AcademiaAPITests(TestCase):
         response = self.client.get(url, {'modulo_id': self.modulo.id})
         
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(response.data), 1)
-        self.assertEqual(response.data[0]['titulo'], 'Lección Test')
+        # Con paginación, la respuesta tiene estructura diferente
+        if 'results' in response.data:
+            self.assertEqual(len(response.data['results']), 1)
+            self.assertEqual(response.data['results'][0]['titulo'], 'Lección Test')
+        else:
+            # Fallback sin paginación
+            self.assertEqual(len(response.data), 1)
+            self.assertEqual(response.data[0]['titulo'], 'Lección Test')
     
     def test_leccion_detail_api(self):
         """Test API de detalle de lección"""

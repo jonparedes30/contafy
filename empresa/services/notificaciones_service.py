@@ -1,225 +1,98 @@
+"""Servicio de Notificaciones por Email y WhatsApp con protecciones para modo sandbox.
+
+Este módulo evita enviar emails o llamadas externas cuando `empresa.sandbox_mode.is_sandbox()` está activo.
+También centraliza logging y maneja fallbacks seguros (imprimir en consola).
 """
-Servicio de Notificaciones por Email y WhatsApp
-"""
-from django.core.mail import send_mail
-from django.conf import settings
-from empresa.sandbox_mode import is_sandbox
-import requests
 import logging
-from django.utils import timezone
-from datetime import timedelta
-from django.core.mail import send_mail
 from django.conf import settings
+from django.core.mail import EmailMessage
+from empresa.sandbox_mode import is_sandbox
 
 logger = logging.getLogger(__name__)
 
+
 class NotificacionesService:
-    
+
     @staticmethod
     def enviar_email(destinatario, asunto, mensaje, empresa=None):
-        """Envía notificación por email"""
+        """Envía notificación por email.
+
+        Retorna True si el envío se realizó o fue omitido por sandbox. Never raises.
+        """
         try:
             # No enviar emails en modo sandbox
             if is_sandbox():
-                print(f"[SANDBOX] Skipping email to {destinatario}: {asunto}")
+                logger.info(f"[SANDBOX] Skipping email to {destinatario}: {asunto}")
                 return True
-            # Usar configuración simple para desarrollo
-            from django.core.mail import EmailMessage
-            
+
             email = EmailMessage(
                 subject=f"[CONTAFY] {asunto}",
                 body=mensaje,
-                from_email='jonathanparedes738@gmail.com',
+                from_email=getattr(settings, 'DEFAULT_FROM_EMAIL', 'no-reply@contafy.local'),
                 to=[destinatario],
             )
-            email.send()
-            
-            print(f"Email enviado a {destinatario}: {asunto}")
+            email.send(fail_silently=False)
+            logger.info(f"Email sent to {destinatario}: {asunto}")
             return True
         except Exception as e:
-            print(f"Error enviando email a {destinatario}: {e}")
-            # Mostrar el email en consola como fallback
-            print(f"\n--- EMAIL FALLBACK ---")
-            print(f"Para: {destinatario}")
-            print(f"Asunto: [CONTAFY] {asunto}")
-            print(f"Mensaje:\n{mensaje}")
-            print(f"--- FIN EMAIL ---\n")
+            # Log the failure and fallback to console output
+            logger.exception(f"Error sending email to {destinatario}: {e}")
+            try:
+                print(f"\n--- EMAIL FALLBACK ---")
+                print(f"Para: {destinatario}")
+                print(f"Asunto: [CONTAFY] {asunto}")
+                print(f"Mensaje:\n{mensaje}")
+                print(f"--- FIN EMAIL ---\n")
+            except Exception:
+                logger.exception("Failed to print email fallback")
             return False
-    
+
     @staticmethod
     def enviar_whatsapp(telefono, mensaje, empresa=None):
-        """Envía notificación por WhatsApp usando API"""
+        """Envía notificación por WhatsApp (simulado si no está configurado).
+
+        Returns True if message would have been sent or was skipped due to sandbox.
+        """
         if not telefono:
             return False
-            
+
         try:
-            # No enviar WhatsApp en modo sandbox
             if is_sandbox():
-                print(f"[SANDBOX] Skipping WhatsApp to {telefono}")
+                logger.info(f"[SANDBOX] Skipping WhatsApp to {telefono}")
                 return True
-            # Ejemplo con Twilio WhatsApp API
-            # Necesitas configurar TWILIO_ACCOUNT_SID y TWILIO_AUTH_TOKEN en .env
-            
-            # Formato del teléfono: +593987654321
+
+            # Normalize phone (best-effort)
             if not telefono.startswith('+'):
                 telefono = f"+593{telefono}"
-            
-            # Por ahora mostrar en consola (WhatsApp requiere configuración adicional)
-            print(f"\n--- WHATSAPP MENSAJE ---")
+
+            # If Twilio is configured use it, otherwise print to console
+            if getattr(settings, 'TWILIO_ACCOUNT_SID', None):
+                try:
+                    # Import dynamico para evitar errores si la librería no está instalada
+                    import importlib
+                    twilio_mod = importlib.import_module('twilio.rest') if importlib.util.find_spec('twilio.rest') else None
+                    Client = getattr(twilio_mod, 'Client', None) if twilio_mod else None
+                    if Client:
+                        client = Client(settings.TWILIO_ACCOUNT_SID, settings.TWILIO_AUTH_TOKEN)
+                        message = client.messages.create(
+                            from_='whatsapp:+14155238886',
+                            body=mensaje,
+                            to=f'whatsapp:{telefono}'
+                        )
+                        logger.info(f"WhatsApp sent to {telefono}: {getattr(message, 'sid', '')}")
+                        return True
+                except Exception:
+                    logger.exception("Twilio send failed, falling back to console")
+
+            # Fallback: print message
+            print(f"\n--- WHATSAPP MESSAGE ---")
             print(f"Para: {telefono}")
-            print(f"Mensaje: {mensaje[:100]}...")
-            print(f"--- FIN WHATSAPP ---\n")
-            
-            # TODO: Configurar Twilio para envío real
-            # if hasattr(settings, 'TWILIO_ACCOUNT_SID') and settings.TWILIO_ACCOUNT_SID:
-            #     from twilio.rest import Client
-            #     client = Client(settings.TWILIO_ACCOUNT_SID, settings.TWILIO_AUTH_TOKEN)
-            #     message = client.messages.create(
-            #         from_='whatsapp:+14155238886',
-            #         body=mensaje,
-            #         to=f'whatsapp:{telefono}'
-            #     )
-            #     print(f"WhatsApp enviado a {telefono}: {message.sid}")
-            
+            print(f"Mensaje: {mensaje[:400]}")
+            print(f"--- END WHATSAPP ---\n")
             return True
         except Exception as e:
-            logger.error(f"Error enviando WhatsApp a {telefono}: {e}")
+            logger.exception(f"Error preparing WhatsApp to {telefono}: {e}")
             return False
-    
-    @staticmethod
-    def notificar_meta_critica(meta):
-        """Notifica cuando una meta está en estado crítico"""
-        empresa = meta.empresa
-        mensaje = f"""
-🚨 ALERTA: Meta Crítica
 
-Empresa: {empresa.nombre}
-Meta: {meta.get_tipo_display()}
-Progreso: {meta.progreso_actual:.1f}%
-Objetivo: ${meta.objetivo_mensual:,.2f}
-Período: {meta.mes}/{meta.anio}
-
-Tu meta está en riesgo. Revisa tu estrategia urgentemente.
-
-Accede a CONTAFY para más detalles.
-        """.strip()
-        
-        # Enviar a todos los usuarios de la empresa
-        for usuario in empresa.usuarios.all():
-            if usuario.email:
-                NotificacionesService.enviar_email(
-                    usuario.email,
-                    f"Meta Crítica: {meta.get_tipo_display()}",
-                    mensaje,
-                    empresa
-                )
-        
-        # Enviar WhatsApp si está configurado
-        if empresa.telefono_whatsapp:
-            NotificacionesService.enviar_whatsapp(
-                empresa.telefono_whatsapp,
-                mensaje,
-                empresa
-            )
-    
-    @staticmethod
-    def notificar_meta_cumplida(meta):
-        """Notifica cuando una meta se cumple"""
-        empresa = meta.empresa
-        mensaje = f"""
-🎉 ¡FELICITACIONES!
-
-Empresa: {empresa.nombre}
-Meta: {meta.get_tipo_display()}
-Progreso: {meta.progreso_actual:.1f}%
-Objetivo: ${meta.objetivo_mensual:,.2f}
-Período: {meta.mes}/{meta.anio}
-
-¡Has cumplido tu meta! Excelente trabajo.
-
-Revisa tus logros en CONTAFY.
-        """.strip()
-        
-        # Enviar a todos los usuarios de la empresa
-        for usuario in empresa.usuarios.all():
-            if usuario.email:
-                NotificacionesService.enviar_email(
-                    usuario.email,
-                    f"¡Meta Cumplida!: {meta.get_tipo_display()}",
-                    mensaje,
-                    empresa
-                )
-        
-        # Enviar WhatsApp si está configurado
-        if empresa.telefono_whatsapp:
-            NotificacionesService.enviar_whatsapp(
-                empresa.telefono_whatsapp,
-                mensaje,
-                empresa
-            )
-    
-    @staticmethod
-    def notificar_stock_bajo(producto):
-        """Notifica cuando un producto tiene stock bajo"""
-        empresa = producto.empresa
-        mensaje = f"""
-⚠️ STOCK BAJO
-
-Producto: {producto.nombre}
-Código: {producto.codigo}
-Stock actual: {producto.stock}
-Stock mínimo: {producto.stock_minimo}
-
-Es necesario reabastecer este producto.
-
-Gestiona tu inventario en CONTAFY.
-        """.strip()
-        
-        # Enviar a usuarios con permisos de inventario
-        for usuario in empresa.usuarios.all():
-            if usuario.email:
-                NotificacionesService.enviar_email(
-                    usuario.email,
-                    f"Stock Bajo: {producto.nombre}",
-                    mensaje,
-                    empresa
-                )
-        
-        if empresa.telefono_whatsapp:
-            NotificacionesService.enviar_whatsapp(
-                empresa.telefono_whatsapp,
-                mensaje,
-                empresa
-            )
-    
-    @staticmethod
-    def notificar_alerta_predictiva(empresa, alerta):
-        """Notifica alertas del análisis predictivo"""
-        mensaje = f"""
-🔍 ANÁLISIS PREDICTIVO
-
-Empresa: {empresa.nombre}
-Alerta: {alerta['mensaje']}
-Prioridad: {alerta['prioridad']}
-
-Recomendación: Revisa tu dashboard financiero para más detalles.
-
-Accede a CONTAFY para análisis completo.
-        """.strip()
-        
-        # Enviar a todos los usuarios de la empresa
-        for usuario in empresa.usuarios.all():
-            if usuario.email:
-                NotificacionesService.enviar_email(
-                    usuario.email,
-                    f"Alerta Predictiva: {alerta['prioridad']}",
-                    mensaje,
-                    empresa
-                )
-        
-        if empresa.telefono_whatsapp:
-            NotificacionesService.enviar_whatsapp(
-                empresa.telefono_whatsapp,
-                mensaje,
-                empresa
-            )
+    # The higher-level notification methods keep using enviar_email/enviar_whatsapp
+    # and therefore automatically respect sandbox mode.

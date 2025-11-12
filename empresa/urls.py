@@ -60,6 +60,27 @@ from .views.recomendaciones_api import obtener_recomendaciones_api, registrar_in
 from .views.ranking_api import ranking_semanal_api, ligas_activas_api, inscribir_liga_api, retos_activos_api, ranking_view
 from .views.ventas_servicios import crear_venta_servicio
 from .views.admin_simple import admin_dashboard, crear_codigo_invitacion
+from django.conf import settings
+from django.shortcuts import render
+
+# Importaciones para vistas que estaban con lambda
+from empresa.views.valuacion import valuacion_empresa
+from empresa.views.responder_solicitud import responder_solicitud_web
+from empresa.views.aprendizaje_views import (
+    leccion_interactiva, 
+    marcar_leccion_completada,
+    marcar_paso_completado, 
+    modulo_detalle as modulo_detalle_ux, 
+    perfil_aprendizaje
+)
+from empresa.views.ai_reports import vista_reporte_ia, generar_reporte_ia_pdf
+from empresa.views.ai_comandos import (
+    AIComandosView, 
+    procesar_comando_rapido,
+    ayuda_comandos, 
+    ejemplos_comandos
+)
+from empresa.views.debug_datos import debug_datos
 
 # Configurar router para la API
 router = DefaultRouter()
@@ -99,7 +120,6 @@ urlpatterns = [
     path('venta/listar/', listar_ventas, name='listar_ventas'),
     path('venta/<int:venta_id>/editar/', editar_venta, name='editar_venta'),
     path('venta/<int:venta_id>/eliminar/', eliminar_venta, name='eliminar_venta'),
-    path('api/venta/<int:venta_id>/eliminar/', eliminar_venta, name='api_eliminar_venta'),
 
     
     # URLs de compras
@@ -165,10 +185,6 @@ urlpatterns += [
 urlpatterns += [
     path('saldos-iniciales/', saldos_iniciales, name='saldos_iniciales'),
     path('inventario-detallado-inicial/', inventario_detallado_inicial, name='inventario_detallado_inicial'),
-    
-    # URLs de prueba para filtros
-    path('test/filtros/', test_filtros_fecha, name='test_filtros_fecha'),
-    path('test/verificar-fecha/', verificar_datos_fecha, name='verificar_datos_fecha'),
     
     # URLs para API de códigos de barras
     path('api/buscar-codigo-barras/', buscar_por_codigo_barras, name='buscar_codigo_barras'),
@@ -239,10 +255,10 @@ urlpatterns += [
     path('comercio/exportar/pdf/interno/', exportar_pdf_comercio_interno, name='exportar_pdf_comercio_interno'),
     
     # URL de valuación de empresa
-    path('valuacion/', lambda request: __import__('empresa.views.valuacion', fromlist=['valuacion_empresa']).valuacion_empresa(request), name='valuacion_empresa'),
+    path('valuacion/', valuacion_empresa, name='valuacion_empresa'),
     
     # URL para responder solicitudes desde web
-    path('responder/<int:solicitud_id>/', lambda request, solicitud_id: __import__('empresa.views.responder_solicitud', fromlist=['responder_solicitud_web']).responder_solicitud_web(request, solicitud_id), name='responder_solicitud_web'),
+    path('responder/<int:solicitud_id>/', responder_solicitud_web, name='responder_solicitud_web'),
     
     # URLs del Agente de IA
     path('agente-ia/', agente_ia, name='agente_ia'),
@@ -258,11 +274,11 @@ urlpatterns += [
     path('aprendizaje/paso-completado/', paso_completado, name='aprendizaje_paso_completado'),
     
     # URLs de Academia UX Duolingo (Fase 4)
-    path('aprendizaje/leccion/<int:leccion_id>/interactiva/', lambda request, leccion_id: __import__('empresa.views.aprendizaje_views', fromlist=['leccion_interactiva']).leccion_interactiva(request, leccion_id), name='leccion_interactiva'),
-    path('aprendizaje/leccion/<int:leccion_id>/completar/', lambda request, leccion_id: __import__('empresa.views.aprendizaje_views', fromlist=['marcar_leccion_completada']).marcar_leccion_completada(request, leccion_id), name='marcar_leccion_completada'),
-    path('aprendizaje/leccion/<int:leccion_id>/paso/<int:paso_index>/completar/', lambda request, leccion_id, paso_index: __import__('empresa.views.aprendizaje_views', fromlist=['marcar_paso_completado']).marcar_paso_completado(request, leccion_id, paso_index), name='marcar_paso_completado'),
-    path('aprendizaje/modulo/<int:modulo_id>/detalle/', lambda request, modulo_id: __import__('empresa.views.aprendizaje_views', fromlist=['modulo_detalle']).modulo_detalle(request, modulo_id), name='modulo_detalle_ux'),
-    path('aprendizaje/perfil-ux/', lambda request: __import__('empresa.views.aprendizaje_views', fromlist=['perfil_aprendizaje']).perfil_aprendizaje(request), name='perfil_aprendizaje_ux'),
+    path('aprendizaje/leccion/<int:leccion_id>/interactiva/', leccion_interactiva, name='leccion_interactiva'),
+    path('aprendizaje/leccion/<int:leccion_id>/completar/', marcar_leccion_completada, name='marcar_leccion_completada'),
+    path('aprendizaje/leccion/<int:leccion_id>/paso/<int:paso_index>/completar/', marcar_paso_completado, name='marcar_paso_completado'),
+    path('aprendizaje/modulo/<int:modulo_id>/detalle/', modulo_detalle_ux, name='modulo_detalle_ux'),
+    path('aprendizaje/perfil-ux/', perfil_aprendizaje, name='perfil_aprendizaje_ux'),
     
     # URLs Sociales (Fase 5)
     path('aprendizaje/social/', social.dashboard_social, name='social_dashboard'),
@@ -305,15 +321,15 @@ urlpatterns += [
     path('aprendizaje/simulacion/servicio/<int:leccion_id>/', simulacion_servicio, name='simulacion_servicio_leccion'),
     
     # URLs de Reportes IA
-    path('reporte-ia/', lambda request: __import__('empresa.views.ai_reports', fromlist=['vista_reporte_ia']).vista_reporte_ia(request), name='vista_reporte_ia'),
-    path('reporte-ia/pdf/', lambda request: __import__('empresa.views.ai_reports', fromlist=['generar_reporte_ia_pdf']).generar_reporte_ia_pdf(request), name='generar_reporte_ia_pdf'),
+    path('reporte-ia/', vista_reporte_ia, name='vista_reporte_ia'),
+    path('reporte-ia/pdf/', generar_reporte_ia_pdf, name='generar_reporte_ia_pdf'),
     
     # URLs de Comandos IA
-    path('ai-comandos/', lambda request: __import__('django.shortcuts', fromlist=['render']).render(request, 'empresa/ai_comandos.html'), name='ai_comandos_page'),
-    path('api/ai-comandos/', lambda request: __import__('empresa.views.ai_comandos', fromlist=['AIComandosView']).AIComandosView.as_view()(request), name='ai_comandos'),
-    path('api/comando-rapido/', lambda request: __import__('empresa.views.ai_comandos', fromlist=['procesar_comando_rapido']).procesar_comando_rapido(request), name='comando_rapido'),
-    path('api/ayuda-comandos/', lambda request: __import__('empresa.views.ai_comandos', fromlist=['ayuda_comandos']).ayuda_comandos(request), name='ayuda_comandos'),
-    path('api/ejemplos-comandos/', lambda request: __import__('empresa.views.ai_comandos', fromlist=['ejemplos_comandos']).ejemplos_comandos(request), name='ejemplos_comandos'),
+    path('ai-comandos/', lambda request: render(request, 'empresa/ai_comandos.html'), name='ai_comandos_page'),
+    path('api/ai-comandos/', AIComandosView.as_view(), name='ai_comandos'),
+    path('api/comando-rapido/', procesar_comando_rapido, name='comando_rapido'),
+    path('api/ayuda-comandos/', ayuda_comandos, name='ayuda_comandos'),
+    path('api/ejemplos-comandos/', ejemplos_comandos, name='ejemplos_comandos'),
     
     # URLs de nuevas funcionalidades IA
     path('api/comando-voz/', procesar_comando_voz, name='comando_voz'),
@@ -324,10 +340,17 @@ urlpatterns += [
     # URLs del Admin Simple
     path('admin-simple/', admin_dashboard, name='admin_simple'),
     path('admin-simple/crear-codigo/', crear_codigo_invitacion, name='crear_codigo_invitacion'),
-    
-    # URL de debug
-    path('debug/datos/', lambda request: __import__('empresa.views.debug_datos', fromlist=['debug_datos']).debug_datos(request), name='debug_datos'),
-    
+]
+
+# URLs de prueba y debug (solo en modo DEBUG)
+if settings.DEBUG:
+    urlpatterns += [
+        path('test/filtros/', test_filtros_fecha, name='test_filtros_fecha'),
+        path('test/verificar-fecha/', verificar_datos_fecha, name='verificar_datos_fecha'),
+        path('debug/datos/', debug_datos, name='debug_datos'),
+    ]
+
+urlpatterns += [
     # URLs de mensajería (deshabilitadas hasta migrar DB)
     # path('bandeja/', lambda request: __import__('empresa.views.mensajeria', fromlist=['bandeja_entrada']).bandeja_entrada(request), name='bandeja_entrada'),
     # path('conversacion/<int:conversacion_id>/', lambda request, conversacion_id: __import__('empresa.views.mensajeria', fromlist=['ver_conversacion']).ver_conversacion(request, conversacion_id), name='ver_conversacion'),

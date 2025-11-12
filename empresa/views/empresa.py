@@ -112,7 +112,6 @@ def crear_empleado(request):
     return render(request, 'empresa/crear_empleado.html', {'form': form})
 
 
-@csrf_exempt
 @login_required
 @require_http_methods(["GET", "POST"])
 def gestion_poderes_empleado(request, empresa_id, empleado_id):
@@ -162,7 +161,6 @@ def gestion_poderes_empleado(request, empresa_id, empleado_id):
         return JsonResponse({'success': True})
 
 
-@csrf_exempt
 @login_required
 @require_owner
 @require_http_methods(["POST"])
@@ -190,7 +188,6 @@ def eliminar_empleado(request, empleado_id):
         return JsonResponse({'error': str(e)}, status=500)
 
 
-@csrf_exempt
 @login_required
 @require_owner
 @require_http_methods(["POST"])
@@ -226,7 +223,6 @@ def editar_empresa(request):
         return JsonResponse({'error': str(e)}, status=500)
 
 
-@csrf_exempt
 @login_required
 @require_http_methods(["POST"])
 def editar_usuario(request):

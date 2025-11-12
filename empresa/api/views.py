@@ -2,8 +2,15 @@ from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
+from rest_framework.pagination import PageNumberPagination
 from django.shortcuts import get_object_or_404
 from django.db.models import Q
+
+# Paginación estándar para las APIs
+class StandardPagination(PageNumberPagination):
+    page_size = 20
+    page_size_query_param = 'page_size'
+    max_page_size = 100
 
 from empresa.models_aprendizaje import ModuloAprendizaje, Leccion, ProgresoUsuario
 from empresa.models_simulaciones import TipoSimulacion, SimulacionUsuario, EscenarioSimulacion
@@ -27,6 +34,14 @@ def modulos_list(request):
         activo=True
     ).order_by('orden')
     
+    # Aplicar paginación
+    paginator = StandardPagination()
+    page = paginator.paginate_queryset(modulos, request)
+    if page is not None:
+        serializer = ModuloAprendizajeSerializer(page, many=True)
+        return paginator.get_paginated_response(serializer.data)
+    
+    # Fallback sin paginación
     serializer = ModuloAprendizajeSerializer(modulos, many=True)
     return Response(serializer.data)
 
@@ -45,6 +60,15 @@ def lecciones_list(request):
         queryset = queryset.filter(modulo__tipo_empresa=tipo_empresa)
     
     lecciones = queryset.select_related('modulo').order_by('modulo__orden', 'orden')
+    
+    # Aplicar paginación
+    paginator = StandardPagination()
+    page = paginator.paginate_queryset(lecciones, request)
+    if page is not None:
+        serializer = LeccionSerializer(page, many=True)
+        return paginator.get_paginated_response(serializer.data)
+    
+    # Fallback sin paginación
     serializer = LeccionSerializer(lecciones, many=True)
     return Response(serializer.data)
 
@@ -128,6 +152,17 @@ def simulacion_finalizar(request, simulacion_id):
         usuario=request.user
     )
     
+    # Validar que no esté ya completada
+    if simulacion.estado == 'completada':
+        return Response(
+            {
+                'error': 'Esta simulación ya fue completada',
+                'simulacion_id': simulacion_id,
+                'completada_en': simulacion.fecha_completado
+            },
+            status=status.HTTP_400_BAD_REQUEST
+        )
+    
     serializer = SimulacionGuardarSerializer(data=request.data)
     if serializer.is_valid():
         datos_usuario = serializer.validated_data['datos_usuario']
@@ -209,5 +244,14 @@ def escenarios_list(request):
         queryset = queryset.filter(tipo_simulacion_id=tipo_simulacion_id)
     
     escenarios = queryset.select_related('tipo_simulacion').order_by('dificultad', 'nombre')
+    
+    # Aplicar paginación
+    paginator = StandardPagination()
+    page = paginator.paginate_queryset(escenarios, request)
+    if page is not None:
+        serializer = EscenarioSimulacionSerializer(page, many=True)
+        return paginator.get_paginated_response(serializer.data)
+    
+    # Fallback sin paginación
     serializer = EscenarioSimulacionSerializer(escenarios, many=True)
     return Response(serializer.data)

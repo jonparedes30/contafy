@@ -115,6 +115,14 @@ class Empresa(models.Model):
         help_text="Usuario propietario de la empresa"
     )
 
+    def __init__(self, *args, **kwargs):
+        # Soporte retrocompatible para tests/constructores que pasan `usuario=` al crear
+        usuario = kwargs.pop('usuario', None)
+        super().__init__(*args, **kwargs)
+        if usuario and not getattr(self, 'propietario', None):
+            # Asignar temporalmente; al guardar se persistirá correctamente
+            self.propietario = usuario
+
     class Meta:
         indexes = [
             models.Index(fields=['nombre']),
@@ -322,6 +330,13 @@ class Venta(AuditModel):
     tasa_iva = models.DecimalField(max_digits=5, decimal_places=2, default=15, help_text="Tasa de IVA (%)")
     tipo_pago = models.CharField(max_length=15, choices=TIPO_PAGO_CHOICES, default='contado')
     fecha = models.DateTimeField(auto_now_add=True)
+
+    def __init__(self, *args, **kwargs):
+        # Compatibilidad con tests/clients que pasan `total=` en lugar de `monto=`.
+        total = kwargs.pop('total', None)
+        if total is not None and 'monto' not in kwargs:
+            kwargs['monto'] = total
+        super().__init__(*args, **kwargs)
     
     @property
     def cliente_display(self):
@@ -336,14 +351,22 @@ class Venta(AuditModel):
     def save(self, *args, **kwargs):
         """Calcular IVA y crear asientos contables según NIIF"""
         es_nuevo = not self.pk
-        
-        # Calcular IVA según NIC 12
-        if self.monto_neto > 0 and self.iva == 0:
-            self.iva = self.monto_neto * (self.tasa_iva / 100)
-            self.monto = self.monto_neto + self.iva
-        elif self.monto > 0 and self.monto_neto == 0:
-            self.monto_neto = self.monto / (1 + self.tasa_iva / 100)
-            self.iva = self.monto - self.monto_neto
+        # Calcular IVA según NIC 12 usando Decimal para evitar mezclas float/Decimal
+        from decimal import Decimal, ROUND_HALF_UP
+        one = Decimal('1')
+        hundred = Decimal('100')
+
+        try:
+            tasa = Decimal(self.tasa_iva) / hundred
+        except Exception:
+            tasa = Decimal(str(self.tasa_iva)) / hundred
+
+        if self.monto_neto > 0 and (self.iva == 0 or self.iva is None):
+            self.iva = (Decimal(self.monto_neto) * tasa).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+            self.monto = Decimal(self.monto_neto) + self.iva
+        elif self.monto > 0 and (self.monto_neto == 0 or self.monto_neto is None):
+            self.monto_neto = (Decimal(self.monto) / (one + tasa)).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+            self.iva = Decimal(self.monto) - self.monto_neto
         
         super().save(*args, **kwargs)
         
@@ -454,7 +477,8 @@ class Venta(AuditModel):
     def obtener_costo_peps(self):
         """Obtiene costo usando método PEPS según NIC 2"""
         from empresa.models import Compra, ProductoManufacturado
-        
+        from decimal import Decimal
+
         try:
             if self.empresa.categoria == 'manufactura':
                 producto_manuf = ProductoManufacturado.objects.get(
@@ -472,10 +496,10 @@ class Venta(AuditModel):
                     # Usar costo de la compra más antigua disponible
                     return compras.first().monto_neto / compras.first().cantidad
                 else:
-                    # Si no hay compras, usar 70% del precio de venta
-                    return self.producto.precio_unitario * 0.7
+                    # Si no hay compras, usar 70% del precio de venta (usar Decimal)
+                    return (self.producto.precio_unitario * Decimal('0.7'))
         except Exception:
-            return self.producto.precio_unitario * 0.7
+            return (self.producto.precio_unitario * Decimal('0.7'))
 
 # Compra
 class Compra(AuditModel):
@@ -520,15 +544,23 @@ class Compra(AuditModel):
     def save(self, *args, **kwargs):
         """Calcular IVA y crear asientos contables automáticamente"""
         es_nuevo = not self.pk
-        
-        # Calcular IVA si no está establecido
-        if self.monto_neto > 0 and self.iva == 0:
-            self.iva = self.monto_neto * (self.tasa_iva / 100)
-            self.monto = self.monto_neto + self.iva
-        elif self.monto > 0 and self.monto_neto == 0:
+        # Calcular IVA usando Decimal
+        from decimal import Decimal, ROUND_HALF_UP
+        one = Decimal('1')
+        hundred = Decimal('100')
+
+        try:
+            tasa = Decimal(self.tasa_iva) / hundred
+        except Exception:
+            tasa = Decimal(str(self.tasa_iva)) / hundred
+
+        if self.monto_neto > 0 and (self.iva == 0 or self.iva is None):
+            self.iva = (Decimal(self.monto_neto) * tasa).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+            self.monto = Decimal(self.monto_neto) + self.iva
+        elif self.monto > 0 and (self.monto_neto == 0 or self.monto_neto is None):
             # Si solo se ingresó el monto total, calcular neto e IVA
-            self.monto_neto = self.monto / (1 + self.tasa_iva / 100)
-            self.iva = self.monto - self.monto_neto
+            self.monto_neto = (Decimal(self.monto) / (one + tasa)).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+            self.iva = Decimal(self.monto) - self.monto_neto
         
         super().save(*args, **kwargs)
         

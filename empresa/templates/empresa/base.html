@@ -423,66 +423,14 @@
         {% endif %}
       {% endif %}
 
-      <!-- MANUFACTURA (Solo para empresas de manufactura) -->
+      <!-- MANUFACTURA - Temporalmente deshabilitado -->
       {% if user.empresa.categoria == 'manufactura' %}
-        {% if is_owner or user_powers.puede_gestionar_inventario %}
         <li class="nav-item">
-          <a class="nav-link" data-bs-toggle="collapse" href="#materiasMenu">
-            <i class="bi bi-boxes me-2"></i>Materias Primas <i class="bi bi-chevron-down ms-auto"></i>
-          </a>
-          <div class="collapse" id="materiasMenu">
-            <ul class="nav flex-column ms-3">
-              <!-- <li><a class="nav-link" href="{% url 'empresa:listar_materias_primas' %}">
-                <i class="bi bi-list-ul me-2"></i>Ver Materias Primas
-              </a></li> -->
-              <!-- <li><a class="nav-link" href="{% url 'empresa:crear_materia_prima' %}">
-                <i class="bi bi-plus-circle me-2"></i>+ Nueva Materia Prima
-              </a></li>
-              <li><a class="nav-link" href="{% url 'empresa:listar_proveedores' %}">
-                <i class="bi bi-truck me-2"></i>Proveedores
-              </a></li> -->
-            </ul>
+          <div class="alert alert-info mx-3 mt-2 mb-2" role="alert" style="font-size: 0.85rem; padding: 0.5rem;">
+            <i class="bi bi-info-circle me-1"></i>
+            <strong>Módulo de Manufactura:</strong> Próximamente disponible. Mientras tanto, usa las opciones de Gastos y Reportes.
           </div>
         </li>
-        {% endif %}
-        
-        {% if is_owner or user_powers.puede_editar_productos or user_powers.puede_gestionar_inventario %}
-        <li class="nav-item">
-          <a class="nav-link" data-bs-toggle="collapse" href="#catalogoMenu">
-            <i class="bi bi-book me-2"></i>Catálogo <i class="bi bi-chevron-down ms-auto"></i>
-          </a>
-          <div class="collapse" id="catalogoMenu">
-            <ul class="nav flex-column ms-3">
-              <!-- <li><a class="nav-link" href="{% url 'empresa:listar_productos_manufacturados' %}">
-                <i class="bi bi-list-ul me-2"></i>Ver Catálogo
-              </a></li>
-              {% if is_owner or user_powers.puede_editar_productos %}
-              <li><a class="nav-link" href="{% url 'empresa:crear_producto_manufacturado' %}">
-                <i class="bi bi-plus-circle me-2"></i>+ Nuevo Producto
-              </a></li>
-              {% endif %} -->
-            </ul>
-          </div>
-        </li>
-        {% endif %}
-        
-        {% if is_owner or user_powers.puede_registrar_ventas %}
-        <li class="nav-item">
-          <a class="nav-link" data-bs-toggle="collapse" href="#ventasManufMenu">
-            <i class="bi bi-cart-check me-2"></i>Ventas <i class="bi bi-chevron-down ms-auto"></i>
-          </a>
-          <div class="collapse" id="ventasManufMenu">
-            <ul class="nav flex-column ms-3">
-              <!-- <li><a class="nav-link" href="{% url 'empresa:listar_ventas_manufactura' %}">
-                <i class="bi bi-list-ul me-2"></i>Ver Ventas
-              </a></li>
-              <li><a class="nav-link" href="{% url 'empresa:crear_venta_manufactura' %}">
-                <i class="bi bi-plus-circle me-2"></i>+ Nueva Venta
-              </a></li> -->
-            </ul>
-          </div>
-        </li>
-        {% endif %}
         
         {% if is_owner or user_powers.puede_registrar_gastos %}
         <li class="nav-item">

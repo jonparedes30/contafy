@@ -84,6 +84,21 @@ heroku run python manage.py migrate --settings=heroku_settings_fixed
 heroku run python manage.py createsuperuser --settings=heroku_settings_fixed
 ```
 
+### Crear/Actualizar admin desde variables de entorno (recomendado para scripts/deploy)
+Configura las variables en Heroku y ejecuta el comando para crear o actualizar el superusuario automáticamente:
+
+```bash
+# Establece las variables (ejemplo)
+heroku config:set ADMIN_USERNAME=admin ADMIN_EMAIL=admin@example.com ADMIN_PASSWORD="$(python -c "import secrets; print(secrets.token_urlsafe(16))")"
+
+# Ejecuta el comando que crea o actualiza el admin desde las env vars
+heroku run python manage.py create_admin_from_env --settings=heroku_settings_fixed
+```
+
+Notas:
+- El comando `create_admin_from_env` crea el usuario si no existe, o actualiza la contraseña y permisos si ya existe.
+- No subas contraseñas a git; usa `heroku config:set` o el dashboard para mantenerlas seguras.
+
 ## 📋 CHECKLIST DE VERIFICACIÓN
 
 - [ ] runtime.txt actualizado a python-3.11.10

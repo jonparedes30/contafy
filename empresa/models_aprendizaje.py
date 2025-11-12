@@ -83,6 +83,7 @@ class Leccion(models.Model):
         verbose_name_plural = 'Lecciones'
     
     def clean(self):
+        from django.core.exceptions import ValidationError as DjangoValidationError
         import json
         if self.pasos:
             try:
@@ -92,18 +93,17 @@ class Leccion(models.Model):
                     pasos_data = self.pasos
                 
                 if not isinstance(pasos_data, list):
-                    raise ValidationError('Los pasos deben ser una lista')
+                    raise DjangoValidationError('Los pasos deben ser una lista')
                 
                 for i, paso in enumerate(pasos_data):
                     if not isinstance(paso, dict):
-                        raise ValidationError(f'Paso {i+1} debe ser un objeto')
+                        raise DjangoValidationError(f'Paso {i+1} debe ser un objeto')
                     if 'titulo' not in paso:
-                        raise ValidationError(f'Paso {i+1} debe tener titulo')
+                        raise DjangoValidationError(f'Paso {i+1} debe tener titulo')
                         
             except json.JSONDecodeError:
-                raise ValidationError('JSON de pasos inválido')
-        
-        from django.core.exceptions import ValidationError
+                raise DjangoValidationError('JSON de pasos inválido')
+        # Call parent clean at the end of validation
         super().clean()
     
     def save(self, *args, **kwargs):
