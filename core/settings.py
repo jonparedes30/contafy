@@ -173,9 +173,8 @@ CSRF_TRUSTED_ORIGINS = [
     'https://contafy-pruebas-30fdb804cc25.herokuapp.com',
 ]
 
-# Agregar Render siempre
-if 'RENDER' in os.environ or True:  # Siempre incluir Render
-    CSRF_TRUSTED_ORIGINS.append('https://*.onrender.com')
+# Agregar Render siempre (para desarrollo y producción)
+CSRF_TRUSTED_ORIGINS.append('https://*.onrender.com')
 
 # Configuración para proxy de Heroku
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
