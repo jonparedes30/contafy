@@ -30,7 +30,9 @@ SECURE_BROWSER_XSS_FILTER = True
 SECURE_CONTENT_TYPE_NOSNIFF = True
 X_FRAME_OPTIONS = 'DENY'
 CSRF_COOKIE_SECURE = not DEBUG
+CSRF_COOKIE_SAMESITE = 'Lax'
 SESSION_COOKIE_SECURE = not DEBUG
+SESSION_COOKIE_SAMESITE = 'Lax'
 SECURE_HSTS_SECONDS = 31536000 if not DEBUG else 0
 SECURE_HSTS_INCLUDE_SUBDOMAINS = True
 SECURE_HSTS_PRELOAD = True
@@ -171,10 +173,14 @@ CSRF_TRUSTED_ORIGINS = [
     'http://127.0.0.1:8000',
     'https://*.herokuapp.com',
     'https://contafy-pruebas-30fdb804cc25.herokuapp.com',
+    'https://*.onrender.com',
 ]
 
-# Agregar Render siempre (para desarrollo y producción)
-CSRF_TRUSTED_ORIGINS.append('https://*.onrender.com')
+# Detectar dominio específico de Render si existe
+if 'RENDER_EXTERNAL_URL' in os.environ:
+    render_url = os.environ['RENDER_EXTERNAL_URL']
+    if render_url not in CSRF_TRUSTED_ORIGINS:
+        CSRF_TRUSTED_ORIGINS.append(render_url)
 
 # Configuración para proxy de Heroku
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
