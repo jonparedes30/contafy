@@ -10,15 +10,15 @@ from empresa.views.contabilidad import registrar_movimiento_contable
 @require_power('puede_registrar_gastos')
 def crear_gasto(request):
     if request.method == 'POST':
-        form = GastoForm(request.POST, empresa=request.user.empresa)
+        form = GastoForm(request.POST)
         if form.is_valid():
             gasto = form.save(commit=False)
             gasto.empresa = request.user.empresa
             gasto.creado_por = request.user
-            gasto.save()  # Los asientos contables se crean automáticamente en el modelo
+            gasto.save()
             return redirect('empresa:home')
     else:
-        form = GastoForm(empresa=request.user.empresa)
+        form = GastoForm()
     return render(request, 'empresa/crear_gasto.html', {'form': form})
 
 @login_required
