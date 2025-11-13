@@ -423,32 +423,31 @@
         {% endif %}
       {% endif %}
 
-      <!-- MANUFACTURA - Temporalmente deshabilitado -->
+      <!-- MANUFACTURA -->
       {% if user.empresa.categoria == 'manufactura' %}
         <li class="nav-item">
-          <div class="alert alert-info mx-3 mt-2 mb-2" role="alert" style="font-size: 0.85rem; padding: 0.5rem;">
-            <i class="bi bi-info-circle me-1"></i>
-            <strong>Módulo de Manufactura:</strong> Próximamente disponible. Mientras tanto, usa las opciones de Gastos y Reportes.
-          </div>
-        </li>
-        
-        {% if is_owner or user_powers.puede_registrar_gastos %}
-        <li class="nav-item">
-          <a class="nav-link" data-bs-toggle="collapse" href="#gastosManufMenu">
-            <i class="bi bi-receipt me-2"></i>Gastos <i class="bi bi-chevron-down ms-auto"></i>
+          <a class="nav-link" href="{% url 'empresa:dashboard_manufactura' %}">
+            <i class="bi bi-gear-wide-connected me-2"></i>Dashboard Manufactura
           </a>
-          <div class="collapse" id="gastosManufMenu">
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" data-bs-toggle="collapse" href="#manufacturaMenu">
+            <i class="bi bi-boxes me-2"></i>Producción <i class="bi bi-chevron-down ms-auto"></i>
+          </a>
+          <div class="collapse" id="manufacturaMenu">
             <ul class="nav flex-column ms-3">
-              <li><a class="nav-link" href="{% url 'empresa:listar_gastos' %}">
-                <i class="bi bi-list-ul me-2"></i>Ver Gastos
+              <li><a class="nav-link" href="{% url 'empresa:listar_materias_primas' %}">
+                <i class="bi bi-box me-2"></i>Materias Primas
               </a></li>
-              <li><a class="nav-link" href="{% url 'empresa:crear_gasto' %}">
-                <i class="bi bi-plus-circle me-2"></i>+ Nuevo Gasto
+              <li><a class="nav-link" href="{% url 'empresa:listar_productos_manufacturados' %}">
+                <i class="bi bi-box-seam me-2"></i>Productos
+              </a></li>
+              <li><a class="nav-link" href="{% url 'empresa:listar_ordenes_produccion' %}">
+                <i class="bi bi-clipboard-check me-2"></i>Órdenes
               </a></li>
             </ul>
           </div>
         </li>
-        {% endif %}
       {% endif %}
 
       <!-- CONFIGURACIÓN -->
