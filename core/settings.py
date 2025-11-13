@@ -278,10 +278,10 @@ if 'RENDER' in os.environ:
     SESSION_COOKIE_SECURE = True
     CSRF_COOKIE_SECURE = True
     
-    # CSRF trusted origins para Render
-    CSRF_TRUSTED_ORIGINS = [
+    # CSRF trusted origins para Render - AGREGAR, no reemplazar
+    CSRF_TRUSTED_ORIGINS.extend([
         'https://*.onrender.com',
-    ]
+    ])
     
     # Logging para Render
     LOGGING['handlers']['console']['level'] = 'INFO'
