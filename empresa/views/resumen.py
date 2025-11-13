@@ -338,7 +338,11 @@ def resumen_financiero(request):
 
 @login_required
 def estado_resultados(request):
-    empresa = request.user.empresa
+    empresa = getattr(request.user, 'empresa', None)
+    if not empresa:
+        return render(request, 'empresa/error_resumen.html', {
+            "mensaje": "No tienes una empresa asociada. Por favor contacta al administrador."
+        }, status=400)
     
     # Obtener filtros de fecha
     from empresa.services.filtros_service import FiltrosFechaService
