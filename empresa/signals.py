@@ -9,10 +9,12 @@ logger = logging.getLogger(__name__)
 @receiver(post_save, sender=CuentaContable)
 def crear_contrapartidas_al_crear_cuenta(sender, instance, created, **kwargs):
     """
+    DESACTIVADO TEMPORALMENTE: Causa recursión infinita.
     Cuando el usuario crea una cuenta nueva, generamos contrapartidas recomendadas.
-    Si la cuenta se crea por script/migration y no queremos esto, se puede añadir un flag
-    (por ejemplo: instance.auto_setup=False) antes de save() para evitar la creación automática.
     """
+    # DESACTIVADO - causa recursión infinita
+    return
+    
     if not created:
         return
     try:
