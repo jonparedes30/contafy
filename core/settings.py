@@ -165,12 +165,13 @@ LOGIN_URL = '/app-beta-2024/login/'
 LOGIN_REDIRECT_URL = '/app-beta-2024/home/'
 LOGOUT_REDIRECT_URL = '/app-beta-2024/login/'
 
-# --- CSRF para desarrollo local y Heroku ---
+# --- CSRF para desarrollo local, Heroku y Render ---
 CSRF_TRUSTED_ORIGINS = [
     'http://localhost:8000',
     'http://127.0.0.1:8000',
     'https://*.herokuapp.com',
     'https://contafy-pruebas-30fdb804cc25.herokuapp.com',
+    'https://*.onrender.com',
 ]
 
 # Configuración para proxy de Heroku
