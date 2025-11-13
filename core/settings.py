@@ -31,6 +31,7 @@ SECURE_CONTENT_TYPE_NOSNIFF = True
 X_FRAME_OPTIONS = 'DENY'
 CSRF_COOKIE_SECURE = not DEBUG
 CSRF_COOKIE_SAMESITE = 'Lax'
+CSRF_COOKIE_HTTPONLY = False
 SESSION_COOKIE_SECURE = not DEBUG
 SESSION_COOKIE_SAMESITE = 'Lax'
 SECURE_HSTS_SECONDS = 31536000 if not DEBUG else 0
@@ -174,6 +175,7 @@ CSRF_TRUSTED_ORIGINS = [
     'https://*.herokuapp.com',
     'https://contafy-pruebas-30fdb804cc25.herokuapp.com',
     'https://*.onrender.com',
+    'https://contafy.onrender.com',
 ]
 
 # Detectar dominio específico de Render si existe
