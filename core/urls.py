@@ -17,7 +17,8 @@ from empresa.views.health import health_check
 urlpatterns = [
     path('', lambda request: redirect('empresa:home')),
     path('admin/', admin.site.urls),
-    path('app-beta-2024/', include('empresa.urls')),  # URL secreta
+    # Incluir con namespace para permitir reverses como 'empresa:home' y 'empresa:dashboard_manufactura'
+    path('app-beta-2024/', include(('empresa.urls', 'empresa'), namespace='empresa')),  # URL secreta
 ]
 
 if settings.DEBUG:

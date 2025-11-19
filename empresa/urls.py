@@ -39,14 +39,14 @@ from .views.inventario import inventario, descargar_plantilla_inventario, subir_
 from .views.actividad import actividad_reciente, asignar_usuarios_auditoria
 from .views.test_filtros import test_filtros_fecha, verificar_datos_fecha
 from .views.barcode_api import buscar_por_codigo_barras, validar_codigo_barras, crear_categoria_api, materias_primas_api
-# from .views.manufactura import (
-#     dashboard_manufactura, listar_materias_primas, crear_materia_prima,
-#     listar_productos_manufacturados, crear_producto_manufacturado,
-#     editar_producto_manufacturado,
-#     listar_ordenes_produccion, crear_orden_produccion, detalle_orden_produccion,
-#     iniciar_produccion, completar_produccion, cambiar_estado_producto,
-#     crear_proveedor_ajax, editar_materia_prima
-# )
+from .views.manufactura import (
+    dashboard_manufactura, listar_materias_primas, crear_materia_prima,
+    listar_productos_manufacturados, crear_producto_manufacturado,
+    editar_producto_manufacturado,
+    listar_ordenes_produccion, crear_orden_produccion, detalle_orden_produccion,
+    iniciar_produccion, completar_produccion, cambiar_estado_producto,
+    crear_proveedor_ajax, editar_materia_prima, listar_proveedores, ver_receta_producto
+)
 from .views.proveedores_simple import listar_proveedores_simple
 from .views.ventas_manufactura import crear_venta_manufactura, listar_ventas_manufactura
 from .views.asistente import asistente_ayuda, historial_solicitudes
@@ -220,22 +220,23 @@ urlpatterns += [
     # API para materias primas
     path('api/materias-primas/', materias_primas_api, name='materias_primas_api'),
     
-    # URLs de manufactura - Dummies para evitar errores 500
-    path('manufactura/', dashboard, name='dashboard_manufactura'),
-    path('manufactura/materias-primas/', dashboard, name='listar_materias_primas'),
-    path('manufactura/materias-primas/crear/', dashboard, name='crear_materia_prima'),
-    path('manufactura/materias-primas/<int:materia_id>/editar/', dashboard, name='editar_materia_prima'),
-    path('manufactura/proveedores/', dashboard, name='listar_proveedores'),
-    path('manufactura/proveedores/crear-ajax/', dashboard, name='crear_proveedor_ajax'),
-    path('manufactura/productos/', dashboard, name='listar_productos_manufacturados'),
-    path('manufactura/productos/crear/', dashboard, name='crear_producto_manufacturado'),
-    path('manufactura/productos/<int:producto_id>/editar/', dashboard, name='editar_producto_manufacturado'),
-    path('manufactura/ordenes/', dashboard, name='listar_ordenes_produccion'),
-    path('manufactura/ordenes/crear/', dashboard, name='crear_orden_produccion'),
-    path('manufactura/ordenes/<int:orden_id>/', dashboard, name='detalle_orden_produccion'),
-    path('manufactura/ordenes/<int:orden_id>/iniciar/', dashboard, name='iniciar_produccion'),
-    path('manufactura/ordenes/<int:orden_id>/completar/', dashboard, name='completar_produccion'),
-    path('manufactura/productos/<int:producto_id>/cambiar-estado/', dashboard, name='cambiar_estado_producto'),
+    # URLs de manufactura - Rutas reales
+    path('manufactura/', dashboard_manufactura, name='dashboard_manufactura'),
+    path('manufactura/materias-primas/', listar_materias_primas, name='listar_materias_primas'),
+    path('manufactura/materias-primas/crear/', crear_materia_prima, name='crear_materia_prima'),
+    path('manufactura/materias-primas/<int:materia_id>/editar/', editar_materia_prima, name='editar_materia_prima'),
+    path('manufactura/proveedores/', listar_proveedores, name='listar_proveedores'),
+    path('manufactura/proveedores/crear-ajax/', crear_proveedor_ajax, name='crear_proveedor_ajax'),
+    path('manufactura/productos/', listar_productos_manufacturados, name='listar_productos_manufacturados'),
+    path('manufactura/productos/crear/', crear_producto_manufacturado, name='crear_producto_manufacturado'),
+    path('manufactura/productos/<int:producto_id>/editar/', editar_producto_manufacturado, name='editar_producto_manufacturado'),
+    path('manufactura/ordenes/', listar_ordenes_produccion, name='listar_ordenes_produccion'),
+    path('manufactura/ordenes/crear/', crear_orden_produccion, name='crear_orden_produccion'),
+    path('manufactura/ordenes/<int:orden_id>/', detalle_orden_produccion, name='detalle_orden_produccion'),
+    path('manufactura/ordenes/<int:orden_id>/iniciar/', iniciar_produccion, name='iniciar_produccion'),
+    path('manufactura/ordenes/<int:orden_id>/completar/', completar_produccion, name='completar_produccion'),
+    path('manufactura/productos/<int:producto_id>/cambiar-estado/', cambiar_estado_producto, name='cambiar_estado_producto'),
+    path('manufactura/productos/<int:producto_id>/receta/', ver_receta_producto, name='ver_receta_producto'),
     
     # URLs de ventas para manufactura
     path('manufactura/ventas/', listar_ventas_manufactura, name='listar_ventas_manufactura'),

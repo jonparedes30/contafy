@@ -1,6 +1,9 @@
 from django import forms
 from django.contrib.auth.forms import UserCreationForm
-from .models import CuentaContable, Capital, Empresa, Usuario, Producto, Venta, Gasto, Compra
+from .models import (
+    CuentaContable, Capital, Empresa, Usuario, Producto, Venta, Gasto, Compra,
+    MateriaPrima, ProductoManufacturado, RecetaProduccion, OrdenProduccion, Proveedor
+)
 from .services.accounting_setup import DEFAULT_CONTRAPARTIDAS, ensure_contrapartidas_for_account
 
 class CuentaContableForm(forms.ModelForm):
@@ -410,29 +413,85 @@ class SaldosInicialesForm(forms.Form):
 
 class MateriaPrimaForm(forms.ModelForm):
     class Meta:
-        model = Producto  # Usando Producto como placeholder
-        fields = ['nombre', 'descripcion', 'precio_unitario']
+        model = MateriaPrima
+        fields = ['nombre', 'descripcion', 'unidad_medida', 'precio_unitario', 'stock_actual', 'stock_minimo', 'proveedor']
         widgets = {
             'nombre': forms.TextInput(attrs={'class': 'form-control'}),
             'descripcion': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
+            'unidad_medida': forms.Select(attrs={'class': 'form-select'}),
             'precio_unitario': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01'}),
+            'stock_actual': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01'}),
+            'stock_minimo': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01'}),
+            'proveedor': forms.Select(attrs={'class': 'form-select'}),
         }
+    
+    def __init__(self, *args, **kwargs):
+        self.empresa = kwargs.pop('empresa', None)
+        super().__init__(*args, **kwargs)
+        if self.empresa:
+            self.fields['proveedor'].queryset = Proveedor.objects.filter(empresa=self.empresa, activo=True)
 
 class ProductoManufacturadoForm(forms.ModelForm):
     class Meta:
-        model = Producto  # Usando Producto como placeholder
-        fields = ['nombre', 'descripcion', 'precio_unitario']
+        model = ProductoManufacturado
+        fields = ['nombre', 'descripcion', 'unidad_medida', 'precio_venta', 'stock_actual', 'stock_minimo']
         widgets = {
             'nombre': forms.TextInput(attrs={'class': 'form-control'}),
             'descripcion': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
-            'precio_unitario': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01'}),
+            'unidad_medida': forms.Select(attrs={'class': 'form-select'}),
+            'precio_venta': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01'}),
+            'stock_actual': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01'}),
+            'stock_minimo': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01'}),
+        }
+    
+    def __init__(self, *args, **kwargs):
+        self.empresa = kwargs.pop('empresa', None)
+        super().__init__(*args, **kwargs)
+
+class RecetaProduccionForm(forms.ModelForm):
+    class Meta:
+        model = RecetaProduccion
+        fields = ['materia_prima', 'cantidad_necesaria']
+        widgets = {
+            'materia_prima': forms.Select(attrs={'class': 'form-select'}),
+            'cantidad_necesaria': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01'}),
         }
 
 class OrdenProduccionForm(forms.ModelForm):
     class Meta:
-        model = Producto  # Usando Producto como placeholder
-        fields = ['nombre', 'descripcion']
+        model = OrdenProduccion
+        fields = ['producto', 'cantidad_solicitada']
+        widgets = {
+            'producto': forms.Select(attrs={'class': 'form-select'}),
+            'cantidad_solicitada': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01'}),
+        }
+    
+    def __init__(self, *args, **kwargs):
+        self.empresa = kwargs.pop('empresa', None)
+        super().__init__(*args, **kwargs)
+        if self.empresa:
+            self.fields['producto'].queryset = ProductoManufacturado.objects.filter(empresa=self.empresa, activo=True)
+
+class ProveedorForm(forms.ModelForm):
+    class Meta:
+        model = Proveedor
+        fields = ['nombre', 'ruc', 'telefono', 'email', 'direccion']
         widgets = {
             'nombre': forms.TextInput(attrs={'class': 'form-control'}),
-            'descripcion': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
+            'ruc': forms.TextInput(attrs={'class': 'form-control'}),
+            'telefono': forms.TextInput(attrs={'class': 'form-control'}),
+            'email': forms.EmailInput(attrs={'class': 'form-control'}),
+            'direccion': forms.Textarea(attrs={'class': 'form-control', 'rows': 2}),
         }
+    
+    def __init__(self, *args, **kwargs):
+        self.empresa = kwargs.pop('empresa', None)
+        super().__init__(*args, **kwargs)
+    
+    def save(self, commit=True):
+        proveedor = super().save(commit=False)
+        if self.empresa:
+            proveedor.empresa = self.empresa
+        if commit:
+            proveedor.save()
+        return proveedor
