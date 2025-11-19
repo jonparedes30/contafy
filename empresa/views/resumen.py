@@ -245,56 +245,59 @@ def generar_conclusion_ejecutiva(ventas, utilidad_neta):
 @login_required
 def resumen_financiero(request):
     """Vista principal del resumen financiero"""
-    # Verificar empresa ANTES de todo
+    from django.http import HttpResponse
+    
+    # Log inicial
+    logger.info(f"=== RESUMEN: Usuario {request.user.username} ====")
+    
+    # Verificar empresa
     empresa = getattr(request.user, 'empresa', None)
+    logger.info(f"Empresa: {empresa}")
+    
     if not empresa:
         from django.shortcuts import redirect
         from django.contrib import messages
-        logger.warning(f"Usuario {request.user.username} sin empresa intentó acceder a resumen")
+        logger.warning(f"Usuario sin empresa")
         messages.warning(request, 'Superusuario: usa /admin/ para gestión')
         return redirect('/admin/')
     
     try:
-        # Datos por defecto
-        totales = {
-            'ventas': 0,
-            'compras': 0, 
-            'gastos': 0,
-            'utilidad_bruta': 0,
-            'utilidad_neta': 0
-        }
-        
+        logger.info("Obteniendo totales contables...")
         totales = obtener_totales_contables(empresa)
+        logger.info(f"Totales OK: {totales}")
+        
+        logger.info("Obteniendo productos vendidos...")
         productos_vendidos = obtener_productos_mas_vendidos(empresa)
+        logger.info(f"Productos OK: {len(productos_vendidos)}")
+        
+        logger.info("Obteniendo gastos por categoría...")
         gastos_por_categoria = obtener_gastos_por_categoria(empresa)
-    
-        # 5. Generar recomendaciones automáticas
+        logger.info(f"Gastos OK: {len(gastos_por_categoria)}")
+        
+        logger.info("Generando recomendaciones...")
         recomendaciones = generar_recomendaciones(
             totales['ventas'],
             totales['gastos'],
             totales['utilidad_neta'],
             []
         )
+        logger.info(f"Recomendaciones OK: {len(recomendaciones)}")
         
-        # 6. Generar conclusión ejecutiva
+        logger.info("Generando conclusión...")
         conclusion = generar_conclusion_ejecutiva(
             totales['ventas'],
             totales['utilidad_neta']
         )
+        logger.info(f"Conclusión OK")
         
-        # 7. Calcular indicadores financieros
-        margen_neto = margen_bruto = ratio_gastos_ventas = ratio_costos = 0
+        logger.info("Calculando indicadores...")
+        margen_neto = (totales['utilidad_neta'] / totales['ventas'] * 100) if totales['ventas'] > 0 else 0
+        margen_bruto = (totales['utilidad_bruta'] / totales['ventas'] * 100) if totales['ventas'] > 0 else 0
+        ratio_gastos_ventas = (totales['gastos'] / totales['ventas'] * 100) if totales['ventas'] > 0 else 0
+        ratio_costos = (totales['compras'] / totales['ventas'] * 100) if totales['ventas'] > 0 else 0
+        logger.info(f"Indicadores OK")
         
-        if empresa:
-            try:
-                margen_neto = (totales['utilidad_neta'] / totales['ventas'] * 100) if totales['ventas'] > 0 else 0
-                margen_bruto = (totales['utilidad_bruta'] / totales['ventas'] * 100) if totales['ventas'] > 0 else 0
-                ratio_gastos_ventas = (totales['gastos'] / totales['ventas'] * 100) if totales['ventas'] > 0 else 0
-                ratio_costos = (totales['compras'] / totales['ventas'] * 100) if totales['ventas'] > 0 else 0
-            except Exception as e:
-                logger.error(f"Error calculando indicadores: {e}")
-
-        # 8. Preparar contexto para el template
+        logger.info("Preparando contexto...")
         contexto = {
             'ventas': totales.get('ventas', 0),
             'compras': totales.get('compras', 0),
@@ -311,27 +314,14 @@ def resumen_financiero(request):
             'ratio_costos': round(float(ratio_costos), 2),
             'analisis_predictivo': {}
         }
+        logger.info("Contexto OK")
         
+        logger.info("Renderizando template...")
         return render(request, 'empresa/resumen.html', contexto)
     
     except Exception as exc:
-        # Log completo con traceback
-        logger.exception("Error en vista resumen_financiero: %s", exc)
-        # Respuesta controlada para el usuario
-        from django.http import JsonResponse
-        if request.headers.get('Accept') == 'application/json':
-            return JsonResponse({
-                'error': 'Error al generar resumen financiero',
-                'detail': str(exc) if request.user.is_superuser else 'Contacta soporte'
-            }, status=500)
-        
-        try:
-            return render(request, 'empresa/error_resumen.html', {
-                "mensaje": "Error al generar el resumen financiero. El equipo técnico ha sido notificado."
-            }, status=500)
-        except:
-            from django.http import HttpResponse
-            return HttpResponse('Error 500: Resumen financiero no disponible', status=500)
+        logger.exception(f"ERROR CRÍTICO en resumen: {exc}")
+        return HttpResponse(f'Error 500: {str(exc)}', status=500)
 
 @login_required
 def estado_resultados(request):
