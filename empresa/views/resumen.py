@@ -245,16 +245,16 @@ def generar_conclusion_ejecutiva(ventas, utilidad_neta):
 @login_required
 def resumen_financiero(request):
     """Vista principal del resumen financiero"""
+    # Verificar empresa ANTES de todo
+    empresa = getattr(request.user, 'empresa', None)
+    if not empresa:
+        from django.shortcuts import redirect
+        from django.contrib import messages
+        logger.warning(f"Usuario {request.user.username} sin empresa intentó acceder a resumen")
+        messages.warning(request, 'Superusuario: usa /admin/ para gestión')
+        return redirect('/admin/')
+    
     try:
-        # Verificar empresa PRIMERO
-        empresa = getattr(request.user, 'empresa', None)
-        if not empresa:
-            from django.shortcuts import redirect
-            from django.contrib import messages
-            logger.warning(f"Usuario {request.user.username} sin empresa intentó acceder a resumen")
-            messages.warning(request, 'Superusuario: usa /admin/ para gestión')
-            return redirect('/admin/')
-        
         # Datos por defecto
         totales = {
             'ventas': 0,
