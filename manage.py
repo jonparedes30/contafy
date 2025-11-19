@@ -6,7 +6,9 @@ import sys
 
 def main():
     """Run administrative tasks."""
-    os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'core.settings')
+    # Para desarrollo local, usar core.test_settings por defecto si no se especifica
+    # En producción/Render/Heroku se debe establecer DJANGO_SETTINGS_MODULE en el entorno
+    os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'core.test_settings')
     try:
         from django.core.management import execute_from_command_line
     except ImportError as exc:

@@ -19,8 +19,10 @@ username = os.environ.get('ADMIN_USERNAME', 'admin')
 email = os.environ.get('ADMIN_EMAIL', 'admin@contafy.com')
 password = os.environ.get('ADMIN_PASSWORD', 'changeme123')
 if not User.objects.filter(username=username).exists():
-    User.objects.create_superuser(username, email, password)
-    print(f'✅ Superusuario {username} creado')
+    user = User(username=username, email=email, is_staff=True, is_superuser=True)
+    user.set_password(password)
+    user.save()
+    print(f'✅ Superusuario {username} creado sin empresa')
 else:
     print(f'ℹ️ Superusuario {username} ya existe')
 END

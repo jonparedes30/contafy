@@ -23,7 +23,7 @@ if not SECRET_KEY:
     if not DEBUG:
         raise ValueError("SECRET_KEY debe ser configurada en producción")
 
-ALLOWED_HOSTS = env.list('ALLOWED_HOSTS', default=['localhost', '127.0.0.1', '.herokuapp.com'])
+ALLOWED_HOSTS = env.list('ALLOWED_HOSTS', default=['localhost', '127.0.0.1', '.herokuapp.com', '.onrender.com'])
 
 # Configuración de seguridad
 SECURE_BROWSER_XSS_FILTER = True
@@ -32,6 +32,8 @@ X_FRAME_OPTIONS = 'DENY'
 CSRF_COOKIE_SECURE = not DEBUG
 CSRF_COOKIE_SAMESITE = 'Lax'
 CSRF_COOKIE_HTTPONLY = False
+CSRF_USE_SESSIONS = False
+CSRF_COOKIE_NAME = 'csrftoken'
 SESSION_COOKIE_SECURE = not DEBUG
 SESSION_COOKIE_SAMESITE = 'Lax'
 SECURE_HSTS_SECONDS = 31536000 if not DEBUG else 0
@@ -287,8 +289,7 @@ if 'RENDER' in os.environ:
     SECURE_SSL_REDIRECT = True
     SESSION_COOKIE_SECURE = True
     CSRF_COOKIE_SECURE = True
-    
-    # CSRF ya configurado arriba
+    CSRF_COOKIE_DOMAIN = None  # Crítico para Render
     
     # Logging para Render
     LOGGING['handlers']['console']['level'] = 'INFO'

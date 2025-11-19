@@ -12,6 +12,13 @@ from empresa.utils.security import LoginAttemptTracker, get_client_ip, log_secur
 logger = logging.getLogger(__name__)
 
 def login_usuario(request):
+    # Logging CSRF para diagnóstico
+    if request.method == 'POST':
+        logger.info(f"POST login - CSRF token en POST: {request.POST.get('csrfmiddlewaretoken', 'MISSING')[:20]}...")
+        logger.info(f"POST login - CSRF cookie: {request.COOKIES.get('csrftoken', 'MISSING')[:20]}...")
+        logger.info(f"POST login - Referer: {request.META.get('HTTP_REFERER', 'MISSING')}")
+        logger.info(f"POST login - Origin: {request.META.get('HTTP_ORIGIN', 'MISSING')}")
+    
     if request.method == 'POST':
         username = request.POST.get('username', '').strip()
         password = request.POST.get('password', '')

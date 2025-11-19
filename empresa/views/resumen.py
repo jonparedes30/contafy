@@ -246,6 +246,15 @@ def generar_conclusion_ejecutiva(ventas, utilidad_neta):
 def resumen_financiero(request):
     """Vista principal del resumen financiero"""
     try:
+        # Verificar empresa PRIMERO
+        empresa = getattr(request.user, 'empresa', None)
+        if not empresa:
+            from django.shortcuts import redirect
+            from django.contrib import messages
+            logger.warning(f"Usuario {request.user.username} sin empresa intentó acceder a resumen")
+            messages.warning(request, 'Superusuario: usa /admin/ para gestión')
+            return redirect('/admin/')
+        
         # Datos por defecto
         totales = {
             'ventas': 0,
@@ -255,19 +264,9 @@ def resumen_financiero(request):
             'utilidad_neta': 0
         }
         
-        empresa = getattr(request.user, 'empresa', None)
-        if empresa:
-            totales = obtener_totales_contables(empresa)
-        
-        productos_vendidos = []
-        gastos_por_categoria = []
-        
-        if empresa:
-            try:
-                productos_vendidos = obtener_productos_mas_vendidos(empresa)
-                gastos_por_categoria = obtener_gastos_por_categoria(empresa)
-            except Exception as e:
-                print(f"Error obteniendo productos/gastos: {e}")
+        totales = obtener_totales_contables(empresa)
+        productos_vendidos = obtener_productos_mas_vendidos(empresa)
+        gastos_por_categoria = obtener_gastos_por_categoria(empresa)
     
         # 5. Generar recomendaciones automáticas
         recomendaciones = generar_recomendaciones(
@@ -319,9 +318,20 @@ def resumen_financiero(request):
         # Log completo con traceback
         logger.exception("Error en vista resumen_financiero: %s", exc)
         # Respuesta controlada para el usuario
-        return render(request, 'empresa/error_resumen.html', {
-            "mensaje": "Error al generar el resumen financiero. El equipo técnico ha sido notificado."
-        }, status=500)
+        from django.http import JsonResponse
+        if request.headers.get('Accept') == 'application/json':
+            return JsonResponse({
+                'error': 'Error al generar resumen financiero',
+                'detail': str(exc) if request.user.is_superuser else 'Contacta soporte'
+            }, status=500)
+        
+        try:
+            return render(request, 'empresa/error_resumen.html', {
+                "mensaje": "Error al generar el resumen financiero. El equipo técnico ha sido notificado."
+            }, status=500)
+        except:
+            from django.http import HttpResponse
+            return HttpResponse('Error 500: Resumen financiero no disponible', status=500)
 
 @login_required
 def estado_resultados(request):

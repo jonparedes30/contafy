@@ -1,8 +1,14 @@
 """
 Servicio de Machine Learning Local para CONTAFY
 """
-import numpy as np
-import pandas as pd
+try:
+    import numpy as np
+except Exception:
+    np = None
+try:
+    import pandas as pd
+except Exception:
+    pd = None
 from datetime import datetime, timedelta, date
 from django.db.models import Sum, Avg, Count
 from empresa.models import Venta, Gasto, Producto, Empresa
@@ -42,11 +48,13 @@ class MLService:
             # Obtener datos históricos
             datos = self._obtener_datos_historicos_ventas()
             
-            if len(datos) < 10:  # Mínimo 10 registros
+            if len(datos) < 10 or np is None:  # Mínimo 10 registros o numpy no disponible
                 return self._prediccion_simple_ventas()
             
             # Preparar features
             X, y = self._preparar_features_ventas(datos)
+            if np is None:
+                return self._prediccion_simple_ventas()
             
             if len(X) < 5:
                 return self._prediccion_simple_ventas()
@@ -91,7 +99,7 @@ class MLService:
     
     def predecir_ventas_mes_siguiente(self):
         """Predice ventas del próximo mes"""
-        if not SKLEARN_AVAILABLE or not self.modelo_ventas:
+        if not SKLEARN_AVAILABLE or not self.modelo_ventas or np is None:
             return self._prediccion_simple_ventas()
         
         try:
@@ -140,8 +148,11 @@ class MLService:
             patrones = []
             
             # Tendencia general
-            if len(ventas_por_mes) >= 3:
-                tendencia = np.polyfit(range(len(ventas_por_mes)), ventas_por_mes, 1)[0]
+            if len(ventas_por_mes) >= 3 and np is not None:
+                try:
+                    tendencia = np.polyfit(range(len(ventas_por_mes)), ventas_por_mes, 1)[0]
+                except Exception:
+                    tendencia = 0
                 if tendencia > 100:
                     patrones.append(f"Tendencia de crecimiento: +${tendencia:.0f}/mes")
                 elif tendencia < -100:
@@ -150,8 +161,11 @@ class MLService:
                     patrones.append("Ventas estables sin tendencia clara")
             
             # Estacionalidad
-            if len(ventas_por_mes) >= 6:
-                variabilidad = np.std(ventas_por_mes) / np.mean(ventas_por_mes)
+            if len(ventas_por_mes) >= 6 and np is not None:
+                try:
+                    variabilidad = np.std(ventas_por_mes) / np.mean(ventas_por_mes)
+                except Exception:
+                    variabilidad = 0
                 if variabilidad > 0.3:
                     patrones.append("Alta variabilidad estacional detectada")
                     

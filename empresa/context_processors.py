@@ -11,7 +11,11 @@ def user_permissions(request):
         'user_powers': None
     }
     
-    if request.user.is_authenticated and hasattr(request.user, 'empresa') and request.user.empresa:
+    # Verificar que el usuario tenga empresa (superusuario no tiene)
+    if not (request.user.is_authenticated and hasattr(request.user, 'empresa') and request.user.empresa):
+        return context
+    
+    try:
         # Verificar si es propietario
         propietario = request.user.empresa.usuarios.first()
         context['is_owner'] = request.user.id == propietario.id if propietario else False
@@ -48,5 +52,8 @@ def user_permissions(request):
                 puede_gestionar_metas = True
             
             context['user_powers'] = MockPowers()
+    except Exception as e:
+        # Si falla, retornar contexto vacío sin crashear
+        pass
     
     return context

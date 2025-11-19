@@ -25,7 +25,15 @@ import logging
 
 logger = logging.getLogger(__name__)
 from .views.resumen import resumen_financiero
-from .views.exportaciones import exportar_excel_ventas, exportar_excel_compras, exportar_excel_gastos, exportar_excel_inventario, exportar_pdf, exportar_pdf_usuario, exportar_pdf_profesional, exportar_pdf_inventario, exportar_excel_completo, exportar_excel_iva, exportar_pdf_iva
+import importlib
+
+# Lazy loader for views that pull heavy optional dependencies (pandas/reportlab/etc.)
+def lazy_view(module_name, attr):
+    def _view(request, *args, **kwargs):
+        mod = importlib.import_module(module_name)
+        view = getattr(mod, attr)
+        return view(request, *args, **kwargs)
+    return _view
 from .views.metas import gestionar_metas, historial_meta, marcar_notificacion_leida
 from .views.inventario import inventario, descargar_plantilla_inventario, subir_inventario_excel, saldos_iniciales, inventario_detallado_inicial
 from .views.actividad import actividad_reciente, asignar_usuarios_auditoria
@@ -47,7 +55,12 @@ from .views.exportaciones_mejoradas import (
     exportar_excel_ventas_manufactura, exportar_pdf_comercio_bancario, exportar_pdf_comercio_interno,
     exportar_pdf_manufactura_bancario, exportar_pdf_manufactura_interno
 )
-from .views.exportaciones_manufactura import exportar_excel_materias_primas, exportar_excel_productos_manufacturados, exportar_excel_ordenes_produccion
+# manufacture exports lazy-loaded where used below
+from .views.exportaciones_manufactura import (
+    exportar_excel_materias_primas as _exportar_excel_materias_primas,
+    exportar_excel_productos_manufacturados as _exportar_excel_productos_manufacturados,
+    exportar_excel_ordenes_produccion as _exportar_excel_ordenes_produccion,
+)
 from .views.gestion_deudas import gestion_deudas, registrar_pago_cobrar, registrar_pago_pagar, api_cuentas_cobrar, api_cuentas_pagar
 from .views.servicios import listar_tipos_servicios, crear_tipo_servicio, editar_tipo_servicio, eliminar_tipo_servicio
 from .views.voice_commands import procesar_comando_voz
@@ -154,17 +167,17 @@ urlpatterns = [
     path('flujo-caja/', flujo_caja, name='flujo_caja'),
     
     # URLs de exportaciones
-    path('exportar/excel/ventas/', exportar_excel_ventas, name='exportar_excel_ventas'),
-    path('exportar/excel/compras/', exportar_excel_compras, name='exportar_excel_compras'),
-    path('exportar/excel/gastos/', exportar_excel_gastos, name='exportar_excel_gastos'),
-    path('exportar/excel/inventario/', exportar_excel_inventario, name='exportar_excel_inventario'),
-    path('exportar/excel/completo/', exportar_excel_completo, name='exportar_excel_completo'),
-    path('exportar/pdf/', exportar_pdf, name='exportar_pdf'),
-    path('exportar/pdf/usuario/', exportar_pdf_usuario, name='exportar_pdf_usuario'),
-    path('exportar/pdf/profesional/', exportar_pdf_profesional, name='exportar_pdf_profesional'),
-    path('exportar/pdf/inventario/', exportar_pdf_inventario, name='exportar_pdf_inventario'),
-    path('exportar/excel/iva/', exportar_excel_iva, name='exportar_excel_iva'),
-    path('exportar/pdf/iva/', exportar_pdf_iva, name='exportar_pdf_iva'),
+    path('exportar/excel/ventas/', lazy_view('empresa.views.exportaciones', 'exportar_excel_ventas'), name='exportar_excel_ventas'),
+    path('exportar/excel/compras/', lazy_view('empresa.views.exportaciones', 'exportar_excel_compras'), name='exportar_excel_compras'),
+    path('exportar/excel/gastos/', lazy_view('empresa.views.exportaciones', 'exportar_excel_gastos'), name='exportar_excel_gastos'),
+    path('exportar/excel/inventario/', lazy_view('empresa.views.exportaciones', 'exportar_excel_inventario'), name='exportar_excel_inventario'),
+    path('exportar/excel/completo/', lazy_view('empresa.views.exportaciones', 'exportar_excel_completo'), name='exportar_excel_completo'),
+    path('exportar/pdf/', lazy_view('empresa.views.exportaciones', 'exportar_pdf'), name='exportar_pdf'),
+    path('exportar/pdf/usuario/', lazy_view('empresa.views.exportaciones', 'exportar_pdf_usuario'), name='exportar_pdf_usuario'),
+    path('exportar/pdf/profesional/', lazy_view('empresa.views.exportaciones', 'exportar_pdf_profesional'), name='exportar_pdf_profesional'),
+    path('exportar/pdf/inventario/', lazy_view('empresa.views.exportaciones', 'exportar_pdf_inventario'), name='exportar_pdf_inventario'),
+    path('exportar/excel/iva/', lazy_view('empresa.views.exportaciones', 'exportar_excel_iva'), name='exportar_excel_iva'),
+    path('exportar/pdf/iva/', lazy_view('empresa.views.exportaciones', 'exportar_pdf_iva'), name='exportar_pdf_iva'),
     
     # URLs de metas
     path('metas/', gestionar_metas, name='gestionar_metas'),
@@ -243,9 +256,9 @@ urlpatterns += [
     path('exportaciones/manufactura/', exportaciones_manufactura, name='exportaciones_manufactura'),
     
     # URLs de exportaciones para manufactura
-    path('manufactura/exportar/excel/materias-primas/', exportar_excel_materias_primas, name='exportar_excel_materias_primas'),
-    path('manufactura/exportar/excel/productos/', exportar_excel_productos_manufacturados, name='exportar_excel_productos_manufacturados'),
-    path('manufactura/exportar/excel/ordenes/', exportar_excel_ordenes_produccion, name='exportar_excel_ordenes_produccion'),
+    path('manufactura/exportar/excel/materias-primas/', lazy_view('empresa.views.exportaciones_manufactura', 'exportar_excel_materias_primas'), name='exportar_excel_materias_primas'),
+    path('manufactura/exportar/excel/productos/', lazy_view('empresa.views.exportaciones_manufactura', 'exportar_excel_productos_manufacturados'), name='exportar_excel_productos_manufacturados'),
+    path('manufactura/exportar/excel/ordenes/', lazy_view('empresa.views.exportaciones_manufactura', 'exportar_excel_ordenes_produccion'), name='exportar_excel_ordenes_produccion'),
     path('manufactura/exportar/excel/ventas/', exportar_excel_ventas_manufactura, name='exportar_excel_ventas_manufactura'),
     path('manufactura/exportar/pdf/bancario/', exportar_pdf_manufactura_bancario, name='exportar_pdf_manufactura_bancario'),
     path('manufactura/exportar/pdf/interno/', exportar_pdf_manufactura_interno, name='exportar_pdf_manufactura_interno'),

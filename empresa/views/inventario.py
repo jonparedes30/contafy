@@ -1,8 +1,14 @@
 from django.shortcuts import render, redirect
 from django.http import HttpResponse
 from django.db.models import Q
-import pandas as pd
-import openpyxl
+try:
+    import pandas as pd
+except Exception:
+    pd = None
+try:
+    import openpyxl
+except Exception:
+    openpyxl = None
 import io
 from django.contrib import messages
 from empresa.models import Producto
@@ -73,6 +79,10 @@ def inventario(request):
 
 @login_required
 def descargar_plantilla_inventario(request):
+    # Verificar que pandas esté disponible
+    if pd is None:
+        return HttpResponse('La funcionalidad de exportación requiere la librería pandas. Instale pandas para descargar la plantilla.', status=503)
+
     # Crear un DataFrame con todos los campos del modelo Producto
     df = pd.DataFrame(columns=[
         'codigo', 'codigo_barras', 'nombre', 'descripcion', 'precio_unitario', 'pvp', 
@@ -126,6 +136,10 @@ def subir_inventario_excel(request):
     if request.method == 'POST' and request.FILES.get('archivo_excel'):
         archivo = request.FILES['archivo_excel']
         try:
+            if pd is None:
+                from django.contrib import messages
+                messages.error(request, 'La funcionalidad de importación requiere la librería pandas. Instálela e intente de nuevo.')
+                return render(request, 'empresa/subir_inventario.html')
             df = pd.read_excel(archivo)
         except Exception as e:
             messages.error(request, f'Error al leer el archivo: {e}')

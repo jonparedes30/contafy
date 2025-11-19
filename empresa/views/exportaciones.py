@@ -1,5 +1,8 @@
 import json
-import pandas as pd
+try:
+    import pandas as pd
+except Exception:
+    pd = None
 from datetime import datetime, timedelta
 from decimal import Decimal
 from django.shortcuts import render
@@ -7,27 +10,65 @@ from django.contrib.auth.decorators import login_required
 from django.http import HttpResponse
 from django.db.models import Sum, Avg, Count, Q
 from django.utils import timezone
-from reportlab.lib.pagesizes import letter, A4
-from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, PageBreak
-from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-from reportlab.lib.units import inch
-from reportlab.lib import colors
-from reportlab.lib.enums import TA_CENTER, TA_LEFT, TA_RIGHT
-from reportlab.graphics.shapes import Drawing
-from reportlab.graphics.charts.linecharts import HorizontalLineChart
-from reportlab.graphics.charts.piecharts import Pie
-from reportlab.graphics.charts.barcharts import VerticalBarChart
-from reportlab.graphics import renderPDF
+HAS_REPORTLAB = True
+try:
+    from reportlab.lib.pagesizes import letter, A4
+    from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, PageBreak
+    from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+    from reportlab.lib.units import inch
+    from reportlab.lib import colors
+    from reportlab.lib.enums import TA_CENTER, TA_LEFT, TA_RIGHT
+    from reportlab.graphics.shapes import Drawing
+    from reportlab.graphics.charts.linecharts import HorizontalLineChart
+    from reportlab.graphics.charts.piecharts import Pie
+    from reportlab.graphics.charts.barcharts import VerticalBarChart
+    from reportlab.graphics import renderPDF
+except Exception:
+    HAS_REPORTLAB = False
 from io import BytesIO
-import matplotlib.pyplot as plt
-import matplotlib
-matplotlib.use('Agg')
-import numpy as np
+try:
+    import matplotlib.pyplot as plt
+    import matplotlib
+    matplotlib.use('Agg')
+    import numpy as np
+except Exception:
+    plt = None
+    np = None
 
 from empresa.models import Venta, Gasto, Producto, Compra, Empresa, MetaFinanciera, CuentaContable, MovimientoContable
 from empresa.views.resumen import obtener_totales_contables
 
+# Helper decorator to ensure heavy optional libs are available when export endpoints are called
+def _requires_export_libs(func):
+    def wrapper(request, *args, **kwargs):
+        missing = []
+        try:
+            import pandas as pd_check
+        except Exception:
+            pd_check = None
+        if pd_check is None:
+            missing.append('pandas')
+        try:
+            import reportlab
+            has_reportlab = True
+        except Exception:
+            has_reportlab = False
+        if not has_reportlab:
+            missing.append('reportlab')
+        try:
+            import matplotlib
+        except Exception:
+            matplotlib = None
+        if matplotlib is None:
+            # matplotlib optional for charts only, warn but not block for simple excel
+            pass
+        if missing:
+            return HttpResponse(f"Las siguientes dependencias faltan: {', '.join(missing)}. Instálelas para usar las exportaciones.", status=503)
+        return func(request, *args, **kwargs)
+    return wrapper
+
 @login_required
+@_requires_export_libs
 def exportar_excel_ventas(request):
     """Exporta solo las ventas filtradas a Excel, con los mismos filtros y columnas que la vista de historial de ventas."""
     try:
@@ -266,6 +307,7 @@ def exportar_excel_ventas(request):
         return HttpResponse(f"Error al exportar Excel: {str(e)}", status=500)
 
 @login_required
+@_requires_export_libs
 def exportar_excel_compras(request):
     """Exporta solo las compras filtradas a Excel, con los mismos filtros y columnas que la vista de historial de compras."""
     try:
@@ -507,6 +549,7 @@ def exportar_excel_compras(request):
         return HttpResponse(f"Error al exportar Excel: {str(e)}", status=500)
 
 @login_required
+@_requires_export_libs
 def exportar_excel_gastos(request):
     """Exporta solo los gastos filtrados a Excel, con los mismos filtros y columnas que la vista de historial de gastos."""
     try:
@@ -739,6 +782,7 @@ def exportar_excel_gastos(request):
         return HttpResponse(f"Error al exportar Excel: {str(e)}", status=500)
 
 @login_required
+@_requires_export_libs
 def exportar_pdf_usuario(request):
     """Exporta reporte PDF profesional para usuarios con análisis avanzados"""
     empresa = request.user.empresa
@@ -1057,6 +1101,7 @@ def exportar_pdf_usuario(request):
     return response
 
 @login_required
+@_requires_export_libs
 def exportar_pdf_profesional(request):
     """Exporta reporte PDF profesional para bancos con análisis financieros avanzados"""
     empresa = request.user.empresa
@@ -1389,11 +1434,13 @@ def exportar_pdf_profesional(request):
     return response
 
 @login_required
+@_requires_export_libs
 def exportar_pdf(request):
     """Página de selección de tipo de reporte PDF"""
     return render(request, 'empresa/exportar_pdf.html')
 
 @login_required
+@_requires_export_libs
 def exportar_excel_inventario(request):
     """Exporta el inventario filtrado a Excel"""
     try:
@@ -1696,6 +1743,7 @@ def exportar_excel_inventario(request):
         return HttpResponse(f"Error al exportar Excel: {str(e)}", status=500)
 
 @login_required
+@_requires_export_libs
 def exportar_pdf_inventario(request):
     """Exporta el inventario filtrado a PDF"""
     try:
@@ -1905,6 +1953,7 @@ def exportar_pdf_inventario(request):
         return HttpResponse(f"Error al exportar PDF: {str(e)}", status=500)
 
 @login_required
+@_requires_export_libs
 def exportar_excel_completo(request):
     """Exporta un reporte Excel completo con todas las secciones de la empresa"""
     try:
@@ -2437,6 +2486,7 @@ def exportar_excel_completo(request):
         return HttpResponse(f"Error al exportar Excel completo: {str(e)}", status=500)
 
 @login_required
+@_requires_export_libs
 def exportar_excel_iva(request):
     """Exporta reporte de IVA a Excel"""
     try:
@@ -2554,6 +2604,7 @@ def exportar_excel_iva(request):
         return HttpResponse(f"Error al exportar IVA: {str(e)}", status=500)
 
 @login_required
+@_requires_export_libs
 def exportar_pdf_iva(request):
     """Exporta reporte de IVA a PDF"""
     try:
