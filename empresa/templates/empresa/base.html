@@ -423,9 +423,10 @@
         {% endif %}
       {% endif %}
 
-      <!-- MANUFACTURA -->
+      <!-- MANUFACTURA (dashboard_manufactura deshabilitado temporalmente) -->
       {% if user.empresa.categoria == 'manufactura' %}
-        <!-- <li class="nav-item">
+        <!-- Dashboard manufactura comentado - URL no existe en urls.py
+        <li class="nav-item">
           <a class="nav-link" href="{% url 'empresa:dashboard_manufactura' %}">
             <i class="bi bi-factory me-2"></i>Dashboard Manufactura
           </a>
