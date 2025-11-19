@@ -27,6 +27,11 @@ from empresa.forms import (
 @login_required
 def dashboard_manufactura(request):
     """Dashboard específico para empresas de manufactura"""
+    # Verificar que sea empresa de manufactura
+    if not request.user.empresa or request.user.empresa.categoria != 'manufactura':
+        messages.warning(request, 'Esta sección es solo para empresas de manufactura.')
+        return redirect('empresa:dashboard')
+    
     empresa = request.user.empresa
     
     # Estadísticas básicas
@@ -70,6 +75,10 @@ def dashboard_manufactura(request):
 @require_power('puede_gestionar_inventario')
 def listar_materias_primas(request):
     """Lista todas las materias primas"""
+    if not request.user.empresa or request.user.empresa.categoria != 'manufactura':
+        messages.warning(request, 'Esta sección es solo para empresas de manufactura.')
+        return redirect('empresa:dashboard')
+    
     empresa = request.user.empresa
     materias_primas = MateriaPrima.objects.filter(empresa=empresa).order_by('nombre')
     
@@ -88,6 +97,10 @@ def listar_materias_primas(request):
 @require_power('puede_gestionar_inventario')
 def crear_materia_prima(request):
     """Crear nueva materia prima"""
+    if not request.user.empresa or request.user.empresa.categoria != 'manufactura':
+        messages.warning(request, 'Esta sección es solo para empresas de manufactura.')
+        return redirect('empresa:dashboard')
+    
     if request.method == 'POST':
         form = MateriaPrimaForm(request.POST, empresa=request.user.empresa)
         if form.is_valid():
