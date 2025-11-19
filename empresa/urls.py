@@ -221,7 +221,7 @@ urlpatterns += [
     path('api/materias-primas/', materias_primas_api, name='materias_primas_api'),
     
     # URLs de manufactura (temporalmente deshabilitadas)
-    # path('manufactura/', dashboard_manufactura, name='dashboard_manufactura'),
+    path('manufactura/', dashboard, name='dashboard_manufactura'),  # Redirect temporal a dashboard normal
     # path('manufactura/materias-primas/', listar_materias_primas, name='listar_materias_primas'),
     # path('manufactura/materias-primas/crear/', crear_materia_prima, name='crear_materia_prima'),
     # path('manufactura/materias-primas/<int:materia_id>/editar/', editar_materia_prima, name='editar_materia_prima'),
