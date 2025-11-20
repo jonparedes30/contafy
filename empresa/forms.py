@@ -436,11 +436,12 @@ class MateriaPrimaForm(forms.ModelForm):
 class ProductoManufacturadoForm(forms.ModelForm):
     class Meta:
         model = ProductoManufacturado
-        fields = ['codigo', 'nombre', 'descripcion', 'precio_venta', 'tiempo_produccion', 'stock_actual', 'stock_minimo']
+        fields = ['codigo', 'nombre', 'descripcion', 'categoria', 'precio_venta', 'tiempo_produccion', 'stock_actual', 'stock_minimo']
         widgets = {
             'codigo': forms.TextInput(attrs={'class': 'form-control'}),
             'nombre': forms.TextInput(attrs={'class': 'form-control'}),
             'descripcion': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
+            'categoria': forms.Select(attrs={'class': 'form-select'}),
             'precio_venta': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01'}),
             'tiempo_produccion': forms.NumberInput(attrs={'class': 'form-control'}),
             'stock_actual': forms.NumberInput(attrs={'class': 'form-control'}),
@@ -450,6 +451,10 @@ class ProductoManufacturadoForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         self.empresa = kwargs.pop('empresa', None)
         super().__init__(*args, **kwargs)
+        if self.empresa:
+            from empresa.models import CategoriaProducto
+            self.fields['categoria'].queryset = CategoriaProducto.objects.filter(empresa=self.empresa)
+        self.fields['categoria'].required = False
 
 class RecetaProduccionForm(forms.ModelForm):
     class Meta:
