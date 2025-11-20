@@ -105,6 +105,7 @@ def crear_materia_prima(request):
         form = MateriaPrimaForm(request.POST, empresa=request.user.empresa)
         if form.is_valid():
             materia_prima = form.save(commit=False)
+            materia_prima.empresa = request.user.empresa
             materia_prima.creado_por = request.user
             materia_prima.save()
             
