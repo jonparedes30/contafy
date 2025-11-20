@@ -219,6 +219,7 @@ urlpatterns += [
     
     # API para materias primas
     path('api/materias-primas/', materias_primas_api, name='materias_primas_api'),
+    path('api/materia-prima/<int:materia_id>/precio/', lambda request, materia_id: __import__('django.http', fromlist=['JsonResponse']).JsonResponse(__import__('empresa.models', fromlist=['MateriaPrima']).MateriaPrima.objects.filter(id=materia_id, empresa=request.user.empresa).values('id', 'precio_unitario', 'unidad_medida').first() or {}), name='materia_prima_precio'),
     
     # URLs de manufactura - Rutas reales
     path('manufactura/', dashboard_manufactura, name='dashboard_manufactura'),

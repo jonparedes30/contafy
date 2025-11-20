@@ -177,22 +177,26 @@ document.addEventListener('DOMContentLoaded', function() {
     const materiasPrimas = {};
     let formCount = parseInt(document.querySelector('input[name="form-TOTAL_FORMS"]').value);
     
-    // Cargar datos de materias primas via AJAX
-    fetch('/empresa/api/materias-primas/')
-        .then(response => response.json())
-        .then(data => {
-            data.forEach(materia => {
-                materiasPrimas[materia.id] = {
-                    precio: parseFloat(materia.precio_unitario),
-                    unidad: materia.unidad_medida
-                };
-            });
-            calcularCostoTotal();
-        })
-        .catch(() => {
-            // Si no hay API, usar datos estáticos o mostrar mensaje
-            console.log('No se pudieron cargar las materias primas');
+    // Cargar datos de materias primas desde los selects (data attributes)
+    document.querySelectorAll('select[name*="materia_prima"]').forEach(select => {
+        Array.from(select.options).forEach(option => {
+            if (option.value) {
+                // Obtener precio via AJAX cuando se selecciona
+                fetch(`/app-beta-2024/api/materias-primas/`)
+                    .then(response => response.json())
+                    .then(data => {
+                        data.forEach(materia => {
+                            materiasPrimas[materia.id] = {
+                                precio: parseFloat(materia.precio_unitario),
+                                unidad: materia.unidad_medida
+                            };
+                        });
+                        calcularCostoTotal();
+                    })
+                    .catch(() => console.log('Cargando precios...'));
+            }
         });
+    });
     
     // Función para calcular costo de un ingrediente
     function calcularCostoIngrediente(materiaSelect, cantidadInput, costoInput) {
@@ -203,6 +207,24 @@ document.addEventListener('DOMContentLoaded', function() {
             const costo = cantidad * materiasPrimas[materiaId].precio;
             costoInput.value = '$' + costo.toFixed(2);
             return costo;
+        } else if (materiaId) {
+            // Si no tenemos el precio en cache, obtenerlo via AJAX
+            fetch(`/app-beta-2024/api/materias-primas/`)
+                .then(response => response.json())
+                .then(data => {
+                    const materia = data.find(m => m.id == materiaId);
+                    if (materia) {
+                        materiasPrimas[materiaId] = {
+                            precio: parseFloat(materia.precio_unitario),
+                            unidad: materia.unidad_medida
+                        };
+                        const costo = cantidad * materiasPrimas[materiaId].precio;
+                        costoInput.value = '$' + costo.toFixed(2);
+                        calcularCostoTotal();
+                    }
+                });
+            costoInput.value = 'Cargando...';
+            return 0;
         } else {
             costoInput.value = '$0.00';
             return 0;
