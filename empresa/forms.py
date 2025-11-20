@@ -436,14 +436,15 @@ class MateriaPrimaForm(forms.ModelForm):
 class ProductoManufacturadoForm(forms.ModelForm):
     class Meta:
         model = ProductoManufacturado
-        fields = ['nombre', 'descripcion', 'unidad_medida', 'precio_venta', 'stock_actual', 'stock_minimo']
+        fields = ['codigo', 'nombre', 'descripcion', 'precio_venta', 'tiempo_produccion', 'stock_actual', 'stock_minimo']
         widgets = {
+            'codigo': forms.TextInput(attrs={'class': 'form-control'}),
             'nombre': forms.TextInput(attrs={'class': 'form-control'}),
             'descripcion': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
-            'unidad_medida': forms.Select(attrs={'class': 'form-select'}),
             'precio_venta': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01'}),
-            'stock_actual': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01'}),
-            'stock_minimo': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01'}),
+            'tiempo_produccion': forms.NumberInput(attrs={'class': 'form-control'}),
+            'stock_actual': forms.NumberInput(attrs={'class': 'form-control'}),
+            'stock_minimo': forms.NumberInput(attrs={'class': 'form-control'}),
         }
     
     def __init__(self, *args, **kwargs):
