@@ -2,8 +2,10 @@
 from django.http import JsonResponse
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.http import require_http_methods
+from django.views.decorators.csrf import csrf_exempt
 from ..models import Producto
 import logging
+import json
 
 logger = logging.getLogger(__name__)
 
@@ -124,35 +126,44 @@ def validar_codigo_barras(request):
     })
 
 @login_required
+@require_http_methods(["POST"])
 def crear_categoria_api(request):
-    if request.method == 'POST':
-        try:
-            import json
-            data = json.loads(request.body)
-            nombre = data.get('nombre')
-            descripcion = data.get('descripcion', '')
-            
-            if not nombre:
-                return JsonResponse({'success': False, 'error': 'Nombre requerido'})
-            
-            from empresa.models import CategoriaProducto
-            categoria = CategoriaProducto.objects.create(
-                empresa=request.user.empresa,
-                nombre=nombre,
-                descripcion=descripcion
-            )
-            
-            return JsonResponse({
-                'success': True,
-                'categoria': {
-                    'id': categoria.id,
-                    'nombre': categoria.nombre
-                }
-            })
-        except Exception as e:
-            return JsonResponse({'success': False, 'error': str(e)})
-    
-    return JsonResponse({'success': False, 'error': 'Método no permitido'})
+    try:
+        import json
+        data = json.loads(request.body)
+        nombre = data.get('nombre', '').strip()
+        descripcion = data.get('descripcion', '').strip()
+        
+        if not nombre:
+            return JsonResponse({'success': False, 'error': 'Nombre requerido'})
+        
+        from empresa.models import CategoriaProducto
+        
+        # Verificar si ya existe
+        if CategoriaProducto.objects.filter(empresa=request.user.empresa, nombre__iexact=nombre).exists():
+            return JsonResponse({'success': False, 'error': 'Ya existe una categoría con ese nombre'})
+        
+        categoria = CategoriaProducto.objects.create(
+            empresa=request.user.empresa,
+            nombre=nombre,
+            descripcion=descripcion
+        )
+        
+        logger.info(f"Categoría creada: {categoria.nombre} por {request.user.username}")
+        
+        return JsonResponse({
+            'success': True,
+            'categoria': {
+                'id': categoria.id,
+                'nombre': categoria.nombre,
+                'descripcion': categoria.descripcion
+            }
+        })
+    except json.JSONDecodeError:
+        return JsonResponse({'success': False, 'error': 'JSON inválido'})
+    except Exception as e:
+        logger.error(f"Error creando categoría: {str(e)}")
+        return JsonResponse({'success': False, 'error': f'Error: {str(e)}'})
 
 @login_required
 def materias_primas_api(request):
