@@ -414,22 +414,24 @@ class SaldosInicialesForm(forms.Form):
 class MateriaPrimaForm(forms.ModelForm):
     class Meta:
         model = MateriaPrima
-        fields = ['nombre', 'descripcion', 'unidad_medida', 'precio_unitario', 'stock_actual', 'stock_minimo', 'proveedor']
+        fields = ['codigo', 'nombre', 'descripcion', 'unidad_medida', 'precio_unitario', 'stock_actual', 'stock_minimo', 'proveedor_principal']
         widgets = {
+            'codigo': forms.TextInput(attrs={'class': 'form-control'}),
             'nombre': forms.TextInput(attrs={'class': 'form-control'}),
             'descripcion': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
             'unidad_medida': forms.Select(attrs={'class': 'form-select'}),
             'precio_unitario': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01'}),
             'stock_actual': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01'}),
             'stock_minimo': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01'}),
-            'proveedor': forms.Select(attrs={'class': 'form-select'}),
+            'proveedor_principal': forms.Select(attrs={'class': 'form-select'}),
         }
     
     def __init__(self, *args, **kwargs):
         self.empresa = kwargs.pop('empresa', None)
         super().__init__(*args, **kwargs)
         if self.empresa:
-            self.fields['proveedor'].queryset = Proveedor.objects.filter(empresa=self.empresa, activo=True)
+            self.fields['proveedor_principal'].queryset = Proveedor.objects.filter(empresa=self.empresa, activo=True)
+        self.fields['proveedor_principal'].required = False
 
 class ProductoManufacturadoForm(forms.ModelForm):
     class Meta:
