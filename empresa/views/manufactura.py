@@ -104,28 +104,37 @@ def crear_materia_prima(request):
     if request.method == 'POST':
         form = MateriaPrimaForm(request.POST, empresa=request.user.empresa)
         if form.is_valid():
-            materia_prima = form.save(commit=False)
-            materia_prima.empresa = request.user.empresa
-            materia_prima.creado_por = request.user
-            materia_prima.save()
-            
-            # Registrar compra de materia prima como movimiento contable
-            if materia_prima.stock_actual > 0:
-                from empresa.views.contabilidad import registrar_movimiento_contable
-                costo_total = materia_prima.stock_actual * materia_prima.precio_unitario
+            try:
+                materia_prima = form.save(commit=False)
+                materia_prima.empresa = request.user.empresa
+                materia_prima.creado_por = request.user
+                materia_prima.save()
                 
-                registrar_movimiento_contable(
-                    empresa=request.user.empresa,
-                    cuenta_debito_nombre='Inventario de Materias Primas',
-                    cuenta_credito_nombre='Caja/Banco',
-                    monto=costo_total,
-                    descripcion=f"Compra inicial de {materia_prima.nombre} - {materia_prima.stock_actual} {materia_prima.unidad_medida}",
-                    tipo_cuenta_debito='activo',
-                    tipo_cuenta_credito='activo'
-                )
-            
-            messages.success(request, 'Materia prima creada exitosamente.')
-            return redirect('empresa:listar_materias_primas')
+                # Registrar compra de materia prima como movimiento contable (opcional)
+                try:
+                    if materia_prima.stock_actual > 0:
+                        from empresa.views.contabilidad import registrar_movimiento_contable
+                        costo_total = materia_prima.stock_actual * materia_prima.precio_unitario
+                        
+                        registrar_movimiento_contable(
+                            empresa=request.user.empresa,
+                            cuenta_debito_nombre='Inventario de Materias Primas',
+                            cuenta_credito_nombre='Caja/Banco',
+                            monto=costo_total,
+                            descripcion=f"Compra inicial de {materia_prima.nombre} - {materia_prima.stock_actual} {materia_prima.unidad_medida}",
+                            tipo_cuenta_debito='activo',
+                            tipo_cuenta_credito='activo'
+                        )
+                except Exception as e:
+                    # No fallar si el movimiento contable falla
+                    print(f"Error registrando movimiento contable: {e}")
+                
+                messages.success(request, 'Materia prima creada exitosamente.')
+                return redirect('empresa:listar_materias_primas')
+            except Exception as e:
+                messages.error(request, f'Error al guardar materia prima: {str(e)}')
+        else:
+            messages.error(request, 'Por favor corrige los errores en el formulario.')
     else:
         form = MateriaPrimaForm(empresa=request.user.empresa)
     
