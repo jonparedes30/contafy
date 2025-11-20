@@ -106,8 +106,11 @@ def crear_materia_prima(request):
         if form.is_valid():
             try:
                 materia_prima = form.save(commit=False)
-                materia_prima.empresa = request.user.empresa
-                materia_prima.creado_por = request.user
+                # CRÍTICO: Asignar empresa ANTES de cualquier otra operación
+                if not materia_prima.empresa_id:
+                    materia_prima.empresa = request.user.empresa
+                if not materia_prima.creado_por_id:
+                    materia_prima.creado_por = request.user
                 materia_prima.save()
                 
                 # Registrar compra de materia prima como movimiento contable (opcional)
