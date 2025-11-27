@@ -108,7 +108,7 @@
             </thead>
             <tbody>
                 {% for producto in productos %}
-                <tr style="border-bottom:1px solid #e0e0e0;">
+                <tr data-product-id="{{ producto.id }}" data-delete-url="{% url 'empresa:eliminar_producto' producto.id %}" style="border-bottom:1px solid #e0e0e0;">
                     <td><span style="font-family:'Courier New',monospace;font-weight:600;color:#1976d2;background:#f8f9fa;padding:0.25rem 0.5rem;border-radius:4px;">{{ producto.codigo }}</span></td>
                     <td>
                         <div style="font-weight:600;color:#495057;">{{ producto.nombre }}</div>
@@ -221,9 +221,15 @@
 
 <script>
 function confirmarEliminar(productoId) {
-    if(confirm('¿Estás seguro de que deseas eliminar este producto? Esta acción no se puede deshacer.')) {
-        window.location.href = `/empresa/producto/${productoId}/eliminar/`;
+    if(!confirm('¿Estás seguro de que deseas eliminar este producto? Esta acción no se puede deshacer.')) return;
+    const row = document.querySelector(`[data-product-id="${productoId}"]`);
+    if (row && row.dataset.deleteUrl) {
+        window.location.href = row.dataset.deleteUrl;
+        return;
     }
+    const template = '{% url "empresa:eliminar_producto" 0 %}';
+    const url = template.replace('/0/', `/${productoId}/`);
+    window.location.href = url;
 }
 
 // Gestión de categorías
@@ -242,7 +248,7 @@ document.addEventListener('DOMContentLoaded', function() {
     });
     
     function cargarCategorias() {
-        fetch('/empresa/api/categorias/')
+        fetch('{% url "empresa:categorias_api" %}')
             .then(response => response.json())
             .then(data => {
                 let html = '';
@@ -280,11 +286,12 @@ document.addEventListener('DOMContentLoaded', function() {
         const nombre = document.getElementById('nombreCategoria').value;
         const descripcion = document.getElementById('descripcionCategoria').value;
         
-        fetch('/empresa/api/categorias/', {
+        fetch('{% url "empresa:categorias_api" %}', {
             method: 'POST',
+            credentials: 'same-origin',
             headers: {
                 'Content-Type': 'application/json',
-                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                'X-CSRFToken': window.CONTAFY_CSRF_TOKEN || (document.querySelector('[name=csrfmiddlewaretoken]') && document.querySelector('[name=csrfmiddlewaretoken]').value)
             },
             body: JSON.stringify({
                 nombre: nombre,
@@ -310,10 +317,12 @@ document.addEventListener('DOMContentLoaded', function() {
     
     window.eliminarCategoria = function(id) {
         if (confirm('¿Eliminar esta categoría?')) {
-            fetch(`/empresa/api/categorias/${id}/`, {
+            const template = '{% url "empresa:categoria_delete_api" 0 %}';
+            fetch(template.replace('/0/', `/${id}/`), {
                 method: 'DELETE',
+                credentials: 'same-origin',
                 headers: {
-                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                    'X-CSRFToken': window.CONTAFY_CSRF_TOKEN || (document.querySelector('[name=csrfmiddlewaretoken]') && document.querySelector('[name=csrfmiddlewaretoken]').value)
                 }
             })
             .then(response => response.json())
@@ -333,7 +342,7 @@ document.addEventListener('DOMContentLoaded', function() {
     };
     
     // Cargar proveedores deudas
-    fetch('/empresa/api/cuentas-pagar/')
+    fetch('{% url "empresa:cuentas_pagar_api" %}')
         .then(response => response.json())
         .then(data => {
             const container = document.getElementById('proveedoresDeudas');

@@ -350,7 +350,7 @@ function crearCategoria() {
         return;
     }
     
-    fetch('/empresa/api/categorias/', {
+    fetch('{% url "empresa:categorias_api" %}', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',

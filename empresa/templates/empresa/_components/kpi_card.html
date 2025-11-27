@@ -1,0 +1,8 @@
+<div class="resumen-card text-center">
+    <div style="font-size:2.2rem; color:#1976d2; margin-bottom:14px;"><i class="bi bi-currency-dollar"></i></div>
+    <div class="resumen-amount {% if kpi.type == 'costo' %}costo{% elif kpi.type == 'gasto' %}gasto{% elif kpi.type == 'utilidad' and kpi.positive %}positivo{% elif kpi.type == 'utilidad' and not kpi.positive %}negativo{% else %}neutro{% endif %}">${{ kpi.value|floatformat:2 }}</div>
+    <div class="resumen-section-title">{{ kpi.label }}</div>
+    {% if kpi.note %}
+    <div class="resumen-badge">{{ kpi.note }}</div>
+    {% endif %}
+</div>

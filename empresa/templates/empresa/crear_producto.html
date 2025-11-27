@@ -275,7 +275,7 @@ document.addEventListener('DOMContentLoaded', function () {
         sugerenciaInfo.textContent = "🔄 Buscando información del código...";
         sugerenciaInfo.style.color = 'gray';
 
-        fetch(`/empresa/producto/info_api/?codigo=${codigo}`)
+        fetch('{% url "empresa:producto_info_api" %}?codigo=' + encodeURIComponent(codigo))
             .then(response => response.json())
             .then(data => {
                 if (data.nombre) {
@@ -400,7 +400,7 @@ function escanearCodigo() {
                 sugerenciaInfo.textContent = "🔄 Buscando información del código...";
                 sugerenciaInfo.style.color = 'gray';
 
-                fetch(`/empresa/producto/info_api/?codigo=${mockBarcode}`)
+                fetch(`{% url "empresa:producto_info_api" %}?codigo=${mockBarcode}`)
                     .then(response => response.json())
                     .then(data => {
                         if (data.nombre) {

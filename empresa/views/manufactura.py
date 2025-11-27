@@ -10,64 +10,46 @@ from empresa.decorators import require_power
 from empresa.models import (
     MateriaPrima, 
     ProductoManufacturado, 
-    RecetaProduccion, 
-    OrdenProduccion,
-    ConsumoMateriaPrima,
-    Proveedor
+    RecetaProduccion,
+    OrdenProduccion
 )
-from empresa.forms import (
-    MateriaPrimaForm, 
-    ProductoManufacturadoForm, 
-    RecetaProduccionForm,
-    OrdenProduccionForm,
-    ProveedorForm
-)
+from empresa.forms import MateriaPrimaForm, ProductoManufacturadoForm
 
 
 @login_required
+@require_power('puede_gestionar_inventario')
 def dashboard_manufactura(request):
-    """Dashboard específico para empresas de manufactura"""
-    # Verificar que sea empresa de manufactura
+    """Dashboard para manufactura"""
     if not request.user.empresa or request.user.empresa.categoria != 'manufactura':
         messages.warning(request, 'Esta sección es solo para empresas de manufactura.')
         return redirect('empresa:dashboard')
     
     empresa = request.user.empresa
-    
-    # Estadísticas básicas
-    total_materias_primas = MateriaPrima.objects.filter(empresa=empresa).count()
-    total_productos = ProductoManufacturado.objects.filter(empresa=empresa, activo=True).count()
-    ordenes_pendientes = OrdenProduccion.objects.filter(empresa=empresa, estado='pendiente').count()
-    ordenes_en_proceso = OrdenProduccion.objects.filter(empresa=empresa, estado='en_proceso').count()
-    
-    # Materias primas con stock bajo
-    materias_stock_bajo = MateriaPrima.objects.filter(
-        empresa=empresa,
-        stock_actual__lte=F('stock_minimo')
-    )[:5]
-    
-    # Productos con stock bajo
-    productos_stock_bajo = ProductoManufacturado.objects.filter(
-        empresa=empresa,
-        stock_actual__lte=F('stock_minimo'),
-        activo=True
-    )[:5]
-    
-    # Órdenes recientes
-    ordenes_recientes = OrdenProduccion.objects.filter(
-        empresa=empresa
-    ).order_by('-creado_en')[:5]
-    
-    context = {
-        'total_materias_primas': total_materias_primas,
-        'total_productos': total_productos,
-        'ordenes_pendientes': ordenes_pendientes,
-        'ordenes_en_proceso': ordenes_en_proceso,
-        'materias_stock_bajo': materias_stock_bajo,
-        'productos_stock_bajo': productos_stock_bajo,
-        'ordenes_recientes': ordenes_recientes,
-    }
-    
+
+    try:
+        from empresa.presenters.manufactura_presenter import ManufacturaPresenter
+        presenter = ManufacturaPresenter(empresa)
+        context = presenter.to_context()
+    except Exception as e:
+        # Fallback: calcular in-place si el presenter falla
+        print(f"Manufactura presenter error: {e}")
+        total_materias_primas = MateriaPrima.objects.filter(empresa=empresa).count()
+        total_productos = ProductoManufacturado.objects.filter(empresa=empresa, activo=True).count()
+        ordenes_pendientes = OrdenProduccion.objects.filter(empresa=empresa, estado='pendiente').count()
+        ordenes_en_proceso = OrdenProduccion.objects.filter(empresa=empresa, estado='en_proceso').count()
+        materias_stock_bajo = MateriaPrima.objects.filter(empresa=empresa, stock_actual__lte=F('stock_minimo'))[:5]
+        productos_stock_bajo = ProductoManufacturado.objects.filter(empresa=empresa, stock_actual__lte=F('stock_minimo'), activo=True)[:5]
+        ordenes_recientes = OrdenProduccion.objects.filter(empresa=empresa).order_by('-creado_en')[:5]
+        context = {
+            'total_materias_primas': total_materias_primas,
+            'total_productos': total_productos,
+            'ordenes_pendientes': ordenes_pendientes,
+            'ordenes_en_proceso': ordenes_en_proceso,
+            'materias_stock_bajo': materias_stock_bajo,
+            'productos_stock_bajo': productos_stock_bajo,
+            'ordenes_recientes': ordenes_recientes,
+        }
+
     return render(request, 'empresa/manufactura/dashboard.html', context)
 
 

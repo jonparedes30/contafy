@@ -190,7 +190,7 @@ function confirmarEliminar(ventaId, productoNombre) {
         })
         .then(response => {
             if (response.ok) {
-                window.location.href = '/empresa/home/';
+                window.location.href = '{% url "empresa:home" %}';
             } else {
                 alert('Error al eliminar la venta');
             }

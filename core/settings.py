@@ -64,6 +64,7 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'empresa.middleware.CurrentUserMiddleware',
+    'empresa.middleware.EmpresaValidationMiddleware',
     'empresa.middleware.SecurityMiddleware',
 ]
 

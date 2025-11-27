@@ -90,7 +90,7 @@
             </thead>
             <tbody>
                 {% for producto in productos %}
-                <tr style="border-bottom:1px solid #e0e0e0;">
+                <tr data-product-id="{{ producto.id }}" data-delete-url="{% url 'empresa:eliminar_producto' producto.id %}" style="border-bottom:1px solid #e0e0e0;">
                     <td><span style="font-family:'Courier New',monospace;font-weight:600;color:#1976d2;background:#f8f9fa;padding:0.25rem 0.5rem;border-radius:4px;">{{ producto.codigo }}</span></td>
                     <td>
                         <div style="font-weight:600;color:#495057;">{{ producto.nombre }}</div>
@@ -160,10 +160,17 @@
 </div>
 <script>
 function confirmarEliminar(productoId) {
-    // Aquí puedes mostrar un modal de confirmación si lo deseas
-    if(confirm('¿Estás seguro de que deseas eliminar este producto? Esta acción no se puede deshacer.')) {
-        window.location.href = `/empresa/producto/${productoId}/eliminar/`;
+    // Puedes usar un atributo data-delete-url en cada fila para tener la URL ya resuelta
+    if(!confirm('¿Estás seguro de que deseas eliminar este producto? Esta acción no se puede deshacer.')) return;
+    const row = document.querySelector(`[data-product-id="${productoId}"]`);
+    if (row && row.dataset.deleteUrl) {
+        window.location.href = row.dataset.deleteUrl;
+        return;
     }
+    // Fallback: usar la URL nombrada con placeholder 0 y reemplazar
+    const template = '{% url "empresa:eliminar_producto" 0 %}';
+    const url = template.replace('/0/', `/${productoId}/`);
+    window.location.href = url;
 }
 </script>
 {% endblock %} 

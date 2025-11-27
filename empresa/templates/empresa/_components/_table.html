@@ -1,0 +1,52 @@
+<!-- Componente reutilizable de tabla -->
+<div class="table-responsive">
+    <table class="table table-hover {{ table_class|default:'' }}">
+        {% if caption %}
+        <caption>{{ caption }}</caption>
+        {% endif %}
+        
+        <thead class="table-light">
+            <tr>
+                {% for header in headers %}
+                <th scope="col">{{ header }}</th>
+                {% endfor %}
+                {% if actions %}
+                <th scope="col" class="text-end">Acciones</th>
+                {% endif %}
+            </tr>
+        </thead>
+        
+        <tbody>
+            {% if rows %}
+                {% for row in rows %}
+                <tr>
+                    {% for cell in row.cells %}
+                    <td>{{ cell|default:"-" }}</td>
+                    {% endfor %}
+                    {% if actions %}
+                    <td class="text-end">
+                        <div class="btn-group btn-group-sm">
+                            {% for action in row.actions|default:actions %}
+                            <a href="{{ action.url }}" 
+                               class="btn btn-{{ action.type|default:'primary' }}" 
+                               {% if action.confirm %}onclick="return confirm('{{ action.confirm }}')"{% endif %}>
+                                <i class="bi bi-{{ action.icon }}"></i>
+                                {% if action.label %}{{ action.label }}{% endif %}
+                            </a>
+                            {% endfor %}
+                        </div>
+                    </td>
+                    {% endif %}
+                </tr>
+                {% endfor %}
+            {% else %}
+                <tr>
+                    <td colspan="{{ headers|length|add:1 }}" class="text-center text-muted py-4">
+                        <i class="bi bi-inbox fs-1 d-block mb-2"></i>
+                        {{ empty_message|default:"No hay datos para mostrar" }}
+                    </td>
+                </tr>
+            {% endif %}
+        </tbody>
+    </table>
+</div>

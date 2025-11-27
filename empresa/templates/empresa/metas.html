@@ -723,10 +723,12 @@ document.addEventListener('DOMContentLoaded', function() {
         notif.addEventListener('click', function() {
             const notifId = this.dataset.notifId;
             if (notifId) {
-                fetch(`/empresa/metas/notificacion/${notifId}/leida/`, {
+                const template = '{% url "empresa:marcar_notificacion_leida" 0 %}';
+                fetch(template.replace('/0/', `/${notifId}/`), {
                     method: 'POST',
+                    credentials: 'same-origin',
                     headers: {
-                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                        'X-CSRFToken': window.CONTAFY_CSRF_TOKEN || (document.querySelector('[name=csrfmiddlewaretoken]') && document.querySelector('[name=csrfmiddlewaretoken]').value),
                     }
                 });
             }

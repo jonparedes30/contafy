@@ -277,7 +277,7 @@
     if (!codigo.trim()) return;
     
     try {
-      const response = await fetch(`/empresa/api/buscar-codigo-barras/?codigo=${encodeURIComponent(codigo)}`);
+      const response = await fetch('{% url "empresa:buscar_codigo_barras" %}?codigo=' + encodeURIComponent(codigo));
       const data = await response.json();
       
       if (data.encontrado) {
@@ -397,7 +397,7 @@ function crearProveedor() {
     return;
   }
   
-  fetch('/empresa/api/proveedores/', {
+  fetch('{% url "empresa:proveedores_api" %}', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',

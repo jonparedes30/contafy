@@ -311,7 +311,8 @@
       const empleadoId = btn.dataset.empleadoId;
       // Guardamos el id en el botón de guardar para reutilizarlo
       document.getElementById('guardarPoderes').dataset.empleadoId = empleadoId;
-      fetch(`/empresa/empresa/{{ empresa.id }}/empleado/${empleadoId}/poderes/`)
+      const poderesTemplate = '{% url "empresa:gestion_poderes_empleado" empresa.id 0 %}';
+      fetch(poderesTemplate.replace('/0/', `/${empleadoId}/`))
         .then(res => res.json())
         .then(data => {
           // Rellenar los checkboxes con los valores actuales
@@ -335,11 +336,13 @@
     console.log('Datos a enviar:', data);
     console.log('Número de propiedades:', Object.keys(data).length);
     
-    fetch(`/empresa/empresa/{{ empresa.id }}/empleado/${empleadoId}/poderes/`, {
+    const poderesTemplate = '{% url "empresa:gestion_poderes_empleado" empresa.id 0 %}';
+    fetch(poderesTemplate.replace('/0/', `/${empleadoId}/`), {
       method: 'POST',
+      credentials: 'same-origin',
       headers: { 
         'Content-Type': 'application/json',
-        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+        'X-CSRFToken': window.CONTAFY_CSRF_TOKEN || (document.querySelector('[name=csrfmiddlewaretoken]') && document.querySelector('[name=csrfmiddlewaretoken]').value)
       },
       body: JSON.stringify(data)
     })

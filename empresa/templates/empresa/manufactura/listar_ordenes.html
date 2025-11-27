@@ -75,12 +75,12 @@
                                                 </a>
                                                 {% if orden.estado == 'pendiente' %}
                                                 <button type="button" class="btn btn-sm btn-outline-success btn-iniciar" 
-                                                        data-orden-id="{{ orden.id }}" title="Iniciar producción">
+                                                        data-orden-id="{{ orden.id }}" data-iniciar-url="{% url 'empresa:iniciar_produccion' orden.id %}" title="Iniciar producción">
                                                     <i class="fas fa-play"></i>
                                                 </button>
                                                 {% elif orden.estado == 'en_proceso' %}
                                                 <button type="button" class="btn btn-sm btn-outline-info btn-completar" 
-                                                        data-orden-id="{{ orden.id }}" title="Completar producción">
+                                                        data-orden-id="{{ orden.id }}" data-completar-url="{% url 'empresa:completar_produccion' orden.id %}" title="Completar producción">
                                                     <i class="fas fa-check"></i>
                                                 </button>
                                                 {% endif %}
@@ -114,10 +114,13 @@ document.addEventListener('DOMContentLoaded', function() {
         btn.addEventListener('click', function() {
             const ordenId = this.dataset.ordenId;
             if (confirm('¿Iniciar producción de esta orden?')) {
-                fetch(`/empresa/manufactura/ordenes/${ordenId}/iniciar/`, {
+                const iniciarUrl = this.dataset.iniciarUrl;
+                const token = window.CONTAFY_CSRF_TOKEN || (document.querySelector('[name=csrfmiddlewaretoken]') && document.querySelector('[name=csrfmiddlewaretoken]').value);
+                fetch(iniciarUrl, {
                     method: 'POST',
+                    credentials: 'same-origin',
                     headers: {
-                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                        'X-CSRFToken': token,
                     },
                 })
                 .then(response => response.json())
@@ -137,10 +140,13 @@ document.addEventListener('DOMContentLoaded', function() {
         btn.addEventListener('click', function() {
             const ordenId = this.dataset.ordenId;
             if (confirm('¿Completar producción de esta orden?')) {
-                fetch(`/empresa/manufactura/ordenes/${ordenId}/completar/`, {
+                const completarUrl = this.dataset.completarUrl;
+                const token = window.CONTAFY_CSRF_TOKEN || (document.querySelector('[name=csrfmiddlewaretoken]') && document.querySelector('[name=csrfmiddlewaretoken]').value);
+                fetch(completarUrl, {
                     method: 'POST',
+                    credentials: 'same-origin',
                     headers: {
-                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                        'X-CSRFToken': token,
                     },
                 })
                 .then(response => response.json())

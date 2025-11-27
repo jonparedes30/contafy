@@ -530,10 +530,11 @@ class VoiceCommandsIA {
         }
         
         // Fallback: usar API directamente
-        const csrfToken = getCookie('csrftoken');
+        const csrfToken = window.CONTAFY_CSRF_TOKEN || getCookie('csrftoken');
         
-        fetch('/empresa/chat-ia/', {
+        fetch('{% url "empresa:chat_ia" %}', {
             method: 'POST',
+            credentials: 'same-origin',
             headers: {
                 'Content-Type': 'application/json',
                 'X-CSRFToken': csrfToken

@@ -939,7 +939,7 @@
         if (!codigo.trim()) return;
         
         try {
-            const response = await fetch(`/empresa/api/buscar-codigo-barras/?codigo=${encodeURIComponent(codigo)}`);
+            const response = await fetch('{% url "empresa:buscar_codigo_barras" %}?codigo=' + encodeURIComponent(codigo));
             const data = await response.json();
             
             if (data.encontrado) {
@@ -1065,11 +1065,12 @@ function crearCliente() {
         return;
     }
     
-    fetch('/empresa/api/clientes/', {
+    fetch('{% url "empresa:clientes_api" %}', {
         method: 'POST',
+        credentials: 'same-origin',
         headers: {
             'Content-Type': 'application/json',
-            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+            'X-CSRFToken': window.CONTAFY_CSRF_TOKEN || (document.querySelector('[name=csrfmiddlewaretoken]') && document.querySelector('[name=csrfmiddlewaretoken]').value)
         },
         body: JSON.stringify({
             nombre: nombre,

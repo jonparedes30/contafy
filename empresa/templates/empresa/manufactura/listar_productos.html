@@ -73,6 +73,7 @@
                                                 <button type="button" 
                                                         class="btn btn-sm {% if producto.activo %}btn-outline-danger{% else %}btn-outline-success{% endif %} btn-cambiar-estado" 
                                                         data-producto-id="{{ producto.id }}"
+                                                        data-change-url="{% url 'empresa:cambiar_estado_producto' producto.id %}"
                                                         data-estado-actual="{{ producto.activo|yesno:'true,false' }}"
                                                         title="{% if producto.activo %}Desactivar{% else %}Activar{% endif %}">
                                                     <i class="fas {% if producto.activo %}fa-toggle-on{% else %}fa-toggle-off{% endif %}"></i>
@@ -118,10 +119,13 @@ document.addEventListener('DOMContentLoaded', function() {
             // Deshabilitar botón durante la petición
             boton.disabled = true;
             
-            fetch(`/empresa/manufactura/productos/${productoId}/cambiar-estado/`, {
+            const changeUrl = this.dataset.changeUrl;
+            const token = window.CONTAFY_CSRF_TOKEN || (document.querySelector('[name=csrfmiddlewaretoken]') && document.querySelector('[name=csrfmiddlewaretoken]').value);
+            fetch(changeUrl, {
                 method: 'POST',
+                credentials: 'same-origin',
                 headers: {
-                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                    'X-CSRFToken': token,
                     'Content-Type': 'application/json',
                 },
             })

@@ -1,0 +1,36 @@
+<!-- Componente reutilizable de alertas -->
+{% if alertas %}
+    {% for alerta in alertas %}
+    <div class="alert alert-{{ alerta.tipo|default:'info' }} alert-dismissible fade show" role="alert">
+        {% if alerta.icono %}
+        <i class="bi bi-{{ alerta.icono }} me-2"></i>
+        {% else %}
+            {% if alerta.tipo == 'danger' %}
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+            {% elif alerta.tipo == 'warning' %}
+            <i class="bi bi-exclamation-circle-fill me-2"></i>
+            {% elif alerta.tipo == 'success' %}
+            <i class="bi bi-check-circle-fill me-2"></i>
+            {% else %}
+            <i class="bi bi-info-circle-fill me-2"></i>
+            {% endif %}
+        {% endif %}
+        
+        {% if alerta.titulo %}
+        <strong>{{ alerta.titulo }}</strong>
+        {% endif %}
+        
+        {% if alerta.mensaje %}
+        <div>{{ alerta.mensaje }}</div>
+        {% endif %}
+        
+        {% if alerta.descripcion %}
+        <div>{{ alerta.descripcion }}</div>
+        {% endif %}
+        
+        {% if dismissible|default:True %}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        {% endif %}
+    </div>
+    {% endfor %}
+{% endif %}

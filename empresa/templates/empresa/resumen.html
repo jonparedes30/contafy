@@ -160,50 +160,11 @@ body {
 <div class="resumen-container">
     <!-- KPIs PRINCIPALES -->
     <div class="row mb-4">
-        <div class="col-xl-3 col-md-6 mb-3">
-            <div class="resumen-card text-center">
-                <div style="font-size:2.2rem; color:#1976d2; margin-bottom:14px;"><i class="bi bi-currency-dollar"></i></div>
-                <div class="resumen-amount neutro">${{ ventas|floatformat:2 }}</div>
-                <div class="resumen-section-title">Total Ventas</div>
-                <div class="resumen-badge">Ingresos principales</div>
+        {% for kpi in kpis %}
+            <div class="col-xl-3 col-md-6 mb-3">
+                {% include 'empresa/_components/kpi_card.html' with kpi=kpi %}
             </div>
-        </div>
-        <div class="col-xl-3 col-md-6 mb-3">
-            <div class="resumen-card text-center">
-                <div style="font-size:2.2rem; color:#0dcaf0; margin-bottom:14px;"><i class="bi bi-cart-check"></i></div>
-                <div class="resumen-amount costo">${{ compras|floatformat:2 }}</div>
-                <div class="resumen-section-title">
-                    {% if user.empresa.categoria == 'manufactura' %}
-                        Total Costos
-                    {% else %}
-                        Total Compras
-                    {% endif %}
-                </div>
-                <div class="resumen-badge costo">
-                    {% if user.empresa.categoria == 'manufactura' %}
-                        Costos de producción
-                    {% else %}
-                        Costos de mercancía
-                    {% endif %}
-                </div>
-            </div>
-        </div>
-        <div class="col-xl-3 col-md-6 mb-3">
-            <div class="resumen-card text-center">
-                <div style="font-size:2.2rem; color:#dc3545; margin-bottom:14px;"><i class="bi bi-cash-stack"></i></div>
-                <div class="resumen-amount gasto">${{ gastos|floatformat:2 }}</div>
-                <div class="resumen-section-title">Total Gastos</div>
-                <div class="resumen-badge gasto">Gastos operativos</div>
-            </div>
-        </div>
-        <div class="col-xl-3 col-md-6 mb-3">
-            <div class="resumen-card text-center">
-                <div style="font-size:2.2rem; color:#198754; margin-bottom:14px;"><i class="bi bi-calculator"></i></div>
-                <div class="resumen-amount {% if utilidad_neta >= 0 %}positivo{% else %}negativo{% endif %}">${{ utilidad_neta|floatformat:2 }}</div>
-                <div class="resumen-section-title">Utilidad Neta</div>
-                <div class="resumen-badge utilidad">{% if utilidad_neta >= 0 %}Ganancia{% else %}Pérdida{% endif %}</div>
-            </div>
-        </div>
+        {% endfor %}
     </div>
 
     <!-- Indicadores de Rentabilidad y Solvencia -->

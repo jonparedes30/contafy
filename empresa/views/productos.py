@@ -201,6 +201,48 @@ def editar_producto(request, producto_id):
 
 
 @login_required
+def producto_info_api(request):
+    """API endpoint para obtener información de producto por código o código de barras"""
+    codigo = request.GET.get('codigo', '').strip()
+    
+    if not codigo:
+        return JsonResponse({'error': 'Código requerido'}, status=400)
+    
+    empresa = request.user.empresa
+    
+    try:
+        # Buscar por código o código de barras
+        producto = Producto.objects.filter(
+            empresa=empresa
+        ).filter(
+            Q(codigo=codigo) | Q(codigo_barras=codigo)
+        ).first()
+        
+        if producto:
+            return JsonResponse({
+                'id': producto.id,
+                'nombre': producto.nombre,
+                'descripcion': producto.descripcion or '',
+                'codigo': producto.codigo,
+                'codigo_barras': producto.codigo_barras or '',
+                'precio_unitario': float(producto.precio_unitario) if producto.precio_unitario else 0,
+                'stock': producto.stock,
+                'fuente': 'local',
+                'encontrado': True
+            })
+        else:
+            # Aquí podrías agregar búsqueda en API global si existe
+            return JsonResponse({
+                'encontrado': False,
+                'nombre': '',
+                'descripcion': '',
+                'precio_unitario': 0
+            })
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
+
+
+@login_required
 def eliminar_producto(request, producto_id):
     empresa = request.user.empresa
     try:

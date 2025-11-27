@@ -368,9 +368,34 @@ def resumen_financiero(request):
             'analisis_predictivo': analisis_predictivo
         }
         logger.info("Contexto OK")
-        
+
+        # Normalizar contexto usando Presenter según categoría
+        try:
+            from empresa.presenters.resumen_presenter import ResumenPresenter
+            from empresa.presenters.comercio_presenter import ComercioPresenter
+            from empresa.presenters.servicio_presenter import ServicioPresenter
+            
+            categoria = getattr(empresa, 'categoria', 'default') or 'default'
+            
+            # Usar presenter específico según categoría
+            if categoria == 'comercio':
+                presenter = ComercioPresenter(empresa=empresa)
+                contexto.update(presenter.to_context())
+            elif categoria == 'servicio':
+                presenter = ServicioPresenter(empresa=empresa)
+                contexto.update(presenter.to_context())
+            else:
+                # Default: usar ResumenPresenter para manufactura u otros
+                presenter = ResumenPresenter(empresa=empresa, data=contexto)
+                contexto = presenter.to_context()
+        except Exception as e:
+            logger.exception(f"Error inicializando presenter: {e}")
+
         logger.info("Renderizando template...")
-        return render(request, 'empresa/resumen.html', contexto)
+        # Selección de plantilla por categoría con fallback
+        prefix = getattr(empresa, 'categoria', 'default') or 'default'
+        templates = [f'empresa/{prefix}/resumen.html', 'empresa/resumen.html']
+        return render(request, templates, contexto)
     
     except Exception as exc:
         logger.exception(f"ERROR CRÍTICO en resumen: {exc}")

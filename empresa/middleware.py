@@ -34,14 +34,44 @@ class CurrentUserMiddleware(MiddlewareMixin):
             pass
         return None
 
+class EmpresaValidationMiddleware(MiddlewareMixin):
+    """Valida que usuarios autenticados tengan empresa asociada"""
+    
+    EXCLUDED_PATHS = [
+        '/admin/', '/api/', '/static/', '/media/',
+        '/app-beta-2024/login/', '/app-beta-2024/logout/',
+        '/app-beta-2024/registro/', '/health/'
+    ]
+    
+    def process_request(self, request):
+        if not request.user.is_authenticated:
+            return None
+        
+        # Excluir rutas específicas
+        if any(request.path.startswith(path) for path in self.EXCLUDED_PATHS):
+            return None
+        
+        # Superusuarios no necesitan empresa
+        if request.user.is_superuser:
+            return None
+        
+        # Validar empresa
+        empresa = getattr(request.user, 'empresa', None)
+        if not empresa:
+            logger.warning(f"Usuario {request.user.username} sin empresa intentó acceder a {request.path}")
+            from django.shortcuts import redirect
+            from django.contrib import messages
+            messages.error(request, 'Tu cuenta no tiene una empresa asociada. Contacta al administrador.')
+            return redirect('/admin/')
+        
+        return None
+
 class SecurityMiddleware(MiddlewareMixin):
     """Middleware de seguridad adicional"""
     
     def process_request(self, request):
-        # Rate limiting básico por IP
         ip = self.get_client_ip(request)
         
-        # Log de intentos sospechosos
         if self.is_suspicious_request(request):
             logger.warning(f"Solicitud sospechosa desde {ip}: {request.path}")
         
