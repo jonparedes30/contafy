@@ -178,8 +178,15 @@
       stockInfo.classList.toggle('text-danger', p.stock===0);
     }
 
-    // Calcular IVA
-    const tasaIva = parseFloat(inputTasaIva.value) || 15;
+    // Calcular IVA - usar valor del campo o default 15
+    const tasaIvaValue = parseFloat(inputTasaIva.value);
+    const tasaIva = isNaN(tasaIvaValue) ? 15 : tasaIvaValue;
+    
+    // Si el campo está vacío, establecer el default
+    if (!inputTasaIva.value || inputTasaIva.value === '0') {
+      inputTasaIva.value = '15';
+    }
+    
     const montoNeto = precioEditado * cantidad || 0;
     const iva = montoNeto * (tasaIva / 100);
     const total = montoNeto + iva;
