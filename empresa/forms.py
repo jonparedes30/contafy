@@ -421,12 +421,16 @@ class GastoForm(forms.ModelForm):
 class CompraForm(forms.ModelForm):
     class Meta:
         model = Compra
-        fields = ['producto', 'cantidad', 'monto', 'tipo_pago']
+        fields = ['proveedor_fk', 'producto', 'cantidad', 'monto', 'tipo_pago']
         widgets = {
+            'proveedor_fk': forms.Select(attrs={'class': 'form-select'}),
             'producto': forms.Select(attrs={'class': 'form-select'}),
             'cantidad': forms.NumberInput(attrs={'class': 'form-control'}),
             'monto': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01'}),
             'tipo_pago': forms.Select(attrs={'class': 'form-select'}),
+        }
+        labels = {
+            'proveedor_fk': 'Proveedor',
         }
     
     def __init__(self, *args, **kwargs):
@@ -434,6 +438,9 @@ class CompraForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         if self.empresa:
             self.fields['producto'].queryset = Producto.objects.filter(empresa=self.empresa)
+            from empresa.models import Proveedor
+            self.fields['proveedor_fk'].queryset = Proveedor.objects.filter(empresa=self.empresa, activo=True)
+        self.fields['proveedor_fk'].required = False
 
 class SaldosInicialesForm(forms.Form):
     producto = forms.ModelChoiceField(queryset=None, widget=forms.Select(attrs={'class': 'form-select'}))
