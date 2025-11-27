@@ -297,6 +297,12 @@ def resumen_financiero(request):
         ratio_costos = (totales['compras'] / totales['ventas'] * 100) if totales['ventas'] > 0 else 0
         logger.info(f"Indicadores OK")
         
+        logger.info("Generando análisis predictivo...")
+        from empresa.services.predicciones_service import PrediccionesAvanzadas
+        predicciones_service = PrediccionesAvanzadas(empresa)
+        analisis_predictivo = predicciones_service.predecir_flujo_caja(meses=6)
+        logger.info(f"Análisis predictivo OK: {analisis_predictivo.get('success', False)}")
+        
         logger.info("Preparando contexto...")
         contexto = {
             'ventas': totales.get('ventas', 0),
@@ -312,7 +318,7 @@ def resumen_financiero(request):
             'margen_bruto': round(float(margen_bruto), 2),
             'ratio_gastos_ventas': round(float(ratio_gastos_ventas), 2),
             'ratio_costos': round(float(ratio_costos), 2),
-            'analisis_predictivo': {}
+            'analisis_predictivo': analisis_predictivo if analisis_predictivo.get('success') else {}
         }
         logger.info("Contexto OK")
         

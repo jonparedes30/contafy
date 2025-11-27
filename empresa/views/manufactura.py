@@ -162,49 +162,46 @@ def listar_productos_manufacturados(request):
 @require_power('puede_editar_productos')
 def crear_producto_manufacturado(request):
     """Crear nuevo producto manufacturado con su receta"""
-    print(f"DEBUG - Vista llamada. Método: {request.method}")
+    from django.db import transaction
+    
     RecetaFormSet = formset_factory(RecetaProduccionForm, extra=3, can_delete=True, max_num=10)
     
     if request.method == 'POST':
         form = ProductoManufacturadoForm(request.POST, empresa=request.user.empresa)
         formset = RecetaFormSet(request.POST)
         
-        print(f"DEBUG - Form valid: {form.is_valid()}")
-        print(f"DEBUG - Formset valid: {formset.is_valid()}")
-        if not form.is_valid():
-            print(f"DEBUG - Form errors: {form.errors}")
-        if not formset.is_valid():
-            print(f"DEBUG - Formset errors: {formset.errors}")
-        
         if form.is_valid() and formset.is_valid():
             try:
-                # Guardar producto
-                print("DEBUG - Guardando producto...")
-                producto = form.save(commit=False)
-                producto.empresa = request.user.empresa
-                producto.creado_por = request.user
-                producto.save()
-                print(f"DEBUG - Producto guardado: {producto.id}")
-                
-                # Guardar receta
-                recetas_guardadas = 0
-                for receta_form in formset:
-                    if receta_form.cleaned_data and not receta_form.cleaned_data.get('DELETE', False):
-                        print(f"DEBUG - Guardando receta: {receta_form.cleaned_data}")
-                        receta = receta_form.save(commit=False)
-                        receta.producto = producto
-                        receta.save()
-                        recetas_guardadas += 1
-                        print(f"DEBUG - Receta guardada: {receta.id}")
-                
-                print(f"DEBUG - Total recetas guardadas: {recetas_guardadas}")
-                messages.success(request, 'Producto y receta creados exitosamente.')
-                return redirect('empresa:listar_productos_manufacturados')
+                with transaction.atomic():
+                    # Guardar producto
+                    producto = form.save(commit=False)
+                    producto.empresa = request.user.empresa
+                    producto.creado_por = request.user
+                    producto.save()
+                    
+                    # Guardar receta
+                    recetas_guardadas = 0
+                    for receta_form in formset:
+                        if receta_form.cleaned_data and not receta_form.cleaned_data.get('DELETE', False):
+                            materia_prima = receta_form.cleaned_data.get('materia_prima')
+                            cantidad = receta_form.cleaned_data.get('cantidad_necesaria')
+                            
+                            if materia_prima and cantidad:
+                                receta = receta_form.save(commit=False)
+                                receta.producto = producto
+                                receta.save()
+                                recetas_guardadas += 1
+                    
+                    messages.success(request, f'Producto "{producto.nombre}" y receta creados exitosamente.')
+                    return redirect('empresa:listar_productos_manufacturados')
             except Exception as e:
-                print(f"DEBUG - Error guardando: {e}")
-                messages.error(request, f'Error al guardar: {e}')
+                messages.error(request, f'Error al guardar: {str(e)}')
+        else:
+            if not form.is_valid():
+                messages.error(request, 'Por favor corrige los errores en el formulario del producto.')
+            if not formset.is_valid():
+                messages.error(request, 'Por favor corrige los errores en la receta.')
     else:
-        print("DEBUG - Creando formularios nuevos")
         form = ProductoManufacturadoForm(empresa=request.user.empresa)
         formset = RecetaFormSet()
         
