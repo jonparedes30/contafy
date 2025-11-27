@@ -419,14 +419,35 @@ class GastoForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
 
 class CompraForm(forms.ModelForm):
+    precio_unitario = forms.DecimalField(
+        required=False,
+        widget=forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01', 'id': 'precio_unitario'}),
+        label='Precio Unitario (sin IVA)'
+    )
+    monto_neto = forms.DecimalField(
+        required=False,
+        widget=forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01', 'id': 'id_monto_neto_compra', 'readonly': 'readonly'}),
+        label='Monto Neto'
+    )
+    tasa_iva = forms.DecimalField(
+        required=False,
+        initial=15,
+        widget=forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01', 'id': 'id_tasa_iva_compra'}),
+        label='Tasa IVA (%)'
+    )
+    iva = forms.DecimalField(
+        required=False,
+        widget=forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01', 'id': 'id_iva_compra', 'readonly': 'readonly'}),
+        label='IVA'
+    )
+    
     class Meta:
         model = Compra
-        fields = ['proveedor_fk', 'producto', 'cantidad', 'monto', 'tipo_pago']
+        fields = ['proveedor_fk', 'producto', 'cantidad', 'tipo_pago']
         widgets = {
             'proveedor_fk': forms.Select(attrs={'class': 'form-select'}),
             'producto': forms.Select(attrs={'class': 'form-select'}),
             'cantidad': forms.NumberInput(attrs={'class': 'form-control'}),
-            'monto': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01'}),
             'tipo_pago': forms.Select(attrs={'class': 'form-select'}),
         }
         labels = {
