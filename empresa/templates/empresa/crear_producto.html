@@ -234,6 +234,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // Función para calcular y mostrar margen
     function calcularMargen() {
+        if (!inputPrecio || !inputPvp) return;
         const precioCosto = parseFloat(inputPrecio.value) || 0;
         const precioVenta = parseFloat(inputPvp.value) || 0;
         
@@ -383,9 +384,11 @@ function escanearCodigo() {
         if (mockDetection) {
             // Generar código de barras simulado
             const mockBarcode = '123456789012' + Math.floor(Math.random() * 10);
-            result.style.display = 'block';
-            result.innerHTML = `<strong>Código detectado:</strong> ${mockBarcode}`;
-            inputCodigoBarras.value = mockBarcode;
+            if (result) {
+                result.style.display = 'block';
+                result.innerHTML = `<strong>Código detectado:</strong> ${mockBarcode}`;
+            }
+            if (inputCodigoBarras) inputCodigoBarras.value = mockBarcode;
             
             setTimeout(() => {
                 stopScanner();
@@ -511,8 +514,10 @@ function crearCategoria() {
         if (data.success) {
             // Agregar al select
             const select = document.getElementById('id_categoria');
-            const option = new Option(data.categoria.nombre, data.categoria.id, true, true);
-            select.add(option);
+            if (select) {
+                const option = new Option(data.categoria.nombre, data.categoria.id, true, true);
+                select.add(option);
+            }
             
             // Cerrar modal y limpiar
             bootstrap.Modal.getInstance(document.getElementById('categoriaModal')).hide();
