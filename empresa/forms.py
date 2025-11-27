@@ -366,6 +366,18 @@ class ProductoForm(forms.ModelForm):
             'precio_unitario': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01'}),
             'stock': forms.NumberInput(attrs={'class': 'form-control'}),
         }
+    
+    def __init__(self, *args, **kwargs):
+        self.empresa = kwargs.pop('empresa', None)
+        super().__init__(*args, **kwargs)
+    
+    def save(self, commit=True):
+        producto = super().save(commit=False)
+        if self.empresa:
+            producto.empresa = self.empresa
+        if commit:
+            producto.save()
+        return producto
 
 class VentaForm(forms.ModelForm):
     class Meta:
@@ -503,3 +515,71 @@ class ProveedorForm(forms.ModelForm):
         if commit:
             proveedor.save()
         return proveedor
+
+class ClienteForm(forms.ModelForm):
+    class Meta:
+        from .models import Cliente
+        model = Cliente
+        fields = ['nombre', 'tipo_documento', 'numero_documento', 'telefono', 'email', 'direccion', 'limite_credito']
+        widgets = {
+            'nombre': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Nombre completo del cliente'}),
+            'tipo_documento': forms.Select(attrs={'class': 'form-select'}),
+            'numero_documento': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Cédula o RUC'}),
+            'telefono': forms.TextInput(attrs={'class': 'form-control', 'placeholder': '0987654321'}),
+            'email': forms.EmailInput(attrs={'class': 'form-control', 'placeholder': 'cliente@email.com'}),
+            'direccion': forms.Textarea(attrs={'class': 'form-control', 'rows': 2, 'placeholder': 'Dirección del cliente'}),
+            'limite_credito': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01', 'value': '0'}),
+        }
+        labels = {
+            'nombre': 'Nombre Completo',
+            'tipo_documento': 'Tipo de Documento',
+            'numero_documento': 'Número de Documento',
+            'telefono': 'Teléfono',
+            'email': 'Correo Electrónico',
+            'direccion': 'Dirección',
+            'limite_credito': 'Límite de Crédito',
+        }
+    
+    def __init__(self, *args, **kwargs):
+        self.empresa = kwargs.pop('empresa', None)
+        super().__init__(*args, **kwargs)
+        self.fields['email'].required = False
+        self.fields['telefono'].required = False
+        self.fields['direccion'].required = False
+    
+    def save(self, commit=True):
+        cliente = super().save(commit=False)
+        if self.empresa:
+            cliente.empresa = self.empresa
+        if commit:
+            cliente.save()
+        return cliente
+
+class CategoriaProductoForm(forms.ModelForm):
+    class Meta:
+        from .models import CategoriaProducto
+        model = CategoriaProducto
+        fields = ['nombre', 'descripcion', 'activa']
+        widgets = {
+            'nombre': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ej: Electrónicos, Alimentos, etc.'}),
+            'descripcion': forms.Textarea(attrs={'class': 'form-control', 'rows': 2, 'placeholder': 'Descripción de la categoría (opcional)'}),
+            'activa': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+        }
+        labels = {
+            'nombre': 'Nombre de la Categoría',
+            'descripcion': 'Descripción',
+            'activa': 'Categoría Activa',
+        }
+    
+    def __init__(self, *args, **kwargs):
+        self.empresa = kwargs.pop('empresa', None)
+        super().__init__(*args, **kwargs)
+        self.fields['descripcion'].required = False
+    
+    def save(self, commit=True):
+        categoria = super().save(commit=False)
+        if self.empresa:
+            categoria.empresa = self.empresa
+        if commit:
+            categoria.save()
+        return categoria

@@ -1,0 +1,87 @@
+{#
+  Componente reutilizable para botones de acción (edit, delete, view)
+  
+  Uso:
+  {% include 'empresa/_components/action_buttons.html' with item=producto %}
+  
+  Parámetros:
+  - item: Objeto con atributo 'id' y opcionalmente 'get_edit_url', 'get_delete_url'
+  - edit_url: URL para editar (opcional, si no está en item)
+  - delete_url: URL para eliminar (opcional, si no está en item)
+  - view_url: URL para ver detalles (opcional)
+  - show_edit: Mostrar botón editar (default: true)
+  - show_delete: Mostrar botón eliminar (default: true)
+  - show_view: Mostrar botón ver (default: false)
+#}
+
+<div class="btn-group" role="group" aria-label="Acciones">
+  {% if show_view|default:False %}
+    <a href="{{ view_url|default:item.get_view_url }}" 
+       class="btn btn-sm btn-info" 
+       title="Ver detalles"
+       data-bs-toggle="tooltip">
+      <i class="bi bi-eye"></i>
+    </a>
+  {% endif %}
+
+  {% if show_edit|default:True %}
+    <a href="{{ edit_url|default:item.get_edit_url }}" 
+       class="btn btn-sm btn-warning" 
+       title="Editar"
+       data-bs-toggle="tooltip">
+      <i class="bi bi-pencil"></i>
+    </a>
+  {% endif %}
+
+  {% if show_delete|default:True %}
+    <button type="button" 
+            class="btn btn-sm btn-danger" 
+            title="Eliminar"
+            data-bs-toggle="tooltip"
+            onclick="confirmDelete(event, '{{ delete_url|default:item.get_delete_url }}')"
+            data-delete-url="{{ delete_url|default:item.get_delete_url }}">
+      <i class="bi bi-trash"></i>
+    </button>
+  {% endif %}
+</div>
+
+<script>
+function confirmDelete(event, deleteUrl) {
+  event.preventDefault();
+  
+  if (!confirm('¿Estás seguro de que deseas eliminar este elemento?')) {
+    return;
+  }
+
+  // Realizar DELETE request
+  fetch(deleteUrl, {
+    method: 'DELETE',
+    headers: {
+      'X-CSRFToken': document.querySelector('[name="csrfmiddlewaretoken"]')?.value || 
+                     window.CONTAFY_CSRF_TOKEN,
+      'Content-Type': 'application/json',
+    },
+    credentials: 'same-origin'
+  })
+  .then(response => {
+    if (response.ok) {
+      // Recargar página o remover fila
+      window.location.reload();
+    } else if (response.status === 403) {
+      alert('No tienes permisos para eliminar este elemento');
+    } else {
+      alert('Error al eliminar: ' + response.statusText);
+    }
+  })
+  .catch(error => {
+    console.error('Error:', error);
+    alert('Error de red al eliminar elemento');
+  });
+}
+
+// Inicializar tooltips de Bootstrap
+document.addEventListener('DOMContentLoaded', function() {
+  const tooltips = document.querySelectorAll('[data-bs-toggle="tooltip"]');
+  tooltips.forEach(el => new bootstrap.Tooltip(el));
+});
+</script>

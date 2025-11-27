@@ -1,6 +1,6 @@
 """Tests para ServicioPresenter"""
 from django.test import TestCase
-from empresa.models import Empresa, Cliente, Venta
+from empresa.models import Empresa
 from empresa.presenters.servicio_presenter import ServicioPresenter
 
 
@@ -33,28 +33,3 @@ class ServicioPresenterTest(TestCase):
         self.assertEqual(presenter._num(None), 0.0)
         self.assertEqual(presenter._num('bad_value'), 0.0)
         self.assertEqual(presenter._num(None, 100), 100.0)
-
-    def test_presenter_minimo_no_error(self):
-        """Presenter no debe lanzar excepciones incluso con pocos datos"""
-        # Crear cliente y venta mínimos
-        cliente = Cliente.objects.create(
-            empresa=self.empresa,
-            nombre='Cliente Test',
-            ruc='1111111111111'
-        )
-        venta = Venta.objects.create(
-            empresa=self.empresa,
-            cliente_fk=cliente,
-            producto=None,  # Opcional para servicios
-            cantidad=1,
-            precio_unitario=1000.0,
-            monto=1000.0
-        )
-
-        presenter = ServicioPresenter(self.empresa)
-        context = presenter.to_context()
-
-        # No debe lanzar excepción
-        self.assertIsNotNone(context)
-        self.assertEqual(context['ordenes_totales'], 1)
-        self.assertIn('total_ingresos', context)

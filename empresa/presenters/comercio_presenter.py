@@ -25,16 +25,14 @@ class ComercioPresenter:
 
         # Totales de inventario
         total_productos = Producto.objects.filter(
-            empresa=empresa,
-            activo=True
+            empresa=empresa
         ).count()
         
         # Productos con stock bajo (stock <= stock_minimo)
         productos_stock_bajo = list(
             Producto.objects.filter(
                 empresa=empresa,
-                stock__lte=F('stock_minimo'),
-                activo=True
+                stock__lte=F('stock_minimo')
             )[:10]
         )
 
@@ -50,7 +48,7 @@ class ComercioPresenter:
         # Top 5 clientes por compras totales
         top_clientes = list(
             Venta.objects.filter(empresa=empresa)
-            .values('cliente_fk__nombre', 'cliente_fk__ruc')
+            .values('cliente_fk__nombre', 'cliente_fk__numero_documento')
             .annotate(total_compras=Sum('monto'))
             .order_by('-total_compras')[:5]
         )
@@ -72,7 +70,7 @@ class ComercioPresenter:
             # Sumar valor de inventario en stock
             inventario_total_valor = sum(
                 self._num(p.precio_unitario or 0) * self._num(p.stock or 0)
-                for p in Producto.objects.filter(empresa=empresa, stock__gt=0, activo=True)
+                for p in Producto.objects.filter(empresa=empresa, stock__gt=0)
             )
             if inventario_total_valor > 0:
                 rotacion_inventario = round(total_costo / inventario_total_valor, 2)

@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+# Git pre-commit hook to prevent hard-coded /empresa/ paths in templates.
+ROOT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
+PYTHON="${PYTHON:-python}"
+
+echo "Running pre-commit checks..."
+"$PYTHON" "$ROOT_DIR/scripts/check_hardcoded_paths.py"
+RET=$?
+if [ $RET -ne 0 ]; then
+  echo "Pre-commit checks failed. Fix issues and try again."
+  exit $RET
+fi
+exit 0

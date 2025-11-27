@@ -41,8 +41,8 @@ class Command(BaseCommand):
         
         for modelo in modelos_niif:
             try:
-                from empresa.models import *
-                model_class = globals().get(modelo)
+                import empresa.models as models
+                model_class = getattr(models, modelo, None)
                 if model_class:
                     count = model_class.objects.count()
                     self.stdout.write(f'  ✅ {modelo}: {count} registros')

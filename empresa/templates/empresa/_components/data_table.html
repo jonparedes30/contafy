@@ -1,0 +1,132 @@
+{# 
+  Componente reutilizable para tablas de datos
+  
+  Uso:
+  {% load custom_filters %}
+  {% include 'empresa/_components/data_table.html' with items=productos columns=columns title="Productos" %}
+  
+  Parámetros:
+  - items: QuerySet o lista de objetos a mostrar
+  - columns: Lista de dicts con 'key' (atributo), 'label' (encabezado), 'sortable' (bool, opcional)
+  - title: Título de la tabla
+  - actions_url: URL base para acciones (edit/delete)
+  - search_placeholder: Placeholder para búsqueda (default: "Buscar...")
+  - empty_message: Mensaje cuando no hay datos
+#}
+
+{% load custom_filters %}
+
+<div class="card border-0 shadow-sm mb-4">
+  <div class="card-header bg-light d-flex justify-content-between align-items-center">
+    <h5 class="mb-0">
+      <i class="bi bi-table"></i> {{ title }}
+    </h5>
+    <div class="input-group" style="max-width: 250px;">
+      <span class="input-group-text"><i class="bi bi-search"></i></span>
+      <input type="text" 
+             class="form-control" 
+             placeholder="{{ search_placeholder|default:'Buscar...' }}"
+             id="table-search-{{ title|slugify }}"
+             onkeyup="filterTable(this, '#table-{{ title|slugify }}')">
+    </div>
+  </div>
+
+  <div class="table-responsive">
+    <table class="table table-hover mb-0" id="table-{{ title|slugify }}">
+      <thead class="table-light">
+        <tr>
+          {% for column in columns %}
+            <th class="{% if column.sortable %}cursor-pointer{% endif %}">
+              {% if column.sortable %}
+                <a href="#" class="text-decoration-none text-dark"
+                   onclick="sortTable(event, this, '{{ column.key }}')">
+                  {{ column.label }}
+                  <i class="bi bi-arrow-down-up ms-1" style="font-size: 0.8rem;"></i>
+                </a>
+              {% else %}
+                {{ column.label }}
+              {% endif %}
+            </th>
+          {% endfor %}
+          <th style="width: 100px;">Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% if items %}
+          {% for item in items %}
+            <tr>
+              {% for column in columns %}
+                <td>
+                  {% with value=item|dict_lookup:column.key %}
+                    {% if column.format == 'currency' %}
+                      ${{ value|floatformat:2 }}
+                    {% elif column.format == 'date' %}
+                      {{ value|date:"d/m/Y" }}
+                    {% elif column.format == 'boolean' %}
+                      {% if value %}
+                        <span class="badge bg-success">Sí</span>
+                      {% else %}
+                        <span class="badge bg-danger">No</span>
+                      {% endif %}
+                    {% else %}
+                      {{ value|truncatewords:10 }}
+                    {% endif %}
+                  {% endwith %}
+                </td>
+              {% endfor %}
+              <td>
+                {% include 'empresa/_components/action_buttons.html' with item=item %}
+              </td>
+            </tr>
+          {% endfor %}
+        {% else %}
+          <tr>
+            <td colspan="{{ columns|length|add:1 }}" class="text-center py-4 text-muted">
+              <i class="bi bi-inbox" style="font-size: 2rem;"></i>
+              <p class="mt-2">{{ empty_message|default:"No hay datos para mostrar" }}</p>
+            </td>
+          </tr>
+        {% endif %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+function filterTable(input, tableSelector) {
+  const filter = input.value.toLowerCase();
+  const table = document.querySelector(tableSelector);
+  const rows = table.querySelectorAll('tbody tr');
+
+  rows.forEach(row => {
+    const text = row.textContent.toLowerCase();
+    row.style.display = text.includes(filter) ? '' : 'none';
+  });
+}
+
+function sortTable(e, link, columnKey) {
+  e.preventDefault();
+  // Implementación básica de ordenamiento
+  const table = link.closest('table');
+  const rows = Array.from(table.querySelectorAll('tbody tr'));
+  
+  rows.sort((a, b) => {
+    const aValue = a.textContent;
+    const bValue = b.textContent;
+    return aValue.localeCompare(bValue);
+  });
+
+  const tbody = table.querySelector('tbody');
+  rows.forEach(row => tbody.appendChild(row));
+}
+</script>
+
+<style>
+.cursor-pointer {
+  cursor: pointer;
+}
+
+.cursor-pointer th a:hover {
+  color: #0066cc !important;
+}
+</style>
