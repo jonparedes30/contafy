@@ -76,61 +76,37 @@
     <div class="mb-3">
       {{ form.precio_unitario.label_tag }}
       {{ form.precio_unitario }}
+      <div class="form-text">Precio de compra por unidad (sin IVA)</div>
     </div>
 
-    <!-- Calculadora de IVA -->
+    <!-- Cálculo Automático de IVA -->
     <div class="mb-3">
       <div class="card bg-light">
         <div class="card-body">
-          <h6 class="text-primary">🧮 Cálculo de IVA</h6>
-          <div class="form-text mb-3">El precio unitario es sin IVA. Aquí puedes ver cuánto pagarás en total:</div>
-          
-          <div class="row align-items-end">
-            <div class="col-md-3">
-              <label for="porcentajeIva" class="form-label">% IVA:</label>
-              <div class="input-group">
-                <input type="number" id="porcentajeIva" class="form-control" value="15" step="0.01" min="0" max="100">
-                <span class="input-group-text">%</span>
-              </div>
+          <h6 class="text-primary mb-3">💰 Cálculo de IVA</h6>
+          <div class="row mb-3">
+            <div class="col-md-6">
+              <label for="id_monto_neto_compra" class="form-label">Subtotal (sin IVA):</label>
+              {{ form.monto_neto }}
+              <div class="form-text">Precio × Cantidad</div>
             </div>
-            <div class="col-md-3">
-              <label class="form-label">IVA a pagar:</label>
-              <div class="h5 text-info" id="ivaCalculadoCompra">$0.00</div>
-            </div>
-            <div class="col-md-3">
-              <label class="form-label">Total que pagarás:</label>
-              <div class="h5 text-warning" id="totalConIvaCompra">$0.00</div>
-            </div>
-            <div class="col-md-3">
-              <small class="text-muted">Fórmula: Total = Precio × (1 + %IVA/100)</small>
+            <div class="col-md-6">
+              <label for="id_tasa_iva_compra" class="form-label">Tasa IVA (%):</label>
+              {{ form.tasa_iva }}
+              <div class="form-text">Default: 15%</div>
             </div>
           </div>
-        </div>
-      </div>
-    </div>
-    
-    <!-- Campos de IVA -->
-    <div id="ivaDetailsCompra">
-      <div class="card card-body mb-3">
-        <h6 class="text-info mb-3">💰 Detalles del IVA</h6>
-        <div class="row mb-3">
-          <div class="col-md-6">
-            <label for="id_monto_neto_compra" class="form-label">Monto Neto:</label>
-            {{ form.monto_neto }}
-          </div>
-          <div class="col-md-6">
-            <label for="id_tasa_iva_compra" class="form-label">Tasa IVA (%):</label>
-            {{ form.tasa_iva }}
-          </div>
-        </div>
-        <div class="row">
-          <div class="col-md-6">
-            <label for="id_iva_compra" class="form-label">IVA:</label>
-            {{ form.iva }}
-          </div>
-          <div class="col-md-6">
-            <label for="id_monto" class="form-label">Total:</label>
-            <input type="number" id="id_monto_total_compra" name="monto" class="form-control" step="0.01" readonly>
+          <div class="row">
+            <div class="col-md-6">
+              <label for="id_iva_compra" class="form-label">IVA a pagar:</label>
+              {{ form.iva }}
+              <div class="form-text">Subtotal × (Tasa / 100)</div>
+            </div>
+            <div class="col-md-6">
+              <label for="id_monto_total_compra" class="form-label"><strong>Total a pagar:</strong></label>
+              <input type="number" id="id_monto_total_compra" name="monto" class="form-control" step="0.01" readonly>
+              <div class="form-text"><strong>Subtotal + IVA</strong></div>
+            </div>
           </div>
         </div>
       </div>
@@ -203,22 +179,14 @@
     }
 
     // Calcular IVA
-    const checkboxIvaCompra = document.getElementById('incluirIvaCompra');
-    const ivaDetailsCompra = document.getElementById('ivaDetailsCompra');
-    const incluirIva = checkboxIvaCompra ? checkboxIvaCompra.checked : true;
-    const tasaIva = incluirIva ? (parseFloat(inputTasaIva.value) || 12) : 0;
+    const tasaIva = parseFloat(inputTasaIva.value) || 15;
     const montoNeto = precioEditado * cantidad || 0;
-    const iva = incluirIva ? montoNeto * (tasaIva / 100) : 0;
+    const iva = montoNeto * (tasaIva / 100);
     const total = montoNeto + iva;
     
     inputMontoNeto.value = montoNeto.toFixed(2);
     inputIva.value = iva.toFixed(2);
     inputTotal.value = total.toFixed(2);
-    
-    // Mostrar/ocultar detalles IVA
-    if (ivaDetailsCompra) {
-      ivaDetailsCompra.style.display = incluirIva ? 'block' : 'none';
-    }
   }
 
   selectProd.addEventListener('change', actualizarCompra);
@@ -226,35 +194,6 @@
   inputPrecio.addEventListener('input', actualizarCompra);
   inputTasaIva.addEventListener('input', actualizarCompra);
   
-  // Manejar calculadora IVA
-  document.addEventListener('DOMContentLoaded', function() {
-    const porcentajeIva = document.getElementById('porcentajeIva');
-    const ivaCalculadoCompra = document.getElementById('ivaCalculadoCompra');
-    const totalConIvaCompra = document.getElementById('totalConIvaCompra');
-    const inputPrecioUnitario = document.getElementById('id_precio_unitario');
-    
-    // Calculadora de IVA desde precio unitario
-    function calcularIvaCompra() {
-      const precioUnitario = parseFloat(inputPrecioUnitario.value) || 0;
-      const porcentaje = parseFloat(porcentajeIva.value);
-      
-      if (precioUnitario > 0) {
-        const iva = precioUnitario * (porcentaje / 100);
-        const total = precioUnitario + iva;
-        
-        ivaCalculadoCompra.textContent = '$' + iva.toFixed(2);
-        totalConIvaCompra.textContent = '$' + total.toFixed(2);
-      } else {
-        ivaCalculadoCompra.textContent = '$0.00';
-        totalConIvaCompra.textContent = '$0.00';
-      }
-    }
-    
-    inputPrecioUnitario.addEventListener('input', calcularIvaCompra);
-    porcentajeIva.addEventListener('input', calcularIvaCompra);
-    
-
-  });
   document.addEventListener('DOMContentLoaded', actualizarCompra);
   
   // Mostrar/ocultar días de crédito según tipo de pago
