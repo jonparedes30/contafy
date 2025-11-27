@@ -361,21 +361,14 @@ class PrediccionesAvanzadas:
     def _obtener_saldo_actual(self):
         """Obtiene saldo actual de caja"""
         try:
-            cuenta_caja = CuentaContable.objects.filter(
-                empresa=self.empresa,
-                nombre__icontains='caja'
-            ).first()
-            
-            if cuenta_caja:
-                return float(cuenta_caja.valor)
-            else:
-                # Calcular saldo aproximado
-                ingresos_total = Venta.objects.filter(empresa=self.empresa).aggregate(
-                    total=Sum('monto'))['total'] or 0
-                egresos_total = Gasto.objects.filter(empresa=self.empresa).aggregate(
-                    total=Sum('monto'))['total'] or 0
-                return float(ingresos_total - egresos_total)
-                
+            # Calcular saldo aproximado desde movimientos
+            ingresos_total = Venta.objects.filter(empresa=self.empresa).aggregate(
+                total=Sum('monto'))['total'] or 0
+            egresos_total = Gasto.objects.filter(empresa=self.empresa).aggregate(
+                total=Sum('monto'))['total'] or 0
+            compras_total = Compra.objects.filter(empresa=self.empresa).aggregate(
+                total=Sum('monto'))['total'] or 0
+            return float(ingresos_total - egresos_total - compras_total)
         except:
             return 1000  # Saldo por defecto
     
