@@ -396,6 +396,12 @@ class VentaForm(forms.ModelForm):
             'precio_unitario': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01'}),
             'tipo_pago': forms.Select(attrs={'class': 'form-select'}),
         }
+    
+    def __init__(self, *args, **kwargs):
+        self.empresa = kwargs.pop('empresa', None)
+        super().__init__(*args, **kwargs)
+        if self.empresa:
+            self.fields['producto'].queryset = Producto.objects.filter(empresa=self.empresa)
 
 class GastoForm(forms.ModelForm):
     class Meta:
@@ -407,6 +413,10 @@ class GastoForm(forms.ModelForm):
             'categoria': forms.Select(attrs={'class': 'form-select'}),
             'tipo_pago': forms.Select(attrs={'class': 'form-select'}),
         }
+    
+    def __init__(self, *args, **kwargs):
+        self.empresa = kwargs.pop('empresa', None)
+        super().__init__(*args, **kwargs)
 
 class CompraForm(forms.ModelForm):
     class Meta:
@@ -418,6 +428,12 @@ class CompraForm(forms.ModelForm):
             'monto': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01'}),
             'tipo_pago': forms.Select(attrs={'class': 'form-select'}),
         }
+    
+    def __init__(self, *args, **kwargs):
+        self.empresa = kwargs.pop('empresa', None)
+        super().__init__(*args, **kwargs)
+        if self.empresa:
+            self.fields['producto'].queryset = Producto.objects.filter(empresa=self.empresa)
 
 class SaldosInicialesForm(forms.Form):
     producto = forms.ModelChoiceField(queryset=None, widget=forms.Select(attrs={'class': 'form-select'}))
