@@ -440,10 +440,15 @@ class CompraForm(forms.ModelForm):
         widget=forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01', 'id': 'id_iva_compra', 'readonly': 'readonly'}),
         label='IVA'
     )
+    monto = forms.DecimalField(
+        required=False,
+        widget=forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01'}),
+        label='Total'
+    )
     
     class Meta:
         model = Compra
-        fields = ['proveedor_fk', 'producto', 'cantidad', 'tipo_pago']
+        fields = ['proveedor_fk', 'producto', 'cantidad', 'tipo_pago', 'monto']
         widgets = {
             'proveedor_fk': forms.Select(attrs={'class': 'form-select'}),
             'producto': forms.Select(attrs={'class': 'form-select'}),
