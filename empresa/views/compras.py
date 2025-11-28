@@ -115,11 +115,71 @@ def listar_compras(request):
     total_compras = compras.aggregate(total=Sum('monto'))['total'] or 0
     total_transacciones = compras.count()
     promedio_compra = compras.aggregate(promedio=Avg('monto'))['promedio'] or 0
+    
+    es_propietario = not hasattr(request.user, 'poderes') or request.user.is_superuser
 
     contexto = {
         'compras': compras,
         'total_compras': total_compras,
         'total_transacciones': total_transacciones,
         'promedio_compra': promedio_compra,
+        'es_propietario': es_propietario,
     }
     return render(request, 'empresa/listar_compra.html', contexto)
+
+@login_required
+def editar_compra(request, compra_id):
+    from django.shortcuts import get_object_or_404
+    
+    if hasattr(request.user, 'poderes') and not request.user.is_superuser:
+        messages.error(request, 'Solo el propietario puede editar compras.')
+        return redirect('empresa:listar_compras')
+    
+    empresa = request.user.empresa
+    compra = get_object_or_404(Compra, id=compra_id, empresa=empresa)
+    
+    if request.method == 'POST':
+        try:
+            with transaction.atomic():
+                compra.producto.stock -= compra.cantidad
+                
+                compra.cantidad = int(request.POST.get('cantidad', compra.cantidad))
+                compra.monto = float(request.POST.get('monto', compra.monto))
+                
+                compra.producto.stock += compra.cantidad
+                compra.producto.save()
+                compra.save()
+                
+                messages.success(request, 'Compra actualizada correctamente.')
+                return redirect('empresa:listar_compras')
+        except Exception as e:
+            messages.error(request, f'Error al actualizar compra: {str(e)}')
+    
+    context = {'compra': compra}
+    return render(request, 'empresa/editar_compra.html', context)
+
+@login_required
+def eliminar_compra(request, compra_id):
+    from django.shortcuts import get_object_or_404
+    from django.http import JsonResponse
+    
+    if hasattr(request.user, 'poderes') and not request.user.is_superuser:
+        return JsonResponse({'error': 'Sin permisos'}, status=403)
+    
+    if request.method == 'POST':
+        try:
+            empresa = request.user.empresa
+            compra = get_object_or_404(Compra, id=compra_id, empresa=empresa)
+            
+            producto = compra.producto
+            producto.stock -= compra.cantidad
+            producto.save()
+            
+            compra.delete()
+            
+            messages.success(request, 'Compra eliminada correctamente.')
+            return JsonResponse({'success': True})
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=500)
+    
+    return JsonResponse({'error': 'Método no permitido'}, status=405)

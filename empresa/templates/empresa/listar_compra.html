@@ -83,6 +83,7 @@
                 <th>IVA</th>
                 <th>Total</th>
                 <th>Tipo Pago</th>
+                {% if es_propietario %}<th>Acciones</th>{% endif %}
             </tr>
         </thead>
         <tbody>
@@ -109,15 +110,61 @@
                         <span class="badge bg-warning">{{ compra.get_tipo_pago_display }}</span>
                     {% endif %}
                 </td>
+                {% if es_propietario %}
+                <td>
+                    <a href="{% url 'empresa:editar_compra' compra.id %}" class="btn btn-sm btn-warning" title="Editar"><i class="bi bi-pencil"></i></a>
+                    <button onclick="eliminarCompra({{ compra.id }})" class="btn btn-sm btn-danger" title="Eliminar"><i class="bi bi-trash"></i></button>
+                </td>
+                {% endif %}
             </tr>
             {% empty %}
-            <tr><td colspan="9" style="text-align:center; color:#888;">No hay compras registradas o no hay resultados para los filtros seleccionados.</td></tr>
+            <tr><td colspan="{% if es_propietario %}10{% else %}9{% endif %}" style="text-align:center; color:#888;">No hay compras registradas o no hay resultados para los filtros seleccionados.</td></tr>
             {% endfor %}
         </tbody>
     </table>
 </div>
 
 <script>
+function eliminarCompra(id) {
+    if (!confirm('¿Estás seguro de eliminar esta compra?')) return;
+    
+    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || getCookie('csrftoken');
+    
+    fetch(`/app-beta-2024/compra/${id}/eliminar/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': csrfToken
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        } else {
+            alert('Error: ' + (data.error || 'No se pudo eliminar'));
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error al eliminar compra');
+    });
+}
+
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
 function exportarExcel() {
     // Construir URL con los filtros actuales
     const url = new URL('{% url "empresa:exportar_excel_compras" %}', window.location.origin);

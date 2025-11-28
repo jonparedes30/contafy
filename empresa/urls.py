@@ -13,8 +13,8 @@ from .views.empresa import crear_empresa, listar_empresas, gestion_poderes_emple
 from .views.entrada_beta import entrada_beta
 from .views.productos import crear_producto, listar_productos, editar_producto, eliminar_producto, producto_info_api
 from .views.ventas import crear_venta, listar_ventas, crear_venta_multiple, editar_venta, eliminar_venta
-from .views.compras import crear_compra, listar_compras
-from .views.gastos import crear_gasto, listar_gastos
+from .views.compras import crear_compra, listar_compras, editar_compra, eliminar_compra
+from .views.gastos import crear_gasto, listar_gastos, editar_gasto, eliminar_gasto
 from .views.capital import crear_capital, listar_capital
 from .views.cuentas_contables import crear_cuenta_contable, listar_cuentas_contables
 from .views.dashboard import dashboard
@@ -139,10 +139,14 @@ urlpatterns = [
     # URLs de compras
     path('compra/crear/', crear_compra, name='crear_compra'),
     path('compra/listar/', listar_compras, name='listar_compras'),
+    path('compra/<int:compra_id>/editar/', editar_compra, name='editar_compra'),
+    path('compra/<int:compra_id>/eliminar/', eliminar_compra, name='eliminar_compra'),
     
     # URLs de gastos
     path('gasto/crear/', crear_gasto, name='crear_gasto'),
     path('gasto/listar/', listar_gastos, name='listar_gastos'),
+    path('gasto/<int:gasto_id>/editar/', editar_gasto, name='editar_gasto'),
+    path('gasto/<int:gasto_id>/eliminar/', eliminar_gasto, name='eliminar_gasto'),
     
     # URLs de capital
     path('capital/registrar/', crear_capital, name='registrar_capital'),

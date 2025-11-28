@@ -58,10 +58,62 @@ def listar_gastos(request):
     total_transacciones = gastos.count()
     promedio_gasto = gastos.aggregate(promedio=Avg('monto'))['promedio'] or 0
 
+    es_propietario = not hasattr(request.user, 'poderes') or request.user.is_superuser
+    
     contexto = {
         'gastos': gastos,
         'total_gastos': total_gastos,
         'total_transacciones': total_transacciones,
         'promedio_gasto': promedio_gasto,
+        'es_propietario': es_propietario,
     }
     return render(request, 'empresa/listar_gastos.html', contexto)
+
+@login_required
+def editar_gasto(request, gasto_id):
+    from django.shortcuts import get_object_or_404
+    from django.contrib import messages
+    
+    if hasattr(request.user, 'poderes') and not request.user.is_superuser:
+        messages.error(request, 'Solo el propietario puede editar gastos.')
+        return redirect('empresa:listar_gastos')
+    
+    empresa = request.user.empresa
+    gasto = get_object_or_404(Gasto, id=gasto_id, empresa=empresa)
+    
+    if request.method == 'POST':
+        try:
+            gasto.descripcion = request.POST.get('descripcion', gasto.descripcion)
+            gasto.monto = float(request.POST.get('monto', gasto.monto))
+            gasto.categoria = request.POST.get('categoria', gasto.categoria)
+            gasto.save()
+            
+            messages.success(request, 'Gasto actualizado correctamente.')
+            return redirect('empresa:listar_gastos')
+        except Exception as e:
+            messages.error(request, f'Error al actualizar gasto: {str(e)}')
+    
+    context = {'gasto': gasto}
+    return render(request, 'empresa/editar_gasto.html', context)
+
+@login_required
+def eliminar_gasto(request, gasto_id):
+    from django.shortcuts import get_object_or_404
+    from django.http import JsonResponse
+    from django.contrib import messages
+    
+    if hasattr(request.user, 'poderes') and not request.user.is_superuser:
+        return JsonResponse({'error': 'Sin permisos'}, status=403)
+    
+    if request.method == 'POST':
+        try:
+            empresa = request.user.empresa
+            gasto = get_object_or_404(Gasto, id=gasto_id, empresa=empresa)
+            gasto.delete()
+            
+            messages.success(request, 'Gasto eliminado correctamente.')
+            return JsonResponse({'success': True})
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=500)
+    
+    return JsonResponse({'error': 'Método no permitido'}, status=405)
