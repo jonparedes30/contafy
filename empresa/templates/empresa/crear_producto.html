@@ -103,6 +103,10 @@
                     <div class="row align-items-end">
                         <div class="col-md-3">
                             <label for="porcentajeIvaProducto" class="form-label">% IVA:</label>
+                            <div class="btn-group w-100 mb-2" role="group">
+                                <button type="button" class="btn btn-sm btn-outline-primary" onclick="setTasaIvaProducto(0)">0%</button>
+                                <button type="button" class="btn btn-sm btn-outline-primary active" onclick="setTasaIvaProducto(15)">15%</button>
+                            </div>
                             <div class="input-group">
                                 <input type="number" id="porcentajeIvaProducto" class="form-control" value="15" step="0.01" min="0" max="100">
                                 <span class="input-group-text">%</span>
@@ -216,6 +220,15 @@ document.addEventListener('DOMContentLoaded', function () {
     
     inputPrecioUnitario.addEventListener('input', calcularIvaProducto);
     porcentajeIvaProducto.addEventListener('input', calcularIvaProducto);
+    
+    // Función para establecer tasa IVA con botones
+    window.setTasaIvaProducto = function(tasa) {
+        porcentajeIvaProducto.value = tasa;
+        calcularIvaProducto();
+        // Actualizar botones activos
+        document.querySelectorAll('.btn-group button').forEach(btn => btn.classList.remove('active'));
+        event.target.classList.add('active');
+    };
     
 
     

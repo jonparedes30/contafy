@@ -249,6 +249,10 @@
                                     </div>
                                     <div class="col-6">
                                         <label for="id_tasa_iva" class="form-label">Tasa IVA (%):</label>
+                                        <div class="btn-group w-100 mb-2" role="group">
+                                            <button type="button" class="btn btn-sm btn-outline-primary" onclick="setTasaIvaVenta(0)">0%</button>
+                                            <button type="button" class="btn btn-sm btn-outline-primary" onclick="setTasaIvaVenta(15)">15%</button>
+                                        </div>
                                         {{ form.tasa_iva }}
                                     </div>
                                 </div>
@@ -346,7 +350,7 @@
         const cantidad = parseFloat(inputCantidad.value) || 0;
         const precio   = parseFloat(inputPrecio.value) || 0;
         const incluirIva = checkboxIva.checked;
-        const tasaIva  = parseFloat(inputTasaIva.value) || 15;
+        const tasaIva  = parseFloat(inputTasaIva.value) || 0;
         
         const montoNeto = cantidad * precio;
         const iva = incluirIva ? montoNeto * (tasaIva / 100) : 0;
@@ -364,14 +368,27 @@
         // Actualizar tasa IVA a 0 si no incluye IVA
         if (!incluirIva) {
             inputTasaIva.value = '0';
-        } else if (inputTasaIva.value === '0') {
-            inputTasaIva.value = '15';
         }
         
         // Mostrar/ocultar detalles IVA
         if (ivaDetails) {
             ivaDetails.style.display = incluirIva ? 'block' : 'none';
         }
+    }
+    
+    function setTasaIvaVenta(tasa) {
+        inputTasaIva.value = tasa;
+        if (tasa > 0) {
+            checkboxIva.checked = true;
+        }
+        if (modoSimple.checked) {
+            calcularIVA();
+        } else {
+            calcularTotalMultiple();
+        }
+        // Actualizar botones activos
+        document.querySelectorAll('#ivaDetails .btn-group button').forEach(btn => btn.classList.remove('active'));
+        event.target.classList.add('active');
     }
 
     function actualizarVenta() {

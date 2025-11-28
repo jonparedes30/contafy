@@ -92,8 +92,11 @@
             </div>
             <div class="col-md-6">
               <label for="id_tasa_iva_compra" class="form-label">Tasa IVA (%):</label>
+              <div class="btn-group w-100 mb-2" role="group">
+                <button type="button" class="btn btn-sm btn-outline-primary" onclick="setTasaIva(0)">0%</button>
+                <button type="button" class="btn btn-sm btn-outline-primary active" onclick="setTasaIva(15)">15%</button>
+              </div>
               {{ form.tasa_iva }}
-              <div class="form-text">Default: 15%</div>
             </div>
           </div>
           <div class="row">
@@ -183,7 +186,7 @@
     const tasaIva = isNaN(tasaIvaValue) ? 15 : tasaIvaValue;
     
     // Si el campo está vacío, establecer el default
-    if (!inputTasaIva.value || inputTasaIva.value === '0') {
+    if (!inputTasaIva.value) {
       inputTasaIva.value = '15';
     }
     
@@ -194,6 +197,14 @@
     inputMontoNeto.value = montoNeto.toFixed(2);
     inputIva.value = iva.toFixed(2);
     inputTotal.value = total.toFixed(2);
+  }
+  
+  function setTasaIva(tasa) {
+    inputTasaIva.value = tasa;
+    actualizarCompra();
+    // Actualizar botones activos
+    document.querySelectorAll('.btn-group button').forEach(btn => btn.classList.remove('active'));
+    event.target.classList.add('active');
   }
 
   selectProd.addEventListener('change', actualizarCompra);
