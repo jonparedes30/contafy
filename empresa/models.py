@@ -544,7 +544,7 @@ class Compra(AuditModel):
     def save(self, *args, **kwargs):
         """Calcular IVA y crear asientos contables automáticamente"""
         es_nuevo = not self.pk
-        # Calcular IVA usando Decimal
+        # Calcular IVA usando Decimal solo si no se proporcionaron los valores
         from decimal import Decimal, ROUND_HALF_UP
         one = Decimal('1')
         hundred = Decimal('100')
@@ -554,7 +554,11 @@ class Compra(AuditModel):
         except Exception:
             tasa = Decimal(str(self.tasa_iva)) / hundred
 
-        if self.monto_neto > 0 and (self.iva == 0 or self.iva is None):
+        # Solo calcular si no se proporcionaron los valores calculados
+        if self.monto_neto > 0 and self.monto > 0:
+            # Ya vienen calculados del formulario, no recalcular
+            pass
+        elif self.monto_neto > 0 and (self.iva == 0 or self.iva is None):
             self.iva = (Decimal(self.monto_neto) * tasa).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
             self.monto = Decimal(self.monto_neto) + self.iva
         elif self.monto > 0 and (self.monto_neto == 0 or self.monto_neto is None):
