@@ -107,7 +107,7 @@
             </div>
             <div class="col-md-6">
               <label for="id_monto_total_compra" class="form-label"><strong>Total a pagar:</strong></label>
-              <input type="number" id="id_monto_total_compra" name="monto" class="form-control" step="0.01" readonly>
+              {{ form.monto }}
               <div class="form-text"><strong>Subtotal + IVA</strong></div>
             </div>
           </div>
@@ -192,6 +192,12 @@
     inputMontoNeto.value = montoNeto.toFixed(2);
     inputIva.value = iva.toFixed(2);
     inputTotal.value = total.toFixed(2);
+    
+    // Asegurar que el campo hidden monto también se actualice
+    const hiddenMonto = document.getElementById('id_monto');
+    if (hiddenMonto) {
+      hiddenMonto.value = total.toFixed(2);
+    }
   }
   
   function setTasaIva(tasa) {
