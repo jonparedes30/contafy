@@ -1,4 +1,15 @@
 # Render Blueprint para CONTAFY - Academia Duolingo
+
+# IMPORTANTE: La base de datos debe crearse PRIMERO
+databases:
+  - name: contafy-db
+    databaseName: contafy
+    user: contafy
+    plan: starter
+    region: oregon
+    # PostgreSQL 15 es la versión recomendada
+    ipAllowList: []  # Permite todas las IPs por defecto
+
 services:
   - type: web
     name: contafy
@@ -8,6 +19,9 @@ services:
     dockerfilePath: ./Dockerfile
     healthCheckPath: /health/
     autoDeploy: true
+    # Esperar a que la base de datos esté lista
+    buildCommand: ./build.sh
+    startCommand: gunicorn core.wsgi:application --bind 0.0.0.0:$PORT --workers 2 --timeout 120
     envVars:
       - key: SECRET_KEY
         generateValue: true
@@ -33,10 +47,5 @@ services:
         value: "600"
       - key: LOG_LEVEL
         value: "INFO"
-
-databases:
-  - name: contafy-db
-    databaseName: contafy
-    user: contafy
-    plan: starter
-    region: oregon
+      - key: PYTHONUNBUFFERED
+        value: "1"

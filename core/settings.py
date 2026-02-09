@@ -4,8 +4,6 @@ from pathlib import Path
 import os
 import secrets
 
-
-
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 # Inicializar entorno
@@ -25,20 +23,24 @@ if not SECRET_KEY:
 
 ALLOWED_HOSTS = env.list('ALLOWED_HOSTS', default=['localhost', '127.0.0.1', '.herokuapp.com', '.onrender.com'])
 
+# Detectar si estamos en Render
+IS_RENDER = 'RENDER' in os.environ or 'RAILWAY_ENVIRONMENT' in os.environ
+
 # Configuración de seguridad
 SECURE_BROWSER_XSS_FILTER = True
 SECURE_CONTENT_TYPE_NOSNIFF = True
 X_FRAME_OPTIONS = 'DENY'
-CSRF_COOKIE_SECURE = not DEBUG
+CSRF_COOKIE_SECURE = not DEBUG or IS_RENDER
 CSRF_COOKIE_SAMESITE = 'Lax'
 CSRF_COOKIE_HTTPONLY = False
 CSRF_USE_SESSIONS = False
 CSRF_COOKIE_NAME = 'csrftoken'
-SESSION_COOKIE_SECURE = not DEBUG
+SECURE_SSL_REDIRECT = IS_RENDER and not DEBUG
+SESSION_COOKIE_SECURE = not DEBUG or IS_RENDER
 SESSION_COOKIE_SAMESITE = 'Lax'
-SECURE_HSTS_SECONDS = 31536000 if not DEBUG else 0
-SECURE_HSTS_INCLUDE_SUBDOMAINS = True
-SECURE_HSTS_PRELOAD = True
+SECURE_HSTS_SECONDS = 31536000 if (not DEBUG or IS_RENDER) else 0
+SECURE_HSTS_INCLUDE_SUBDOMAINS = not DEBUG
+SECURE_HSTS_PRELOAD = not DEBUG
 
 # Aplicaciones instaladas
 INSTALLED_APPS = [
@@ -92,10 +94,15 @@ WSGI_APPLICATION = 'core.wsgi.application'
 # Base de datos: Postgres en producción, SQLite en desarrollo
 DATABASE_URL = env('DATABASE_URL', default=None)
 if DATABASE_URL:
+    import dj_database_url
     DATABASES = {
-        'default': env.db('DATABASE_URL')
+        'default': dj_database_url.config(
+            default=DATABASE_URL,
+            conn_max_age=env.int('CONN_MAX_AGE', default=600),
+            conn_health_checks=True,
+            ssl_require=True if 'RENDER' in os.environ else False,
+        )
     }
-    DATABASES['default']['CONN_MAX_AGE'] = env.int('CONN_MAX_AGE', default=600)
 else:
     DATABASES = {
         'default': {
