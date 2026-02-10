@@ -13,15 +13,12 @@ databases:
 services:
   - type: web
     name: contafy
-    env: docker
+    env: python
     plan: starter
     region: oregon
-    dockerfilePath: ./Dockerfile
     healthCheckPath: /health/
     autoDeploy: true
-    # Esperar a que la base de datos esté lista
-    buildCommand: ./build.sh
-    startCommand: gunicorn core.wsgi:application --bind 0.0.0.0:$PORT --workers 2 --timeout 120
+    buildCommand: pip install -r requirements.txt
     envVars:
       - key: SECRET_KEY
         generateValue: true

@@ -24,6 +24,5 @@ RUN chmod +x /docker-entrypoint.sh
 # Exponer puerto
 EXPOSE 8000
 
-# Usar entrypoint
-ENTRYPOINT ["/docker-entrypoint.sh"]
-CMD ["gunicorn", "core.wsgi:application", "--bind", "0.0.0.0:8000", "--workers", "2", "--timeout", "120"] 
+# Usar entrypoint script que ejecutará migraciones y luego gunicorn
+ENTRYPOINT ["/docker-entrypoint.sh"] 

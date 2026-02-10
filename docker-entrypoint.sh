@@ -49,5 +49,8 @@ else:
     print(f'ℹ️ Superusuario {username} ya existe')
 PY
 
-echo "🚀 Iniciando aplicación..."
-exec "$@"
+echo "🚀 Iniciando Gunicorn en puerto 8000..."
+# Use PORT env var if set (Render sets this), otherwise default to 8000
+PORT=${PORT:-8000}
+exec gunicorn core.wsgi:application --bind 0.0.0.0:${PORT} --workers 2 --timeout 120 --log-file -
+
