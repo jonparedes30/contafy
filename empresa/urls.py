@@ -34,7 +34,7 @@ def lazy_view(module_name, attr):
         view = getattr(mod, attr)
         return view(request, *args, **kwargs)
     return _view
-from .views.metas import gestionar_metas, historial_meta, marcar_notificacion_leida
+from .views.metas import gestionar_metas, historial_meta, marcar_notificacion_leida, comparacion_sector
 from .views.inventario import inventario, descargar_plantilla_inventario, subir_inventario_excel, saldos_iniciales, inventario_detallado_inicial
 from .views.actividad import actividad_reciente, asignar_usuarios_auditoria
 from .views.test_filtros import test_filtros_fecha, verificar_datos_fecha
@@ -66,11 +66,7 @@ from .views.servicios import listar_tipos_servicios, crear_tipo_servicio, editar
 from .views.voice_commands import procesar_comando_voz
 from .views.mobile_api import chat_movil, dashboard_movil, comando_rapido_movil
 from .views.ai_agent import agente_ia, chat_ia, generar_reporte_ia, actualizar_analisis
-from .views.aprendizaje import dashboard_aprendizaje, modulo_detalle, leccion_detalle, perfil_usuario, simulacion_venta, simulacion_receta, simulacion_servicio, paso_completado
-from .views import social
-from .views.simulaciones_api import simulacion_tipos_api, simulacion_escenarios_api, simulacion_start_api, simulacion_step_api, simulacion_result_api
-from .views.recomendaciones_api import obtener_recomendaciones_api, registrar_interaccion_api, obtener_siguiente_leccion_api
-from .views.ranking_api import ranking_semanal_api, ligas_activas_api, inscribir_liga_api, retos_activos_api, ranking_view
+
 from .views.ventas_servicios import crear_venta_servicio
 from .views.admin_simple import admin_dashboard, crear_codigo_invitacion
 from django.conf import settings
@@ -79,13 +75,7 @@ from django.shortcuts import render
 # Importaciones para vistas que estaban con lambda
 from empresa.views.valuacion import valuacion_empresa
 from empresa.views.responder_solicitud import responder_solicitud_web
-from empresa.views.aprendizaje_views import (
-    leccion_interactiva, 
-    marcar_leccion_completada,
-    marcar_paso_completado, 
-    modulo_detalle as modulo_detalle_ux, 
-    perfil_aprendizaje
-)
+
 from empresa.views.ai_reports import vista_reporte_ia, generar_reporte_ia_pdf
 from empresa.views.ai_comandos import (
     AIComandosView, 
@@ -99,10 +89,20 @@ from empresa.views.debug_datos import debug_datos
 router = DefaultRouter()
 router.register(r'productos', ProductoViewSet, basename='producto')
 
+from .views.demos import demos_disponibles, acceso_rapido_demo, selector_demo
+from .views.search import global_search, search_suggestions_api
+
 urlpatterns = [
     # URL principal - Entrada beta
     path('', entrada_beta, name='entrada_beta'),
     path('home/', home, name='home'),
+    path('buscar/', global_search, name='global_search'),
+    path('api/search-suggestions/', search_suggestions_api, name='search_suggestions_api'),
+    
+    # URLs de Demos
+    path('demos/', demos_disponibles, name='demos_disponibles'),
+    path('demos/selector/', selector_demo, name='selector_demo'),
+    path('demo/<str:username>/', acceso_rapido_demo, name='acceso_rapido_demo'),
     
     # URLs de la API REST
     path('api/', include(router.urls)),
@@ -186,6 +186,8 @@ urlpatterns = [
     
     # URLs de metas
     path('metas/', gestionar_metas, name='gestionar_metas'),
+    path('comparacion-sector/', comparacion_sector, name='comparacion_sector'),
+    path('metas/comparacion-sector/', comparacion_sector, name='comparacion_sector_legacy'),
     path('metas/historial/<int:meta_id>/', historial_meta, name='historial_meta'),
     path('metas/notificacion/<int:notificacion_id>/leida/', marcar_notificacion_leida, name='marcar_notificacion_leida'),
     
@@ -286,59 +288,12 @@ urlpatterns += [
     path('generar-reporte-ia/', generar_reporte_ia, name='generar_reporte_ia'),
     path('actualizar-analisis/', actualizar_analisis, name='actualizar_analisis'),
     
-    # URLs del Sistema de Aprendizaje
-    path('aprendizaje/', dashboard_aprendizaje, name='aprendizaje_dashboard'),
-    path('aprendizaje/modulo/<int:modulo_id>/', modulo_detalle, name='aprendizaje_modulo'),
-    path('aprendizaje/leccion/<int:leccion_id>/', leccion_detalle, name='aprendizaje_leccion'),
-    path('aprendizaje/perfil/', perfil_usuario, name='aprendizaje_perfil'),
-    path('aprendizaje/paso-completado/', paso_completado, name='aprendizaje_paso_completado'),
-    
-    # URLs de Academia UX Duolingo (Fase 4)
-    path('aprendizaje/leccion/<int:leccion_id>/interactiva/', leccion_interactiva, name='leccion_interactiva'),
-    path('aprendizaje/leccion/<int:leccion_id>/completar/', marcar_leccion_completada, name='marcar_leccion_completada'),
-    path('aprendizaje/leccion/<int:leccion_id>/paso/<int:paso_index>/completar/', marcar_paso_completado, name='marcar_paso_completado'),
-    path('aprendizaje/modulo/<int:modulo_id>/detalle/', modulo_detalle_ux, name='modulo_detalle_ux'),
-    path('aprendizaje/perfil-ux/', perfil_aprendizaje, name='perfil_aprendizaje_ux'),
-    
-    # URLs Sociales (Fase 5)
-    path('aprendizaje/social/', social.dashboard_social, name='social_dashboard'),
-    path('aprendizaje/social/crear-reto/', social.crear_reto, name='crear_reto'),
-    path('aprendizaje/social/compartir-logro/', social.compartir_logro, name='compartir_logro'),
-    path('aprendizaje/social/toggle-like/', social.toggle_like_logro, name='toggle_like_logro'),
-    path('aprendizaje/social/clasificacion/', social.clasificacion_completa, name='clasificacion_completa'),
-    path('aprendizaje/social/mis-retos/', social.mis_retos, name='mis_retos'),
-    path('aprendizaje/social/feed/', social.feed_social, name='feed_social'),
-    # APIs de Simulaciones
-    path('api/simulacion/tipos/', simulacion_tipos_api, name='simulacion_tipos_api'),
-    path('api/simulacion/escenarios/', simulacion_escenarios_api, name='simulacion_escenarios_api'),
-    path('api/simulacion/start/', simulacion_start_api, name='simulacion_start_api'),
-    path('api/simulacion/<int:simulacion_id>/step/', simulacion_step_api, name='simulacion_step_api'),
-    path('api/simulacion/<int:simulacion_id>/result/', simulacion_result_api, name='simulacion_result_api'),
-    
-    # APIs de Recomendaciones
-    path('api/recomendaciones/', obtener_recomendaciones_api, name='recomendaciones_api'),
-    path('api/recomendaciones/interaccion/', registrar_interaccion_api, name='registrar_interaccion_api'),
-    path('api/recomendaciones/siguiente/', obtener_siguiente_leccion_api, name='siguiente_leccion_api'),
-    
-    # APIs de Ranking y Ligas
-    path('api/ranking/semanal/', ranking_semanal_api, name='ranking_semanal_api'),
-    path('api/ligas/activas/', ligas_activas_api, name='ligas_activas_api'),
-    path('api/ligas/<int:liga_id>/inscribir/', inscribir_liga_api, name='inscribir_liga_api'),
-    path('api/retos/activos/', retos_activos_api, name='retos_activos_api'),
-    
-    # Vista de Ranking
-    path('aprendizaje/ranking/', ranking_view, name='aprendizaje_ranking'),
+
     
     # Ventas de Servicios
     path('servicios/venta/crear/', crear_venta_servicio, name='crear_venta_servicio'),
     
-    # URLs de Simulaciones
-    path('aprendizaje/simulacion/venta/', simulacion_venta, name='simulacion_venta'),
-    path('aprendizaje/simulacion/venta/<int:leccion_id>/', simulacion_venta, name='simulacion_venta_leccion'),
-    path('aprendizaje/simulacion/receta/', simulacion_receta, name='simulacion_receta'),
-    path('aprendizaje/simulacion/receta/<int:leccion_id>/', simulacion_receta, name='simulacion_receta_leccion'),
-    path('aprendizaje/simulacion/servicio/', simulacion_servicio, name='simulacion_servicio'),
-    path('aprendizaje/simulacion/servicio/<int:leccion_id>/', simulacion_servicio, name='simulacion_servicio_leccion'),
+
     
     # URLs de Reportes IA
     path('reporte-ia/', vista_reporte_ia, name='vista_reporte_ia'),

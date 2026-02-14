@@ -67,7 +67,7 @@ def normalizar_tipo_negocio(tipo_negocio, categoria):
         'mecanico': ['mecánico', 'automotriz', 'taller mecánico'],
         'restauracion': ['restaurante', 'cafetería', 'comida', 'bar'],
         'limpieza': ['limpieza', 'lavandería', 'mantenimiento'],
-        'educacion': ['academia', 'educación', 'enseñanza', 'guardería'],
+        'educacion': ['educación', 'enseñanza', 'guardería'],
         'consultoria': ['consultoría', 'contable', 'asesoría', 'legal'],
         'otros': []
     }

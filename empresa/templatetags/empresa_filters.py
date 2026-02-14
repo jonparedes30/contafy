@@ -32,4 +32,9 @@ def abs(value):
     try:
         return float(value).__abs__()
     except (ValueError, TypeError):
-        return 0 
+        return 0
+
+@register.filter
+def eq(value, arg):
+    """Retorna True si value es igual a arg"""
+    return str(value) == str(arg) 

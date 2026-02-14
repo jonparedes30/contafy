@@ -16,15 +16,6 @@ class FiltrosFechaService:
         fecha_inicio_str = request.GET.get('fecha_inicio')
         fecha_fin_str = request.GET.get('fecha_fin')
         
-        # Fecha de inicio
-        if fecha_inicio_str:
-            try:
-                fecha_inicio = datetime.strptime(fecha_inicio_str, '%Y-%m-%d').date()
-            except ValueError:
-                fecha_inicio = hoy.replace(day=1)  # Primer día del mes actual
-        else:
-            fecha_inicio = hoy.replace(day=1)  # Primer día del mes actual
-        
         # Fecha de fin
         if fecha_fin_str:
             try:
@@ -33,7 +24,34 @@ class FiltrosFechaService:
                 fecha_fin = hoy
         else:
             fecha_fin = hoy
-        
+
+        # Fecha de inicio
+        if fecha_inicio_str:
+            try:
+                fecha_inicio = datetime.strptime(fecha_inicio_str, '%Y-%m-%d').date()
+            except ValueError:
+                # Default: 3 meses atrás
+                fecha_inicio = (fecha_fin.replace(day=1) - timedelta(days=60)).replace(day=1)
+        else:
+            # LÓGICA INTELIGENTE: Si no se especifican fechas, buscar dónde hay datos
+            if not fecha_fin_str and hasattr(request, 'user') and hasattr(request.user, 'empresa'):
+                try:
+                    ultima_venta = Venta.objects.filter(empresa=request.user.empresa).order_by('-fecha').first()
+                    if ultima_venta:
+                        # Si hay datos, usar la fecha de la última venta como referencia
+                        fecha_ultima_venta = ultima_venta.fecha.date()
+                        # Si la última venta es muy antigua (más de 3 meses del default "hoy"), ajustar
+                        if fecha_ultima_venta < (hoy - timedelta(days=90)) or fecha_ultima_venta > hoy:
+                            fecha_fin = fecha_ultima_venta
+                            # Ajustar inicio para cubrir 3 meses terminando en esta fecha
+                            fecha_inicio = (fecha_fin.replace(day=1) - timedelta(days=60)).replace(day=1)
+                            return fecha_inicio, fecha_fin
+                except Exception:
+                    pass # Fallback al default silenciando error
+            
+            # Default normal: 3 meses atrás desde hoy/fecha_fin
+            fecha_inicio = (fecha_fin.replace(day=1) - timedelta(days=60)).replace(day=1)
+
         return fecha_inicio, fecha_fin
     
     @staticmethod

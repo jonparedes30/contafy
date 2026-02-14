@@ -1,2 +1,1 @@
-release: python manage.py migrate
-web: gunicorn core.wsgi --log-file -
+web: gunicorn core.wsgi:application --bind 0.0.0.0:$PORT --workers 2 --timeout 120 --log-file -

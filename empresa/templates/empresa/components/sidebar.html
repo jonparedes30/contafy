@@ -1,0 +1,287 @@
+﻿<nav class="sidebar" id="sidebar">
+    <div class="sidebar-header p-3 mb-2">
+        <h4 class="m-0 fw-bold"><i class="bi bi-calculator-fill me-2 text-success"></i>CONTAFY</h4>
+    </div>
+
+    <div class="nav-container flex-grow-1 overflow-auto">
+        <ul class="nav flex-column">
+
+            <!-- ==============================================
+                 OPERACIÓN
+                 ============================================== -->
+            <li class="nav-section-title px-3 mt-2 mb-1 text-uppercase small text-muted fw-bold">Operación</li>
+
+            <!-- VENTAS (Para todos, acceso directo o catálogo) -->
+            <li class="nav-item">
+                <a class="nav-link {% if 'venta' in request.path %}active{% endif %}" data-bs-toggle="collapse"
+                    href="#menuVentas" role="button"
+                    aria-expanded="{% if 'venta' in request.path %}true{% else %}false{% endif %}"
+                    aria-controls="menuVentas">
+                    <i class="bi bi-cart"></i> Ventas <i class="bi bi-chevron-down ms-auto"
+                        style="font-size: 0.8em;"></i>
+                </a>
+                <div class="collapse {% if 'venta' in request.path %}show{% endif %}" id="menuVentas">
+                    <ul class="nav flex-column ms-3 border-start border-secondary border-opacity-25 ps-2">
+                        <li class="nav-item">
+                            <a class="nav-link py-1 {% if 'listar_ventas' in request.path %}text-white{% endif %}"
+                                href="{% url 'empresa:listar_ventas' %}">Historial</a>
+                        </li>
+                        {% if is_owner or user_powers.puede_registrar_ventas %}
+                        <li class="nav-item">
+                            <a class="nav-link py-1 {% if 'crear_venta' in request.path and 'manufactura' not in request.path %}text-white{% endif %}"
+                                href="{% url 'empresa:crear_venta' %}">Nueva Venta</a>
+                        </li>
+                        {% endif %}
+                        {% if user.empresa.categoria == 'servicios' %}
+                        <li class="nav-item">
+                            <a class="nav-link py-1 {% if 'listar_tipos_servicios' in request.path %}text-white{% endif %}"
+                                href="{% url 'empresa:listar_tipos_servicios' %}">Servicios</a>
+                        </li>
+                        {% endif %}
+                    </ul>
+                </div>
+            </li>
+
+            <!-- COMPRAS (O GASTOS) -->
+            <li class="nav-item">
+                <a class="nav-link {% if 'compra' in request.path or 'gasto' in request.path %}active{% endif %}"
+                    data-bs-toggle="collapse" href="#menuCompras" role="button"
+                    aria-expanded="{% if 'compra' in request.path or 'gasto' in request.path %}true{% else %}false{% endif %}"
+                    aria-controls="menuCompras">
+                    <i class="bi bi-bag"></i> Compras <i class="bi bi-chevron-down ms-auto"
+                        style="font-size: 0.8em;"></i>
+                </a>
+                <div class="collapse {% if 'compra' in request.path or 'gasto' in request.path %}show{% endif %}"
+                    id="menuCompras">
+                    <ul class="nav flex-column ms-3 border-start border-secondary border-opacity-25 ps-2">
+                        {% if user.empresa.categoria == 'comercial' or not user.empresa.categoria %}
+                        <li class="nav-item">
+                            <a class="nav-link py-1 {% if 'listar_compras' in request.path %}text-white{% endif %}"
+                                href="{% url 'empresa:listar_compras' %}">Historial Compras</a>
+                        </li>
+                        {% endif %}
+                        <li class="nav-item">
+                            <a class="nav-link py-1 {% if 'listar_gastos' in request.path %}text-white{% endif %}"
+                                href="{% url 'empresa:listar_gastos' %}">Gastos Op.</a>
+                        </li>
+                        {% if is_owner or user_powers.puede_registrar_gastos %}
+                        <li class="nav-item">
+                            <a class="nav-link py-1 {% if 'crear_gasto' in request.path %}text-white{% endif %}"
+                                href="{% url 'empresa:crear_gasto' %}">Nuevo Gasto</a>
+                        </li>
+                        {% endif %}
+                    </ul>
+                </div>
+            </li>
+
+            <!-- INVENTARIO (Solo Comercio y Manufactura) -->
+            {% if user.empresa.categoria != 'servicios' %}
+            <li class="nav-item">
+                <a class="nav-link {% if 'producto' in request.path or 'materia' in request.path %}active{% endif %}"
+                    data-bs-toggle="collapse" href="#menuInventario" role="button"
+                    aria-expanded="{% if 'producto' in request.path or 'materia' in request.path %}true{% else %}false{% endif %}"
+                    aria-controls="menuInventario">
+                    <i class="bi bi-box-seam"></i> Inventario <i class="bi bi-chevron-down ms-auto"
+                        style="font-size: 0.8em;"></i>
+                </a>
+                <div class="collapse {% if 'producto' in request.path or 'materia' in request.path %}show{% endif %}"
+                    id="menuInventario">
+                    <ul class="nav flex-column ms-3 border-start border-secondary border-opacity-25 ps-2">
+                        {% if user.empresa.categoria == 'manufactura' %}
+                        <li class="nav-item">
+                            <a class="nav-link py-1 {% if 'materias_primas' in request.path %}text-white{% endif %}"
+                                href="{% url 'empresa:listar_materias_primas' %}">Materias Primas</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link py-1 {% if 'productos_manufacturados' in request.path %}text-white{% endif %}"
+                                href="{% url 'empresa:listar_productos_manufacturados' %}">Prod. Terminado</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link py-1 {% if 'ordenes_produccion' in request.path %}text-white{% endif %}"
+                                href="{% url 'empresa:listar_ordenes_produccion' %}">Ã“rdenes Prod.</a>
+                        </li>
+                        {% else %}
+                        <li class="nav-item">
+                            <a class="nav-link py-1 {% if 'listar_productos' in request.path %}text-white{% endif %}"
+                                href="{% url 'empresa:listar_productos' %}">Productos</a>
+                        </li>
+                        {% if is_owner or user_powers.puede_editar_productos %}
+                        <li class="nav-item">
+                            <a class="nav-link py-1 {% if 'crear_producto' in request.path %}text-white{% endif %}"
+                                href="{% url 'empresa:crear_producto' %}">Nuevo Producto</a>
+                        </li>
+                        {% endif %}
+                        {% endif %}
+                    </ul>
+                </div>
+            </li>
+            {% endif %}
+
+            <!-- PRODUCCIÓN (Dashboard específico para Manufactura) -->
+            {% if user.empresa.categoria == 'manufactura' %}
+            <li class="nav-item">
+                <a class="nav-link {% if 'dashboard_manufactura' in request.path %}active{% endif %}"
+                    href="{% url 'empresa:dashboard_manufactura' %}">
+                    <i class="bi bi-speedometer2"></i> Dashboard Prod.
+                </a>
+            </li>
+            {% endif %}
+
+
+            <!-- ==============================================
+                 FINANZAS
+                 ============================================== -->
+            <li class="nav-section-title px-3 mt-2 mb-1 text-uppercase small text-muted fw-bold">Finanzas</li>
+
+            <li class="nav-item">
+                <a class="nav-link {% if 'balance_general' in request.path %}active{% endif %}"
+                    href="{% url 'empresa:balance_general' %}">
+                    <i class="bi bi-pie-chart"></i> Balance General
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link {% if 'estado_resultados' in request.path %}active{% endif %}"
+                    href="{% url 'empresa:estado_resultados' %}">
+                    <i class="bi bi-file-earmark-spreadsheet"></i> Estado Resultados
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link {% if 'flujo_caja' in request.path %}active{% endif %}"
+                    href="{% url 'empresa:flujo_caja' %}">
+                    <i class="bi bi-cash-stack"></i> Flujo de Caja
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link {% if 'gestion_deudas' in request.path %}active{% endif %}"
+                    href="{% url 'empresa:gestion_deudas' %}">
+                    <i class="bi bi-credit-card-2-front"></i> CxC / CxP
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link {% if 'resumen_financiero' in request.path %}active{% endif %}"
+                    href="{% url 'empresa:resumen_financiero' %}">
+                    <i class="bi bi-graph-up"></i> Resumen Global
+                </a>
+            </li>
+
+
+            <!-- ==============================================
+                 ANALITICA
+                 ============================================== -->
+            <li class="nav-section-title px-3 mt-2 mb-1 text-uppercase small text-muted fw-bold">Analítica</li>
+
+            <li class="nav-item">
+                <a class="nav-link {% if request.resolver_match.url_name == 'gestionar_metas' or request.resolver_match.url_name == 'historial_meta' %}active{% endif %}"
+                    href="{% url 'empresa:gestionar_metas' %}">
+                    <i class="bi bi-bullseye"></i> Metas Financieras
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link {% if request.resolver_match.url_name == 'comparacion_sector' or request.resolver_match.url_name == 'comparacion_sector_legacy' %}active{% endif %}"
+                    href="{% url 'empresa:comparacion_sector' %}">
+                    <i class="bi bi-bar-chart-fill"></i> Comparación Sectorial
+                </a>
+            </li>
+            <li class="nav-item">
+                <!-- Benchmarking actualmente es parte de Metas/Dashboard, pero si hay vista separada, iría aquí -->
+                <a class="nav-link {% if 'dashboard' in request.path and 'manufactura' not in request.path %}active{% endif %}"
+                    href="{% url 'empresa:dashboard' %}">
+                    <i class="bi bi-bar-chart-line"></i> Dashboard General
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link {% if 'actividad_reciente' in request.path %}active{% endif %}"
+                    href="{% url 'empresa:actividad_reciente' %}">
+                    <i class="bi bi-clock-history"></i> Historial Actividad
+                </a>
+            </li>
+
+
+            <!-- ==============================================
+                 SOPORTE E IA
+                 ============================================== -->
+            <li class="nav-section-title px-3 mt-2 mb-1 text-uppercase small text-muted fw-bold">Soporte e IA</li>
+
+            <li class="nav-item">
+                <a class="nav-link {% if 'agente_ia' in request.path %}active{% endif %}"
+                    href="{% url 'empresa:agente_ia' %}">
+                    <i class="bi bi-robot"></i> Agente IA
+                </a>
+            </li>
+            {% if is_owner %}
+            <li class="nav-item">
+                <a class="nav-link {% if 'asistente_ayuda' in request.path %}active{% endif %}"
+                    href="{% url 'empresa:asistente_ayuda' %}">
+                    <i class="bi bi-question-circle"></i> Asistente de Ayuda
+                </a>
+            </li>
+            {% endif %}
+
+
+            <!-- ==============================================
+                 CONFIGURACIÃ“N
+                 ============================================== -->
+            <li class="nav-section-title px-3 mt-2 mb-1 text-uppercase small text-muted fw-bold">Configuración</li>
+
+            {% if is_owner or user_powers.puede_gestionar_cuentas %}
+            <li class="nav-item">
+                <a class="nav-link {% if 'cuentas_contables' in request.path %}active{% endif %}"
+                    href="{% url 'empresa:listar_cuentas_contables' %}">
+                    <i class="bi bi-journal-check"></i> Cuentas Contables
+                </a>
+            </li>
+            {% endif %}
+
+            {% if is_owner %}
+            <li class="nav-item">
+                <a class="nav-link {% if 'registrar_capital' in request.path %}active{% endif %}"
+                    href="{% url 'empresa:registrar_capital' %}">
+                    <i class="bi bi-bank"></i> Capital
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link {% if 'listar_empresas' in request.path %}active{% endif %}"
+                    href="{% url 'empresa:listar_empresas' %}">
+                    <i class="bi bi-building"></i> Mi Empresa
+                </a>
+            </li>
+            <!-- Exportaciones -->
+            <li class="nav-item">
+                {% if user.empresa.categoria == 'manufactura' %}
+                <a class="nav-link {% if 'exportaciones' in request.path %}active{% endif %}"
+                    href="{% url 'empresa:exportaciones_manufactura' %}">
+                    <i class="bi bi-download"></i> Exportar Datos
+                </a>
+                {% else %}
+                <a class="nav-link {% if 'exportaciones' in request.path %}active{% endif %}"
+                    href="{% url 'empresa:exportaciones_comercio' %}">
+                    <i class="bi bi-download"></i> Exportar Datos
+                </a>
+                {% endif %}
+            </li>
+            {% endif %}
+        </ul>
+    </div>
+
+    <!-- USUARIO -->
+    <div class="sidebar-footer mt-auto p-3 search-bar-container border-top border-secondary border-opacity-10">
+        <div class="dropdown">
+            <a href="#" class="d-flex align-items-center text-decoration-none dropdown-toggle text-light"
+                id="dropdownUser1" data-bs-toggle="dropdown" aria-expanded="false">
+                <div class="avatar-circle bg-success text-white text-center rounded-circle me-2 d-flex align-items-center justify-content-center"
+                    style="width: 32px; height: 32px; font-weight: bold;">
+                    {{ user.username|make_list|first|upper }}
+                </div>
+                <strong class="text-white small text-truncate" style="max-width: 140px;">{{ user.username }}</strong>
+            </a>
+            <ul class="dropdown-menu dropdown-menu-dark text-small shadow" aria-labelledby="dropdownUser1">
+                <li><a class="dropdown-item" href="#">Perfil</a></li>
+                <!-- <li><a class="dropdown-item" href="#">Preferencias</a></li> -->
+                <li>
+                    <hr class="dropdown-divider">
+                </li>
+                <li><a class="dropdown-item text-danger" href="{% url 'empresa:logout' %}">Cerrar Sesión</a></li>
+            </ul>
+        </div>
+    </div>
+</nav>

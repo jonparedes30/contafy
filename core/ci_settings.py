@@ -11,7 +11,7 @@ except Exception:
 
 DATABASE_URL = os.getenv("DATABASE_URL")
 if DATABASE_URL and dj_database_url:
-    DATABASES["default"] = dj_database_url.parse(DATABASE_URL, conn_max_age=600)
+    DATABASES["default"] = dj_database_url.parse(DATABASE_URL, conn_max_age=600)  # type: ignore[assignment]
 else:
     # fallback a variables individuales (servicio postgres en CI)
     DATABASES["default"] = {

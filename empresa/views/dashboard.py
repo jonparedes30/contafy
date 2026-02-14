@@ -5,6 +5,7 @@ from empresa.models import Venta, Gasto, Compra, CuentaContable, MovimientoConta
 import calendar
 from datetime import datetime, timedelta
 from django.utils import timezone
+from decimal import Decimal
 import json
 from empresa.views.resumen import obtener_totales_contables
 from empresa.services.filtros_service import FiltrosFechaService
@@ -42,6 +43,7 @@ def dashboard(request):
         else:
             fecha_iter = fecha_iter.replace(month=fecha_iter.month+1)
     # Calcular KPIs y gráficos para cada mes del rango seleccionado
+    # USAR DATOS DIRECTOS de Venta y Gasto (tienen fechas históricas correctas)
     for anio, mes in meses:
         # Rango de fechas del mes
         fecha_mes_inicio = timezone.datetime(anio, mes, 1).date()
@@ -49,43 +51,40 @@ def dashboard(request):
             fecha_mes_fin = timezone.datetime(anio+1, 1, 1).date() - timezone.timedelta(days=1)
         else:
             fecha_mes_fin = timezone.datetime(anio, mes+1, 1).date() - timezone.timedelta(days=1)
-        # Ventas
-        try:
-            cuenta_ventas = CuentaContable.objects.get(empresa=empresa, nombre__iexact='Ventas')
-            ventas_mes = MovimientoContable.objects.filter(
-                empresa=empresa,
-                cuenta_fk=cuenta_ventas,
-                tipo='credito',
-                fecha__date__gte=fecha_mes_inicio,
-                fecha__date__lte=fecha_mes_fin
-            ).aggregate(total=Sum('monto'))['total'] or 0
-        except CuentaContable.DoesNotExist:
-            ventas_mes = 0
-        # Costos - USAR CUENTA COSTO DE VENTAS CORREGIDA
-        try:
-            cuenta_costos = CuentaContable.objects.get(empresa=empresa, nombre__iexact='Costo de Ventas')
-            costos_mes = MovimientoContable.objects.filter(
-                empresa=empresa,
-                cuenta_fk=cuenta_costos,
-                tipo='debito',
-                fecha__date__gte=fecha_mes_inicio,
-                fecha__date__lte=fecha_mes_fin
-            ).aggregate(total=Sum('monto'))['total'] or 0
-        except CuentaContable.DoesNotExist:
-            costos_mes = 0
-        # Gastos
-        try:
-            cuenta_gastos = CuentaContable.objects.get(empresa=empresa, nombre__iexact='Gastos')
-            gastos_mes = MovimientoContable.objects.filter(
-                empresa=empresa,
-                cuenta_fk=cuenta_gastos,
-                tipo='debito',
-                fecha__date__gte=fecha_mes_inicio,
-                fecha__date__lte=fecha_mes_fin
-            ).aggregate(total=Sum('monto'))['total'] or 0
-        except CuentaContable.DoesNotExist:
-            gastos_mes = 0
-        # Capital, activos y pasivos acumulados hasta fin de mes (usando saldos correctos)
+
+        # Ventas directas del modelo Venta (monto_neto tiene las fechas históricas correctas)
+        ventas_mes = Venta.objects.filter(
+            empresa=empresa,
+            fecha__date__gte=fecha_mes_inicio,
+            fecha__date__lte=fecha_mes_fin
+        ).aggregate(total=Sum('monto_neto'))['total'] or 0
+
+        # Costos: estimar como porcentaje de ventas basado en precio_unitario vs pvp
+        costos_mes_data = Venta.objects.filter(
+            empresa=empresa,
+            fecha__date__gte=fecha_mes_inicio,
+            fecha__date__lte=fecha_mes_fin
+        ).aggregate(
+            total_costo=Sum('precio_unitario'),
+        )
+        # Calcular costo real basado en precio_unitario * cantidad
+        from django.db.models import F
+        costos_mes = Venta.objects.filter(
+            empresa=empresa,
+            fecha__date__gte=fecha_mes_inicio,
+            fecha__date__lte=fecha_mes_fin
+        ).aggregate(
+            total=Sum(F('producto__precio_unitario') * F('cantidad'))
+        )['total'] or 0
+
+        # Gastos directos del modelo Gasto
+        gastos_mes = Gasto.objects.filter(
+            empresa=empresa,
+            fecha__date__gte=fecha_mes_inicio,
+            fecha__date__lte=fecha_mes_fin
+        ).aggregate(total=Sum('monto'))['total'] or 0
+
+        # Capital, activos y pasivos acumulados (usando saldos de CuentaContable)
         capital_mes = sum(cuenta.valor for cuenta in CuentaContable.objects.filter(empresa=empresa, tipo='capital'))
         activos_mes = sum(cuenta.valor for cuenta in CuentaContable.objects.filter(empresa=empresa, tipo='activo'))
         pasivos_mes = sum(cuenta.valor for cuenta in CuentaContable.objects.filter(empresa=empresa, tipo='pasivo'))
@@ -95,28 +94,26 @@ def dashboard(request):
         roe_mes = ((utilidad_neta_mes / capital_mes) * 100) if capital_mes else 0
         liquidez_mes = (activos_mes / pasivos_mes) if pasivos_mes else 0
         endeudamiento_mes = (pasivos_mes / activos_mes) if activos_mes else 0
-        print(f"DEBUG - Mes {mes}/{anio}: Ventas={ventas_mes}, Gastos={gastos_mes}")
-        ventas_mensuales.append(round(ventas_mes, 2))
-        gastos_mensuales.append(round(gastos_mes, 2))
-        margen_neto_historico.append(round(margen_neto_mes, 2))
-        liquidez_historica.append(round(liquidez_mes, 2))
-        endeudamiento_historico.append(round(endeudamiento_mes, 2))
-        roe_historico.append(round(roe_mes, 2))
-    # KPIs totales del periodo
+        print(f"DEBUG - Mes {mes}/{anio}: Ventas={ventas_mes}, Gastos={gastos_mes}, Costos={costos_mes}")
+        ventas_mensuales.append(round(float(ventas_mes), 2))
+        gastos_mensuales.append(round(float(gastos_mes), 2))
+        margen_neto_historico.append(round(float(margen_neto_mes), 2))
+        liquidez_historica.append(round(float(liquidez_mes), 2))
+        endeudamiento_historico.append(round(float(endeudamiento_mes), 2))
+        roe_historico.append(round(float(roe_mes), 2))
+    # KPIs totales del periodo (calculados de los datos directos)
     total_ventas = sum(ventas_mensuales)
     total_gastos = sum(gastos_mensuales)
-    # Costos totales - USAR CUENTA COSTO DE VENTAS CORREGIDA
-    try:
-        cuenta_costos = CuentaContable.objects.get(empresa=empresa, nombre__iexact='Costo de Ventas')
-        total_costos = MovimientoContable.objects.filter(
-            empresa=empresa,
-            cuenta_fk=cuenta_costos,
-            tipo='debito',
-            fecha__date__gte=fecha_inicio,
-            fecha__date__lte=fecha_fin
-        ).aggregate(total=Sum('monto'))['total'] or 0
-    except CuentaContable.DoesNotExist:
-        total_costos = 0
+    # Costos totales directos basado en costo unitario * cantidad
+    from django.db.models import F as F_expr
+    total_costos = Venta.objects.filter(
+        empresa=empresa,
+        fecha__date__gte=fecha_inicio,
+        fecha__date__lte=fecha_fin
+    ).aggregate(
+        total=Sum(F_expr('producto__precio_unitario') * F_expr('cantidad'))
+    )['total'] or Decimal('0')
+    total_costos = float(Decimal(total_costos) if not isinstance(total_costos, Decimal) else total_costos)
     utilidad_bruta = total_ventas - total_costos
     utilidad_neta = utilidad_bruta - total_gastos
     margen_bruto = ((utilidad_bruta / total_ventas) * 100) if total_ventas > 0 else 0
@@ -212,7 +209,7 @@ def dashboard(request):
             fecha__date__gte=fecha_inicio,
             fecha__date__lte=fecha_fin
         ).values('producto__nombre').annotate(
-            total_ventas=Sum('monto'),
+            total_ventas=Sum('monto_neto'),
             cantidad_vendida=Sum('cantidad'),
             veces_vendido=Count('id')
         ).order_by('-total_ventas')[:5]
@@ -222,7 +219,7 @@ def dashboard(request):
             fecha__date__gte=fecha_inicio,
             fecha__date__lte=fecha_fin
         ).values('producto__nombre').annotate(
-            total_ventas=Sum('monto'),
+            total_ventas=Sum('monto_neto'),
             cantidad_vendida=Sum('cantidad'),
             veces_vendido=Count('id')
         ).order_by('-total_ventas')[:5]
@@ -270,13 +267,13 @@ def dashboard(request):
             producto__codigo__in=productos_manuf_ids,
             fecha__date__gte=fecha_inicio,
             fecha__date__lte=fecha_fin
-        ).aggregate(total=Sum('monto'))['total'] or 0
+        ).aggregate(total=Sum('monto_neto'))['total'] or Decimal('0')
     else:
         ventas_filtradas = Venta.objects.filter(
             empresa=empresa,
             fecha__date__gte=fecha_inicio,
             fecha__date__lte=fecha_fin
-        ).aggregate(total=Sum('monto'))['total'] or 0
+        ).aggregate(total=Sum('monto_neto'))['total'] or Decimal('0')
     
     # Compras filtradas (según tipo de empresa)
     if empresa.categoria == 'manufactura':
@@ -286,39 +283,45 @@ def dashboard(request):
             empresa=empresa,
             fecha_consumo__date__gte=fecha_inicio,
             fecha_consumo__date__lte=fecha_fin
-        ).aggregate(total=Sum('costo_total'))['total'] or 0
+        ).aggregate(total=Sum('costo_total'))['total'] or Decimal('0')
     else:
         compras_filtradas = Compra.objects.filter(
             empresa=empresa,
             fecha__date__gte=fecha_inicio,
             fecha__date__lte=fecha_fin
-        ).aggregate(total=Sum('monto'))['total'] or 0
+        ).aggregate(total=Sum('monto'))['total'] or Decimal('0')
     
     gastos_filtrados = Gasto.objects.filter(
         empresa=empresa,
         fecha__date__gte=fecha_inicio,
         fecha__date__lte=fecha_fin
-    ).aggregate(total=Sum('monto'))['total'] or 0
+    ).aggregate(total=Sum('monto'))['total'] or Decimal('0')
     
     # Costo de ventas - USAR CUENTA CORREGIDA
     costo_ventas_filtrado = total_costos
     
-    utilidad_bruta_filtrada = ventas_filtradas - costo_ventas_filtrado
-    utilidad_neta_filtrada = utilidad_bruta_filtrada - gastos_filtrados
+    # Convertir todos a float para evitar mezcla de tipos
+    ventas_filtradas_float = float(ventas_filtradas)
+    compras_filtradas_float = float(compras_filtradas)
+    gastos_filtrados_float = float(gastos_filtrados)
+    costo_ventas_filtrado_float = float(costo_ventas_filtrado)
+    
+    utilidad_bruta_filtrada = ventas_filtradas_float - costo_ventas_filtrado_float
+    utilidad_neta_filtrada = utilidad_bruta_filtrada - gastos_filtrados_float
     
     contexto = {
-        'ventas': ventas_filtradas,
-        'compras': compras_filtradas,
-        'gastos': gastos_filtrados,
+        'ventas': ventas_filtradas_float,
+        'compras': compras_filtradas_float,
+        'gastos': gastos_filtrados_float,
         'utilidad_bruta': utilidad_bruta_filtrada,
-        'utilidad_neta': utilidad_neta_filtrada,
-        'costo_ventas': costo_ventas_filtrado,
+        'utilidad_neta': float(utilidad_neta_filtrada),
+        'costo_ventas': costo_ventas_filtrado_float,
         'ratio_gastos_ventas': ratio_gastos_ventas,
         'fecha_ultima_actualizacion': fecha_ultima_actualizacion,
         'estado_actual': estado_actual,
-        'total_ventas': round(total_ventas, 2),
-        'total_gastos': round(total_gastos, 2),
-        'total_costos': round(total_costos, 2),
+        'total_ventas': round(float(total_ventas), 2),
+        'total_gastos': round(float(total_gastos), 2),
+        'total_costos': round(float(total_costos), 2),
         'utilidad_bruta': round(utilidad_bruta, 2),
         'rentabilidad': round(rentabilidad, 2),
         'labels_meses': labels_meses,
@@ -334,10 +337,10 @@ def dashboard(request):
         'endeudamiento_historico': endeudamiento_historico,
         'roe_historico': roe_historico,
         'otros_ingresos': 0,
-        'total_ingresos': round(total_ventas, 2),
+        'total_ingresos': round(float(total_ventas), 2),
         'margen_operativo': round(margen_neto, 2),
-        'ratio_costos': round((total_costos / total_ventas * 100) if total_ventas > 0 else 0, 1),
-        'ratio_gastos': round((total_gastos / total_ventas * 100) if total_ventas > 0 else 0, 1),
+        'ratio_costos': round((float(total_costos) / float(total_ventas) * 100) if float(total_ventas) > 0 else 0, 1),
+        'ratio_gastos': round((float(total_gastos) / float(total_ventas) * 100) if float(total_ventas) > 0 else 0, 1),
         # BENCHMARK DEL SECTOR - DATOS REALES POR TIPO DE EMPRESA
         'margen_ventas': round(margen_neto, 1),
         'promedio_sector': 15 if empresa.categoria == 'comercial' else 25 if empresa.categoria == 'manufactura' else 20,

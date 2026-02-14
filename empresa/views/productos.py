@@ -112,7 +112,7 @@ def listar_productos(request):
         'productos_bajo_stock': productos_bajo_stock,
     }
     
-    return render(request, 'empresa/listar_productos.html', context)
+    return render(request, 'empresa/listar_productos_final.html', context)
 
 
 @login_required

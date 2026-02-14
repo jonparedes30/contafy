@@ -46,15 +46,75 @@ class EmpresaForm(forms.ModelForm):
         }
 
 class EmpleadoEmpresaForm(forms.ModelForm):
+    password1 = forms.CharField(
+        widget=forms.PasswordInput(attrs={'class': 'form-control', 'placeholder': 'Contraseña'}),
+        label='Contraseña',
+        help_text='Contraseña temporal para el empleado'
+    )
+    password2 = forms.CharField(
+        widget=forms.PasswordInput(attrs={'class': 'form-control', 'placeholder': 'Confirmar contraseña'}),
+        label='Confirmar Contraseña',
+    )
+    
+    # Campos de permisos (PoderEmpleado)
+    puede_ver_reportes = forms.BooleanField(required=False, label='Ver reportes',
+        widget=forms.CheckboxInput(attrs={'class': 'form-check-input'}))
+    puede_registrar_ventas = forms.BooleanField(required=False, label='Registrar ventas',
+        widget=forms.CheckboxInput(attrs={'class': 'form-check-input'}))
+    puede_editar_productos = forms.BooleanField(required=False, label='Editar productos',
+        widget=forms.CheckboxInput(attrs={'class': 'form-check-input'}))
+    puede_gestionar_cuentas = forms.BooleanField(required=False, label='Gestionar cuentas',
+        widget=forms.CheckboxInput(attrs={'class': 'form-check-input'}))
+    puede_registrar_gastos = forms.BooleanField(required=False, label='Registrar gastos',
+        widget=forms.CheckboxInput(attrs={'class': 'form-check-input'}))
+    puede_gestionar_inventario = forms.BooleanField(required=False, label='Gestionar inventario',
+        widget=forms.CheckboxInput(attrs={'class': 'form-check-input'}))
+    puede_gestionar_metas = forms.BooleanField(required=False, label='Gestionar metas',
+        widget=forms.CheckboxInput(attrs={'class': 'form-check-input'}))
+    
     class Meta:
         model = Usuario
         fields = ['username', 'email', 'first_name', 'last_name']
         widgets = {
-            'username': forms.TextInput(attrs={'class': 'form-control'}),
-            'email': forms.EmailInput(attrs={'class': 'form-control'}),
-            'first_name': forms.TextInput(attrs={'class': 'form-control'}),
-            'last_name': forms.TextInput(attrs={'class': 'form-control'}),
+            'username': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Nombre de usuario'}),
+            'email': forms.EmailInput(attrs={'class': 'form-control', 'placeholder': 'correo@ejemplo.com'}),
+            'first_name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Nombres'}),
+            'last_name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Apellidos'}),
         }
+    
+    def __init__(self, *args, **kwargs):
+        self.empresa = kwargs.pop('empresa', None)
+        super().__init__(*args, **kwargs)
+    
+    def clean(self):
+        cleaned_data = super().clean()
+        password1 = cleaned_data.get('password1')
+        password2 = cleaned_data.get('password2')
+        if password1 and password2 and password1 != password2:
+            raise forms.ValidationError('Las contraseñas no coinciden.')
+        return cleaned_data
+    
+    def save(self, commit=True):
+        empleado = super().save(commit=False)
+        if self.empresa:
+            empleado.empresa = self.empresa
+        if commit:
+            empleado.set_password(self.cleaned_data['password1'])
+            empleado.save()
+            # Crear poderes del empleado
+            from empresa.models import PoderEmpleado
+            PoderEmpleado.objects.create(
+                empleado=empleado,
+                empresa=self.empresa,
+                puede_ver_reportes=self.cleaned_data.get('puede_ver_reportes', False),
+                puede_registrar_ventas=self.cleaned_data.get('puede_registrar_ventas', False),
+                puede_editar_productos=self.cleaned_data.get('puede_editar_productos', False),
+                puede_gestionar_cuentas=self.cleaned_data.get('puede_gestionar_cuentas', False),
+                puede_registrar_gastos=self.cleaned_data.get('puede_registrar_gastos', False),
+                puede_gestionar_inventario=self.cleaned_data.get('puede_gestionar_inventario', False),
+                puede_gestionar_metas=self.cleaned_data.get('puede_gestionar_metas', False),
+            )
+        return empleado
 
 class EditarEmpresaForm(forms.ModelForm):
     class Meta:

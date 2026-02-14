@@ -1,4 +1,4 @@
-{% extends 'empresa/base.html' %}
+﻿{% extends 'empresa/base.html' %}
 {% load static %}
 
 {% block title %}Metas de la Empresa - CONTAFY{% endblock %}
@@ -17,20 +17,18 @@
     <!-- Pestañas principales (nuevo orden) -->
     <ul class="nav nav-tabs mb-4" id="metasTabs" role="tablist">
         <li class="nav-item" role="presentation">
-            <button class="nav-link active" id="tus-metas-tab" data-bs-toggle="tab" data-bs-target="#tus-metas" type="button" role="tab">
+            <button class="nav-link active" id="tus-metas-tab" data-bs-toggle="tab" data-bs-target="#tus-metas"
+                type="button" role="tab">
                 🎯 Tus Metas
             </button>
         </li>
         <li class="nav-item" role="presentation">
-            <button class="nav-link" id="nueva-meta-tab" data-bs-toggle="tab" data-bs-target="#nueva-meta" type="button" role="tab">
+            <button class="nav-link" id="nueva-meta-tab" data-bs-toggle="tab" data-bs-target="#nueva-meta" type="button"
+                role="tab">
                 ➕ Nueva Meta
             </button>
         </li>
-        <li class="nav-item" role="presentation">
-            <button class="nav-link" id="comparacion-tab" data-bs-toggle="tab" data-bs-target="#comparacion" type="button" role="tab">
-                📊 Comparación del Sector
-            </button>
-        </li>
+
     </ul>
 
     <!-- Contenido de las pestañas (nuevo orden) -->
@@ -56,42 +54,48 @@
                                 </div>
                                 <div class="card-body">
                                     {% for rec in recomendaciones %}
-                                    <div class="alert {% if rec.estado == 'completada' %}alert-success{% elif rec.estado == 'en_progreso' %}alert-info{% elif rec.estado == 'atrasada' %}alert-warning{% else %}alert-danger{% endif %}">
+                                    <div
+                                        class="alert {% if rec.estado == 'completada' %}alert-success{% elif rec.estado == 'en_progreso' %}alert-info{% elif rec.estado == 'atrasada' %}alert-warning{% else %}alert-danger{% endif %}">
                                         <div class="d-flex justify-content-between align-items-start">
                                             <div class="flex-grow-1">
                                                 <div class="d-flex align-items-center mb-2">
                                                     {% if rec.estado == 'completada' %}
-                                                        <i class="bi bi-check-circle-fill me-2"></i>
-                                                        <strong>{{ rec.meta.get_tipo_display }} ({{ rec.meta.mes }}/{{ rec.meta.anio }})</strong>
-                                                        <span class="badge bg-success ms-2">¡Meta Cumplida!</span>
+                                                    <i class="bi bi-check-circle-fill me-2"></i>
+                                                    <strong>{{ rec.meta.get_tipo_display }} ({{ rec.meta.mes }}/{{
+                                                        rec.meta.anio }})</strong>
+                                                    <span class="badge bg-success ms-2">¡Meta Cumplida!</span>
                                                     {% elif rec.estado == 'en_progreso' %}
-                                                        <i class="bi bi-arrow-up-circle me-2"></i>
-                                                        <strong>{{ rec.meta.get_tipo_display }} ({{ rec.meta.mes }}/{{ rec.meta.anio }})</strong>
-                                                        <span class="badge bg-primary ms-2">En Progreso</span>
+                                                    <i class="bi bi-arrow-up-circle me-2"></i>
+                                                    <strong>{{ rec.meta.get_tipo_display }} ({{ rec.meta.mes }}/{{
+                                                        rec.meta.anio }})</strong>
+                                                    <span class="badge bg-primary ms-2">En Progreso</span>
                                                     {% elif rec.estado == 'atrasada' %}
-                                                        <i class="bi bi-exclamation-triangle me-2"></i>
-                                                        <strong>{{ rec.meta.get_tipo_display }} ({{ rec.meta.mes }}/{{ rec.meta.anio }})</strong>
-                                                        <span class="badge bg-warning ms-2">Atrasada</span>
+                                                    <i class="bi bi-exclamation-triangle me-2"></i>
+                                                    <strong>{{ rec.meta.get_tipo_display }} ({{ rec.meta.mes }}/{{
+                                                        rec.meta.anio }})</strong>
+                                                    <span class="badge bg-warning ms-2">Atrasada</span>
                                                     {% else %}
-                                                        <i class="bi bi-x-circle-fill me-2"></i>
-                                                        <strong>{{ rec.meta.get_tipo_display }} ({{ rec.meta.mes }}/{{ rec.meta.anio }})</strong>
-                                                        <span class="badge bg-danger ms-2">Crítica</span>
+                                                    <i class="bi bi-x-circle-fill me-2"></i>
+                                                    <strong>{{ rec.meta.get_tipo_display }} ({{ rec.meta.mes }}/{{
+                                                        rec.meta.anio }})</strong>
+                                                    <span class="badge bg-danger ms-2">Crítica</span>
                                                     {% endif %}
                                                 </div>
                                                 <p class="mb-0">{{ rec.recomendacion }}</p>
                                                 {% if rec.meta.dias_restantes_mes > 0 and rec.estado != 'completada' %}
-                                                    <small class="text-muted mt-1 d-block">
-                                                        <i class="bi bi-clock"></i> 
-                                                        {% if rec.meta.dias_restantes_mes == 1 %}
-                                                            Vence mañana
-                                                        {% else %}
-                                                            Vence en {{ rec.meta.dias_restantes_mes }} días
-                                                        {% endif %}
-                                                    </small>
+                                                <small class="text-muted mt-1 d-block">
+                                                    <i class="bi bi-clock"></i>
+                                                    {% if rec.meta.dias_restantes_mes == 1 %}
+                                                    Vence mañana
+                                                    {% else %}
+                                                    Vence en {{ rec.meta.dias_restantes_mes }} días
+                                                    {% endif %}
+                                                </small>
                                                 {% endif %}
                                             </div>
                                             <div class="text-end ms-3">
-                                                <div class="badge {% if rec.estado == 'completada' %}bg-success{% elif rec.estado == 'en_progreso' %}bg-primary{% elif rec.estado == 'atrasada' %}bg-warning{% else %}bg-danger{% endif %} fs-6">
+                                                <div
+                                                    class="badge {% if rec.estado == 'completada' %}bg-success{% elif rec.estado == 'en_progreso' %}bg-primary{% elif rec.estado == 'atrasada' %}bg-warning{% else %}bg-danger{% endif %} fs-6">
                                                     {{ rec.progreso|floatformat:1 }}%
                                                 </div>
                                             </div>
@@ -122,7 +126,7 @@
                                             <td>
                                                 <strong>{{ meta.get_tipo_display }}</strong>
                                                 {% if meta.es_dinamica %}
-                                                    <i class="bi bi-robot text-info" title="Meta Dinámica"></i>
+                                                <i class="bi bi-robot text-info" title="Meta Dinámica"></i>
                                                 {% endif %}
                                             </td>
                                             <td>{{ meta.mes }}/{{ meta.anio }}</td>
@@ -131,54 +135,61 @@
                                             <td>
                                                 <div class="progress" style="height: 20px;">
                                                     {% if meta.estado == 'completada' %}
-                                                        <div class="progress-bar bg-success" style="width: {{ meta.progreso_actual }}%">
-                                                            {{ meta.progreso_actual|floatformat:1 }}%
-                                                        </div>
+                                                    <div class="progress-bar bg-success"
+                                                        style="width: {{ meta.progreso_actual }}%">
+                                                        {{ meta.progreso_actual|floatformat:1 }}%
+                                                    </div>
                                                     {% elif meta.estado == 'en_progreso' %}
-                                                        <div class="progress-bar bg-primary" style="width: {{ meta.progreso_actual }}%">
-                                                            {{ meta.progreso_actual|floatformat:1 }}%
-                                                        </div>
+                                                    <div class="progress-bar bg-primary"
+                                                        style="width: {{ meta.progreso_actual }}%">
+                                                        {{ meta.progreso_actual|floatformat:1 }}%
+                                                    </div>
                                                     {% elif meta.estado == 'atrasada' %}
-                                                        <div class="progress-bar bg-warning" style="width: {{ meta.progreso_actual }}%">
-                                                            {{ meta.progreso_actual|floatformat:1 }}%
-                                                        </div>
+                                                    <div class="progress-bar bg-warning"
+                                                        style="width: {{ meta.progreso_actual }}%">
+                                                        {{ meta.progreso_actual|floatformat:1 }}%
+                                                    </div>
                                                     {% else %}
-                                                        <div class="progress-bar bg-danger" style="width: {{ meta.progreso_actual }}%">
-                                                            {{ meta.progreso_actual|floatformat:1 }}%
-                                                        </div>
+                                                    <div class="progress-bar bg-danger"
+                                                        style="width: {{ meta.progreso_actual }}%">
+                                                        {{ meta.progreso_actual|floatformat:1 }}%
+                                                    </div>
                                                     {% endif %}
                                                 </div>
                                             </td>
                                             <td>
                                                 {% if meta.estado == 'completada' %}
-                                                    <span class="badge bg-success">Completada</span>
+                                                <span class="badge bg-success">Completada</span>
                                                 {% elif meta.estado == 'en_progreso' %}
-                                                    <span class="badge bg-primary">En Progreso</span>
+                                                <span class="badge bg-primary">En Progreso</span>
                                                 {% elif meta.estado == 'atrasada' %}
-                                                    <span class="badge bg-warning">Atrasada</span>
+                                                <span class="badge bg-warning">Atrasada</span>
                                                 {% else %}
-                                                    <span class="badge bg-danger">Crítica</span>
+                                                <span class="badge bg-danger">Crítica</span>
                                                 {% endif %}
                                             </td>
                                             <td>
                                                 <small>
                                                     {% if meta.alertas_activas %}
-                                                        <i class="bi bi-bell text-success" title="Alertas activas"></i>
+                                                    <i class="bi bi-bell text-success" title="Alertas activas"></i>
                                                     {% endif %}
                                                     {% if meta.es_dinamica %}
-                                                        <i class="bi bi-robot text-info" title="Factor: {{ meta.factor_ajuste }}"></i>
+                                                    <i class="bi bi-robot text-info"
+                                                        title="Factor: {{ meta.factor_ajuste }}"></i>
                                                     {% endif %}
-                                                    <i class="bi bi-clock text-muted" title="Recordatorio: {{ meta.recordatorio_dias }} días"></i>
+                                                    <i class="bi bi-clock text-muted"
+                                                        title="Recordatorio: {{ meta.recordatorio_dias }} días"></i>
                                                 </small>
                                             </td>
                                             <td>
                                                 <div class="btn-group btn-group-sm">
-                                                    <a href="{% url 'empresa:historial_meta' meta.id %}" class="btn btn-outline-info" title="Ver historial">
+                                                    <a href="{% url 'empresa:historial_meta' meta.id %}"
+                                                        class="btn btn-outline-info" title="Ver historial">
                                                         <i class="bi bi-clock-history"></i>
                                                     </a>
-                                                    <button class="btn btn-outline-primary" 
-                                                            onclick="editarMeta('{{ meta.id }}', '{{ meta.tipo }}', '{{ meta.objetivo_mensual }}', '{{ meta.mes }}', '{{ meta.anio }}', '{{ meta.es_dinamica }}', '{{ meta.factor_ajuste }}', '{{ meta.recordatorio_dias }}', '{{ meta.alertas_activas }}')"
-                                                            title="Editar">
+                                                    <button class="btn btn-outline-primary"
+                                                        onclick="editarMeta('{{ meta.id }}', '{{ meta.tipo }}', '{{ meta.objetivo_mensual }}', '{{ meta.mes }}', '{{ meta.anio }}', '{{ meta.es_dinamica }}', '{{ meta.factor_ajuste }}', '{{ meta.recordatorio_dias }}', '{{ meta.alertas_activas }}')"
+                                                        title="Editar">
                                                         <i class="bi bi-pencil"></i>
                                                     </button>
                                                 </div>
@@ -216,7 +227,9 @@
                         <div class="card-body">
                             <div class="alert alert-info mb-4">
                                 <i class="bi bi-info-circle"></i>
-                                Estas sugerencias se calculan automáticamente usando los datos reales de tu empresa (ventas y utilidad de meses anteriores). Así, siempre verás recomendaciones personalizadas y no valores genéricos.
+                                Estas sugerencias se calculan automáticamente usando los datos reales de tu empresa
+                                (ventas y utilidad de meses anteriores). Así, siempre verás recomendaciones
+                                personalizadas y no valores genéricos.
                             </div>
                             <div class="row">
                                 <div class="col-md-6">
@@ -256,8 +269,8 @@
                             </div>
                             <div class="mt-3">
                                 <small class="text-muted">
-                                    <i class="bi bi-info-circle"></i> 
-                                    Crecimiento actual: {{ metas_dinamicas.tendencia.crecimiento_ventas|floatformat:1 }}%. 
+                                    <i class="bi bi-info-circle"></i>
+                                    Crecimiento actual: {{ metas_dinamicas.tendencia.crecimiento_ventas|floatformat:1 }}%.
                                     Recomendación: {{ metas_dinamicas.tendencia.recomendacion|title }}.
                                 </small>
                             </div>
@@ -285,8 +298,8 @@
                                     </div>
                                     <div class="col-md-3 mb-3">
                                         <label for="objetivo_mensual" class="form-label">Objetivo Mensual ($)</label>
-                                        <input type="number" name="objetivo_mensual" id="objetivo_mensual" 
-                                               class="form-control" step="0.01" min="0" required>
+                                        <input type="number" name="objetivo_mensual" id="objetivo_mensual"
+                                            class="form-control" step="0.01" min="0" required>
                                     </div>
                                     <div class="col-md-2 mb-3">
                                         <label for="mes" class="form-label">Mes</label>
@@ -308,31 +321,36 @@
                                     </div>
                                     <div class="col-md-2 mb-3">
                                         <label for="recordatorio_dias" class="form-label">Recordatorio (días)</label>
-                                        <input type="number" name="recordatorio_dias" id="recordatorio_dias" 
-                                               class="form-control" value="7" min="1" max="30">
+                                        <input type="number" name="recordatorio_dias" id="recordatorio_dias"
+                                            class="form-control" value="7" min="1" max="30">
                                     </div>
                                 </div>
                                 <div class="row">
                                     <div class="col-md-3 mb-3">
                                         <div class="form-check">
-                                            <input class="form-check-input" type="checkbox" name="es_dinamica" id="es_dinamica">
+                                            <input class="form-check-input" type="checkbox" name="es_dinamica"
+                                                id="es_dinamica">
                                             <label class="form-check-label" for="es_dinamica">
                                                 Meta Dinámica
                                             </label>
                                         </div>
                                         <div class="form-text text-muted ms-4">
-                                            Si activas esta opción, la meta se ajustará automáticamente según el desempeño de meses anteriores. Ideal para empresas con ventas o gastos variables.
+                                            Si activas esta opción, la meta se ajustará automáticamente según el
+                                            desempeño de meses anteriores. Ideal para empresas con ventas o gastos
+                                            variables.
                                         </div>
                                     </div>
                                     <div class="col-md-3 mb-3">
                                         <div class="form-check">
-                                            <input class="form-check-input" type="checkbox" name="alertas_activas" id="alertas_activas" checked>
+                                            <input class="form-check-input" type="checkbox" name="alertas_activas"
+                                                id="alertas_activas" checked>
                                             <label class="form-check-label" for="alertas_activas">
                                                 Alertas Activas
                                             </label>
                                         </div>
                                         <div class="form-text text-muted ms-4">
-                                            Si activas esta opción, recibirás notificaciones automáticas cuando tu meta esté en riesgo, atrasada o cumplida. Así no pierdes de vista tu objetivo.
+                                            Si activas esta opción, recibirás notificaciones automáticas cuando tu meta
+                                            esté en riesgo, atrasada o cumplida. Así no pierdes de vista tu objetivo.
                                         </div>
                                     </div>
                                     <div class="col-md-3 mb-3">
@@ -362,378 +380,58 @@
             </div>
         </div>
 
-        <!-- Comparación del Sector -->
-        <div class="tab-pane fade" id="comparacion" role="tabpanel" aria-labelledby="comparacion-tab">
-            <div class="row">
-                <div class="col-12">
-                    <!-- Banner de privacidad -->
-                    <div class="alert alert-info text-center mb-4" role="alert">
-                        <i class="bi bi-shield-check"></i> <strong>Privacidad Garantizada:</strong> Solo se muestran promedios agregados. Tus datos individuales nunca se comparten.
-                    </div>
-                    
-                    <!-- Debug: Mostrar estructura de datos -->
-                    {% comment %}
-                    <div class="alert alert-warning">
-                        <strong>Debug:</strong> {{ benchmarking_sectorial|length }} elementos en benchmarking_sectorial
-                        <br>Keys: {% for key in benchmarking_sectorial.keys %}{{ key }}, {% endfor %}
-                    </div>
-                    {% endcomment %}
-                    
-                    <!-- Resumen Ejecutivo -->
-                    <div class="row mb-4">
-                        <!-- Posición General -->
-                        {% if benchmarking_sectorial.posiciones %}
-                        <div class="col-md-6">
-                            <div class="card border-success">
-                                <div class="card-header bg-success text-white">
-                                    <h6 class="mb-0"><i class="bi bi-trophy"></i> Tu Posición en el Sector</h6>
-                                </div>
-                                <div class="card-body">
-                                    <div class="row text-center">
-                                        {% for nivel, pos in benchmarking_sectorial.posiciones.items %}
-                                            {% if pos.total_empresas > 0 %}
-                                            <div class="col-6 mb-2">
-                                                <div class="badge {% if pos.percentil_ventas >= 75 %}bg-success{% elif pos.percentil_ventas >= 50 %}bg-primary{% elif pos.percentil_ventas >= 25 %}bg-warning{% else %}bg-danger{% endif %} p-2">
-                                                    Top {{ pos.percentil_ventas }}%
-                                                </div>
-                                                <p class="small mt-1 mb-0">{{ nivel|title }}</p>
-                                            </div>
-                                            {% endif %}
-                                        {% endfor %}
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        {% endif %}
-                        
-                        <!-- Tamaño y Valuación -->
-                        <div class="col-md-6">
-                            <div class="card border-info">
-                                <div class="card-header bg-info text-white">
-                                    <h6 class="mb-0"><i class="bi bi-building"></i> Tamaño y Valuación</h6>
-                                </div>
-                                <div class="card-body">
-                                    <div class="row">
-                                        <div class="col-6">
-                                            <p class="mb-1"><strong>Categoría:</strong></p>
-                                            <span class="badge bg-primary">{{ benchmarking_sectorial.tamaño_empresa.categoria }}</span>
-                                            <p class="small text-muted mt-1">{{ benchmarking_sectorial.tamaño_empresa.descripcion }}</p>
-                                        </div>
-                                        {% if benchmarking_sectorial.valuacion_comparativa.tiene_datos %}
-                                        <div class="col-6">
-                                            <p class="mb-1"><strong>Valuación:</strong></p>
-                                            <p class="h6 text-success">${{ benchmarking_sectorial.valuacion_comparativa.valuacion_propia|floatformat:0 }}</p>
-                                            <small class="text-muted">Top {{ benchmarking_sectorial.valuacion_comparativa.percentil_valuacion|floatformat:0 }}% del sector</small>
-                                        </div>
-                                        {% endif %}
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    
 
-
-                    <!-- Comparaciones por Nivel Geográfico -->
-                    {% if benchmarking_sectorial.comparaciones %}
-                    <div class="row">
-                        {% for nivel, datos in benchmarking_sectorial.comparaciones.items %}
-                            {% if datos.tiene_datos %}
-                            <div class="col-md-6 mb-4">
-                                <div class="card h-100">
-                                    <div class="card-header bg-primary text-white">
-                                        <h6 class="mb-0">
-                                            {% if nivel == 'categoria' %}<i class="bi bi-tags"></i>
-                                            {% elif nivel == 'tipo_negocio' %}<i class="bi bi-shop"></i>
-                                            {% elif nivel == 'ciudad' %}<i class="bi bi-building"></i>
-                                            {% elif nivel == 'provincia' %}<i class="bi bi-geo-alt"></i>
-                                            {% elif nivel == 'pais' %}<i class="bi bi-flag"></i>
-                                            {% else %}<i class="bi bi-geo"></i>
-                                            {% endif %}
-                                            {{ datos.nombre_grupo }}
-                                        </h6>
-                                        <small>{{ datos.total_empresas }} empresas comparables</small>
-                                    </div>
-                                    <div class="card-body">
-                                        <!-- Ventas -->
-                                        <div class="mb-3">
-                                            <div class="d-flex justify-content-between align-items-center">
-                                                <span class="fw-bold">Ventas Mensuales</span>
-                                                <span class="badge {% if benchmarking_sectorial.metricas_propias.ventas_mensuales > datos.ventas_promedio %}bg-success{% else %}bg-warning{% endif %}">
-                                                    {% if benchmarking_sectorial.metricas_propias.ventas_mensuales > datos.ventas_promedio %}Superior{% else %}Por debajo{% endif %}
-                                                </span>
-                                            </div>
-                                            <div class="progress mt-2" style="height: 8px;">
-                                                {% if datos.ventas_promedio > 0 %}
-                                                    {% widthratio benchmarking_sectorial.metricas_propias.ventas_mensuales datos.ventas_promedio 100 as porcentaje_ventas %}
-                                                    <div class="progress-bar bg-primary" style="width: {% if porcentaje_ventas > 100 %}100{% else %}{{ porcentaje_ventas }}{% endif %}%"></div>
-                                                {% endif %}
-                                            </div>
-                                            <div class="d-flex justify-content-between mt-1">
-                                                <small class="text-muted">Tú: ${{ benchmarking_sectorial.metricas_propias.ventas_mensuales|floatformat:0 }}</small>
-                                                <small class="text-muted">Promedio: ${{ datos.ventas_promedio|floatformat:0 }}</small>
-                                            </div>
-                                        </div>
-
-                                        <!-- Margen Neto -->
-                                        <div class="mb-3">
-                                            <div class="d-flex justify-content-between align-items-center">
-                                                <span class="fw-bold">Margen Neto</span>
-                                                <span class="badge {% if benchmarking_sectorial.metricas_propias.margen_neto > datos.margen_neto_promedio %}bg-success{% else %}bg-warning{% endif %}">
-                                                    {% if benchmarking_sectorial.metricas_propias.margen_neto > datos.margen_neto_promedio %}Superior{% else %}Por debajo{% endif %}
-                                                </span>
-                                            </div>
-                                            <div class="d-flex justify-content-between mt-1">
-                                                <small class="text-muted">Tú: {{ benchmarking_sectorial.metricas_propias.margen_neto|floatformat:1 }}%</small>
-                                                <small class="text-muted">Promedio: {{ datos.margen_neto_promedio|floatformat:1 }}%</small>
-                                            </div>
-                                        </div>
-
-                                        <!-- Crecimiento -->
-                                        <div>
-                                            <div class="d-flex justify-content-between align-items-center">
-                                                <span class="fw-bold">Crecimiento Mensual</span>
-                                                <span class="badge {% if benchmarking_sectorial.metricas_propias.crecimiento_mensual > datos.crecimiento_promedio %}bg-success{% else %}bg-info{% endif %}">
-                                                    {% if benchmarking_sectorial.metricas_propias.crecimiento_mensual > datos.crecimiento_promedio %}Superior{% else %}Normal{% endif %}
-                                                </span>
-                                            </div>
-                                            <div class="d-flex justify-content-between mt-1">
-                                                <small class="text-muted">Tú: {{ benchmarking_sectorial.metricas_propias.crecimiento_mensual|floatformat:1 }}%</small>
-                                                <small class="text-muted">Promedio: {{ datos.crecimiento_promedio|floatformat:1 }}%</small>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            {% endif %}
-                        {% endfor %}
-                    </div>
-                    {% else %}
-                    <div class="alert alert-info text-center">
-                        <i class="bi bi-info-circle"></i> No hay suficientes datos para comparación. Se necesitan al menos 3 empresas similares.
-                    </div>
-                    {% endif %}
-
-
-
-                    <!-- Proyecciones Futuras -->
-                    {% if benchmarking_sectorial.proyecciones_posicion %}
-                    <div class="card mb-4">
-                        <div class="card-header bg-primary text-white">
-                            <h6 class="mb-0"><i class="bi bi-graph-up"></i> Proyección de Posición Futura (3 años)</h6>
-                        </div>
-                        <div class="card-body">
-                            <div class="table-responsive">
-                                <table class="table table-sm">
-                                    <thead>
-                                        <tr>
-                                            <th>Año</th>
-                                            <th>Ventas Proyectadas</th>
-                                            <th>Utilidad Proyectada</th>
-                                            <th>Posición Estimada</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {% for proj in benchmarking_sectorial.proyecciones_posicion %}
-                                        <tr>
-                                            <td>Año {{ proj.año }}</td>
-                                            <td>${{ proj.ventas_proyectadas|floatformat:0 }}</td>
-                                            <td>${{ proj.utilidad_proyectada|floatformat:0 }}</td>
-                                            <td><span class="badge bg-info">{{ proj.posicion_estimada }}</span></td>
-                                        </tr>
-                                        {% endfor %}
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    </div>
-                    {% endif %}
-                    
-                    <!-- Gráficos de Comparación -->
-                    {% if benchmarking_sectorial.comparaciones %}
-                    <div class="row mt-4">
-                        <div class="col-md-6">
-                            <div class="card">
-                                <div class="card-header">
-                                    <h6><i class="bi bi-bar-chart"></i> Comparación de Ventas</h6>
-                                </div>
-                                <div class="card-body">
-                                    <canvas id="ventasChart" width="400" height="200"></canvas>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="card">
-                                <div class="card-header">
-                                    <h6><i class="bi bi-pie-chart"></i> Comparación de Rentabilidad</h6>
-                                </div>
-                                <div class="card-body">
-                                    <canvas id="rentabilidadChart" width="400" height="200"></canvas>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    {% endif %}
-                </div>
-            </div>
-        </div>
     </div>
 </div>
 
-<!-- Chart.js -->
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script>
-{% if benchmarking_sectorial.comparaciones %}
-// Datos para gráficos
-const datosVentas = {
-    labels: [{% for nivel, datos in benchmarking_sectorial.comparaciones.items %}{% if datos.tiene_datos %}'{{ datos.nombre_grupo }}',{% endif %}{% endfor %}],
-    datasets: [{
-        label: 'Tu Empresa',
-        data: [{% for nivel, datos in benchmarking_sectorial.comparaciones.items %}{% if datos.tiene_datos %}{{ benchmarking_sectorial.metricas_propias.ventas_mensuales }},{% endif %}{% endfor %}],
-        backgroundColor: 'rgba(54, 162, 235, 0.8)',
-        borderColor: 'rgba(54, 162, 235, 1)',
-        borderWidth: 2
-    }, {
-        label: 'Promedio Sector',
-        data: [{% for nivel, datos in benchmarking_sectorial.comparaciones.items %}{% if datos.tiene_datos %}{{ datos.ventas_promedio }},{% endif %}{% endfor %}],
-        backgroundColor: 'rgba(255, 99, 132, 0.8)',
-        borderColor: 'rgba(255, 99, 132, 1)',
-        borderWidth: 2
-    }]
-};
 
-const datosRentabilidad = {
-    labels: [{% for nivel, datos in benchmarking_sectorial.comparaciones.items %}{% if datos.tiene_datos %}'{{ datos.nombre_grupo }}',{% endif %}{% endfor %}],
-    datasets: [{
-        label: 'Tu Empresa',
-        data: [{% for nivel, datos in benchmarking_sectorial.comparaciones.items %}{% if datos.tiene_datos %}{{ benchmarking_sectorial.metricas_propias.margen_neto }},{% endif %}{% endfor %}],
-        backgroundColor: 'rgba(75, 192, 192, 0.8)',
-        borderColor: 'rgba(75, 192, 192, 1)',
-        borderWidth: 2
-    }, {
-        label: 'Promedio Sector',
-        data: [{% for nivel, datos in benchmarking_sectorial.comparaciones.items %}{% if datos.tiene_datos %}{{ datos.margen_neto_promedio }},{% endif %}{% endfor %}],
-        backgroundColor: 'rgba(255, 206, 86, 0.8)',
-        borderColor: 'rgba(255, 206, 86, 1)',
-        borderWidth: 2
-    }]
-};
 
-// Configuración de gráficos
-const configVentas = {
-    type: 'bar',
-    data: datosVentas,
-    options: {
-        responsive: true,
-        plugins: {
-            legend: {
-                position: 'top',
-            },
-            title: {
-                display: true,
-                text: 'Ventas Mensuales - Comparación'
-            }
-        },
-        scales: {
-            y: {
-                beginAtZero: true,
-                ticks: {
-                    callback: function(value) {
-                        return '$' + value.toLocaleString();
-                    }
-                }
-            }
-        }
-    }
-};
-
-const configRentabilidad = {
-    type: 'bar',
-    data: datosRentabilidad,
-    options: {
-        responsive: true,
-        plugins: {
-            legend: {
-                position: 'top',
-            },
-            title: {
-                display: true,
-                text: 'Margen Neto - Comparación'
-            }
-        },
-        scales: {
-            y: {
-                ticks: {
-                    callback: function(value) {
-                        return value + '%';
-                    }
-                }
-            }
-        }
-    }
-};
-
-// Crear gráficos
-document.addEventListener('DOMContentLoaded', function() {
-    const ctxVentas = document.getElementById('ventasChart');
-    const ctxRentabilidad = document.getElementById('rentabilidadChart');
-    
-    if (ctxVentas) {
-        new Chart(ctxVentas, configVentas);
-    }
-    
-    if (ctxRentabilidad) {
-        new Chart(ctxRentabilidad, configRentabilidad);
-    }
-});
-{% endif %}
-</script>
 
 <script>
-// Inicializar tooltips de Bootstrap
-document.addEventListener('DOMContentLoaded', function() {
-    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
-    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
-        return new bootstrap.Tooltip(tooltipTriggerEl);
-    });
-});
-
-function editarMeta(id, tipo, objetivo, mes, anio, esDinamica, factorAjuste, recordatorioDias, alertasActivas) {
-    document.getElementById('tipo').value = tipo;
-    document.getElementById('objetivo_mensual').value = objetivo;
-    document.getElementById('mes').value = mes;
-    document.getElementById('anio').value = anio;
-    document.getElementById('es_dinamica').checked = esDinamica === 'True';
-    document.getElementById('nivel_reto').value = factorAjuste; // Changed from 'factor_ajuste' to 'nivel_reto'
-    document.getElementById('recordatorio_dias').value = recordatorioDias;
-    document.getElementById('alertas_activas').checked = alertasActivas === 'True';
-    
-    // Cambiar a la pestaña de configuración
-    var configTab = new bootstrap.Tab(document.getElementById('nueva-meta-tab')); // Changed from 'configuracion-tab' to 'nueva-meta-tab'
-    configTab.show();
-    
-    // Scroll al formulario
-    document.querySelector('.card-header h5').scrollIntoView({ behavior: 'smooth' });
-}
-
-// Marcar notificaciones como leídas
-document.addEventListener('DOMContentLoaded', function() {
-    const notificaciones = document.querySelectorAll('.dropdown-item');
-    notificaciones.forEach(function(notif) {
-        notif.addEventListener('click', function() {
-            const notifId = this.dataset.notifId;
-            if (notifId) {
-                const template = '{% url "empresa:marcar_notificacion_leida" 0 %}';
-                fetch(template.replace('/0/', `/${notifId}/`), {
-                    method: 'POST',
-                    credentials: 'same-origin',
-                    headers: {
-                        'X-CSRFToken': window.CONTAFY_CSRF_TOKEN || (document.querySelector('[name=csrfmiddlewaretoken]') && document.querySelector('[name=csrfmiddlewaretoken]').value),
-                    }
-                });
-            }
+    // Inicializar tooltips de Bootstrap
+    document.addtener('DOMContentLoaded', function () {
+        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+        var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl);
         });
     });
-});
+
+    function editarMeta(id, tipo, objetivo, mes, anio, esDinamica, factorAjuste, recordatorioDias, alertasActivas) {
+        document.getElementById('tipo').value = tipo;
+        document.getElementById('objetivo_mensual').value = objetivo;
+        document.getElementById('mes').value = mes;
+        document.getElementById('anio').value = anio;
+        document.getElementById('es_dinamica').checked = esDinamica === 'True';
+        document.getElementById('nivel_reto').value = factorAjuste; // Changed from 'factor_ajuste' to 'nivel_reto'
+        document.getElementById('recordatorio_dias').value = recordatorioDias;
+        document.getElementById('alertas_activas').checked = alertasActivas === 'True';
+
+        // Cambiar a la pestaña de configuración
+        var configTab = new bootstrap.Tab(document.getElementById('nueva-meta-tab')); // Changed from 'configuracion-tab' to 'nueva-meta-tab'
+        configTab.show();
+
+        // Scroll al formulario
+        document.querySelector('.card-header h5').scrollIntoView({ behavior: 'smooth' });
+    }
+
+    // Marcar notificaciones como leídas
+    document.addEventListener('DOMContentLoaded', function () {
+        const notificaciones = document.querySelectorAll('.dropdown-item');
+        notificaciones.forEach(function (notif) {
+            notif.addEventListener('click', function () {
+                const notifId = this.dataset.notifId;
+                if (notifId) {
+                    const template = '{% url "empresa:marcar_notificacion_leida" 0 %}';
+                    fetch(template.replace('/0/', `/${notifId}/`), {
+                        method: 'POST',
+                        credentials: 'same-origin',
+                        headers: {
+                            'X-CSRFToken': window.CONTAFY_CSRF_TOKEN || (document.querySelector('[name=csrfmiddlewaretoken]') && document.querySelector('[name=csrfmiddlewaretoken]').value),
+                        }
+                    });
+                }
+            });
+        });
+    });
 </script>
 {% endblock %}

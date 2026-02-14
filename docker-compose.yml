@@ -1,29 +1,102 @@
 version: '3.9'
 
 services:
+  # Base de datos PostgreSQL
   db:
-    image: postgres:15
-    restart: always
+    image: postgres:15-alpine
+    container_name: contafy_db
+    restart: unless-stopped
+    
     environment:
-      POSTGRES_DB: contafy
-      POSTGRES_USER: contafyuser
-      POSTGRES_PASSWORD: contafypass
+      POSTGRES_DB: ${POSTGRES_DB:-contafy_db}
+      POSTGRES_USER: ${POSTGRES_USER:-contafy}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-changeme}
+      POSTGRES_INITDB_ARGS: "--encoding=UTF8 --locale=C --max_connections=200"
+    
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    
     ports:
-      - "5432:5432"
-
-  web:
-    build: .
-    command: gunicorn core.wsgi:application --bind 0.0.0.0:8000
-    volumes:
-      - .:/app
-    ports:
-      - "8000:8000"
+      - "${POSTGRES_PORT:-5432}:5432"
+    
+    networks:
+      - contafy_network
+    
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-contafy} -d ${POSTGRES_DB:-contafy_db}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    
     env_file:
       - .env
-    depends_on:
-      - db
 
+  # Aplicación Django + Gunicorn
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    
+    container_name: contafy_web
+    restart: unless-stopped
+    
+    environment:
+      ENVIRONMENT: ${ENVIRONMENT:-development}
+      DEBUG: ${DEBUG:-false}
+      SECRET_KEY: ${SECRET_KEY:-change-me-in-production}
+      ALLOWED_HOSTS: ${ALLOWED_HOSTS:-localhost,127.0.0.1}
+      POSTGRES_DB: ${POSTGRES_DB:-contafy_db}
+      POSTGRES_USER: ${POSTGRES_USER:-contafy}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-changeme}
+      POSTGRES_HOST: db
+      POSTGRES_PORT: 5432
+      DATABASE_URL: ""
+      DOCKER_RUNNING: "true"
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+    
+    volumes:
+      - ./:/app
+      - static_volume:/app/staticfiles
+      - media_volume:/app/media
+    
+    ports:
+      - "8000:8000"
+    
+    networks:
+      - contafy_network
+    
+    depends_on:
+      db:
+        condition: service_healthy
+    
+    healthcheck:
+      test: ["CMD", "python", "manage.py", "check", "--databases", "default"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    
+    env_file:
+      - .env
+    
+    command: >
+      sh -c "
+      echo '🔧 Running migrations...' &&
+      python manage.py migrate &&
+      echo '📦 Collecting static files...' &&
+      python manage.py collectstatic --noinput &&
+      echo '🚀 Starting Gunicorn...' &&
+      gunicorn core.wsgi:application --bind 0.0.0.0:8000 --workers 4 --worker-class sync --timeout 60 --access-logfile - --error-logfile -
+      "
+
+# Volúmenes nombrados para persistencia
 volumes:
-  postgres_data: 
+  postgres_data:
+    driver: local
+  static_volume:
+  media_volume:
+
+# Red personalizada para comunicación entre servicios
+networks:
+  contafy_network:
+    driver: bridge 

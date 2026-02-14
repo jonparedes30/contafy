@@ -12,7 +12,7 @@ def reverse_accounting_setup_data(apps, schema_editor):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('empresa', '0020_add_slug_and_audit_fields'),
+        ('empresa', '0020_gap_repair'),
     ]
 
     operations = [

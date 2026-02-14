@@ -12,52 +12,9 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RemoveIndex(
-            model_name='moduloaprendizaje',
-            name='empresa_mod_tipo_em_b8c123_idx',
-        ),
-        migrations.RenameIndex(
-            model_name='asientoaudit',
-            new_name='empresa_asi_simulac_61ea23_idx',
-            old_name='empresa_asi_simula_d4e5f6_idx',
-        ),
-        migrations.RenameIndex(
-            model_name='leccion',
-            new_name='empresa_lec_modulo__b35fef_idx',
-            old_name='empresa_lec_modulo__f0e590_idx',
-        ),
-        migrations.RenameIndex(
-            model_name='leccion',
-            new_name='empresa_lec_tipo_4b8d71_idx',
-            old_name='empresa_lec_tipo_vi_a1b2c3_idx',
-        ),
         migrations.AddField(
             model_name='empresa',
             name='propietario',
             field=models.ForeignKey(blank=True, help_text='Usuario propietario de la empresa', null=True, on_delete=django.db.models.deletion.CASCADE, related_name='empresas_propias', to=settings.AUTH_USER_MODEL),
-        ),
-        migrations.AlterField(
-            model_name='asientoaudit',
-            name='id',
-            field=models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID'),
-        ),
-        migrations.AlterField(
-            model_name='leccion',
-            name='orden',
-            field=models.IntegerField(db_index=True, default=1),
-        ),
-        migrations.AlterField(
-            model_name='moduloaprendizaje',
-            name='orden',
-            field=models.IntegerField(db_index=True, default=1),
-        ),
-        migrations.AlterField(
-            model_name='moduloaprendizaje',
-            name='tipo_empresa',
-            field=models.CharField(choices=[('comercial', 'Comercial'), ('manufactura', 'Manufactura'), ('servicios', 'Servicios')], db_index=True, max_length=20),
-        ),
-        migrations.AddIndex(
-            model_name='asientoaudit',
-            index=models.Index(fields=['tipo_movimiento', 'creado_en'], name='empresa_asi_tipo_mo_cf0bc3_idx'),
         ),
     ]

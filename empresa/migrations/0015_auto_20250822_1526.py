@@ -27,7 +27,7 @@ def reverse_iva_rates(apps, schema_editor):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('empresa', '0014_liga_reto_alter_escenariosimulacion_options_and_more'),
+        ('empresa', '0014_gap_repair'),
     ]
 
     operations = [

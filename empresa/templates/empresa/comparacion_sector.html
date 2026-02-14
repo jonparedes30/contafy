@@ -1,0 +1,478 @@
+﻿{% extends 'empresa/base.html' %}
+{% load static %}
+<!-- FIXED VERSION 3.0 WITH ALIASES -->
+
+{% block title %}Comparación del Sector - CONTAFY{% endblock %}
+
+{% block content %}
+{% with own=benchmarking_sectorial.metricas_propias val=benchmarking_sectorial.valuacion_comparativa %}
+<div class="container-fluid mt-4">
+    <div class="animated-header mb-4 d-flex flex-wrap align-items-center">
+        <div>
+            <h1 class="h2 mb-1"><i class="bi bi-bar-chart-line"></i> Comparación del Sector</h1>
+            <p class="mb-0">Analiza cómo se posiciona tu empresa frente a la competencia.</p>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-12">
+            <!-- Banner de privacidad -->
+            <div class="alert alert-info text-center mb-4" role="alert">
+                <i class="bi bi-shield-check"></i> <strong>Privacidad Garantizada:</strong> Solo se muestran promedios
+                agregados. Tus datos individuales nunca se comparten.
+            </div>
+
+            <!-- Posición en el Sector -->
+            <div class="row mb-4">
+                {% if benchmarking_sectorial.posiciones %}
+                <div class="col-md-6 mb-3">
+                    <div class="card h-100">
+                        <div class="card-header border-0 pb-0">
+                            <h6 class="mb-0 text-success"><i class="bi bi-trophy me-2"></i>Tu Posición en el Sector</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="row text-center g-2">
+                                {% for nivel, pos in benchmarking_sectorial.posiciones.items %}
+                                {% if pos.total_empresas > 0 %}
+                                <div class="col-6 mb-2">
+                                    <div class="border rounded p-2 h-100">
+                                        <p class="small text-muted mb-1">
+                                            {% if nivel == 'categoria' %}Categoría
+                                            {% elif nivel == 'tipo_negocio' %}Tipo de negocio
+                                            {% elif nivel == 'ciudad' %}Ciudad
+                                            {% elif nivel == 'provincia' %}Provincia
+                                            {% elif nivel == 'pais' %}País
+                                            {% elif nivel == 'cercanas_100km' %}100 km
+                                            {% else %}{{ nivel|title }}{% endif %}
+                                        </p>
+                                        <div class="d-flex flex-column gap-1">
+                                            <span class="badge {% if pos.percentil_ventas >= 75 %}bg-success{% elif pos.percentil_ventas >= 50 %}bg-primary{% elif pos.percentil_ventas >= 25 %}bg-warning{% else %}bg-danger{% endif %} p-2">
+                                                Ventas: Top {{ pos.percentil_ventas }}%
+                                            </span>
+                                            <span class="badge {% if pos.percentil_margen >= 75 %}bg-success{% elif pos.percentil_margen >= 50 %}bg-primary{% elif pos.percentil_margen >= 25 %}bg-warning{% else %}bg-danger{% endif %} p-2">
+                                                Margen: Top {{ pos.percentil_margen }}%
+                                            </span>
+                                        </div>
+                                        <small class="text-muted d-block mt-1">{{ pos.total_empresas }} empresas comparadas</small>
+                                    </div>
+                                </div>
+                                {% endif %}
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- Tamaño y Valuación -->
+                <div class="{% if benchmarking_sectorial.posiciones %}col-md-6{% else %}col-md-12{% endif %} mb-3">
+                    <div class="card h-100">
+                        <div class="card-header border-0 pb-0">
+                            <h6 class="mb-0 text-info"><i class="bi bi-building me-2"></i>Tamaño y Valuación</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="row g-3">
+                                <div class="col-md-4">
+                                    <div class="border rounded p-3 h-100">
+                                        <p class="small text-muted mb-1">Categoría</p>
+                                        <span class="badge bg-primary">{{ benchmarking_sectorial.tamano_empresa.categoria }}</span>
+                                        <p class="small text-muted mt-2 mb-0">{{ benchmarking_sectorial.tamano_empresa.descripcion }}</p>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="border rounded p-3 h-100">
+                                        <p class="small text-muted mb-1">Crecimiento mensual</p>
+                                        <p class="h5 mb-1 {% if own.crecimiento_mensual >= 0 %}text-success{% else %}text-danger{% endif %}">
+                                            {{ own.crecimiento_mensual|floatformat:1 }}%
+                                        </p>
+                                        <small class="text-muted">
+                                            {% if own.crecimiento_mensual > 5 %}Expansión
+                                            {% elif own.crecimiento_mensual >= 0 %}Estable
+                                            {% else %}Contracción{% endif %}
+                                        </small>
+                                        <p class="small text-muted mt-2 mb-0">Ventas mes: ${{ own.ventas_mensuales|floatformat:0 }}</p>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="border rounded p-3 h-100">
+                                        <p class="small text-muted mb-1">Rentabilidad</p>
+                                        <p class="h5 mb-1 {% if own.margen_neto >= 15 %}text-success{% elif own.margen_neto >= 5 %}text-primary{% elif own.margen_neto >= 0 %}text-warning{% else %}text-danger{% endif %}">
+                                            {{ own.margen_neto|floatformat:1 }}%
+                                        </p>
+                                        <small class="text-muted">Margen neto actual</small>
+                                        {% if val.tiene_datos %}
+                                        <p class="small text-muted mt-2 mb-0">Valuación: ${{ val.valuacion_propia|floatformat:0 }}</p>
+                                        <small class="text-muted d-block">Top {{ val.percentil_valuacion|floatformat:0 }}% del sector</small>
+                                        {% else %}
+                                        <small class="text-muted d-block mt-2">Sin datos de valuación comparativa</small>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Comparaciones por Nivel Geográfico -->
+            {% if benchmarking_sectorial.comparaciones %}
+            <div class="row">
+                {% for nivel, datos in benchmarking_sectorial.comparaciones.items %}
+                {% if datos.tiene_datos %}
+                <div class="col-md-6 mb-4">
+                    <div class="card h-100">
+                        <div class="card-header border-0 pb-0">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <h6 class="mb-0 text-primary">
+                                    {% if nivel == 'categoria' %}<i class="bi bi-tags me-2"></i>
+                                    {% elif nivel == 'tipo_negocio' %}<i class="bi bi-shop me-2"></i>
+                                    {% elif nivel == 'ciudad' %}<i class="bi bi-building me-2"></i>
+                                    {% elif nivel == 'provincia' %}<i class="bi bi-geo-alt me-2"></i>
+                                    {% elif nivel == 'pais' %}<i class="bi bi-flag me-2"></i>
+                                    {% else %}<i class="bi bi-geo me-2"></i>
+                                    {% endif %}
+                                    {{ datos.nombre_grupo }}
+                                </h6>
+                                <span class="badge bg-light text-muted">{{ datos.total_empresas }} empresas</span>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <!-- Ventas -->
+                            <div class="mb-3">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <span class="fw-bold">Ventas Mensuales</span>
+                                    <span
+                                        class="badge {% if own.ventas_mensuales > datos.ventas_promedio %}bg-success{% else %}bg-warning{% endif %}">
+                                        {% if own.ventas_mensuales > datos.ventas_promedio %}Superior{% else %}Por
+                                        debajo{% endif %}
+                                    </span>
+                                </div>
+                                <div class="progress mt-2" style="height: 8px;">
+                                    {% if datos.ventas_promedio > 0 %}
+                                    {% widthratio own.ventas_mensuales datos.ventas_promedio 100 as porcentaje_ventas %}
+                                    <div class="progress-bar bg-primary"
+                                        style="width: {% if porcentaje_ventas > 100 %}100{% else %}{{ porcentaje_ventas }}{% endif %}%">
+                                    </div>
+                                    {% endif %}
+                                </div>
+                                <div class="d-flex justify-content-between mt-1">
+                                    <small class="text-muted">Tú: ${{ own.ventas_mensuales|floatformat:0 }}</small>
+                                    <small class="text-muted">Promedio: ${{ datos.ventas_promedio|floatformat:0 }}</small>
+                                </div>
+                            </div>
+
+                            <!-- Margen Neto -->
+                            <div class="mb-3">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <span class="fw-bold">Margen Neto</span>
+                                    <span
+                                        class="badge {% if own.margen_neto > datos.margen_neto_promedio %}bg-success{% else %}bg-warning{% endif %}">
+                                        {% if own.margen_neto > datos.margen_neto_promedio %}Superior{% else %}Por
+                                        debajo{% endif %}
+                                    </span>
+                                </div>
+                                <div class="d-flex justify-content-between mt-1">
+                                    <small class="text-muted">Tú: {{ own.margen_neto|floatformat:1 }}%</small>
+                                    <small class="text-muted">Promedio: {{ datos.margen_neto_promedio|floatformat:1 }}%</small>
+                                </div>
+                            </div>
+
+                            <!-- Crecimiento -->
+                            <div>
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <span class="fw-bold">Crecimiento Mensual</span>
+                                    <span
+                                        class="badge {% if own.crecimiento_mensual > datos.crecimiento_promedio %}bg-success{% else %}bg-info{% endif %}">
+                                        {% if own.crecimiento_mensual > datos.crecimiento_promedio %}Superior{% else
+                                        %}Normal{% endif %}
+                                    </span>
+                                </div>
+                                <div class="d-flex justify-content-between mt-1">
+                                    <small class="text-muted">Tú: {{ own.crecimiento_mensual|floatformat:1 }}%</small>
+                                    <small class="text-muted">Promedio: {{ datos.crecimiento_promedio|floatformat:1 }}%</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="alert alert-info text-center">
+                <i class="bi bi-info-circle"></i> No hay suficientes datos comparables del sector para mostrar esta sección.
+            </div>
+            {% endif %}
+
+            <!-- Proyecciones Futuras -->
+            {% if benchmarking_sectorial.proyecciones_posicion %}
+            <div class="card mb-4">
+                <div class="card-header border-0 pb-0">
+                    <h6 class="mb-0 text-primary"><i class="bi bi-graph-up me-2"></i>Proyección de Posición Futura (3
+                        años)</h6>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Año</th>
+                                    <th>Ventas Proyectadas</th>
+                                    <th>Utilidad Proyectada</th>
+                                    <th>Posición Estimada</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for proj in benchmarking_sectorial.proyecciones_posicion %}
+                                <tr>
+                                    <td>Año {{ proj.anio }}</td>
+                                    <td>${{ proj.ventas_proyectadas|floatformat:0 }}</td>
+                                    <td>${{ proj.utilidad_proyectada|floatformat:0 }}</td>
+                                    <td><span class="badge bg-info">{{ proj.posicion_estimada }}</span></td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Gráficos de Comparación -->
+            <div class="row mt-4">
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header border-0 pb-0">
+                            <h6 class="mb-0 text-primary"><i class="bi bi-bar-chart me-2"></i>Comparación de Ventas</h6>
+                        </div>
+                        <div class="card-body">
+                            <canvas id="ventasChart" width="400" height="200"></canvas>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header border-0 pb-0">
+                            <h6 class="mb-0 text-primary"><i class="bi bi-pie-chart me-2"></i>Comparación de
+                                Rentabilidad</h6>
+                        </div>
+                        <div class="card-body">
+                            <canvas id="rentabilidadChart" width="400" height="200"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endwith %}
+
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const ctxVentas = document.getElementById('ventasChart');
+        const ctxRentabilidad = document.getElementById('rentabilidadChart');
+
+        {% if benchmarking_sectorial.comparaciones %}
+        // --- Datos de benchmarking (comparación con el sector) ---
+        const datosVentas = {
+            labels: [{% for nivel, datos in benchmarking_sectorial.comparaciones.items %}{% if datos.tiene_datos %}'{{ datos.nombre_grupo }}', {% endif %}{% endfor %}],
+        datasets: [{
+            label: 'Tu Empresa',
+            data: [{% for nivel, datos in benchmarking_sectorial.comparaciones.items %}{% if datos.tiene_datos %}{{ benchmarking_sectorial.metricas_propias.ventas_mensuales|default:0 }}, {% endif %}{% endfor %}],
+    backgroundColor: 'rgba(54, 162, 235, 0.8)',
+        borderColor: 'rgba(54, 162, 235, 1)',
+            borderWidth: 2
+            }, {
+        label: 'Promedio Sector',
+            data: [{% for nivel, datos in benchmarking_sectorial.comparaciones.items %}{% if datos.tiene_datos %}{{ datos.ventas_promedio|default:0 }}, {% endif %}{% endfor %}],
+    backgroundColor: 'rgba(255, 99, 132, 0.8)',
+        borderColor: 'rgba(255, 99, 132, 1)',
+            borderWidth: 2
+            }]
+        };
+
+    const datosRentabilidad = {
+        labels: [{% for nivel, datos in benchmarking_sectorial.comparaciones.items %}{% if datos.tiene_datos %}'{{ datos.nombre_grupo }}', {% endif %}{% endfor %}],
+    datasets: [{
+        label: 'Tu Empresa',
+        data: [{% for nivel, datos in benchmarking_sectorial.comparaciones.items %}{% if datos.tiene_datos %}{{ benchmarking_sectorial.metricas_propias.margen_neto|default:0 }}, {% endif %}{% endfor %}],
+    backgroundColor: 'rgba(75, 192, 192, 0.8)',
+        borderColor: 'rgba(75, 192, 192, 1)',
+            borderWidth: 2
+            }, {
+        label: 'Promedio Sector',
+            data: [{% for nivel, datos in benchmarking_sectorial.comparaciones.items %}{% if datos.tiene_datos %}{{ datos.margen_neto_promedio|default:0 }}, {% endif %}{% endfor %}],
+    backgroundColor: 'rgba(255, 206, 86, 0.8)',
+        borderColor: 'rgba(255, 206, 86, 1)',
+            borderWidth: 2
+            }]
+        };
+
+    // Evita que outliers extremos hagan ver barras demasiado pequeñas.
+    datosRentabilidad.datasets.forEach(ds => {
+        ds.data = ds.data.map(v => Math.max(-100, Math.min(100, Number(v) || 0)));
+    });
+
+    const rentabilidadValores = [
+        ...datosRentabilidad.datasets[0].data,
+        ...datosRentabilidad.datasets[1].data
+    ];
+    const rentabilidadMaxAbs = Math.max(10, ...rentabilidadValores.map(v => Math.abs(v)));
+    const rentabilidadLimite = Math.min(100, Math.ceil((rentabilidadMaxAbs * 1.2) / 5) * 5);
+    const rentabilidadTieneNegativos = rentabilidadValores.some(v => v < 0);
+
+    if (ctxVentas && datosVentas.labels.length > 0) {
+        new Chart(ctxVentas, {
+            type: 'bar',
+            data: datosVentas,
+            options: {
+                responsive: true,
+                plugins: { legend: { position: 'top' }, title: { display: true, text: 'Ventas Mensuales - Comparación Sectorial' } },
+                scales: { y: { beginAtZero: true, ticks: { callback: v => '$' + v.toLocaleString() } } }
+            }
+        });
+    } else if (ctxVentas) {
+        // Fallback: mostrar datos históricos propios
+        renderHistoricoVentas(ctxVentas);
+    }
+
+    if (ctxRentabilidad && datosRentabilidad.labels.length > 0) {
+        new Chart(ctxRentabilidad, {
+            type: 'bar',
+            data: datosRentabilidad,
+            options: {
+                responsive: true,
+                plugins: { legend: { position: 'top' }, title: { display: true, text: 'Margen Neto - Comparación Sectorial' } },
+                scales: {
+                    y: {
+                        beginAtZero: !rentabilidadTieneNegativos,
+                        suggestedMin: rentabilidadTieneNegativos ? -rentabilidadLimite : 0,
+                        suggestedMax: rentabilidadLimite,
+                        ticks: { callback: v => v + '%' }
+                    }
+                }
+            }
+        });
+    } else if (ctxRentabilidad) {
+        renderHistoricoRentabilidad(ctxRentabilidad);
+    }
+    {% else %}
+    // Sin datos de benchmarking — mostrar datos históricos propios
+    if (ctxVentas) { renderHistoricoVentas(ctxVentas); }
+    if (ctxRentabilidad) { renderHistoricoRentabilidad(ctxRentabilidad); }
+    {% endif %}
+
+    // --- Funciones para gráficos históricos propios (fallback) ---
+    function renderHistoricoVentas(ctx) {
+        const labels = {{ historico_labels|safe }};
+    const ventas = {{ historico_ventas| safe }};
+    const gastos = {{ historico_gastos| safe }};
+
+    {% if tiene_datos_historicos %}
+    new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'Ventas',
+                data: ventas,
+                backgroundColor: 'rgba(54, 162, 235, 0.7)',
+                borderColor: 'rgba(54, 162, 235, 1)',
+                borderWidth: 2,
+                borderRadius: 6
+            }, {
+                label: 'Gastos',
+                data: gastos,
+                backgroundColor: 'rgba(255, 99, 132, 0.7)',
+                borderColor: 'rgba(255, 99, 132, 1)',
+                borderWidth: 2,
+                borderRadius: 6
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: { position: 'top' },
+                title: { display: true, text: 'Tu Evolución de Ventas y Gastos (6 meses)' }
+            },
+            scales: {
+                y: { beginAtZero: true, ticks: { callback: v => '$' + v.toLocaleString() } }
+            }
+        }
+    });
+    {% else %}
+    ctx.parentElement.innerHTML = '<div class="alert alert-info"><i class="bi bi-info-circle"></i> No hay datos de ventas registrados aún. Registra ventas para ver el gráfico.</div>';
+    {% endif %}
+        }
+
+    function renderHistoricoRentabilidad(ctx) {
+        const labels = {{ historico_labels|safe }};
+    const rentabilidad = {{ historico_rentabilidad| safe }};
+    const ventas = {{ historico_ventas| safe }};
+    const gastos = {{ historico_gastos| safe }};
+
+    {% if tiene_datos_historicos %}
+    // Calcular utilidad para cada mes
+    const utilidad = ventas.map((v, i) => v - gastos[i]);
+
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'Rentabilidad (%)',
+                data: rentabilidad,
+                borderColor: 'rgba(75, 192, 192, 1)',
+                backgroundColor: 'rgba(75, 192, 192, 0.15)',
+                borderWidth: 3,
+                fill: true,
+                tension: 0.3,
+                pointRadius: 5,
+                pointBackgroundColor: 'rgba(75, 192, 192, 1)',
+                yAxisID: 'y'
+            }, {
+                label: 'Utilidad ($)',
+                data: utilidad,
+                borderColor: 'rgba(255, 206, 86, 1)',
+                backgroundColor: 'rgba(255, 206, 86, 0.15)',
+                borderWidth: 2,
+                fill: false,
+                tension: 0.3,
+                pointRadius: 4,
+                type: 'bar',
+                borderRadius: 6,
+                yAxisID: 'y1'
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: { position: 'top' },
+                title: { display: true, text: 'Tu Rentabilidad y Utilidad (6 meses)' }
+            },
+            scales: {
+                y: {
+                    type: 'linear',
+                    position: 'left',
+                    ticks: { callback: v => v + '%' },
+                    title: { display: true, text: 'Rentabilidad (%)' }
+                },
+                y1: {
+                    type: 'linear',
+                    position: 'right',
+                    ticks: { callback: v => '$' + v.toLocaleString() },
+                    title: { display: true, text: 'Utilidad ($)' },
+                    grid: { drawOnChartArea: false }
+                }
+            }
+        }
+    });
+    {% else %}
+    ctx.parentElement.innerHTML = '<div class="alert alert-info"><i class="bi bi-info-circle"></i> No hay datos de rentabilidad aún. Registra ventas y gastos para ver el gráfico.</div>';
+    {% endif %}
+        }
+    });
+</script>
+{% endblock %}

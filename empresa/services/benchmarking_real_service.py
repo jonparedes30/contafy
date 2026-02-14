@@ -181,9 +181,7 @@ class BenchmarkingRealService:
     @staticmethod
     def _benchmarking_nacional(empresa):
         """Benchmarking a nivel nacional"""
-        empresas_pais = Empresa.objects.filter(
-            categoria=empresa.categoria
-        ).exclude(id=empresa.id)
+        empresas_pais = Empresa.objects.exclude(id=empresa.id)
         
         return BenchmarkingRealService._calcular_metricas_agregadas(
             empresas_pais, "Nacional"
@@ -218,7 +216,7 @@ class BenchmarkingRealService:
     @staticmethod
     def _calcular_metricas_agregadas(empresas_queryset, nombre_grupo):
         """Calcula métricas agregadas manteniendo privacidad"""
-        minimo_empresas = 2 if 'Ciudad' in nombre_grupo or '100km' in nombre_grupo else 3
+        minimo_empresas = 1
         if empresas_queryset.count() < minimo_empresas:
             return BenchmarkingRealService._resultado_vacio(f"Datos insuficientes en {nombre_grupo}")
         
@@ -232,7 +230,7 @@ class BenchmarkingRealService:
             if metricas['ventas_mensuales'] > 0:  # Solo empresas con actividad
                 metricas_empresas.append(metricas)
         
-        minimo_actividad = 2 if 'Ciudad' in nombre_grupo or '100km' in nombre_grupo else 3
+        minimo_actividad = 1
         if len(metricas_empresas) < minimo_actividad:
             return BenchmarkingRealService._resultado_vacio(f"Actividad insuficiente en {nombre_grupo}")
         

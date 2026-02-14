@@ -235,6 +235,8 @@ def procesar_venta_servicio(request, empresa):
 
 @login_required
 @require_power('puede_registrar_ventas')
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
+
 def listar_ventas(request):
     empresa = request.user.empresa
     ventas = Venta.objects.filter(empresa=empresa).order_by('-fecha')
@@ -263,24 +265,31 @@ def listar_ventas(request):
             min_monto = monto.replace('+', '')
             ventas = ventas.filter(monto__gte=float(min_monto))
 
-    # Estadísticas generales (opcional, para futuras mejoras)
+    # Estadísticas generales
     total_ventas = ventas.aggregate(total=Sum('monto'))['total'] or 0
     total_transacciones = ventas.count()
     promedio_venta = ventas.aggregate(promedio=Avg('monto'))['promedio'] or 0
 
-    # Verificar si el usuario es propietario (no empleado)
-    # Si el usuario no tiene atributo 'poderes', es propietario
-    # Si es superuser, también puede editar
-    es_propietario = True  # Por defecto, permitir edición
+    # Paginación: 15 registros por página
+    paginator = Paginator(ventas, 15)
+    page_number = request.GET.get('page')
+    try:
+        page_obj = paginator.page(page_number)
+    except PageNotAnInteger:
+        page_obj = paginator.page(1)
+    except EmptyPage:
+        page_obj = paginator.page(paginator.num_pages)
+
+    # Verificar si el usuario es propietario
+    es_propietario = True
     if hasattr(request.user, 'poderes'):
-        # Si tiene poderes, es empleado, no propietario
         es_propietario = False
     if request.user.is_superuser:
-        # Superuser siempre puede editar
         es_propietario = True
 
     contexto = {
-        'ventas': ventas,
+        'page_obj': page_obj,
+        'ventas': page_obj.object_list,
         'total_ventas': total_ventas,
         'total_transacciones': total_transacciones,
         'promedio_venta': promedio_venta,

@@ -1,4 +1,4 @@
-# Render Blueprint para CONTAFY - Academia Duolingo
+# Render Blueprint para CONTAFY - Sistema Contable
 
 # IMPORTANTE: La base de datos debe crearse PRIMERO
 databases:
@@ -18,7 +18,8 @@ services:
     region: oregon
     healthCheckPath: /health/
     autoDeploy: true
-    buildCommand: pip install -r requirements.txt
+    buildCommand: chmod +x build.sh && ./build.sh
+    startCommand: gunicorn core.wsgi:application --bind 0.0.0.0:$PORT --workers 2 --timeout 120 --log-file - --log-level info
     envVars:
       - key: SECRET_KEY
         generateValue: true

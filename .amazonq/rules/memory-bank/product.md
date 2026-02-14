@@ -1,69 +1,71 @@
-# Product Overview - CONTAFY
+# CONTAFY - Product Overview
 
-## Purpose
-CONTAFY is a SaaS accounting and financial management platform specifically designed for Ecuadorian SMEs (small and medium enterprises). It provides comprehensive financial tracking, reporting, and compliance tools tailored to Ecuador's regulatory environment.
+## Project Purpose
+Contafy is a comprehensive SaaS accounting and financial management platform designed specifically for small and medium-sized enterprises (SMEs) in Ecuador. It provides integrated tools for managing finances, inventory, production, and business operations with compliance to NIIF (IFRS) standards.
 
 ## Value Proposition
-- Simplified accounting for non-accountants running small businesses
-- NIIF (International Financial Reporting Standards) compliance built-in
-- Real-time financial insights and AI-powered recommendations
-- Gamified learning academy to educate users on accounting principles
-- Multi-business type support (retail, manufacturing, services)
+- **Unified Financial Management**: Centralized platform for accounting, invoicing, and financial reporting
+- **NIIF Compliance**: Built-in support for NIIF 9, NIIF 15, NIC 2, and NIC 16 standards
+- **Multi-Business Model Support**: Handles commerce, manufacturing, and service businesses
+- **Real-time Analytics**: Dashboard with KPIs, benchmarking, and financial indicators
+- **AI-Powered Insights**: Intelligent recommendations and automated categorization
+- **Scalable Architecture**: PostgreSQL backend with JWT authentication and REST API
 
 ## Key Features
 
 ### Core Accounting
 - Double-entry bookkeeping system with automatic journal entries
-- Chart of accounts management with default templates
-- Expense and income tracking with categorization
-- Accounts payable and receivable management
-- Inventory management for products and raw materials
+- Chart of accounts management with NIIF classification
+- Financial statements: Balance Sheet, Income Statement, Cash Flow
+- Multi-currency support (USD default for Ecuador)
+- Audit trail with user tracking (creado_por, modificado_por)
 
-### Financial Reporting
-- Balance sheet (Estado de Situación Financiera)
-- Income statement (Estado de Resultados)
-- Cash flow statements
-- NIIF-compliant financial reports
-- Custom date range filtering and export capabilities
+### Sales & Purchases
+- Sales and purchase order management
+- Automatic IVA (VAT) calculation at 15% (Ecuador standard)
+- Credit/cash payment tracking
+- Accounts receivable and payable management
+- Deterioration calculation per NIIF 9
 
-### Business Intelligence
-- AI-powered financial assistant using OpenAI/Gemini APIs
-- Predictive analytics for cash flow and revenue
-- Benchmarking against industry standards
-- Automated financial recommendations
-- Voice command support for data entry
+### Inventory Management
+- Product catalog with barcode support
+- PEPS (First-In-First-Out) inventory valuation per NIC 2
+- Stock tracking with minimum/maximum alerts
+- Expiration date monitoring for perishables
+- Movement history and cost tracking
 
-### Learning Academy (Academia)
-- Duolingo-style gamified learning modules
-- Interactive micro-lessons on accounting concepts
-- Sandbox simulations for practice (sales, recipes, services)
-- XP points, levels, badges, and achievements
-- Progress tracking and adaptive learning paths
+### Manufacturing
+- Recipe-based production with material requirements
+- Production orders with progress tracking
+- Material consumption tracking
+- Automatic cost calculation based on recipes
+- Production in process accounting
 
-### Multi-Business Support
-- Retail/commerce businesses
-- Manufacturing with bill of materials
-- Service-based businesses
-- Restaurant/recipe management
-- Export-oriented businesses
+### Financial Analysis
+- Financial goals and targets with progress tracking
+- Benchmarking against sector standards
+- Margin analysis and profitability metrics
+- Cash flow projections (DCF)
+- Advanced financial indicators
 
-### Collaboration & Social
-- Multi-user support with role-based permissions
-- Social features: leagues, challenges, rankings
-- Invitation code system for controlled access
-- Activity feeds and notifications
+### AI & Automation
+- Intelligent command processing for data entry
+- Conversational AI for financial queries
+- Automatic expense categorization
+- Recommendation engine for business optimization
+- Voice command support
 
 ## Target Users
-- Small business owners in Ecuador
-- Entrepreneurs without formal accounting training
-- Accountants managing multiple SME clients
-- Students learning accounting principles
-- Growing businesses needing NIIF compliance
+- **SME Owners**: Entrepreneurs managing small to medium businesses
+- **Accountants**: Professional accountants handling multiple clients
+- **Finance Managers**: Dedicated finance personnel in growing companies
+- **Operational Staff**: Employees managing sales, purchases, and inventory
 
 ## Use Cases
-1. **Daily Operations**: Record sales, purchases, expenses in real-time
-2. **Month-End Close**: Generate financial statements and reconcile accounts
-3. **Tax Compliance**: Prepare NIIF-compliant reports for regulatory filing
-4. **Financial Planning**: Use AI predictions and benchmarks for decision-making
-5. **Learning**: Complete academy modules to understand accounting fundamentals
-6. **Multi-Location**: Manage multiple business entities from single account
+1. Daily transaction recording (sales, purchases, expenses)
+2. Monthly financial reporting and analysis
+3. Inventory optimization and restock management
+4. Production planning and cost control
+5. Financial forecasting and goal tracking
+6. Tax compliance and audit preparation
+7. Multi-user collaboration with role-based access

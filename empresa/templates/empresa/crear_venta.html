@@ -7,50 +7,55 @@
     <div class="row justify-content-center">
         <div class="col-12 col-xl-10">
             <h2 class="mb-4 text-success text-center">Registrar nueva venta</h2>
-            
+
             <form method="post" class="border rounded bg-white shadow-sm p-4">
-        {% csrf_token %}
-        {% if form.errors %}
-            <div class="alert alert-danger"><ul class="mb-0">
-                {% for field in form %}
-                    {% for error in field.errors %}
+                {% csrf_token %}
+                {% if form.errors %}
+                <div class="alert alert-danger">
+                    <ul class="mb-0">
+                        {% for field in form %}
+                        {% for error in field.errors %}
                         <li>{{ error }}</li>
-                    {% endfor %}
-                {% endfor %}
-                {% for error in form.non_field_errors %}
-                    <li>{{ error }}</li>
-                {% endfor %}
-            </ul></div>
-        {% endif %}
+                        {% endfor %}
+                        {% endfor %}
+                        {% for error in form.non_field_errors %}
+                        <li>{{ error }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+                {% endif %}
 
                 <!-- Fila 1: Código de Barras y Cliente -->
                 <div class="row mb-4">
                     <div class="col-md-6">
                         <label for="codigo_barras" class="form-label">Código de Barras:</label>
                         <div class="input-group">
-                            <input type="text" id="codigo_barras" class="form-control" placeholder="Escanea o escribe el código">
+                            <input type="text" id="codigo_barras" class="form-control"
+                                placeholder="Escanea o escribe el código">
                             <button type="button" id="btn-scanner" class="btn btn-outline-primary">
                                 📷 Escanear
                             </button>
                         </div>
                         <div id="scanner-status" class="form-text"></div>
                     </div>
-                    
+
                     <div class="col-md-6">
                         <label class="form-label">Cliente</label>
                         {% if es_servicios %}
-                            <input type="text" class="form-control" name="cliente_nombre" placeholder="Nombre del cliente (opcional)">
+                        <input type="text" class="form-control" name="cliente_nombre"
+                            placeholder="Nombre del cliente (opcional)">
                         {% else %}
                         <div class="input-group">
                             {{ form.cliente_fk }}
-                            <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#clienteModal">
+                            <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal"
+                                data-bs-target="#clienteModal">
                                 <i class="bi bi-plus"></i> Nuevo
                             </button>
                         </div>
                         {% endif %}
                     </div>
                 </div>
-                
+
                 <!-- Contenedor del escáner -->
                 <div id="scanner-container" class="mb-4" style="display: none;">
                     <div class="card">
@@ -74,10 +79,8 @@
                         <select class="form-select" id="servicio_id" name="servicio_id">
                             <option value="">Seleccionar servicio...</option>
                             {% for servicio in servicios %}
-                            <option value="{{ servicio.id }}" 
-                                    data-precio="{{ servicio.precio_base }}"
-                                    data-costo="{{ servicio.costo_directo }}"
-                                    data-unidad="{{ servicio.unidad_medida }}">
+                            <option value="{{ servicio.id }}" data-precio="{{ servicio.precio_base }}"
+                                data-costo="{{ servicio.costo_directo }}" data-unidad="{{ servicio.unidad_medida }}">
                                 {{ servicio.nombre }} - ${{ servicio.precio_base }}
                             </option>
                             {% endfor %}
@@ -97,7 +100,8 @@
                     <div class="col-12">
                         <label class="form-label">Modo de venta</label>
                         <div class="btn-group w-100" role="group">
-                            <input type="radio" class="btn-check" name="modo_venta" id="modo_simple" value="simple" checked>
+                            <input type="radio" class="btn-check" name="modo_venta" id="modo_simple" value="simple"
+                                checked>
                             <label class="btn btn-outline-primary" for="modo_simple">
                                 <i class="bi bi-box"></i> Producto Único
                             </label>
@@ -115,12 +119,15 @@
                         <div class="col-md-6">
                             {{ form.producto.label_tag }}
                             <div class="position-relative">
-                                <input type="text" id="producto-search" class="form-control" placeholder="Escribe para buscar producto..." autocomplete="off">
-                                <div id="producto-dropdown" class="dropdown-menu w-100" style="display: none; max-height: 200px; overflow-y: auto;"></div>
+                                <input type="text" id="producto-search" class="form-control"
+                                    placeholder="Escribe para buscar producto..." autocomplete="off">
+                                <div id="producto-dropdown" class="dropdown-menu w-100"
+                                    style="display: none; max-height: 200px; overflow-y: auto;"></div>
                                 <select id="id_producto" name="producto" class="form-select" style="display: none;">
                                     <option value="">Seleccionar producto...</option>
                                     {% for producto in productos_json %}
-                                    <option value="{{ producto.id }}" data-nombre="{{ producto.nombre }}" data-descripcion="{{ producto.descripcion }}">
+                                    <option value="{{ producto.id }}" data-nombre="{{ producto.nombre }}"
+                                        data-descripcion="{{ producto.descripcion }}" data-codigo="{{ producto.codigo }}">
                                         {{ producto.nombre }}
                                     </option>
                                     {% endfor %}
@@ -152,41 +159,48 @@
                                     <div class="row">
                                         <div class="col-md-5">
                                             <div class="position-relative">
-                                                <input type="text" id="producto-multiple-search" class="form-control" placeholder="Escribe para buscar producto..." autocomplete="off">
-                                                <div id="producto-multiple-dropdown" class="dropdown-menu w-100" style="display: none; max-height: 200px; overflow-y: auto;"></div>
-                                                <select class="form-select" id="producto-multiple-select" style="display: none;">
+                                                <input type="text" id="producto-multiple-search" class="form-control"
+                                                    placeholder="Escribe para buscar producto..." autocomplete="off">
+                                                <div id="producto-multiple-dropdown" class="dropdown-menu w-100"
+                                                    style="display: none; max-height: 200px; overflow-y: auto;"></div>
+                                                <select class="form-select" id="producto-multiple-select"
+                                                    style="display: none;">
                                                     <option value="">Seleccionar producto...</option>
                                                     {% for producto in productos_json %}
-                                                    <option value="{{ producto.id }}" 
-                                                            data-nombre="{{ producto.nombre }}"
-                                                            data-precio="{{ producto.precio_venta }}"
-                                                            data-stock="{{ producto.stock }}"
-                                                            data-descripcion="{{ producto.descripcion }}">
+                                                    <option value="{{ producto.id }}"
+                                                        data-nombre="{{ producto.nombre }}"
+                                                        data-precio="{{ producto.precio_venta }}"
+                                                        data-stock="{{ producto.stock }}"
+                                                        data-descripcion="{{ producto.descripcion }}"
+                                                        data-codigo="{{ producto.codigo }}">
                                                         {{ producto.nombre }} - ${{ producto.precio_venta }}
                                                     </option>
                                                     {% endfor %}
                                                     {% for servicio in servicios %}
-                                                    <option value="serv_{{ servicio.id }}" 
-                                                            data-nombre="{{ servicio.nombre }}"
-                                                            data-precio="{{ servicio.precio_base }}"
-                                                            data-stock="999"
-                                                            data-descripcion="">
+                                                    <option value="serv_{{ servicio.id }}"
+                                                        data-nombre="{{ servicio.nombre }}"
+                                                        data-precio="{{ servicio.precio_base }}" data-stock="999"
+                                                        data-descripcion="">
                                                         {{ servicio.nombre }} - ${{ servicio.precio_base }}
                                                     </option>
                                                     {% endfor %}
                                                 </select>
-                                                <div id="producto-multiple-descripcion" class="form-text text-muted mt-1"></div>
+                                                <div id="producto-multiple-descripcion"
+                                                    class="form-text text-muted mt-1"></div>
                                                 <div id="stock-info-multiple" class="fw-bold text-center mt-2"></div>
                                             </div>
                                         </div>
                                         <div class="col-md-2">
-                                            <input type="number" class="form-control" id="cantidad-multiple" placeholder="Cant." min="1" value="1">
+                                            <input type="number" class="form-control" id="cantidad-multiple"
+                                                placeholder="Cant." min="1" value="1">
                                         </div>
                                         <div class="col-md-2">
-                                            <input type="number" class="form-control" id="precio-multiple" placeholder="Precio" step="0.01">
+                                            <input type="number" class="form-control" id="precio-multiple"
+                                                placeholder="Precio" step="0.01">
                                         </div>
                                         <div class="col-md-3">
-                                            <button type="button" class="btn btn-success w-100" id="agregar-producto-multiple">
+                                            <button type="button" class="btn btn-success w-100"
+                                                id="agregar-producto-multiple">
                                                 ➕ Agregar
                                             </button>
                                         </div>
@@ -217,7 +231,8 @@
                                             </thead>
                                             <tbody id="productos-tbody-multiple">
                                                 <tr id="no-productos-multiple">
-                                                    <td colspan="5" class="text-center text-muted">No hay productos agregados</td>
+                                                    <td colspan="5" class="text-center text-muted">No hay productos
+                                                        agregados</td>
                                                 </tr>
                                             </tbody>
                                         </table>
@@ -237,7 +252,7 @@
                                 📊 <strong>Incluir IVA</strong> (desmarcar para productos exentos)
                             </label>
                         </div>
-                        
+
                         <!-- Campos de IVA -->
                         <div id="ivaDetails">
                             <div class="card card-body">
@@ -250,8 +265,10 @@
                                     <div class="col-6">
                                         <label for="id_tasa_iva" class="form-label">Tasa IVA (%):</label>
                                         <div class="btn-group w-100 mb-2" role="group">
-                                            <button type="button" class="btn btn-sm btn-outline-primary" onclick="setTasaIvaVenta(0)">0%</button>
-                                            <button type="button" class="btn btn-sm btn-outline-primary" onclick="setTasaIvaVenta(15)">15%</button>
+                                            <button type="button" class="btn btn-sm btn-outline-primary"
+                                                onclick="setTasaIvaVenta(0)">0%</button>
+                                            <button type="button" class="btn btn-sm btn-outline-primary"
+                                                onclick="setTasaIvaVenta(15)">15%</button>
                                         </div>
                                         {{ form.tasa_iva }}
                                     </div>
@@ -269,18 +286,18 @@
                             </div>
                         </div>
                     </div>
-                    
+
                     <div class="col-md-6">
                         <div class="mb-3">
                             {{ form.tipo_pago.label_tag }}
                             {{ form.tipo_pago }}
                         </div>
-                        
+
                         <!-- Stock info -->
                         <div id="stock-info" class="fw-bold text-center mb-3"></div>
                     </div>
                 </div>
-                
+
                 <!-- Calculadora de cambio (solo contado) -->
                 <div id="calculadora-cambio-simple" style="display: none;" class="mb-4">
                     <div class="card bg-light">
@@ -295,7 +312,8 @@
                                     <label for="monto-recibido-simple" class="form-label">Monto recibido:</label>
                                     <div class="input-group">
                                         <span class="input-group-text">$</span>
-                                        <input type="number" class="form-control" id="monto-recibido-simple" step="0.01" placeholder="0.00">
+                                        <input type="number" class="form-control" id="monto-recibido-simple" step="0.01"
+                                            placeholder="0.00">
                                     </div>
                                 </div>
                                 <div class="col-md-4">
@@ -323,59 +341,59 @@
 
 <script>
     const productos = {};
-    for (const p of {{ productos_json|safe }}) {
+    for (const p of {{ productos_json | safe }}) {
         productos[p.id] = p;
     }
-    
+
     // Instancia del escáner
     let scanner = null;
 
-    const selectProducto   = document.getElementById('id_producto');
-    const selectServicio   = document.getElementById('servicio_id');
-    const inputCodigo      = document.getElementById('codigo_barras');
-    const inputCantidad    = document.getElementById('id_cantidad');
-    const inputPrecio      = document.getElementById('id_precio_unitario');
-    const inputMontoNeto   = document.getElementById('id_monto_neto');
-    const inputTasaIva     = document.getElementById('id_tasa_iva');
-    const inputIva         = document.getElementById('id_iva');
-    const inputTotal       = document.getElementById('id_monto_total');
-    const stockInfo        = document.getElementById('stock-info');
-    
-    const esServicios = {{ user.empresa.categoria|yesno:'true,false' }} === 'servicios';
+    const selectProducto = document.getElementById('id_producto');
+    const selectServicio = document.getElementById('servicio_id');
+    const inputCodigo = document.getElementById('codigo_barras');
+    const inputCantidad = document.getElementById('id_cantidad');
+    const inputPrecio = document.getElementById('id_precio_unitario');
+    const inputMontoNeto = document.getElementById('id_monto_neto');
+    const inputTasaIva = document.getElementById('id_tasa_iva');
+    const inputIva = document.getElementById('id_iva');
+    const inputTotal = document.getElementById('id_monto_total');
+    const stockInfo = document.getElementById('stock-info');
+
+    const esServicios = '{{ user.empresa.categoria|default:"" }}' === 'servicios';
 
     const checkboxIva = document.getElementById('incluirIva');
     const ivaDetails = document.getElementById('ivaDetails');
-    
+
     function calcularIVA() {
         const cantidad = parseFloat(inputCantidad.value) || 0;
-        const precio   = parseFloat(inputPrecio.value) || 0;
+        const precio = parseFloat(inputPrecio.value) || 0;
         const incluirIva = checkboxIva.checked;
-        const tasaIva  = parseFloat(inputTasaIva.value) || 0;
-        
+        const tasaIva = parseFloat(inputTasaIva.value) || 0;
+
         const montoNeto = cantidad * precio;
         const iva = incluirIva ? montoNeto * (tasaIva / 100) : 0;
         const total = montoNeto + iva;
-        
+
         inputMontoNeto.value = montoNeto.toFixed(2);
         inputIva.value = iva.toFixed(2);
         inputTotal.value = total.toFixed(2);
-        
+
         // Actualizar calculadora de cambio
         if (tipoPagoSelect && tipoPagoSelect.value === 'contado') {
             actualizarTotalCobrar();
         }
-        
+
         // Actualizar tasa IVA a 0 si no incluye IVA
         if (!incluirIva) {
             inputTasaIva.value = '0';
         }
-        
+
         // Mostrar/ocultar detalles IVA
         if (ivaDetails) {
             ivaDetails.style.display = incluirIva ? 'block' : 'none';
         }
     }
-    
+
     function setTasaIvaVenta(tasa) {
         inputTasaIva.value = tasa;
         if (tasa > 0) {
@@ -408,8 +426,8 @@
             }
         } else if (selectProducto) {
             // Manejar productos (comercio/manufactura)
-            const prodId   = selectProducto.value;
-            const prodData = productos[prodId] || {codigo:'', precio_costo:0, precio_venta:0, stock:0};
+            const prodId = selectProducto.value;
+            const prodData = productos[prodId] || { codigo: '', precio_costo: 0, precio_venta: 0, stock: 0 };
             const cantidad = parseFloat(inputCantidad.value) || 0;
 
             inputCodigo.value = prodData.codigo;
@@ -442,34 +460,34 @@
     if (selectServicio) {
         selectServicio.addEventListener('change', actualizarVenta);
     }
-    inputCantidad.addEventListener('input', function() {
+    inputCantidad.addEventListener('input', function () {
         if (modoSimple.checked) calcularIVA();
     });
-    inputPrecio.addEventListener('input', function() {
+    inputPrecio.addEventListener('input', function () {
         if (modoSimple.checked) calcularIVA();
     });
-    inputTasaIva.addEventListener('input', function() {
+    inputTasaIva.addEventListener('input', function () {
         if (modoSimple.checked) {
             calcularIVA();
         } else {
             calcularTotalMultiple();
         }
     });
-    checkboxIva.addEventListener('change', function() {
+    checkboxIva.addEventListener('change', function () {
         if (modoSimple.checked) {
             calcularIVA();
         } else {
             calcularTotalMultiple();
         }
     });
-    
+
     // Calculadora de cambio para venta simple
     const tipoPagoSelect = document.getElementById('id_tipo_pago');
     const calculadoraCambioSimple = document.getElementById('calculadora-cambio-simple');
     const totalCobrarDisplay = document.getElementById('total-cobrar-display');
     const montoRecibidoSimple = document.getElementById('monto-recibido-simple');
     const cambioDisplaySimple = document.getElementById('cambio-display-simple');
-    
+
     function mostrarCalculadoraCambio() {
         if (tipoPagoSelect && calculadoraCambioSimple) {
             calculadoraCambioSimple.style.display = tipoPagoSelect.value === 'contado' ? 'block' : 'none';
@@ -478,7 +496,7 @@
             }
         }
     }
-    
+
     function actualizarTotalCobrar() {
         const total = parseFloat(inputTotal.value) || 0;
         if (totalCobrarDisplay) {
@@ -486,34 +504,109 @@
         }
         calcularCambioSimple();
     }
-    
+
     function calcularCambioSimple() {
         const total = parseFloat(inputTotal.value) || 0;
         const recibido = parseFloat(montoRecibidoSimple.value) || 0;
         const cambio = recibido - total;
-        
+
         if (cambioDisplaySimple) {
             cambioDisplaySimple.textContent = '$' + Math.max(0, cambio).toFixed(2);
             cambioDisplaySimple.className = cambio >= 0 ? 'h5 text-success' : 'h5 text-danger';
         }
     }
-    
+
     if (tipoPagoSelect) {
         tipoPagoSelect.addEventListener('change', mostrarCalculadoraCambio);
     }
     if (montoRecibidoSimple) {
         montoRecibidoSimple.addEventListener('input', calcularCambioSimple);
     }
-    
+
+    // Autocomplete for Simple Sale Mode
+    const productoSearchSimple = document.getElementById('producto-search');
+    const productoDropdownSimple = document.getElementById('producto-dropdown');
+
+    if (productoSearchSimple && productoDropdownSimple) {
+        // Prepare data array from the object
+        const productosSimpleData = Object.values(productos);
+
+        productoSearchSimple.addEventListener('input', function () {
+            const searchTerm = this.value.trim().toLowerCase();
+
+            if (searchTerm.length < 1) {
+                productoDropdownSimple.style.display = 'none';
+                return;
+            }
+
+            // Filter and sort
+            const coincidencias = productosSimpleData.filter(p =>
+                p.nombre.toLowerCase().includes(searchTerm) ||
+                (p.codigo && p.codigo.toLowerCase().includes(searchTerm)) ||
+                (p.descripcion && p.descripcion.toLowerCase().includes(searchTerm))
+            ).sort((a, b) => {
+                const aEmpieza = a.nombre.toLowerCase().startsWith(searchTerm);
+                const bEmpieza = b.nombre.toLowerCase().startsWith(searchTerm);
+                if (aEmpieza && !bEmpieza) return -1;
+                if (!aEmpieza && bEmpieza) return 1;
+                return a.nombre.localeCompare(b.nombre);
+            });
+
+            if (coincidencias.length > 0) {
+                let html = '';
+                coincidencias.forEach(producto => {
+                    const stockClass = producto.stock > 0 ? 'text-success' : 'text-danger';
+                    html += `<a class="dropdown-item" href="#" 
+                            data-id="${producto.id}" 
+                            data-nombre="${producto.nombre}">
+                            <div class="d-flex justify-content-between">
+                                <span>${producto.nombre}</span>
+                                <span class="${stockClass} small">Stock: ${producto.stock}</span>
+                            </div>
+                            <small class="text-muted">${producto.codigo}</small>
+                        </a>`;
+                });
+
+                productoDropdownSimple.innerHTML = html;
+                productoDropdownSimple.style.display = 'block';
+
+                // Click events
+                productoDropdownSimple.querySelectorAll('.dropdown-item').forEach(item => {
+                    item.addEventListener('click', function (e) {
+                        e.preventDefault();
+                        const id = this.dataset.id;
+                        const nombre = this.dataset.nombre;
+
+                        productoSearchSimple.value = nombre;
+                        selectProducto.value = id;
+                        productoDropdownSimple.style.display = 'none';
+
+                        // Trigger change to update price/stock logic
+                        selectProducto.dispatchEvent(new Event('change'));
+                    });
+                });
+            } else {
+                productoDropdownSimple.style.display = 'none';
+            }
+        });
+
+        // Hide on outside click
+        document.addEventListener('click', function (e) {
+            if (!productoSearchSimple.contains(e.target) && !productoDropdownSimple.contains(e.target)) {
+                productoDropdownSimple.style.display = 'none';
+            }
+        });
+    }
+
     // Variables para venta múltiple
     let productosMultiple = [];
-    
+
     // Manejar cambio de modo de venta
     const modoSimple = document.getElementById('modo_simple');
     const modoMultiple = document.getElementById('modo_multiple');
     const ventaSimple = document.getElementById('venta-simple');
     const ventaMultiple = document.getElementById('venta-multiple');
-    
+
     function cambiarModoVenta() {
         if (modoMultiple.checked) {
             ventaSimple.style.display = 'none';
@@ -526,10 +619,10 @@
             actualizarTablaMultiple();
         }
     }
-    
+
     modoSimple.addEventListener('change', cambiarModoVenta);
     modoMultiple.addEventListener('change', cambiarModoVenta);
-    
+
     // Funciones para venta múltiple
     const productoMultipleSelect = document.getElementById('producto-multiple-select');
     const productoMultipleSearch = document.getElementById('producto-multiple-search');
@@ -538,7 +631,7 @@
     const precioMultiple = document.getElementById('precio-multiple');
     const agregarProductoBtn = document.getElementById('agregar-producto-multiple');
     let productosMultipleData = [];
-    
+
     // Cargar datos de productos para múltiples
     if (productoMultipleSelect) {
         Array.from(productoMultipleSelect.options).forEach(option => {
@@ -548,58 +641,62 @@
                     nombre: option.dataset.nombre,
                     precio: option.dataset.precio,
                     stock: option.dataset.stock,
-                    descripcion: option.dataset.descripcion || ''
+                    descripcion: option.dataset.descripcion || '',
+                    codigo: option.dataset.codigo || ''
                 });
             }
         });
     }
-    
+
     // Configurar autocompletado para múltiples productos
     if (productoMultipleSearch && productoMultipleDropdown) {
-        productoMultipleSearch.addEventListener('input', function() {
-            const searchTerm = this.value.toLowerCase();
-            
-            if (searchTerm.length === 0) {
+        productoMultipleSearch.addEventListener('input', function () {
+            const searchTerm = this.value.trim().toLowerCase();
+
+            if (searchTerm.length < 1) {
                 productoMultipleDropdown.style.display = 'none';
                 return;
             }
-            
+
             // Filtrar y ordenar productos
-            const coincidencias = productosMultipleData.filter(p => 
-                p.nombre.toLowerCase().includes(searchTerm)
+            const coincidencias = productosMultipleData.filter(p =>
+                p.nombre.toLowerCase().includes(searchTerm) ||
+                (p.codigo && p.codigo.toLowerCase().includes(searchTerm)) ||
+                (p.descripcion && p.descripcion.toLowerCase().includes(searchTerm))
             ).sort((a, b) => {
                 const aEmpiezaCon = a.nombre.toLowerCase().startsWith(searchTerm);
                 const bEmpiezaCon = b.nombre.toLowerCase().startsWith(searchTerm);
-                
+
                 if (aEmpiezaCon && !bEmpiezaCon) return -1;
                 if (!aEmpiezaCon && bEmpiezaCon) return 1;
-                
+
                 return a.nombre.localeCompare(b.nombre);
             });
-            
+
             if (coincidencias.length > 0) {
                 let html = '';
                 coincidencias.forEach(producto => {
-                    html += `<a class="dropdown-item" href="#" data-id="${producto.id}" data-nombre="${producto.nombre}" data-precio="${producto.precio}" data-stock="${producto.stock}" data-descripcion="${producto.descripcion}">${producto.nombre} - $${producto.precio}</a>`;
+                    const codigoTxt = producto.codigo ? ` (${producto.codigo})` : '';
+                    html += `<a class="dropdown-item" href="#" data-id="${producto.id}" data-nombre="${producto.nombre}" data-precio="${producto.precio}" data-stock="${producto.stock}" data-descripcion="${producto.descripcion}">${producto.nombre}${codigoTxt} - $${producto.precio}</a>`;
                 });
-                
+
                 productoMultipleDropdown.innerHTML = html;
                 productoMultipleDropdown.style.display = 'block';
-                
+
                 // Agregar eventos de clic
                 productoMultipleDropdown.querySelectorAll('.dropdown-item').forEach(item => {
-                    item.addEventListener('click', function(e) {
+                    item.addEventListener('click', function (e) {
                         e.preventDefault();
                         const nombre = this.dataset.nombre;
                         const id = this.dataset.id;
                         const precio = this.dataset.precio;
                         const descripcion = this.dataset.descripcion;
-                        
+
                         productoMultipleSearch.value = nombre;
                         productoMultipleSelect.value = id;
                         productoMultipleDropdown.style.display = 'none';
                         precioMultiple.value = parseFloat(precio || 0).toFixed(2);
-                        
+
                         // Mostrar descripción
                         const descripcionDiv = document.getElementById('producto-multiple-descripcion');
                         if (descripcionDiv && descripcion) {
@@ -608,7 +705,7 @@
                         } else if (descripcionDiv) {
                             descripcionDiv.style.display = 'none';
                         }
-                        
+
                         // Mostrar stock
                         const stockInfoMultiple = document.getElementById('stock-info-multiple');
                         if (stockInfoMultiple) {
@@ -633,42 +730,42 @@
                 productoMultipleDropdown.style.display = 'none';
             }
         });
-        
+
         // Ocultar dropdown al hacer clic fuera
-        document.addEventListener('click', function(e) {
+        document.addEventListener('click', function (e) {
             if (!productoMultipleSearch.contains(e.target) && !productoMultipleDropdown.contains(e.target)) {
                 productoMultipleDropdown.style.display = 'none';
             }
         });
     }
-    
-    agregarProductoBtn.addEventListener('click', function() {
+
+    agregarProductoBtn.addEventListener('click', function () {
         const option = productoMultipleSelect.options[productoMultipleSelect.selectedIndex];
         const cantidad = parseInt(cantidadMultiple.value) || 1;
         let precio = parseFloat(precioMultiple.value) || 0;
-        
+
         if (!option.value) {
             alert('Selecciona un producto');
             return;
         }
-        
+
         // Si no hay precio, usar el del producto
         if (precio <= 0) {
             precio = parseFloat(option.dataset.precio) || 0;
             precioMultiple.value = precio.toFixed(2);
         }
-        
+
         if (precio <= 0) {
             alert('El producto debe tener un precio válido');
             return;
         }
-        
+
         const stock = parseInt(option.dataset.stock) || 0;
         if (cantidad > stock && !option.value.startsWith('serv_')) {
             alert(`Stock insuficiente. Disponible: ${stock}`);
             return;
         }
-        
+
         const producto = {
             id: option.value,
             nombre: option.dataset.nombre,
@@ -676,7 +773,7 @@
             precio: precio,
             subtotal: cantidad * precio
         };
-        
+
         // Verificar si ya existe
         const existente = productosMultiple.find(p => p.id === producto.id);
         if (existente) {
@@ -685,31 +782,31 @@
         } else {
             productosMultiple.push(producto);
         }
-        
+
         actualizarTablaMultiple();
         calcularTotalMultiple();
-        
+
         // Limpiar formulario
         productoMultipleSelect.value = '';
         cantidadMultiple.value = '1';
         precioMultiple.value = '';
     });
-    
+
     function actualizarTablaMultiple() {
         const tbody = document.getElementById('productos-tbody-multiple');
         const noProductos = document.getElementById('no-productos-multiple');
-        
+
         // Limpiar filas existentes
         const filas = tbody.querySelectorAll('tr:not(#no-productos-multiple)');
         filas.forEach(fila => fila.remove());
-        
+
         if (productosMultiple.length === 0) {
             noProductos.style.display = 'table-row';
             return;
         }
-        
+
         noProductos.style.display = 'none';
-        
+
         productosMultiple.forEach((producto, index) => {
             const fila = document.createElement('tr');
             fila.innerHTML = `
@@ -730,7 +827,7 @@
             tbody.appendChild(fila);
         });
     }
-    
+
     function cambiarCantidadMultiple(index, nuevaCantidad) {
         const cantidad = parseInt(nuevaCantidad) || 1;
         productosMultiple[index].cantidad = cantidad;
@@ -738,44 +835,44 @@
         actualizarTablaMultiple();
         calcularTotalMultiple();
     }
-    
+
     function eliminarProductoMultiple(index) {
         productosMultiple.splice(index, 1);
         actualizarTablaMultiple();
         calcularTotalMultiple();
     }
-    
+
     function calcularTotalMultiple() {
         const incluirIva = checkboxIva.checked;
         const tasaIva = parseFloat(inputTasaIva.value) || 15;
-        
+
         let subtotal = 0;
         productosMultiple.forEach(producto => {
             subtotal += producto.subtotal;
         });
-        
+
         const iva = incluirIva ? subtotal * (tasaIva / 100) : 0;
         const total = subtotal + iva;
-        
+
         inputMontoNeto.value = subtotal.toFixed(2);
         inputIva.value = iva.toFixed(2);
         inputTotal.value = total.toFixed(2);
-        
+
         // Actualizar calculadora de cambio
         if (tipoPagoSelect && tipoPagoSelect.value === 'contado') {
             actualizarTotalCobrar();
         }
     }
-    
+
     // Modificar el envío del formulario para venta múltiple
     const form = document.querySelector('form');
-    form.addEventListener('submit', function(e) {
+    form.addEventListener('submit', function (e) {
         if (modoMultiple.checked && productosMultiple.length > 0) {
             e.preventDefault();
             procesarVentaMultiple();
         }
     });
-    
+
     function procesarVentaMultiple() {
         const ventaData = {
             productos: productosMultiple,
@@ -784,7 +881,7 @@
             tipo_pago: tipoPagoSelect.value,
             monto_recibido: parseFloat(montoRecibidoSimple?.value || 0)
         };
-        
+
         fetch('{% url "empresa:crear_venta_multiple" %}', {
             method: 'POST',
             headers: {
@@ -793,26 +890,26 @@
             },
             body: JSON.stringify(ventaData)
         })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                alert('Venta procesada exitosamente');
-                window.location.href = '{% url "empresa:home" %}';
-            } else {
-                alert('Error: ' + (data.error || 'No se pudo procesar la venta'));
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            alert('Error procesando la venta');
-        });
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('Venta procesada exitosamente');
+                    window.location.href = '{% url "empresa:home" %}';
+                } else {
+                    alert('Error: ' + (data.error || 'No se pudo procesar la venta'));
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error procesando la venta');
+            });
     }
-    
+
     // Autocompletado con dropdown de productos
     const productoSearch = document.getElementById('producto-search');
     const productoDropdown = document.getElementById('producto-dropdown');
     let productosData = [];
-    
+
     // Cargar datos de productos
     if (selectProducto) {
         Array.from(selectProducto.options).forEach(option => {
@@ -820,65 +917,69 @@
                 productosData.push({
                     id: option.value,
                     nombre: option.textContent,
-                    descripcion: option.dataset.descripcion || ''
+                    descripcion: option.dataset.descripcion || '',
+                    codigo: option.dataset.codigo || ''
                 });
             }
         });
     }
-    
+
     // Configurar autocompletado con dropdown
     if (productoSearch && productoDropdown) {
-        productoSearch.addEventListener('input', function() {
-            const searchTerm = this.value.toLowerCase();
-            
-            if (searchTerm.length === 0) {
+        productoSearch.addEventListener('input', function () {
+            const searchTerm = this.value.trim().toLowerCase();
+
+            if (searchTerm.length < 1) {
                 productoDropdown.style.display = 'none';
                 return;
             }
-            
+
             // Filtrar y ordenar productos
-            const coincidencias = productosData.filter(p => 
-                p.nombre.toLowerCase().includes(searchTerm)
+            const coincidencias = productosData.filter(p =>
+                p.nombre.toLowerCase().includes(searchTerm) ||
+                (p.codigo && p.codigo.toLowerCase().includes(searchTerm)) ||
+                (p.descripcion && p.descripcion.toLowerCase().includes(searchTerm))
             ).sort((a, b) => {
                 const aEmpiezaCon = a.nombre.toLowerCase().startsWith(searchTerm);
                 const bEmpiezaCon = b.nombre.toLowerCase().startsWith(searchTerm);
-                
+
                 // Primero los que empiecen con la letra/palabra
                 if (aEmpiezaCon && !bEmpiezaCon) return -1;
                 if (!aEmpiezaCon && bEmpiezaCon) return 1;
-                
+
                 // Luego orden alfabético
                 return a.nombre.localeCompare(b.nombre);
             });
-            
+
             if (coincidencias.length > 0) {
                 let html = '';
                 coincidencias.forEach(producto => {
-                    html += `<a class="dropdown-item" href="#" data-id="${producto.id}" data-nombre="${producto.nombre}" data-descripcion="${producto.descripcion}">${producto.nombre}</a>`;
+                    const codigoTxt = producto.codigo ? ` <small class="text-muted">(${producto.codigo})</small>` : '';
+                    html += `<a class="dropdown-item" href="#" data-id="${producto.id}" data-nombre="${producto.nombre}" data-descripcion="${producto.descripcion}">${producto.nombre}${codigoTxt}</a>`;
                 });
-                
+
                 productoDropdown.innerHTML = html;
                 productoDropdown.style.display = 'block';
-                
+
                 // Agregar eventos de clic
                 productoDropdown.querySelectorAll('.dropdown-item').forEach(item => {
-                    item.addEventListener('click', function(e) {
+                    item.addEventListener('click', function (e) {
                         e.preventDefault();
                         const nombre = this.dataset.nombre;
                         const id = this.dataset.id;
                         const descripcion = this.dataset.descripcion;
-                        
+
                         productoSearch.value = nombre;
                         selectProducto.value = id;
                         productoDropdown.style.display = 'none';
-                        
+
                         // Mostrar descripción
                         const descripcionDiv = document.getElementById('producto-descripcion');
                         if (descripcionDiv && descripcion) {
                             descripcionDiv.textContent = `📝 ${descripcion}`;
                             descripcionDiv.style.display = 'block';
                         }
-                        
+
                         actualizarVenta();
                     });
                 });
@@ -886,26 +987,26 @@
                 productoDropdown.style.display = 'none';
             }
         });
-        
+
         // Ocultar dropdown al hacer clic fuera
-        document.addEventListener('click', function(e) {
+        document.addEventListener('click', function (e) {
             if (!productoSearch.contains(e.target) && !productoDropdown.contains(e.target)) {
                 productoDropdown.style.display = 'none';
             }
         });
-        
+
         // Navegación con teclado
-        productoSearch.addEventListener('keydown', function(e) {
+        productoSearch.addEventListener('keydown', function (e) {
             const items = productoDropdown.querySelectorAll('.dropdown-item');
             let activeIndex = -1;
-            
+
             // Encontrar elemento activo
             items.forEach((item, index) => {
                 if (item.classList.contains('active')) {
                     activeIndex = index;
                 }
             });
-            
+
             if (e.key === 'ArrowDown') {
                 e.preventDefault();
                 items.forEach(item => item.classList.remove('active'));
@@ -922,14 +1023,14 @@
             }
         });
     }
-    
+
     // Mostrar descripción del producto seleccionado
     if (selectProducto) {
-        selectProducto.addEventListener('change', function() {
+        selectProducto.addEventListener('change', function () {
             const productoDescripcion = document.getElementById('producto-descripcion');
             const prodId = this.value;
             const prodData = productos[prodId] || {};
-            
+
             if (productoDescripcion && prodData.descripcion) {
                 productoDescripcion.textContent = `📝 ${prodData.descripcion}`;
                 productoDescripcion.style.display = 'block';
@@ -938,13 +1039,13 @@
             }
         });
     }
-    
+
     // Hacer funciones globales
     window.cambiarCantidadMultiple = cambiarCantidadMultiple;
     window.eliminarProductoMultiple = eliminarProductoMultiple;
-    
+
     // Inicializar estado de IVA al cargar la página
-    document.addEventListener('DOMContentLoaded', function() {
+    document.addEventListener('DOMContentLoaded', function () {
         actualizarVenta();
         calcularIVA(); // Asegurar que los detalles de IVA estén ocultos inicialmente
         mostrarCalculadoraCambio();
@@ -954,11 +1055,11 @@
     // Buscar producto por código (mejorado con API)
     async function buscarProductoPorCodigo(codigo) {
         if (!codigo.trim()) return;
-        
+
         try {
             const response = await fetch('{% url "empresa:buscar_codigo_barras" %}?codigo=' + encodeURIComponent(codigo));
             const data = await response.json();
-            
+
             if (data.encontrado) {
                 // Buscar el producto en el select
                 for (const option of selectProducto.options) {
@@ -983,26 +1084,26 @@
             stockInfo.className = 'fw-bold mb-3 text-center text-danger';
         }
     }
-    
+
     // Evento de búsqueda manual
     inputCodigo.addEventListener('blur', () => {
         buscarProductoPorCodigo(inputCodigo.value);
     });
-    
+
     // Escáner de cámara
     const btnScanner = document.getElementById('btn-scanner');
     const btnStopScanner = document.getElementById('btn-stop-scanner');
     const scannerContainer = document.getElementById('scanner-container');
     const scannerStatus = document.getElementById('scanner-status');
-    
+
     btnScanner.addEventListener('click', async () => {
         try {
             scannerStatus.textContent = 'Iniciando escáner...';
             scannerStatus.className = 'form-text text-info';
-            
+
             scanner = new BarcodeScanner();
             scannerContainer.style.display = 'block';
-            
+
             await scanner.init('scanner-viewport', (codigo) => {
                 console.log('Código detectado:', codigo);
                 inputCodigo.value = codigo;  // Llenar campo
@@ -1011,10 +1112,10 @@
                 scannerStatus.textContent = `Código escaneado: ${codigo}`;
                 scannerStatus.className = 'form-text text-success';
             });
-            
+
             scannerStatus.textContent = 'Escáner activo - Apunta al código de barras';
             scannerStatus.className = 'form-text text-success';
-            
+
         } catch (error) {
             console.error('Error iniciando escáner:', error);
             scannerStatus.textContent = 'Error: ' + error.message;
@@ -1022,7 +1123,7 @@
             scannerContainer.style.display = 'none';
         }
     });
-    
+
     btnStopScanner.addEventListener('click', () => {
         if (scanner) {
             scanner.stop();
@@ -1071,53 +1172,52 @@
 </div>
 
 <script>
-function crearCliente() {
-    const nombre = document.getElementById('clienteNombre').value;
-    const documento = document.getElementById('clienteDocumento').value;
-    const telefono = document.getElementById('clienteTelefono').value;
-    const credito = document.getElementById('clienteCredito').value;
-    
-    if (!nombre) {
-        alert('El nombre es requerido');
-        return;
-    }
-    
-    fetch('{% url "empresa:clientes_api" %}', {
-        method: 'POST',
-        credentials: 'same-origin',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRFToken': window.CONTAFY_CSRF_TOKEN || (document.querySelector('[name=csrfmiddlewaretoken]') && document.querySelector('[name=csrfmiddlewaretoken]').value)
-        },
-        body: JSON.stringify({
-            nombre: nombre,
-            numero_documento: documento,
-            telefono: telefono,
-            limite_credito: credito
-        })
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            // Agregar al select
-            const select = document.getElementById('id_cliente_fk');
-            const option = new Option(data.cliente.nombre, data.cliente.id, true, true);
-            select.add(option);
-            
-            // Cerrar modal y limpiar
-            bootstrap.Modal.getInstance(document.getElementById('clienteModal')).hide();
-            document.getElementById('formCliente').reset();
-            
-            alert('Cliente creado exitosamente');
-        } else {
-            alert('Error: ' + (data.error || 'No se pudo crear el cliente'));
+    function crearCliente() {
+        const nombre = document.getElementById('clienteNombre').value;
+        const documento = document.getElementById('clienteDocumento').value;
+        const telefono = document.getElementById('clienteTelefono').value;
+        const credito = document.getElementById('clienteCredito').value;
+
+        if (!nombre) {
+            alert('El nombre es requerido');
+            return;
         }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        alert('Error creando cliente');
-    });
-}
+
+        fetch('{% url "empresa:clientes_api" %}', {
+            method: 'POST',
+            credentials: 'same-origin',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': window.CONTAFY_CSRF_TOKEN || (document.querySelector('[name=csrfmiddlewaretoken]') && document.querySelector('[name=csrfmiddlewaretoken]').value)
+            },
+            body: JSON.stringify({
+                nombre: nombre,
+                numero_documento: documento,
+                telefono: telefono,
+                limite_credito: credito
+            })
+        })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Agregar al select
+                    const select = document.getElementById('id_cliente_fk');
+                    const option = new Option(data.cliente.nombre, data.cliente.id, true, true);
+                    select.add(option);
+
+                    // Cerrar modal y limpiar
+                    bootstrap.Modal.getInstance(document.getElementById('clienteModal')).hide();
+                    document.getElementById('formCliente').reset();
+
+                    alert('Cliente creado exitosamente');
+                } else {
+                    alert('Error: ' + (data.error || 'No se pudo crear el cliente'));
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error creando cliente');
+            });
+    }
 </script>
 {% endblock %}
-

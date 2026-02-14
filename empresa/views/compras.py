@@ -83,6 +83,8 @@ def crear_compra(request):
 
 
 @login_required
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
+
 def listar_compras(request):
     empresa = request.user.empresa
     compras = Compra.objects.filter(empresa=empresa).order_by('-fecha')
@@ -118,8 +120,19 @@ def listar_compras(request):
     
     es_propietario = not hasattr(request.user, 'poderes') or request.user.is_superuser
 
+    # Paginación: 15 registros por página
+    paginator = Paginator(compras, 15)
+    page_number = request.GET.get('page')
+    try:
+        page_obj = paginator.page(page_number)
+    except PageNotAnInteger:
+        page_obj = paginator.page(1)
+    except EmptyPage:
+        page_obj = paginator.page(paginator.num_pages)
+
     contexto = {
-        'compras': compras,
+        'page_obj': page_obj,
+        'compras': page_obj.object_list,
         'total_compras': total_compras,
         'total_transacciones': total_transacciones,
         'promedio_compra': promedio_compra,

@@ -1,6 +1,6 @@
-"""
-Benchmarking Avanzado con Valuación y Análisis Predictivo
-Integra: comparación sectorial + valuación + proyecciones + análisis de riesgo
+﻿"""
+Benchmarking Avanzado con ValuaciÃ³n y AnÃ¡lisis Predictivo
+Integra: comparaciÃ³n sectorial + valuaciÃ³n + proyecciones + anÃ¡lisis de riesgo
 """
 from django.db.models import Sum, Avg, Count
 from django.utils import timezone
@@ -14,18 +14,18 @@ class BenchmarkingAvanzadoService:
     
     @staticmethod
     def obtener_benchmarking_completo_avanzado(empresa):
-        """Benchmarking completo con valuación y análisis predictivo"""
+        """Benchmarking completo con valuaciÃ³n y anÃ¡lisis predictivo"""
         
         # Benchmarking base
         benchmarking_base = BenchmarkingRealService.obtener_benchmarking_completo(empresa)
         
-        # Valuación comparativa
+        # ValuaciÃ³n comparativa
         valuacion_comparativa = BenchmarkingAvanzadoService._calcular_valuacion_comparativa(empresa)
         
-        # Análisis predictivo
+        # AnÃ¡lisis predictivo
         analisis_predictivo = BenchmarkingAvanzadoService._calcular_analisis_predictivo(empresa)
         
-        # Proyecciones de posición
+        # Proyecciones de posiciÃ³n
         proyecciones_posicion = BenchmarkingAvanzadoService._proyectar_posicion_futura(empresa)
         
         # Combinar todo
@@ -34,20 +34,20 @@ class BenchmarkingAvanzadoService:
             'valuacion_comparativa': valuacion_comparativa,
             'analisis_predictivo': analisis_predictivo,
             'proyecciones_posicion': proyecciones_posicion,
-            'tamaño_empresa': BenchmarkingAvanzadoService._clasificar_tamaño_empresa(empresa)
+            'tamano_empresa': BenchmarkingAvanzadoService._clasificar_tamano_empresa(empresa)
         }
     
     @staticmethod
     def _calcular_valuacion_comparativa(empresa):
-        """Calcula valuación y la compara con el sector"""
+        """Calcula valuaciÃ³n y la compara con el sector"""
         
         # Datos financieros propios
         datos_propios = BenchmarkingAvanzadoService._obtener_datos_financieros(empresa)
         
-        # Valuación propia (método simplificado)
+        # ValuaciÃ³n propia (mÃ©todo simplificado)
         valuacion_propia = BenchmarkingAvanzadoService._calcular_valuacion_simple(datos_propios)
         
-        # Obtener empresas similares para comparar valuación
+        # Obtener empresas similares para comparar valuaciÃ³n
         empresas_similares = Empresa.objects.filter(
             categoria=empresa.categoria
         ).exclude(id=empresa.id)
@@ -76,24 +76,24 @@ class BenchmarkingAvanzadoService:
                 'tiene_datos': True
             }
         
-        return {'tiene_datos': False, 'razon': 'Datos insuficientes para comparación de valuación'}
+        return {'tiene_datos': False, 'razon': 'Datos insuficientes para comparaciÃ³n de valuaciÃ³n'}
     
     @staticmethod
     def _calcular_valuacion_simple(datos):
-        """Método simplificado de valuación para comparación"""
+        """MÃ©todo simplificado de valuaciÃ³n para comparaciÃ³n"""
         ventas = datos['ventas_anuales']
         utilidad = datos['utilidad_neta']
         
-        # Múltiplo conservador: 2x ventas + 10x utilidad (si es positiva)
+        # MÃºltiplo conservador: 2x ventas + 10x utilidad (si es positiva)
         valuacion = ventas * 2
         if utilidad > 0:
             valuacion += utilidad * 10
         
-        return max(valuacion, ventas * 0.5)  # Mínimo 0.5x ventas
+        return max(valuacion, ventas * 0.5)  # MÃ­nimo 0.5x ventas
     
     @staticmethod
     def _calcular_analisis_predictivo(empresa):
-        """Análisis predictivo de riesgo y oportunidades"""
+        """AnÃ¡lisis predictivo de riesgo y oportunidades"""
         datos = BenchmarkingAvanzadoService._obtener_datos_financieros(empresa)
         
         # Altman Z-Score simplificado para PyMEs
@@ -134,11 +134,11 @@ class BenchmarkingAvanzadoService:
     def _interpretar_z_score(z_score):
         """Interpreta el Z-Score"""
         if z_score > 2.6:
-            return {'nivel': 'Bajo', 'descripcion': 'Empresa financieramente sólida'}
+            return {'nivel': 'Bajo', 'descripcion': 'Empresa financieramente sÃ³lida'}
         elif z_score > 1.8:
-            return {'nivel': 'Medio', 'descripcion': 'Situación financiera estable'}
+            return {'nivel': 'Medio', 'descripcion': 'SituaciÃ³n financiera estable'}
         else:
-            return {'nivel': 'Alto', 'descripcion': 'Requiere atención financiera'}
+            return {'nivel': 'Alto', 'descripcion': 'Requiere atenciÃ³n financiera'}
     
     @staticmethod
     def _calcular_probabilidad_crecimiento(datos):
@@ -153,7 +153,7 @@ class BenchmarkingAvanzadoService:
         else:
             factores.append(10)
         
-        # Factor crecimiento histórico
+        # Factor crecimiento histÃ³rico
         if datos['tasa_crecimiento'] > 15:
             factores.append(25)
         elif datos['tasa_crecimiento'] > 5:
@@ -214,7 +214,7 @@ class BenchmarkingAvanzadoService:
     
     @staticmethod
     def _evaluar_tendencia_general(datos):
-        """Evalúa la tendencia general de la empresa"""
+        """EvalÃºa la tendencia general de la empresa"""
         puntuacion = 0
         
         # Rentabilidad
@@ -250,20 +250,20 @@ class BenchmarkingAvanzadoService:
     
     @staticmethod
     def _proyectar_posicion_futura(empresa):
-        """Proyecta la posición futura en el sector"""
+        """Proyecta la posiciÃ³n futura en el sector"""
         datos = BenchmarkingAvanzadoService._obtener_datos_financieros(empresa)
         
-        # Proyección simple basada en tendencias
+        # ProyecciÃ³n simple basada en tendencias
         crecimiento_anual = max(datos['tasa_crecimiento'], 0) / 100
         
         proyecciones = []
-        for año in range(1, 4):  # 3 años
-            factor_crecimiento = (1 + crecimiento_anual) ** año
+        for anio in range(1, 4):  # 3 anios
+            factor_crecimiento = (1 + crecimiento_anual) ** anio
             
             ventas_proyectadas = datos['ventas_anuales'] * factor_crecimiento
             utilidad_proyectada = datos['utilidad_neta'] * factor_crecimiento
             
-            # Posición estimada (simplificada)
+            # PosiciÃ³n estimada (simplificada)
             if ventas_proyectadas > 100000:
                 posicion_estimada = 'Top 10%'
             elif ventas_proyectadas > 50000:
@@ -271,10 +271,10 @@ class BenchmarkingAvanzadoService:
             elif ventas_proyectadas > 20000:
                 posicion_estimada = 'Top 50%'
             else:
-                posicion_estimada = 'Bottom 50%'
+                posicion_estimada = 'Mitad inferior (50%)'
             
             proyecciones.append({
-                'año': año,
+                'anio': anio,
                 'ventas_proyectadas': ventas_proyectadas,
                 'utilidad_proyectada': utilidad_proyectada,
                 'posicion_estimada': posicion_estimada
@@ -283,8 +283,8 @@ class BenchmarkingAvanzadoService:
         return proyecciones
     
     @staticmethod
-    def _clasificar_tamaño_empresa(empresa):
-        """Clasifica el tamaño de la empresa"""
+    def _clasificar_tamano_empresa(empresa):
+        """Clasifica el tamano de la empresa"""
         datos = BenchmarkingAvanzadoService._obtener_datos_financieros(empresa)
         ventas = datos['ventas_anuales']
         
@@ -293,13 +293,13 @@ class BenchmarkingAvanzadoService:
         elif ventas > 100000:
             return {'categoria': 'Mediana', 'descripcion': 'Empresa mediana del sector'}
         elif ventas > 20000:
-            return {'categoria': 'Pequeña', 'descripcion': 'Pequeña empresa del sector'}
+            return {'categoria': 'PequeÃ±a', 'descripcion': 'PequeÃ±a empresa del sector'}
         else:
             return {'categoria': 'Micro', 'descripcion': 'Microempresa del sector'}
     
     @staticmethod
     def _obtener_datos_financieros(empresa):
-        """Obtiene datos financieros (reutiliza lógica del servicio de valuación)"""
+        """Obtiene datos financieros (reutiliza lÃ³gica del servicio de valuaciÃ³n)"""
         hoy = timezone.now()
         hace_12_meses = hoy - timedelta(days=365)
         hace_6_meses = hoy - timedelta(days=180)
@@ -353,3 +353,4 @@ class BenchmarkingAvanzadoService:
             'tasa_crecimiento': float(tasa_crecimiento),
             'margen_neto': float(margen_neto)
         }
+

@@ -3,9 +3,10 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.db.models import Sum, Avg
 from django.http import JsonResponse
-from datetime import datetime
+from datetime import datetime, timedelta
 from empresa.models import MetaFinanciera, Venta, Gasto, HistorialMeta, NotificacionMeta
 from empresa.services.metas_service import ServicioMetas
+import json
 
 @login_required
 def gestionar_metas(request):
@@ -80,6 +81,21 @@ def gestionar_metas(request):
     # Obtener notificaciones pendientes
     notificaciones = ServicioMetas.obtener_notificaciones_pendientes(empresa)
     
+    # Datos históricos mensuales para gráficos (últimos 6 meses)
+    datos_historicos = _obtener_datos_historicos_mensuales(empresa)
+    
+    # Nombres de meses en español
+    MESES_ES = ['', 'Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun',
+                'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic']
+    
+    historico_labels = json.dumps([
+        f"{MESES_ES[d['mes']]} {d['anio']}" for d in datos_historicos
+    ])
+    historico_ventas = json.dumps([float(d['ventas']) for d in datos_historicos])
+    historico_gastos = json.dumps([float(d['gastos']) for d in datos_historicos])
+    historico_rentabilidad = json.dumps([float(d['rentabilidad']) for d in datos_historicos])
+    tiene_datos_historicos = any(d['ventas'] > 0 or d['gastos'] > 0 for d in datos_historicos)
+    
     # Lista de meses en español
     meses_es = [
         (1, 'Enero'), (2, 'Febrero'), (3, 'Marzo'), (4, 'Abril'),
@@ -96,7 +112,12 @@ def gestionar_metas(request):
         'notificaciones': notificaciones,
         'tipos_meta': MetaFinanciera._meta.get_field('tipo').choices,
         'meses': meses_es,
-        'anios': range(2020, datetime.now().year + 2)
+        'anios': range(2020, datetime.now().year + 2),
+        'historico_labels': historico_labels,
+        'historico_ventas': historico_ventas,
+        'historico_gastos': historico_gastos,
+        'historico_rentabilidad': historico_rentabilidad,
+        'tiene_datos_historicos': tiene_datos_historicos,
     })
 
 @login_required
@@ -117,6 +138,75 @@ def marcar_notificacion_leida(request, notificacion_id):
         success = ServicioMetas.marcar_notificacion_leida(notificacion_id)
         return JsonResponse({'success': success})
     return JsonResponse({'success': False})
+
+@login_required
+def comparacion_sector(request):
+    empresa = request.user.empresa
+    
+    # Obtener benchmarking sectorial con datos reales
+    benchmarking_sectorial = ServicioMetas.calcular_benchmarking_sectorial(empresa)
+    
+    # Datos históricos mensuales para gráficos (últimos 6 meses)
+    datos_historicos = _obtener_datos_historicos_mensuales(empresa)
+    
+    # Nombres de meses en español
+    MESES_ES = ['', 'Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun',
+                'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic']
+    
+    historico_labels = json.dumps([
+        f"{MESES_ES[d['mes']]} {d['anio']}" for d in datos_historicos
+    ])
+    historico_ventas = json.dumps([float(d['ventas']) for d in datos_historicos])
+    historico_gastos = json.dumps([float(d['gastos']) for d in datos_historicos])
+    historico_rentabilidad = json.dumps([float(d['rentabilidad']) for d in datos_historicos])
+    tiene_datos_historicos = any(d['ventas'] > 0 or d['gastos'] > 0 for d in datos_historicos)
+    
+    context = {
+        'benchmarking_sectorial': benchmarking_sectorial,
+        'historico_labels': historico_labels,
+        'historico_ventas': historico_ventas,
+        'historico_gastos': historico_gastos,
+        'historico_rentabilidad': historico_rentabilidad,
+        'tiene_datos_historicos': tiene_datos_historicos,
+    }
+    return render(request, 'empresa/comparacion_sector.html', context)
+
+def _obtener_datos_historicos_mensuales(empresa, meses=6):
+    """Obtiene datos mensuales de ventas, gastos y rentabilidad para los últimos N meses."""
+    datos = []
+    hoy = datetime.now()
+    
+    for i in range(meses - 1, -1, -1):  # Orden cronológico (más antiguo primero)
+        fecha = hoy - timedelta(days=30 * i)
+        mes = fecha.month
+        anio = fecha.year
+        
+        ventas_mes = Venta.objects.filter(
+            empresa=empresa,
+            fecha__month=mes,
+            fecha__year=anio
+        ).aggregate(total=Sum('monto'))['total'] or 0
+        
+        gastos_mes = Gasto.objects.filter(
+            empresa=empresa,
+            fecha__month=mes,
+            fecha__year=anio
+        ).aggregate(total=Sum('monto'))['total'] or 0
+        
+        utilidad = float(ventas_mes) - float(gastos_mes)
+        rentabilidad = (utilidad / float(ventas_mes) * 100) if float(ventas_mes) > 0 else 0
+        
+        datos.append({
+            'mes': mes,
+            'anio': anio,
+            'ventas': ventas_mes,
+            'gastos': gastos_mes,
+            'utilidad': utilidad,
+            'rentabilidad': round(rentabilidad, 1),
+        })
+    
+    return datos
+
 
 def calcular_benchmarking(empresa):
     """Calcula estadísticas de benchmarking para la empresa"""

@@ -1,5 +1,6 @@
 from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from empresa.models import Gasto
 from empresa.forms import GastoForm
 from empresa.decorators import require_power
@@ -60,8 +61,19 @@ def listar_gastos(request):
 
     es_propietario = not hasattr(request.user, 'poderes') or request.user.is_superuser
     
+    # Paginación: 15 registros por página
+    paginator = Paginator(gastos, 15)
+    page_number = request.GET.get('page')
+    try:
+        page_obj = paginator.page(page_number)
+    except PageNotAnInteger:
+        page_obj = paginator.page(1)
+    except EmptyPage:
+        page_obj = paginator.page(paginator.num_pages)
+
     contexto = {
-        'gastos': gastos,
+        'page_obj': page_obj,
+        'gastos': page_obj.object_list,
         'total_gastos': total_gastos,
         'total_transacciones': total_transacciones,
         'promedio_gasto': promedio_gasto,

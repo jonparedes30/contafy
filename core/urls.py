@@ -35,5 +35,5 @@ urlpatterns += [
         path('api/token/', lambda request: (_ for _ in ()).throw(Exception('JWT not installed')), name='token_obtain_pair'),
         path('api/token/refresh/', lambda request: (_ for _ in ()).throw(Exception('JWT not installed')), name='token_refresh'),
     ] ),
-    # path('api/academia/', include('empresa.api.urls')),  # DESHABILITADO TEMPORALMENTE - Academia módulo desactivado
+
 ]

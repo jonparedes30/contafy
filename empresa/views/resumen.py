@@ -295,42 +295,101 @@ def resumen_financiero(request):
         margen_bruto = (totales['utilidad_bruta'] / totales['ventas'] * 100) if totales['ventas'] > 0 else 0
         ratio_gastos_ventas = (totales['gastos'] / totales['ventas'] * 100) if totales['ventas'] > 0 else 0
         ratio_costos = (totales['compras'] / totales['ventas'] * 100) if totales['ventas'] > 0 else 0
-        logger.info(f"Indicadores OK")
+        
+        # Calcular indicadores de solvencia
+        try:
+            # Obtener valores de cuentas contables, manejando None
+            activos_cuentas = CuentaContable.objects.filter(empresa=empresa, tipo='activo')
+            total_activos = sum(float(cuenta.valor) if cuenta.valor else 0 for cuenta in activos_cuentas) or 1
+            
+            pasivos_cuentas = CuentaContable.objects.filter(empresa=empresa, tipo='pasivo')
+            total_pasivos = sum(float(cuenta.valor) if cuenta.valor else 0 for cuenta in pasivos_cuentas) or 1
+            
+            capital_cuentas = CuentaContable.objects.filter(empresa=empresa, tipo='capital')
+            total_capital = sum(float(cuenta.valor) if cuenta.valor else 0 for cuenta in capital_cuentas) or 0
+            
+            logger.info(f"DEBUG - Total activos: {total_activos}, Total pasivos: {total_pasivos}")
+        except Exception as e:
+            logger.error(f"Error calculando cuentas contables: {e}")
+            total_activos = 1
+            total_pasivos = 1
+            total_capital = 0
+        
+        # Convertir a float para evitar mezcla de tipos
+        total_activos_f = float(total_activos)
+        total_pasivos_f = float(total_pasivos)
+        ventas_f = float(totales['ventas'])
+        
+        # Calcular ratios solo si hay valores válidos
+        if total_activos_f > 0 and total_pasivos_f > 0:
+            liquidez = round(total_activos_f / total_pasivos_f, 2)
+        else:
+            liquidez = 0.0
+            
+        if total_activos_f > 0 and total_pasivos_f > 0:
+            endeudamiento = round(total_pasivos_f / total_activos_f, 2)
+        else:
+            endeudamiento = 0.0
+            
+        if total_activos_f > 0:
+            rotacion_activos = round(ventas_f / total_activos_f, 2)
+        else:
+            rotacion_activos = 0.0
+        
+        logger.info(f"Indicadores de solvencia OK: liquidez={liquidez}, endeudamiento={endeudamiento}, rotacion={rotacion_activos}")
         
         logger.info("Generando análisis predictivo...")
+        
+        # Determinar tendencia basada en datos actuales
+        utilidad_neta = totales.get('utilidad_neta', 0)
+        utilidad_bruta = totales.get('utilidad_bruta', 0)
+        ventas = totales.get('ventas', 0)
+        
+        # Tendencia: positiva si hay utilidad neta positiva
+        tendencia_nivel = 'Positiva' if utilidad_neta > 0 else 'Negativa' if utilidad_neta < 0 else 'Estable'
+        tendencia_color = 'positivo' if utilidad_neta > 0 else 'negativo' if utilidad_neta < 0 else 'neutro'
+        
+        # Riesgo de quiebra: basado en el margen neto
+        margen_neto_calc = (utilidad_neta / ventas * 100) if ventas > 0 else 0
+        if margen_neto_calc > 15:
+            riesgo_nivel = 'Bajo'
+        elif margen_neto_calc > 5:
+            riesgo_nivel = 'Medio'
+        else:
+            riesgo_nivel = 'Alto'
+        
+        # Probabilidad de crecimiento: basada en tendencia positiva
+        probabilidad_crecimiento = 70 if utilidad_neta > 0 and ventas > 0 else 30
+        
+        # Z-Score de Altman simplificado
+        z_score = 2.5 if utilidad_neta > 0 else 1.5 if margen_neto_calc > 0 else 0.9
+        
         analisis_predictivo = {
-            'tendencia_general': {'nivel': 'Calculando...', 'color': 'neutro'},
-            'riesgo_quiebra': {'nivel': 'Medio'},
-            'probabilidad_crecimiento': 50,
-            'z_score': 2.0,
+            'tendencia_general': {'nivel': tendencia_nivel, 'color': tendencia_color},
+            'riesgo_quiebra': {'nivel': riesgo_nivel},
+            'probabilidad_crecimiento': probabilidad_crecimiento,
+            'z_score': z_score,
             'alertas_tempranas': []
         }
         
+        # Intentar obtener análisis más avanzado si el servicio está disponible
         try:
             from empresa.services.predicciones_service import PrediccionesAvanzadas
             predicciones_service = PrediccionesAvanzadas(empresa)
             
             flujo_caja = predicciones_service.predecir_flujo_caja(meses=6)
-            logger.info(f"Flujo caja: {flujo_caja.get('success')}")
+            logger.info(f"Flujo caja avanzado disponible: {flujo_caja.get('success')}")
             
             if flujo_caja.get('success'):
-                tendencia = flujo_caja.get('tendencia_ingresos', 0)
-                analisis_predictivo['tendencia_general'] = {
-                    'nivel': 'Positiva' if tendencia > 0 else 'Negativa',
-                    'color': 'positivo' if tendencia > 0 else 'negativo'
-                }
+                # Usar datos avanzados si están disponibles
                 analisis_predictivo['predicciones'] = flujo_caja.get('predicciones', [])
                 analisis_predictivo['confianza'] = flujo_caja.get('confianza', 'Media')
             
             riesgo_quiebra = predicciones_service.detectar_riesgo_quiebra()
-            logger.info(f"Riesgo quiebra: {riesgo_quiebra.get('success')}")
+            logger.info(f"Riesgo quiebra avanzado disponible: {riesgo_quiebra.get('success')}")
             
             if riesgo_quiebra.get('success'):
-                analisis_predictivo['riesgo_quiebra'] = {
-                    'nivel': riesgo_quiebra.get('riesgo_general', 'Medio')
-                }
-                
-                # Generar alertas
+                # Actualizar con datos avanzados
                 alertas = []
                 for key, ind in riesgo_quiebra.get('indicadores', {}).items():
                     if ind.get('riesgo') == 'Alto':
@@ -339,14 +398,13 @@ def resumen_financiero(request):
                             'prioridad': 'Alta',
                             'mensaje': f"{ind.get('descripcion', key)}: {ind.get('valor', 'N/A')}"
                         })
-                analisis_predictivo['alertas_tempranas'] = alertas
-            
-            # Métricas adicionales
-            analisis_predictivo['probabilidad_crecimiento'] = 70 if totales['ventas'] > 0 and totales['utilidad_neta'] > 0 else 30
-            analisis_predictivo['z_score'] = 2.5 if totales['utilidad_neta'] > 0 else 1.2
+                if alertas:
+                    analisis_predictivo['alertas_tempranas'] = alertas
             
         except Exception as e:
-            logger.error(f"Error en análisis predictivo: {e}")
+            logger.info(f"Análisis predictivo avanzado no disponible: {e}. Usando análisis básico.")
+        
+        logger.info(f"Análisis predictivo OK: {analisis_predictivo}")
         
         logger.info(f"Análisis predictivo OK: {analisis_predictivo}")
         
@@ -365,6 +423,13 @@ def resumen_financiero(request):
             'margen_bruto': round(float(margen_bruto), 2),
             'ratio_gastos_ventas': round(float(ratio_gastos_ventas), 2),
             'ratio_costos': round(float(ratio_costos), 2),
+            # Indicadores de solvencia
+            'liquidez': liquidez,
+            'endeudamiento': endeudamiento,
+            'rotacion_activos': rotacion_activos,
+            'total_activos': round(float(total_activos), 2),
+            'total_pasivos': round(float(total_pasivos), 2),
+            'total_capital': total_capital,
             'analisis_predictivo': analisis_predictivo
         }
         logger.info("Contexto OK")
@@ -390,6 +455,17 @@ def resumen_financiero(request):
                 contexto = presenter.to_context()
         except Exception as e:
             logger.exception(f"Error inicializando presenter: {e}")
+
+        # Asegurar que los indicadores de solvencia siempre están en el contexto
+        contexto['liquidez'] = liquidez
+        contexto['endeudamiento'] = endeudamiento
+        contexto['rotacion_activos'] = rotacion_activos
+        contexto['total_activos'] = round(float(total_activos), 2)
+        contexto['total_pasivos'] = round(float(total_pasivos), 2)
+        contexto['total_capital'] = total_capital
+        contexto['analisis_predictivo'] = analisis_predictivo
+        
+        logger.info(f"DEBUG - Contexto final con liquidez: {contexto.get('liquidez')}, endeudamiento: {contexto.get('endeudamiento')}")
 
         logger.info("Renderizando template...")
         # Selección de plantilla por categoría con fallback

@@ -1,42 +1,128 @@
-# Entorno virtual
+# ============================================================================
+# ENTORNO VIRTUAL - NUNCA SUBIR
+# ============================================================================
+# El entorno virtual se crea localmente en cada máquina
 venv/
 .venv/
+env/
+ENV/
 .env
 *.env
+!.env.example  # Pero SÍ queremos .env.example en Git
 
-# Archivos de Python
+# ============================================================================
+# ARCHIVOS DE PYTHON - TEMPORALES
+# ============================================================================
 __pycache__/
 *.py[cod]
+*$py.class
 *.pyo
 *.pyd
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+.eggs/
+*.egg-info
 
-# Archivos de base de datos y migraciones temporales
+# ============================================================================
+# BASE DE DATOS - SUSPALDOS Y ARCHIVOS LOCALES
+# ============================================================================
+# SQLite (desarrollo local)
 *.sqlite3
 *.db
-*.bak
+*.sqlite
+db.sqlite3
+contafy_sistema.db
 
-# Archivos de logs
+# PostgreSQL (respaldos)
+backup.sql
+backup.sql.gz
+backup_*.sql
+backup_*.sql.gz
+backup_*.sql.zip
+backup_*.zip
+
+# ============================================================================
+# ARCHIVOS DE LOGS Y TEMPORALES
+# ============================================================================
 *.log
+logs/
+*.tmp
+*.bak
+*.swp
+*.swo
+*~
+.ipynb_checkpoints/
+.DS_Store
+Thumbs.db
 
-# Configuración de IDEs
+# ============================================================================
+# CONFIGURACIÓN DE IDEs Y EDITORES
+# ============================================================================
 .idea/
 .vscode/
 *.sublime-workspace
 *.sublime-project
+.vs/
+.vscode/
+*.swp
+*.swo
+*~
+.code-workspace
+.env.local
+.env.*.local
 
-# Archivos de sistema
+# ============================================================================
+# ARTEFACTOS DE TESTING Y COVERAGE
+# ============================================================================
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+.tox/
+.hypothesis/
+
+# ============================================================================
+# HERRAMIENTAS Y GIT
+# ============================================================================
+.git/
+.gitkeep
 .DS_Store
-Thumbs.db
+.AppleDouble
+.LSOverride
+*.orig
+.merge_*
+.pre-commit-framework/
 
-# Archivos comprimidos y binarios
-*.zip
-*.tar.gz
-*.egg-info/
-dist/
-build/
+# ============================================================================
+# ARCHIVOS DE NODE (si se usa frontend)
+# ============================================================================
+node_modules/
+npm-debug.log
+yarn-error.log
+package-lock.json
+yarn.lock
 
-# Otros posibles directorios temporales
+# ============================================================================
+# ARCHIVOS ESTATICOS RECOLECTADOS
+# ============================================================================
+staticfiles/
+/static/
+
+# ============================================================================
+# RESPALDOS DE SISTEMA Y EDITORES
+# ============================================================================
+*.bak
+*.backup
 *.tmp
 *.swp
-*.bak
-node_modules/ 
+*.swo
+*#*#
+.#*
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+ 

@@ -603,7 +603,7 @@ class AIComandosService:
         if 'explica' in texto.lower():
             return {"success": True, "mensaje": "El IVA es 12% en Ecuador"}
         elif 'recomienda' in texto.lower():
-            return {"success": True, "mensaje": "Visita Academia CONTAFY", "enlace": "/app-beta-2024/aprendizaje/"}
+            return {"success": True, "mensaje": "Visita nuestra sección de ayuda", "enlace": "/app-beta-2024/asistente/"}
         elif 'practica' in texto.lower():
             return {"success": True, "mensaje": "Simulaciones disponibles", "enlace": "/app-beta-2024/aprendizaje/simulacion/venta/"}
         else:
