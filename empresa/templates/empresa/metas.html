@@ -237,15 +237,18 @@
                                     <div class="list-group">
                                         <div class="list-group-item d-flex justify-content-between align-items-center">
                                             <span>Conservadora (+5%)</span>
-                                            <span class="badge bg-success">${{ metas_dinamicas.ventas.conservadora|floatformat:2 }}</span>
+                                            <span class="badge bg-success">${{
+                                                metas_dinamicas.ventas.conservadora|floatformat:2 }}</span>
                                         </div>
                                         <div class="list-group-item d-flex justify-content-between align-items-center">
                                             <span>Moderada (+10%)</span>
-                                            <span class="badge bg-warning">${{ metas_dinamicas.ventas.moderada|floatformat:2 }}</span>
+                                            <span class="badge bg-warning">${{
+                                                metas_dinamicas.ventas.moderada|floatformat:2 }}</span>
                                         </div>
                                         <div class="list-group-item d-flex justify-content-between align-items-center">
                                             <span>Ambiciosa (+20%)</span>
-                                            <span class="badge bg-danger">${{ metas_dinamicas.ventas.ambiciosa|floatformat:2 }}</span>
+                                            <span class="badge bg-danger">${{
+                                                metas_dinamicas.ventas.ambiciosa|floatformat:2 }}</span>
                                         </div>
                                     </div>
                                 </div>
@@ -254,15 +257,18 @@
                                     <div class="list-group">
                                         <div class="list-group-item d-flex justify-content-between align-items-center">
                                             <span>Conservadora (+5%)</span>
-                                            <span class="badge bg-success">${{ metas_dinamicas.gastos.conservadora|floatformat:2 }}</span>
+                                            <span class="badge bg-success">${{
+                                                metas_dinamicas.gastos.conservadora|floatformat:2 }}</span>
                                         </div>
                                         <div class="list-group-item d-flex justify-content-between align-items-center">
                                             <span>Moderada (+15%)</span>
-                                            <span class="badge bg-warning">${{ metas_dinamicas.gastos.moderada|floatformat:2 }}</span>
+                                            <span class="badge bg-warning">${{
+                                                metas_dinamicas.gastos.moderada|floatformat:2 }}</span>
                                         </div>
                                         <div class="list-group-item d-flex justify-content-between align-items-center">
                                             <span>Ambiciosa (+25%)</span>
-                                            <span class="badge bg-danger">${{ metas_dinamicas.gastos.ambiciosa|floatformat:2 }}</span>
+                                            <span class="badge bg-danger">${{
+                                                metas_dinamicas.gastos.ambiciosa|floatformat:2 }}</span>
                                         </div>
                                     </div>
                                 </div>
@@ -270,7 +276,8 @@
                             <div class="mt-3">
                                 <small class="text-muted">
                                     <i class="bi bi-info-circle"></i>
-                                    Crecimiento actual: {{ metas_dinamicas.tendencia.crecimiento_ventas|floatformat:1 }}%.
+                                    Crecimiento actual: {{ metas_dinamicas.tendencia.crecimiento_ventas|floatformat:1
+                                    }}%.
                                     Recomendación: {{ metas_dinamicas.tendencia.recomendacion|title }}.
                                 </small>
                             </div>
@@ -389,7 +396,7 @@
 
 <script>
     // Inicializar tooltips de Bootstrap
-    document.addtener('DOMContentLoaded', function () {
+    document.addEventListener('DOMContentLoaded', function () {
         var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
         var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
             return new bootstrap.Tooltip(tooltipTriggerEl);

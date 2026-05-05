@@ -3,10 +3,12 @@
 {% block title %}Registrar Producto{% endblock %}
 
 {% block content %}
-<div class="container mt-5" style="max-width: 600px;">
-    <h2 class="mb-4 text-success text-center"><i class="bi bi-box-seam me-2"></i>Registrar nuevo producto</h2>
+<div class="container-fluid mt-4">
+    <div class="row justify-content-center">
+        <div class="col-12 col-xl-10">
+            <h2 class="page-header-module text-success"><i class="bi bi-box-seam me-2"></i>Registrar nuevo producto</h2>
 
-    <form method="post" class="border p-4 rounded bg-white shadow-sm">
+            <form method="post" id="form-crear-producto">
         {% csrf_token %}
         {% if form.errors %}
             <div class="alert alert-danger"><ul class="mb-0">
@@ -21,83 +23,159 @@
             </ul></div>
         {% endif %}
 
-        <!-- Código de barras -->
-        <div class="mb-3">
-            <label for="id_codigo_barras" class="form-label"><i class="bi bi-upc me-2"></i>Código de barras</label>
-            <div class="input-group">
-                {{ form.codigo_barras }}
-                <button type="button" class="btn btn-outline-primary" onclick="escanearCodigo()">
-                    <i class="bi bi-camera-fill me-1"></i>Escanear
-                </button>
+        <!-- Card 1: Identificar producto -->
+        <div class="card form-page-card mb-4">
+            <div class="card-header form-page-card-header form-page-card-header-success">
+                <i class="bi bi-camera-fill"></i>Identificar producto
             </div>
-            <div class="form-text">Escanea o ingresa manualmente el código de barras</div>
-        </div>
-
-        <!-- Código -->
-        <div class="mb-3">
-            <label for="id_codigo" class="form-label"><i class="bi bi-hash me-2"></i>Código interno</label>
-            {{ form.codigo }}
-            <div class="form-text">Código único para identificar el producto</div>
-        </div>
-
-        <!-- Nombre -->
-        <div class="mb-3">
-            <label for="id_nombre" class="form-label"><i class="bi bi-tag me-2"></i>Nombre del producto</label>
-            {{ form.nombre }}
-            <div class="form-text">Nombre descriptivo del producto</div>
-        </div>
-
-        <!-- Descripción -->
-        <div class="mb-3">
-            <label for="id_descripcion" class="form-label"><i class="bi bi-card-text me-2"></i>Descripción</label>
-            {{ form.descripcion }}
-            <div class="form-text">Descripción detallada del producto (opcional)</div>
-        </div>
-
-        <!-- Precio Unitario -->
-        <div class="mb-3">
-            <label for="id_precio_unitario" class="form-label"><i class="bi bi-currency-dollar me-2"></i>Precio Unitario (USD)</label>
-            <div class="input-group">
-                <span class="input-group-text">$</span>
-                {{ form.precio_unitario }}
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6 mb-3 mb-md-0">
+                        <button type="button" id="btn-scanner-producto" class="btn btn-scanner-unified text-white w-100 py-3" style="background: red !important;">
+                            <i class="bi bi-camera-fill me-2"></i>Escanear Producto (Cámara + IA)
+                        </button>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="id_codigo_barras" class="form-label"><i class="bi bi-upc me-2"></i>Código de barras</label>
+                        <div class="input-group">
+                            {{ form.codigo_barras }}
+                            <button type="button" class="btn btn-outline-primary" onclick="escanearCodigo()">
+                                <i class="bi bi-camera-fill me-1"></i>Escanear
+                            </button>
+                        </div>
+                        <div class="form-text">Escanea o ingresa manualmente</div>
+                        <div id="scan-actions-producto" class="mt-2 text-center" style="display:none;"></div>
+                    </div>
+                </div>
             </div>
-            <div class="form-text">Precio de costo o compra del producto</div>
         </div>
 
-        <!-- Stock -->
-        <div class="mb-3">
-            <label for="id_stock" class="form-label"><i class="bi bi-boxes me-2"></i>Stock inicial</label>
-            {{ form.stock }}
-            <div class="form-text">Cantidad inicial en inventario</div>
-        </div>
-
-        <!-- Categoría -->
-        <div class="mb-3">
-            <label for="id_categoria" class="form-label"><i class="bi bi-tags me-2"></i>Categoría</label>
-            <div class="input-group">
-                {{ form.categoria }}
-                <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#categoriaModal">
-                    <i class="bi bi-plus"></i> Nueva
-                </button>
+        <!-- Card 2: Información del producto -->
+        <div class="card form-page-card mb-4">
+            <div class="card-header form-page-card-header">
+                <i class="bi bi-tag"></i>Información del producto
             </div>
-            <div class="form-text">Categoría para organizar tus productos</div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="id_codigo" class="form-label"><i class="bi bi-hash me-2"></i>Código interno</label>
+                            {{ form.codigo }}
+                            <div class="form-text">Código único para identificar el producto</div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="id_nombre" class="form-label"><i class="bi bi-tag me-2"></i>Nombre del producto</label>
+                            {{ form.nombre }}
+                            <div class="form-text">Nombre descriptivo del producto</div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="id_categoria" class="form-label"><i class="bi bi-tags me-2"></i>Categoría</label>
+                            <div class="input-group">
+                                {{ form.categoria }}
+                                <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#categoriaModal">
+                                    <i class="bi bi-plus"></i> Nueva
+                                </button>
+                            </div>
+                            <div class="form-text">Categoría para organizar tus productos</div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="id_precio_unitario" class="form-label"><i class="bi bi-currency-dollar me-2"></i>Precio Unitario (USD)</label>
+                            <div class="input-group">
+                                <span class="input-group-text">$</span>
+                                {{ form.precio_unitario }}
+                            </div>
+                            <div class="form-text">Precio de costo o compra</div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="id_pvp" class="form-label"><i class="bi bi-cash-coin me-2"></i>PVP (USD)</label>
+                            <div class="input-group">
+                                <span class="input-group-text">$</span>
+                                {{ form.pvp }}
+                            </div>
+                            <div class="form-text">Precio de venta al cliente</div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="id_stock" class="form-label"><i class="bi bi-boxes me-2"></i>Stock inicial</label>
+                            {{ form.stock }}
+                            <div class="form-text">Cantidad inicial en inventario</div>
+                        </div>
+                        <div class="mb-3" id="margen-container" style="display: none;">
+                            <label class="form-label"><i class="bi bi-percent me-2"></i>Margen de Ganancia</label>
+                            <div class="input-group">
+                                <input type="text" id="margen-display" class="form-control" readonly>
+                                <span class="input-group-text">%</span>
+                            </div>
+                            <div class="form-text" id="margen-info">Margen calculado automáticamente</div>
+                        </div>
+                    </div>
+                </div>
+                <div id="sugerencia-info" class="form-text text-muted text-center mb-2"></div>
+            </div>
         </div>
 
-        <!-- PVP -->
-        <div class="mb-3">
-            <label for="id_pvp" class="form-label"><i class="bi bi-cash-coin me-2"></i>Precio de Venta al Público (USD)</label>
-            <div class="input-group">
-                <span class="input-group-text">$</span>
-                {{ form.pvp }}
+        <!-- Card 3: Campos opcionales -->
+        <div class="card form-page-card mb-4">
+            <div class="card-header form-page-card-header">
+                <i class="bi bi-gear"></i>Campos opcionales
             </div>
-            <div class="form-text">Precio de venta al cliente final (opcional)</div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <label for="id_descripcion" class="form-label"><i class="bi bi-card-text me-2"></i>Descripción</label>
+                    {{ form.descripcion }}
+                    <div class="form-text">Descripción detallada (opcional)</div>
+                </div>
+                <div class="accordion" id="camposOpcionales">
+                    <div class="accordion-item">
+                        <h2 class="accordion-header">
+                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOpcionales">
+                                <i class="bi bi-sliders me-2"></i>Más opciones (stock mín/máx, vencimiento, lote)
+                            </button>
+                        </h2>
+                        <div id="collapseOpcionales" class="accordion-collapse collapse" data-bs-parent="#camposOpcionales">
+                            <div class="accordion-body">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="id_stock_minimo" class="form-label">Stock mínimo</label>
+                                            {{ form.stock_minimo }}
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="id_stock_maximo" class="form-label">Stock máximo</label>
+                                            {{ form.stock_maximo }}
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="id_fecha_vencimiento" class="form-label">Fecha de vencimiento</label>
+                                            {{ form.fecha_vencimiento }}
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="id_lote" class="form-label">Lote</label>
+                                            {{ form.lote }}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
-        
-        <!-- Calculadora de IVA -->
-        <div class="mb-3">
-            <div class="card bg-light">
-                <div class="card-body">
-                    <h6 class="text-primary"><i class="bi bi-calculator me-2"></i>Cálculo de IVA</h6>
+
+        <!-- Card 4: Calculadora de IVA -->
+        <div class="card form-page-card mb-4">
+            <div class="card-header form-page-card-header">
+                <i class="bi bi-calculator"></i>Cálculo de IVA
+            </div>
+            <div class="card-body">
                     <div class="form-text mb-3">El precio unitario es sin IVA. Aquí puedes ver cuánto pagarás en total:</div>
                     
                     <div class="row align-items-end">
@@ -124,73 +202,15 @@
                             <small class="text-muted">Fórmula: Total = Precio × (1 + %IVA/100)</small>
                         </div>
                     </div>
-                </div>
             </div>
         </div>
 
-        <!-- Margen de Ganancia (calculado) -->
-        <div class="mb-3" id="margen-container" style="display: none;">
-            <label class="form-label"><i class="bi bi-percent me-2"></i>Margen de Ganancia</label>
-            <div class="input-group">
-                <input type="text" id="margen-display" class="form-control" readonly>
-                <span class="input-group-text">%</span>
-            </div>
-            <div class="form-text" id="margen-info">Margen calculado automáticamente</div>
-        </div>
-
-        <!-- Campos opcionales en acordeón -->
-        <div class="accordion mb-3" id="camposOpcionales">
-            <div class="accordion-item">
-                <h2 class="accordion-header">
-                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOpcionales">
-                        <i class="bi bi-gear me-2"></i>Campos opcionales
-                    </button>
-                </h2>
-                <div id="collapseOpcionales" class="accordion-collapse collapse" data-bs-parent="#camposOpcionales">
-                    <div class="accordion-body">
-                        
-                        <!-- Stock mínimo y máximo -->
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label for="id_stock_minimo" class="form-label">Stock mínimo</label>
-                                    {{ form.stock_minimo }}
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label for="id_stock_maximo" class="form-label">Stock máximo</label>
-                                    {{ form.stock_maximo }}
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <!-- Fecha de vencimiento y lote -->
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label for="id_fecha_vencimiento" class="form-label">Fecha de vencimiento</label>
-                                    {{ form.fecha_vencimiento }}
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label for="id_lote" class="form-label">Lote</label>
-                                    {{ form.lote }}
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div id="sugerencia-info" class="form-text text-muted text-center mb-3"></div>
-
-        <button type="submit" class="btn btn-success w-100" id="btn-guardar-producto">
+        <button type="submit" class="btn btn-success btn-lg w-100 py-3" id="btn-guardar-producto">
             <i class="bi bi-save me-2"></i>Guardar Producto
         </button>
-    </form>
+            </form>
+        </div>
+    </div>
 </div>
 
 <script>
@@ -308,6 +328,8 @@ document.addEventListener('DOMContentLoaded', function () {
                 } else {
                     sugerenciaInfo.textContent = '⚠️ No se encontró información. Puedes ingresar los datos manualmente.';
                     sugerenciaInfo.style.color = 'gray';
+                    // Ofrecer crear desde escaneo si no existe
+                    prefillFromScanProducto(codigo);
                 }
             })
             .catch(() => {
@@ -338,6 +360,103 @@ document.addEventListener('DOMContentLoaded', function () {
             btnGuardar.innerHTML = '<i class="bi bi-hourglass-split me-2"></i>Guardando...';
         });
     }
+
+    // Prefill / crear desde scan - para la página de crear producto
+    async function prefillFromScanProducto(codigo) {
+        const actions = document.getElementById('scan-actions-producto');
+        actions.style.display = 'none';
+        try {
+            const resp = await fetch('{% url "empresa:producto_prefill_from_scan" %}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                },
+                body: JSON.stringify({ barcode: codigo })
+            });
+            const json = await resp.json();
+            const found = (json && ((json.success && json.found) || json.encontrado));
+            const prod = (json && (json.product || json));
+            if (found) {
+                // Si existe en inventario, sugerir usar la edición existente
+                actions.innerHTML = `<div class="alert alert-info">Producto ya registrado: <strong>${prod.nombre}</strong></div>` +
+                    `<a href="/app-beta-2024/producto/${prod.id}/editar/" class="btn btn-outline-secondary">Abrir producto</a>`;
+                actions.style.display = 'block';
+                return;
+            }
+
+            // No existe: ofrecer crear producto rápido en inventario con el barcode
+            actions.innerHTML = `<div class="alert alert-warning">No se encontró info. ¿Crear producto automáticamente?</div>` +
+                `<button type="button" id="btn-create-from-scan-producto" class="btn btn-outline-primary">Crear producto con este código</button>`;
+            actions.style.display = 'block';
+            document.getElementById('btn-create-from-scan-producto').addEventListener('click', () => createProductFromScanProducto(codigo));
+        } catch (err) {
+            console.error('Prefill producto error:', err);
+        }
+    }
+
+    async function createProductFromScanProducto(codigo) {
+        const actions = document.getElementById('scan-actions-producto');
+        actions.innerHTML = '<div class="form-text">Preparando datos para el formulario...</div>';
+        try {
+            // Do NOT create on behalf of the user. Instead prefill the form fields
+            // with the barcode and prompt the user to confirm/save. This preserves
+            // existing backend logic and avoids automatic writes.
+            if (inputCodigoBarras) inputCodigoBarras.value = codigo;
+            sugerenciaInfo.textContent = `🔍 Código aplicado: ${codigo}. Revise los campos y presione Guardar Producto.`;
+            sugerenciaInfo.style.color = 'green';
+
+            // Show quick actions: apply & save, or create automatically (explicit)
+            actions.innerHTML = `<div class="d-flex justify-content-center gap-2">` +
+                `<button type="button" id="btn-apply-fill" class="btn btn-primary">Aplicar y mostrar</button>` +
+                `<button type="button" id="btn-auto-create" class="btn btn-outline-secondary">Crear automáticamente</button>` +
+                `</div>`;
+            actions.style.display = 'block';
+
+            document.getElementById('btn-apply-fill').addEventListener('click', function(){
+                // Focus the first editable field so user can verify
+                if (inputNombre) { inputNombre.focus(); flashField(inputNombre); }
+                actions.style.display = 'none';
+            });
+
+            document.getElementById('btn-auto-create').addEventListener('click', async function(){
+                // Explicit user action to create now via existing endpoint
+                actions.innerHTML = '<div class="form-text">Creando producto en inventario...</div>';
+                try {
+                    const resp = await fetch('{% url "empresa:inventario_create_from_scan" %}', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                        },
+                        body: JSON.stringify({ barcode: codigo, stock: 0, precio_unitario: 0 })
+                    });
+                    const json = await resp.json();
+                    if (json.success && json.product) {
+                        const prod = json.product;
+                        if (inputCodigo) inputCodigo.value = prod.codigo_barras || prod.id || '';
+                        if (inputNombre) inputNombre.value = prod.nombre || '';
+                        if (inputDescripcion) inputDescripcion.value = prod.descripcion || '';
+                        if (inputPrecio) inputPrecio.value = prod.precio_unitario || '';
+                        sugerenciaInfo.textContent = `✅ Producto creado: ${prod.nombre}`;
+                        sugerenciaInfo.style.color = 'green';
+                        actions.style.display = 'none';
+                    } else {
+                        actions.innerHTML = '<div class="alert alert-danger">Error creando producto</div>';
+                    }
+                } catch (err) {
+                    console.error('Create product error:', err);
+                    actions.innerHTML = '<div class="alert alert-danger">Error de red creando producto</div>';
+                }
+            });
+
+        } catch (err) {
+            console.error('Prepare create product error:', err);
+            actions.innerHTML = '<div class="alert alert-danger">Error preparando datos</div>';
+        }
+    }
+
+    function flashField(el){ if(!el) return; el.style.transition='box-shadow 0.25s ease'; el.style.boxShadow='0 0 0 4px rgba(16,185,129,0.18)'; setTimeout(()=>el.style.boxShadow='',1200); }
 });
 
 // Función para escanear código de barras
@@ -473,6 +592,174 @@ function escanearCodigo() {
 }
 </script>
 
+<!-- SweetAlert2 para diálogos del escáner Vision -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+<!-- Modal Escáner Vision para Crear Producto -->
+<div class="modal fade scanner-modal-unified modal-fullscreen-sm-down" id="visionScannerModalProducto" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="bi bi-camera-fill me-2"></i>Escáner IA - Identificar Producto</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body">
+                <div class="text-center">
+                    <video id="video-producto" autoplay playsinline style="width: 100%; max-width: 500px; border-radius: 8px; background: #000;"></video>
+                    <canvas id="canvas-producto" style="display: none;"></canvas>
+                    <div id="loading-producto" class="mt-3" style="display: none;">
+                        <div class="spinner-border text-primary" role="status"></div>
+                        <p class="mt-2 text-muted">Analizando imagen con IA...</p>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                <button type="button" id="btn-capturar-producto" class="btn btn-primary">
+                    <i class="bi bi-camera me-1"></i>DETECTAR PRODUCTO
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+(function() {
+  'use strict';
+  let streamProducto = null;
+  const videoProducto = document.getElementById('video-producto');
+  const canvasProducto = document.getElementById('canvas-producto');
+  const loadingProducto = document.getElementById('loading-producto');
+  const btnScannerProducto = document.getElementById('btn-scanner-producto');
+  const btnCapturarProducto = document.getElementById('btn-capturar-producto');
+
+  if (!videoProducto || !canvasProducto || !btnScannerProducto || !btnCapturarProducto) return;
+
+  document.getElementById('visionScannerModalProducto').addEventListener('shown.bs.modal', function() {
+    if (!navigator.mediaDevices?.getUserMedia) {
+      Swal.fire('Error', 'Tu navegador no soporta acceso a cámara', 'error');
+      return;
+    }
+    navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
+      .then(function(stream) {
+        streamProducto = stream;
+        videoProducto.srcObject = stream;
+      })
+      .catch(function(err) {
+        Swal.fire('Error', 'No se pudo acceder a la cámara: ' + err.message, 'error');
+      });
+  });
+
+  document.getElementById('visionScannerModalProducto').addEventListener('hidden.bs.modal', function() {
+    if (streamProducto) {
+      streamProducto.getTracks().forEach(track => track.stop());
+      streamProducto = null;
+    }
+    if (loadingProducto) loadingProducto.style.display = 'none';
+    if (btnCapturarProducto) btnCapturarProducto.disabled = false;
+  });
+
+  btnScannerProducto.addEventListener('click', function() {
+    bootstrap.Modal.getOrCreateInstance(document.getElementById('visionScannerModalProducto')).show();
+  });
+
+  btnCapturarProducto.addEventListener('click', function() {
+    if (!videoProducto.videoWidth || !videoProducto.videoHeight) {
+      Swal.fire('Espera', 'El video no está listo. Espera un momento.', 'warning');
+      return;
+    }
+    loadingProducto.style.display = 'block';
+    btnCapturarProducto.disabled = true;
+
+    canvasProducto.width = videoProducto.videoWidth;
+    canvasProducto.height = videoProducto.videoHeight;
+    const ctx = canvasProducto.getContext('2d');
+    ctx.drawImage(videoProducto, 0, 0);
+    const imageDataURL = canvasProducto.toDataURL('image/jpeg', 0.85);
+
+    fetch("{% url 'empresa:vision_search_api' %}", {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+      },
+      body: JSON.stringify({ image: imageDataURL, contexto: 'inventario' })
+    })
+    .then(r => r.ok ? r.json() : r.json().then(j => { throw new Error(j.error || 'Error servidor'); }))
+    .then(function(data) {
+      loadingProducto.style.display = 'none';
+      btnCapturarProducto.disabled = false;
+      const productos = data.productos || data.products || [];
+
+      if (productos.length === 0) {
+        bootstrap.Modal.getInstance(document.getElementById('visionScannerModalProducto')).hide();
+        const nombreDetectado = (data.debug && data.debug.textos && data.debug.textos[0]) || (data.debug && data.debug.search_terms && data.debug.search_terms[0]) || '';
+        const codigoDetectado = data.codigo_detectado || '';
+
+        const inputNombre = document.getElementById('id_nombre');
+        const inputCodigoBarras = document.getElementById('id_codigo_barras');
+        if (inputNombre && nombreDetectado) inputNombre.value = nombreDetectado;
+        if (inputCodigoBarras && codigoDetectado) inputCodigoBarras.value = codigoDetectado;
+
+        Swal.fire({
+          toast: true,
+          position: 'top-end',
+          icon: 'success',
+          title: 'Producto nuevo detectado',
+          text: 'Completa los campos restantes',
+          showConfirmButton: false,
+          timer: 3000
+        });
+      } else if (productos.length === 1) {
+        const p = productos[0];
+        bootstrap.Modal.getInstance(document.getElementById('visionScannerModalProducto')).hide();
+        Swal.fire({
+          title: '⚠️ Producto ya registrado',
+          html: '<div class="text-start"><p><strong>Este producto ya existe:</strong></p><p><strong>Nombre:</strong> ' + p.nombre + '</p><p><strong>Stock:</strong> ' + p.stock + '</p><hr><p class="text-muted small">Si quieres agregar más stock, ve a <strong>Crear Compra</strong></p></div>',
+          icon: 'warning',
+          showCancelButton: true,
+          confirmButtonText: 'Ir a Crear Compra',
+          cancelButtonText: 'Entendido',
+          confirmButtonColor: '#0d6efd'
+        }).then(function(result) {
+          if (result.isConfirmed) {
+            window.location.href = "{% url 'empresa:crear_compra' %}";
+          }
+        });
+      } else {
+        let html = '<div class="text-start"><p><strong>Productos similares encontrados:</strong></p><ul>';
+        productos.forEach(function(pr) { html += '<li>' + pr.nombre + ' (Stock: ' + pr.stock + ')</li>'; });
+        html += '</ul><p class="text-muted small">Verifica que no estés duplicando.</p></div>';
+        bootstrap.Modal.getInstance(document.getElementById('visionScannerModalProducto')).hide();
+        Swal.fire({ title: 'Posibles coincidencias', html: html, icon: 'info' });
+      }
+    })
+    .catch(function(err) {
+      loadingProducto.style.display = 'none';
+      btnCapturarProducto.disabled = false;
+      Swal.fire('Error', err.message || 'No se pudo procesar la imagen', 'error');
+    });
+  });
+})();
+
+document.addEventListener('DOMContentLoaded', function() {
+  try {
+    const datosPrefill = localStorage.getItem('producto_prefill');
+    if (datosPrefill) {
+      const datos = JSON.parse(datosPrefill);
+      const inputNombre = document.getElementById('id_nombre');
+      const inputCodigoBarras = document.getElementById('id_codigo_barras');
+      if (inputNombre && datos.nombre) inputNombre.value = datos.nombre;
+      if (inputCodigoBarras && datos.codigo_barras) inputCodigoBarras.value = datos.codigo_barras;
+      localStorage.removeItem('producto_prefill');
+      if (typeof Swal !== 'undefined') {
+        Swal.fire({ toast: true, position: 'top-end', icon: 'info', title: 'Datos del escáner cargados', showConfirmButton: false, timer: 2000 });
+      }
+    }
+  } catch (e) {}
+});
+</script>
+
 <!-- Modal Crear Categoría -->
 <div class="modal fade" id="categoriaModal" tabindex="-1">
     <div class="modal-dialog">
@@ -547,4 +834,5 @@ function crearCategoria() {
     });
 }
 </script>
+<!-- vision_scanner inlined in base.html -->
 {% endblock %}

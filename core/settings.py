@@ -217,6 +217,10 @@ CURRENCY_NAME = 'Dólares Americanos'
 STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
+# Google Vision API key (se recomienda configurar en entorno; aquí queda un
+# valor por defecto temporal si no se configura la variable de entorno).
+GOOGLE_VISION_API_KEY = env('GOOGLE_VISION_API_KEY', default='AIzaSyDD4cb3ZQPtnl30MQxv_Pvs1TmM6O-3yE4')  # provided by user
+
 # Storage para estáticos (usar WhiteNoise si está instalado)
 try:
     import importlib.util

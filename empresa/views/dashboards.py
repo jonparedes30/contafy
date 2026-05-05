@@ -188,17 +188,20 @@ def dashboard_metas(request):
     """
     empresa = request.user.empresa
     
-    # Obtener metas activas
+    # Obtener metas del mes/año actual (las más recientes primero)
     from empresa.models import MetaFinanciera
+    from django.utils import timezone as tz
+    ahora = tz.now()
     metas_activas = MetaFinanciera.objects.filter(
         empresa=empresa,
-        activa=True
-    ).order_by('-fecha_creacion')[:5]
+        mes=ahora.month,
+        anio=ahora.year
+    ).order_by('-actualizado_en')[:5]
     
     # Notificaciones no leídas
     from empresa.models import NotificacionMeta
     notificaciones = NotificacionMeta.objects.filter(
-        meta__empresa=empresa,
+        empresa=empresa,
         leida=False
     ).order_by('-fecha_creacion')[:5]
     

@@ -60,8 +60,15 @@ def gestionar_metas(request):
             except Exception as e:
                 messages.error(request, f'Error al guardar la meta: {str(e)}')
 
-    # Obtener metas existentes
-    metas = MetaFinanciera.objects.filter(empresa=empresa).order_by('-anio', '-mes')
+    # Obtener metas existentes y pre-calcular propiedades para evitar N+1 queries
+    metas_qs = MetaFinanciera.objects.filter(empresa=empresa).order_by('-anio', '-mes')
+    metas = []
+    for meta in metas_qs:
+        # Cachear valores calculados para evitar queries repetidas en el template
+        meta._cached_valor_actual = meta.valor_actual
+        meta._cached_progreso_actual = meta.progreso_actual
+        meta._cached_estado = meta.estado
+        metas.append(meta)
     
     # Calcular estadísticas de benchmarking
     estadisticas = calcular_benchmarking(empresa)
@@ -177,9 +184,12 @@ def _obtener_datos_historicos_mensuales(empresa, meses=6):
     hoy = datetime.now()
     
     for i in range(meses - 1, -1, -1):  # Orden cronológico (más antiguo primero)
-        fecha = hoy - timedelta(days=30 * i)
-        mes = fecha.month
-        anio = fecha.year
+        # Cálculo exacto de mes/año retrocediendo i meses
+        mes = hoy.month - i
+        anio = hoy.year
+        while mes <= 0:
+            mes += 12
+            anio -= 1
         
         ventas_mes = Venta.objects.filter(
             empresa=empresa,

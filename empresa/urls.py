@@ -11,9 +11,9 @@ from .views.api_comercio import (
 from .views.autenticacion import login_usuario, logout_usuario, registrar_usuario
 from .views.empresa import crear_empresa, listar_empresas, gestion_poderes_empleado, crear_empleado, home, eliminar_empleado, editar_empresa, editar_usuario
 from .views.entrada_beta import entrada_beta
-from .views.productos import crear_producto, listar_productos, editar_producto, eliminar_producto, producto_info_api
-from .views.ventas import crear_venta, listar_ventas, crear_venta_multiple, editar_venta, eliminar_venta
-from .views.compras import crear_compra, listar_compras, editar_compra, eliminar_compra
+from .views.productos import crear_producto, listar_productos, editar_producto, eliminar_producto, producto_info_api, prefill_producto_from_scan
+from .views.ventas import crear_venta, listar_ventas, crear_venta_multiple, editar_venta, eliminar_venta, producto_scan_vision
+from .views.compras import crear_compra, listar_compras, editar_compra, eliminar_compra, vision_search_api
 from .views.gastos import crear_gasto, listar_gastos, editar_gasto, eliminar_gasto
 from .views.capital import crear_capital, listar_capital
 from .views.cuentas_contables import crear_cuenta_contable, listar_cuentas_contables
@@ -84,6 +84,8 @@ from empresa.views.ai_comandos import (
     ejemplos_comandos
 )
 from empresa.views.debug_datos import debug_datos
+from .views.extras import vision_recognize
+from .views.extras import create_product_from_scan, prefill_compra_from_scan
 
 # Configurar router para la API
 router = DefaultRouter()
@@ -127,9 +129,15 @@ urlpatterns = [
     path('producto/<int:producto_id>/editar/', editar_producto, name='editar_producto'),
     path('producto/<int:producto_id>/eliminar/', eliminar_producto, name='eliminar_producto'),
     path('producto/info_api/', producto_info_api, name='producto_info_api'),
+    path('producto/prefill_from_scan/', prefill_producto_from_scan, name='producto_prefill_from_scan'),
+    path('vision/recognize/', vision_recognize, name='vision_recognize'),
+    path('inventario/create_from_scan/', create_product_from_scan, name='inventario_create_from_scan'),
+    path('compra/prefill_from_scan/', prefill_compra_from_scan, name='compra_prefill_from_scan'),
+    path('compra/vision-search/', vision_search_api, name='vision_search_api'),
     
     # URLs de ventas
     path('venta/crear/', crear_venta, name='crear_venta'),
+    path('venta/producto-scan-vision/', producto_scan_vision, name='producto_scan_vision'),
     path('venta/multiple/', crear_venta_multiple, name='crear_venta_multiple'),
     path('venta/listar/', listar_ventas, name='listar_ventas'),
     path('venta/<int:venta_id>/editar/', editar_venta, name='editar_venta'),

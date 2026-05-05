@@ -1,322 +1,225 @@
 {% extends 'empresa/base.html' %}
+{% load static %}
 
 {% block title %}Registrar Compra{% endblock %}
 
 {% block content %}
-<div class="container mt-5" style="max-width: 600px;">
-  <h2 class="mb-4 text-primary text-center">Registrar nueva compra</h2>
+<div class="container-fluid mt-4">
+  <div class="row justify-content-center">
+    <div class="col-12 col-xl-10">
+      <h2 class="page-header-module text-primary mb-4"><i class="bi bi-box-seam me-2"></i>Registrar Nueva Compra</h2>
 
-  <form method="post" class="border p-4 rounded bg-white shadow-sm">
+  <form method="post" id="form-compra" class="mb-4">
     {% csrf_token %}
 
     {% if form.errors %}
-      <div class="alert alert-danger"><ul class="mb-0">
-        {% for field in form %}
-          {% for error in field.errors %}
-            <li>{{ error }}</li>
+      <div class="alert alert-danger alert-dismissible fade show">
+        <h5>❌ Errores en el formulario:</h5>
+        <ul class="mb-0">
+          {% for field in form %}
+            {% for error in field.errors %}<li>{{ error }}</li>{% endfor %}
           {% endfor %}
-        {% endfor %}
-        {% for error in form.non_field_errors %}
-          <li>{{ error }}</li>
-        {% endfor %}
-      </ul></div>
+          {% for error in form.non_field_errors %}<li>{{ error }}</li>{% endfor %}
+        </ul>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+      </div>
     {% endif %}
 
-    <!-- Proveedor -->
-    <div class="mb-3">
-      <label class="form-label">Proveedor</label>
-      <div class="input-group">
-        {{ form.proveedor_fk }}
-        <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#proveedorModal">
-          <i class="bi bi-plus"></i> Nuevo
-        </button>
-      </div>
-    </div>
+    <div class="row">
+      <!-- COLUMNA 1: SELECCIONAR PRODUCTO -->
+      <div class="col-md-5 mb-4">
+        <div class="card form-page-card shadow-sm h-100">
+          <div class="card-header form-page-card-header form-page-card-header-success py-3">
+            <h5 class="mb-0"><i class="bi bi-search me-2"></i>Identificar Producto</h5>
+          </div>
+          <div class="card-body p-4">
 
-    <!-- Código de Barras -->
-    <div class="mb-3">
-      <label for="codigo_barras" class="form-label">Código de Barras:</label>
-      <div class="input-group">
-        <input type="text" id="codigo_barras" class="form-control" placeholder="Escanea o escribe el código">
-        <button type="button" id="btn-scanner" class="btn btn-outline-primary">
-          📷 Escanear
-        </button>
-      </div>
-      <div id="scanner-status" class="form-text"></div>
-    </div>
-    
-    <!-- Contenedor del escáner -->
-    <div id="scanner-container" class="mb-3" style="display: none;">
-      <div class="card">
-        <div class="card-header d-flex justify-content-between align-items-center">
-          <span>📷 Escáner Activo</span>
-          <button type="button" id="btn-stop-scanner" class="btn btn-sm btn-danger">
-            ❌ Detener
-          </button>
-        </div>
-        <div class="card-body p-2">
-          <div id="scanner-viewport" style="width: 100%; height: 240px; background: #000;"></div>
-        </div>
-      </div>
-    </div>
+            <!-- Botón Escáner Vision -->
+            <button type="button" id="btn-open-scanner" class="btn btn-scanner-unified text-white w-100 mb-3">
+              <i class="bi bi-camera me-2"></i>Escanear Producto (Cámara + IA)
+            </button>
 
-    <!-- Producto -->
-    <div class="mb-3">
-      {{ form.producto.label_tag }}
-      {{ form.producto }}
-    </div>
+            <hr class="text-muted opacity-25">
 
-    <!-- Cantidad -->
-    <div class="mb-3">
-      {{ form.cantidad.label_tag }}
-      {{ form.cantidad }}
-    </div>
-
-    <!-- Precio Unitario -->
-    <div class="mb-3">
-      {{ form.precio_unitario.label_tag }}
-      {{ form.precio_unitario }}
-      <div class="form-text">Precio de compra por unidad (sin IVA)</div>
-    </div>
-
-    <!-- Cálculo Automático de IVA -->
-    <div class="mb-3">
-      <div class="card bg-light">
-        <div class="card-body">
-          <h6 class="text-primary mb-3">💰 Cálculo de IVA</h6>
-          <div class="row mb-3">
-            <div class="col-md-6">
-              <label for="id_monto_neto_compra" class="form-label">Subtotal (sin IVA):</label>
-              {{ form.monto_neto }}
-              <div class="form-text">Precio × Cantidad</div>
-            </div>
-            <div class="col-md-6">
-              <label for="id_tasa_iva_compra" class="form-label">Tasa IVA (%):</label>
-              <div class="btn-group w-100 mb-2" role="group">
-                <button type="button" class="btn btn-sm btn-outline-primary" onclick="setTasaIva(0)">0%</button>
-                <button type="button" class="btn btn-sm btn-outline-primary active" onclick="setTasaIva(15)">15%</button>
+            <!-- Seleccionar Producto -->
+            <div class="mb-3">
+              <label for="id_producto" class="form-label fw-bold">Producto</label>
+              {{ form.producto }}
+              <div id="stock-info" class="mt-2 small fw-bold text-center text-muted">
+                Stock actual: --
               </div>
-              {{ form.tasa_iva }}
             </div>
+
+            <div class="input-group input-group-sm">
+              <span class="input-group-text">Código</span>
+              <input type="text" id="display_codigo" class="form-control bg-light" readonly placeholder="...">
+            </div>
+
           </div>
-          <div class="row">
-            <div class="col-md-6">
-              <label for="id_iva_compra" class="form-label">IVA a pagar:</label>
-              {{ form.iva }}
-              <div class="form-text">Subtotal × (Tasa / 100)</div>
+        </div>
+      </div>
+
+      <!-- COLUMNA 2: DETALLES DE COMPRA -->
+      <div class="col-md-7 mb-4">
+        <div class="card form-page-card shadow-sm h-100">
+          <div class="card-header form-page-card-header py-3">
+            <h5 class="mb-0"><i class="bi bi-cash-coin me-2"></i>Detalles de Compra</h5>
+          </div>
+          <div class="card-body p-4">
+
+            <!-- Proveedor -->
+            <div class="mb-4">
+              <label class="form-label fw-bold">Proveedor *</label>
+              <div class="input-group">
+                {{ form.proveedor_fk }}
+                <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#proveedorModal">
+                  <i class="bi bi-plus-lg"></i>
+                </button>
+              </div>
             </div>
-            <div class="col-md-6">
-              <label for="id_monto_total_compra" class="form-label"><strong>Total a pagar:</strong></label>
-              {{ form.monto }}
-              <div class="form-text"><strong>Subtotal + IVA</strong></div>
+
+            <hr class="text-muted opacity-25">
+
+            <!-- Cantidad y Precio Unitario -->
+            <div class="row mb-3">
+              <div class="col-md-6">
+                <label for="id_cantidad" class="form-label fw-bold text-success">Cantidad a Ingresar</label>
+                <div class="input-group input-group-lg">
+                  <span class="input-group-text"><i class="bi bi-123"></i></span>
+                  {{ form.cantidad }}
+                </div>
+              </div>
+              <div class="col-md-6">
+                <label for="precio_unitario" class="form-label fw-bold">Costo Unitario ($)</label>
+                <div class="input-group input-group-lg">
+                  <span class="input-group-text">$</span>
+                  {{ form.precio_unitario }}
+                </div>
+                <div class="form-text small">Sin IVA</div>
+              </div>
             </div>
+
+            <!-- PVP y Stock Mínimo -->
+            <div class="row mb-4">
+              <div class="col-md-6">
+                <label for="id_pvp" class="form-label fw-bold text-primary">PVP Sugerido ($)</label>
+                <input type="number" id="id_pvp" name="pvp" class="form-control" step="0.01" min="0" placeholder="0.00" readonly>
+                <div class="form-text small">Precio de venta público</div>
+              </div>
+              <div class="col-md-6">
+                <label for="id_stock_minimo" class="form-label fw-bold text-warning">Stock Mínimo</label>
+                <input type="number" id="id_stock_minimo" name="stock_minimo" class="form-control" min="0" placeholder="0">
+                <div class="form-text small">Cantidad mínima en inventario</div>
+              </div>
+            </div>
+
+            <hr class="text-muted opacity-25">
+
+            <!-- Cálculo de IVA -->
+            <div class="row mb-3">
+              <div class="col-md-6">
+                <label for="id_monto_neto_compra" class="form-label fw-bold">Subtotal (sin IVA)</label>
+                {{ form.monto_neto }}
+                <div class="form-text small"><small id="lbl_subtotal">$0.00</small></div>
+              </div>
+              <div class="col-md-6">
+                <label for="id_tasa_iva_compra" class="form-label fw-bold">Tasa IVA (%)</label>
+                <div class="btn-group w-100 mb-2" role="group">
+                  <button type="button" class="btn btn-sm btn-outline-primary" onclick="setTasaIva(0)">0%</button>
+                  <button type="button" class="btn btn-sm btn-outline-primary active" onclick="setTasaIva(15)">15%</button>
+                </div>
+                {{ form.tasa_iva }}
+              </div>
+            </div>
+
+            <!-- IVA y Total -->
+            <div class="row mb-4">
+              <div class="col-md-6">
+                <label for="id_iva_compra" class="form-label fw-bold">IVA a Pagar</label>
+                {{ form.iva }}
+                <div class="form-text small"><small id="lbl_iva">$0.00</small></div>
+              </div>
+              <div class="col-md-6">
+                <label for="id_monto_total_compra" class="form-label fw-bold text-danger">💰 TOTAL</label>
+                {{ form.monto }}
+                <div class="form-text small"><small id="lbl_total" class="fw-bold">$0.00</small></div>
+              </div>
+            </div>
+
+            <hr class="text-muted opacity-25">
+
+            <!-- Tipo de Pago -->
+            <div class="mb-3">
+              <label class="form-label fw-bold">Tipo de Pago</label>
+              {{ form.tipo_pago }}
+            </div>
+
+            <!-- Días de Crédito (opcional) -->
+            <div class="mb-4" id="dias-credito-container" style="display: none;">
+              <label class="form-label fw-bold">Días de Crédito</label>
+              <input type="number" id="dias_credito" class="form-control" value="30" min="1" max="365">
+              <div class="form-text small">Número de días para pagar</div>
+            </div>
+
           </div>
         </div>
       </div>
     </div>
 
-    <!-- Tipo de Pago -->
-    <div class="mb-3">
-      {{ form.tipo_pago.label_tag }}
-      {{ form.tipo_pago }}
-    </div>
-    
-    <!-- Días de Crédito (solo si es crédito) -->
-    <div class="mb-3" id="dias-credito-container" style="display: none;">
-      <label class="form-label">Días de Crédito</label>
-      <input type="number" id="dias_credito" class="form-control" value="30" min="1" max="365">
-      <div class="form-text">Número de días para pagar la compra</div>
+    <!-- Botón Submit -->
+    <div class="row">
+      <div class="col-12">
+        <button type="submit" class="btn btn-success btn-lg w-100 py-3">
+          <i class="bi bi-check-circle me-2"></i>GUARDAR COMPRA
+        </button>
+      </div>
     </div>
 
-    <!-- Stock Info -->
-    <div id="stock-info" class="fw-bold mb-3 text-center"></div>
-
-    <button type="submit" class="btn btn-primary w-100">Guardar Compra</button>
   </form>
+  </div>
 </div>
 
-<!-- Cargar librería de escáner -->
-<script src="{% load static %}{% static 'js/barcode_scanner.js' %}"></script>
+<!-- ============================================================================ -->
+<!-- MODAL ESCÁNER VISION -->
+<!-- ============================================================================ -->
+<div class="modal fade scanner-modal-unified" id="visionScannerModal" tabindex="-1">
+  <div class="modal-dialog modal-fullscreen-sm-down">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title"><i class="bi bi-camera-video me-2"></i>Escáner IA - Identificar Producto</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div id="scanner-placeholder" class="text-center py-5">
+          <div style="font-size: 3em;">📷</div>
+          <p class="text-muted">Haz clic en "Activar Cámara" para comenzar</p>
+        </div>
+        <video id="vision-video" width="100%" style="display:none; border-radius: 8px; background: #000;"></video>
+        <canvas id="vision-canvas" style="display:none;"></canvas>
+        <div id="vision-loading" style="display:none; text-align:center; padding:20px;">
+          <div class="spinner-border text-primary" role="status"></div>
+          <p class="mt-2 text-muted">Analizando imagen con IA...</p>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" id="btn-capture-vision" class="btn btn-scanner-unified text-white">
+          <i class="bi bi-brightness-high me-2"></i>DETECTAR PRODUCTO
+        </button>
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+      </div>
+    </div>
+  </div>
+</div>
 
-<script>
-  const productos = {};
-  for (const p of {{ productos_json|safe }}) {
-    productos[p.id] = p;
-  }
-  
-  // Instancia del escáner
-  let scanner = null;
-
-  const selectProd = document.getElementById('id_producto');
-  const inputCodigo = document.getElementById('codigo_barras');
-  const inputCant   = document.getElementById('id_cantidad');
-  const inputPrecio = document.getElementById('precio_unitario');
-  const inputMontoNeto = document.getElementById('id_monto_neto_compra');
-  const inputTasaIva   = document.getElementById('id_tasa_iva_compra');
-  const inputIva       = document.getElementById('id_iva_compra');
-  const inputTotal     = document.getElementById('id_monto_total_compra');
-  const stockInfo   = document.getElementById('stock-info');
-
-  function actualizarCompra() {
-    const id = selectProd.value;
-    const p  = productos[id] || {codigo:'', precio_unitario:0, stock:0};
-    const cantidad = parseInt(inputCant.value) || 0;
-    const precioEditado = parseFloat(inputPrecio.value) || 0;
-
-    inputCodigo.value = p.codigo;
-    
-    // Solo autocompletar precio si está vacío o si se cambió el producto
-    if (!inputPrecio.value || inputPrecio.dataset.lastProduct !== id) {
-      inputPrecio.value = Number(p.precio_unitario).toFixed(2);
-      inputPrecio.dataset.lastProduct = id;
-    }
-
-    stockInfo.textContent = `🔍 Stock disponible: ${p.stock}`;
-    if (cantidad > p.stock) {
-      stockInfo.textContent += ' ⚠️ Excede stock';
-      stockInfo.classList.add('text-danger');
-      stockInfo.classList.remove('text-success');
-    } else {
-      stockInfo.classList.toggle('text-success', p.stock>0);
-      stockInfo.classList.toggle('text-danger', p.stock===0);
-    }
-
-    // Calcular IVA
-    const tasaIvaValue = parseFloat(inputTasaIva.value);
-    const tasaIva = isNaN(tasaIvaValue) ? 0 : tasaIvaValue;
-    
-    const montoNeto = precioEditado * cantidad || 0;
-    const iva = tasaIva > 0 ? montoNeto * (tasaIva / 100) : 0;
-    const total = montoNeto + iva;
-    
-    inputMontoNeto.value = montoNeto.toFixed(2);
-    inputIva.value = iva.toFixed(2);
-    inputTotal.value = total.toFixed(2);
-    
-    // Asegurar que el campo hidden monto también se actualice
-    const hiddenMonto = document.getElementById('id_monto');
-    if (hiddenMonto) {
-      hiddenMonto.value = total.toFixed(2);
-    }
-  }
-  
-  function setTasaIva(tasa) {
-    inputTasaIva.value = tasa;
-    actualizarCompra();
-    // Actualizar botones activos
-    document.querySelectorAll('.btn-group button').forEach(btn => btn.classList.remove('active'));
-    event.target.classList.add('active');
-  }
-
-  selectProd.addEventListener('change', actualizarCompra);
-  inputCant.addEventListener('input', actualizarCompra);
-  inputPrecio.addEventListener('input', actualizarCompra);
-  inputTasaIva.addEventListener('input', actualizarCompra);
-  
-  document.addEventListener('DOMContentLoaded', actualizarCompra);
-  
-  // Mostrar/ocultar días de crédito según tipo de pago
-  const tipoPago = document.getElementById('id_tipo_pago');
-  const diasCreditoContainer = document.getElementById('dias-credito-container');
-  
-  function toggleDiasCredito() {
-    if (tipoPago.value === 'credito') {
-      diasCreditoContainer.style.display = 'block';
-    } else {
-      diasCreditoContainer.style.display = 'none';
-    }
-  }
-  
-  tipoPago.addEventListener('change', toggleDiasCredito);
-  document.addEventListener('DOMContentLoaded', toggleDiasCredito);
-
-  // Buscar producto por código (mejorado con API)
-  async function buscarProductoPorCodigo(codigo) {
-    if (!codigo.trim()) return;
-    
-    try {
-      const response = await fetch('{% url "empresa:buscar_codigo_barras" %}?codigo=' + encodeURIComponent(codigo));
-      const data = await response.json();
-      
-      if (data.encontrado) {
-        // Buscar el producto en el select
-        for (const option of selectProd.options) {
-          if (option.value == data.id) {
-            selectProd.value = data.id;
-            actualizarCompra();
-            stockInfo.textContent = `✅ Producto encontrado: ${data.nombre}`;
-            stockInfo.className = 'fw-bold mb-3 text-center text-success';
-            return;
-          }
-        }
-      } else {
-        stockInfo.textContent = `⚠️ ${data.mensaje || 'Producto no encontrado'}`;
-        stockInfo.className = 'fw-bold mb-3 text-center text-warning';
-      }
-    } catch (error) {
-      console.error('Error buscando producto:', error);
-      stockInfo.textContent = '❌ Error buscando producto';
-      stockInfo.className = 'fw-bold mb-3 text-center text-danger';
-    }
-  }
-  
-  // Evento de búsqueda manual
-  inputCodigo.addEventListener('blur', () => {
-    buscarProductoPorCodigo(inputCodigo.value);
-  });
-  
-  // Escáner de cámara
-  const btnScanner = document.getElementById('btn-scanner');
-  const btnStopScanner = document.getElementById('btn-stop-scanner');
-  const scannerContainer = document.getElementById('scanner-container');
-  const scannerStatus = document.getElementById('scanner-status');
-  
-  btnScanner.addEventListener('click', async () => {
-    try {
-      scannerStatus.textContent = 'Iniciando escáner...';
-      scannerStatus.className = 'form-text text-info';
-      
-      scanner = new BarcodeScanner();
-      scannerContainer.style.display = 'block';
-      
-      await scanner.init('scanner-viewport', (codigo) => {
-        console.log('Código detectado:', codigo);
-        inputCodigo.value = codigo;  // Llenar campo
-        buscarProductoPorCodigo(codigo);
-        scannerContainer.style.display = 'none';
-        scannerStatus.textContent = `Código escaneado: ${codigo}`;
-        scannerStatus.className = 'form-text text-success';
-      });
-      
-      scannerStatus.textContent = 'Escáner activo - Apunta al código de barras';
-      scannerStatus.className = 'form-text text-success';
-      
-    } catch (error) {
-      console.error('Error iniciando escáner:', error);
-      scannerStatus.textContent = 'Error: ' + error.message;
-      scannerStatus.className = 'form-text text-danger';
-      scannerContainer.style.display = 'none';
-    }
-  });
-  
-  btnStopScanner.addEventListener('click', () => {
-    if (scanner) {
-      scanner.stop();
-      scanner = null;
-    }
-    scannerContainer.style.display = 'none';
-    scannerStatus.textContent = 'Escáner detenido';
-    scannerStatus.className = 'form-text text-muted';
-  });
-</script>
-
-<!-- Modal Crear Proveedor -->
+<!-- ============================================================================ -->
+<!-- MODAL CREAR PROVEEDOR -->
+<!-- ============================================================================ -->
 <div class="modal fade" id="proveedorModal" tabindex="-1">
   <div class="modal-dialog">
     <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title">Crear Nuevo Proveedor</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      <div class="modal-header bg-primary text-white">
+        <h5 class="modal-title">Nuevo Proveedor</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
       </div>
       <div class="modal-body">
         <form id="formProveedor">
@@ -326,69 +229,562 @@
           </div>
           <div class="mb-3">
             <label class="form-label">RUC</label>
-            <input type="text" id="proveedorRuc" class="form-control" placeholder="1234567890001">
+            <input type="text" id="proveedorRuc" class="form-control" placeholder="Ej: 172...">
           </div>
           <div class="mb-3">
             <label class="form-label">Teléfono</label>
             <input type="text" id="proveedorTelefono" class="form-control">
           </div>
-
         </form>
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-        <button type="button" class="btn btn-primary" onclick="crearProveedor()">Crear Proveedor</button>
+        <button type="button" class="btn btn-primary" onclick="crearProveedor()">Guardar Proveedor</button>
       </div>
     </div>
   </div>
 </div>
 
-<script>
-function crearProveedor() {
-  const nombre = document.getElementById('proveedorNombre').value;
-  const ruc = document.getElementById('proveedorRuc').value;
-  const telefono = document.getElementById('proveedorTelefono').value;
+<!-- SweetAlert2 -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
+<script>
+  // Referencias DOM
+  const selectProd = document.getElementById('id_producto');
+  const inputCant = document.getElementById('id_cantidad');
+  const inputPrecio = document.getElementById('precio_unitario');
+  const inputTasa = document.getElementById('id_tasa_iva_compra');
+  const displayCodigo = document.getElementById('display_codigo');
+  const lblSubtotal = document.getElementById('lbl_subtotal');
+  const lblIva = document.getElementById('lbl_iva');
+  const lblTotal = document.getElementById('lbl_total');
+
+  // Productos desde el backend
+  let productos = {};
+  const prodsRaw = {{ productos_json|default:"[]"|safe }};
+  if (Array.isArray(prodsRaw)) {
+    prodsRaw.forEach(p => { productos[p.id] = p; });
+  }
+
+  // Calcular totales
+  function calcularTotales() {
+    const cant = parseFloat(inputCant.value) || 0;
+    const precio = parseFloat(inputPrecio.value) || 0;
+    const tasa = parseFloat(inputTasa?.value) || 0;
+
+    const subtotal = cant * precio;
+    const iva = subtotal * (tasa / 100);
+    const total = subtotal + iva;
+
+    if (lblSubtotal) lblSubtotal.textContent = `$${subtotal.toFixed(2)}`;
+    if (lblIva) lblIva.textContent = `$${iva.toFixed(2)}`;
+    if (lblTotal) lblTotal.textContent = `$${total.toFixed(2)}`;
+
+    const hiddenNeto = document.getElementById('id_monto_neto_compra');
+    const hiddenIva = document.getElementById('id_iva_compra');
+    const hiddenTotal = document.getElementById('id_monto_total_compra');
+    const hiddenMonto = document.getElementById('id_monto');
+
+    if (hiddenNeto) hiddenNeto.value = subtotal.toFixed(2);
+    if (hiddenIva) hiddenIva.value = iva.toFixed(2);
+    if (hiddenTotal) hiddenTotal.value = total.toFixed(2);
+    if (hiddenMonto) hiddenMonto.value = total.toFixed(2);
+  }
+
+  if (inputCant) inputCant.addEventListener('input', calcularTotales);
+  if (inputPrecio) inputPrecio.addEventListener('input', calcularTotales);
+  if (inputTasa) inputTasa.addEventListener('change', calcularTotales);
+
+  if (selectProd) {
+    selectProd.addEventListener('change', function () {
+      const id = this.value;
+      const p = productos[id];
+      const stockDisplay = document.getElementById('stock-info');
+
+      if (p) {
+        // Rellenar precio si está vacío
+        if (!inputPrecio.value || parseFloat(inputPrecio.value) === 0) {
+          inputPrecio.value = p.precio_unitario;
+        }
+        // Rellenar PVP
+        const pvpInput = document.getElementById('id_pvp');
+        if (pvpInput && p.pvp) {
+          pvpInput.value = parseFloat(p.pvp).toFixed(2);
+        }
+        // Rellenar stock mínimo
+        const stockMinInput = document.getElementById('id_stock_minimo');
+        if (stockMinInput && p.stock_minimo) {
+          stockMinInput.value = p.stock_minimo;
+        }
+
+        if (stockDisplay) stockDisplay.textContent = `Stock actual: ${p.stock}`;
+        if (displayCodigo) displayCodigo.value = p.codigo || p.codigo_barras || '';
+
+        inputCant.focus();
+      } else {
+        if (stockDisplay) stockDisplay.textContent = "Stock actual: --";
+        if (displayCodigo) displayCodigo.value = "";
+      }
+      calcularTotales();
+    });
+  }
+
+  function setTasaIva(tasa) {
+    inputTasa.value = tasa;
+    calcularTotales();
+    document.querySelectorAll('.btn-group button').forEach(btn => btn.classList.remove('active'));
+    event.target.classList.add('active');
+  }
+
+  // Mostrar/ocultar días de crédito
+  const tipoPago = document.getElementById('id_tipo_pago');
+  const diasCreditoContainer = document.getElementById('dias-credito-container');
   
-  if (!nombre) {
-    alert('El nombre es requerido');
-    return;
+  function toggleDiasCredito() {
+    if (tipoPago?.value === 'credito') {
+      diasCreditoContainer.style.display = 'block';
+    } else {
+      diasCreditoContainer.style.display = 'none';
+    }
   }
   
-  fetch('{% url "empresa:proveedores_api" %}', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
-    },
-    body: JSON.stringify({
-      nombre: nombre,
-      ruc: ruc,
-      telefono: telefono,
-      dias_credito: 0
-    })
-  })
-  .then(response => response.json())
-  .then(data => {
-    if (data.success) {
-      // Agregar al select
-      const select = document.getElementById('id_proveedor_fk');
-      const option = new Option(data.proveedor.nombre, data.proveedor.id, true, true);
-      select.add(option);
-      
-      // Cerrar modal y limpiar
-      bootstrap.Modal.getInstance(document.getElementById('proveedorModal')).hide();
-      document.getElementById('formProveedor').reset();
-      
-      alert('Proveedor creado exitosamente');
-    } else {
-      alert('Error: ' + (data.error || 'No se pudo crear el proveedor'));
+  tipoPago?.addEventListener('change', toggleDiasCredito);
+  document.addEventListener('DOMContentLoaded', toggleDiasCredito);
+
+  // Crear proveedor
+  function crearProveedor() {
+    const nombre = document.getElementById('proveedorNombre').value;
+    const ruc = document.getElementById('proveedorRuc').value;
+    const telefono = document.getElementById('proveedorTelefono').value;
+
+    if (!nombre) {
+      alert('El nombre es requerido');
+      return;
     }
-  })
-  .catch(error => {
-    console.error('Error:', error);
-    alert('Error creando proveedor');
+
+    fetch('{% url "empresa:proveedores_api" %}', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+      },
+      body: JSON.stringify({
+        nombre: nombre,
+        ruc: ruc,
+        telefono: telefono,
+        dias_credito: 0
+      })
+    })
+    .then(response => response.json())
+    .then(data => {
+      if (data.success) {
+        const select = document.getElementById('id_proveedor_fk');
+        const option = new Option(data.proveedor.nombre, data.proveedor.id, true, true);
+        select.add(option);
+        bootstrap.Modal.getInstance(document.getElementById('proveedorModal')).hide();
+        document.getElementById('formProveedor').reset();
+        alert('Proveedor creado exitosamente');
+      } else {
+        alert('Error: ' + (data.error || 'No se pudo crear el proveedor'));
+      }
+    })
+    .catch(error => {
+      console.error('Error:', error);
+      alert('Error creando proveedor');
+    });
+  }
+
+  // Inicializar totales
+  document.addEventListener('DOMContentLoaded', calcularTotales);
+
+  // Validar antes de enviar
+  document.getElementById('form-compra').addEventListener('submit', function(e) {
+    const producto = document.getElementById('id_producto').value;
+    const cantidad = document.getElementById('id_cantidad').value;
+    const costo = document.getElementById('precio_unitario').value;
+    
+    if (!producto) {
+      e.preventDefault();
+      Swal.fire({
+        icon: 'error',
+        title: 'Producto requerido',
+        text: 'Debes seleccionar un producto'
+      });
+      return false;
+    }
+    
+    if (!cantidad || parseFloat(cantidad) <= 0) {
+      e.preventDefault();
+      Swal.fire({
+        icon: 'error',
+        title: 'Cantidad inválida',
+        text: 'La cantidad debe ser mayor a 0'
+      });
+      return false;
+    }
+    
+    if (!costo || parseFloat(costo) <= 0) {
+      e.preventDefault();
+      Swal.fire({
+        icon: 'error',
+        title: 'Costo inválido',
+        text: 'El costo debe ser mayor a 0'
+      });
+      return false;
+    }
   });
-}
 </script>
+
+<!-- ============================================================================ -->
+<!-- ESCÁNER VISION (IIFE) -->
+<!-- ============================================================================ -->
+<script>
+  (function() {
+    'use strict';
+    console.log('🔧 Inicializando escáner Vision...');
+
+    const modal = document.getElementById('visionScannerModal');
+    const video = document.getElementById('vision-video');
+    const canvas = document.getElementById('vision-canvas');
+    const btnCapture = document.getElementById('btn-capture-vision');
+    const loading = document.getElementById('vision-loading');
+    const placeholder = document.getElementById('scanner-placeholder');
+    const btnOpenScanner = document.getElementById('btn-open-scanner');
+
+    if (!modal || !video || !canvas || !btnCapture) {
+      console.error('❌ Elementos del escáner no encontrados');
+      return;
+    }
+
+    let currentStream = null;
+    let isProcessing = false;
+
+    function getCookie(name) {
+      let cookieValue = null;
+      if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+          const cookie = cookies[i].trim();
+          if (cookie.substring(0, name.length + 1) === (name + '=')) {
+            cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+            break;
+          }
+        }
+      }
+      return cookieValue;
+    }
+
+    modal.addEventListener('shown.bs.modal', async function() {
+      console.log('📱 Modal abierto - Activando cámara automáticamente...');
+      if (placeholder) placeholder.style.display = 'block';
+      video.style.display = 'none';
+      video.srcObject = null;
+      if (loading) loading.style.display = 'none';
+      if (btnCapture) btnCapture.disabled = false;
+      
+      // Auto-activar cámara
+      try {
+        if (!navigator.mediaDevices?.getUserMedia) {
+          throw new Error('Tu navegador no soporta acceso a cámara');
+        }
+
+        currentStream = await navigator.mediaDevices.getUserMedia({
+          video: {
+            facingMode: 'environment',
+            width: { ideal: 1280 },
+            height: { ideal: 720 }
+          }
+        });
+
+        video.srcObject = currentStream;
+
+        await new Promise((resolve, reject) => {
+          video.onloadedmetadata = () => {
+            video.play().then(resolve).catch(reject);
+          };
+          video.onerror = () => reject(new Error('Error al cargar video'));
+          setTimeout(() => reject(new Error('Timeout')), 10000);
+        });
+
+        let frameCheckAttempts = 0;
+        while ((!video.videoWidth || video.readyState < 4) && frameCheckAttempts < 30) {
+          await new Promise(resolve => setTimeout(resolve, 100));
+          frameCheckAttempts++;
+        }
+
+        if (!video.videoWidth) {
+          throw new Error('No se pudo obtener video');
+        }
+
+        await new Promise(resolve => setTimeout(resolve, 500));
+
+        video.style.display = 'block';
+        if (placeholder) placeholder.style.display = 'none';
+
+        console.log('✅ Cámara lista automáticamente');
+      } catch (error) {
+        console.error('❌ Error al activar cámara:', error);
+        if (placeholder) placeholder.style.display = 'block';
+        video.style.display = 'none';
+        Swal.fire({
+          icon: 'error',
+          title: 'Error de cámara',
+          text: error.message
+        });
+      }
+    });
+
+
+
+    modal.addEventListener('hidden.bs.modal', function() {
+      console.log('🔴 Cerrando escáner');
+      if (currentStream) {
+        currentStream.getTracks().forEach(track => track.stop());
+        currentStream = null;
+      }
+      video.srcObject = null;
+      video.style.display = 'none';
+      if (placeholder) placeholder.style.display = 'block';
+      if (loading) loading.style.display = 'none';
+      btnCapture.disabled = true;
+      isProcessing = false;
+    });
+
+    if (btnCapture) {
+      btnCapture.addEventListener('click', async function() {
+        if (isProcessing) return;
+
+        console.log('📸 Capturando...');
+        isProcessing = true;
+
+        try {
+          if (!video.videoWidth || !video.videoHeight || video.readyState < 2) {
+            let attempts = 0;
+            while ((!video.videoWidth || video.readyState < 2) && attempts < 50) {
+              await new Promise(resolve => setTimeout(resolve, 100));
+              attempts++;
+            }
+            if (!video.videoWidth) {
+              throw new Error('No se pudo acceder al stream de video');
+            }
+          }
+
+          await new Promise(resolve => setTimeout(resolve, 300));
+
+          if (video.paused || video.ended) {
+            throw new Error('El video no está activo');
+          }
+
+          canvas.width = video.videoWidth;
+          canvas.height = video.videoHeight;
+
+          if (canvas.width === 0 || canvas.height === 0) {
+            throw new Error('Video sin dimensiones válidas');
+          }
+
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+          const imageData = ctx.getImageData(0, 0, Math.min(canvas.width, 100), Math.min(canvas.height, 100));
+          const data = imageData.data;
+
+          let hasContent = false;
+          for (let i = 0; i < data.length; i += 16) {
+            const r = data[i];
+            const g = data[i + 1];
+            const b = data[i + 2];
+            if ((r !== 0 || g !== 0 || b !== 0) && (r !== 255 || g !== 255 || b !== 255)) {
+              hasContent = true;
+              break;
+            }
+          }
+
+          if (!hasContent) {
+            throw new Error('El video está en negro o sin contenido');
+          }
+
+          const imageDataURL = canvas.toDataURL('image/jpeg', 0.85);
+          const sizeInMB = (imageDataURL.length * 0.75) / (1024 * 1024);
+
+          if (sizeInMB < 0.01) {
+            throw new Error('Imagen vacía (menos de 0.01 MB)');
+          }
+
+          if (sizeInMB > 5) {
+            throw new Error('Imagen muy grande (más de 5 MB)');
+          }
+
+          if (loading) loading.style.display = 'flex';
+          btnCapture.disabled = true;
+
+          console.log('🚀 Enviando imagen...');
+
+          const response = await fetch('{% url "empresa:vision_search_api" %}', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'X-CSRFToken': getCookie('csrftoken')
+            },
+            body: JSON.stringify({ image: imageDataURL, contexto: 'compra' })
+          });
+
+          if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(`Error del servidor (${response.status}): ${errorText}`);
+          }
+
+          const data_resp = await response.json();
+          console.log('✅ Respuesta:', data_resp);
+
+          if (!data_resp.success && !data_resp.ok) {
+            throw new Error(data_resp.error || 'Error en análisis');
+          }
+
+          const bsModal = bootstrap.Modal.getInstance(modal);
+          if (bsModal) bsModal.hide();
+
+          procesarResultados(data_resp);
+
+        } catch (error) {
+          console.error('❌ Error:', error);
+          alert('Error: ' + error.message);
+        } finally {
+          if (loading) loading.style.display = 'none';
+          btnCapture.disabled = false;
+          isProcessing = false;
+        }
+      });
+    }
+
+    if (btnOpenScanner) {
+      btnOpenScanner.addEventListener('click', function() {
+        new bootstrap.Modal(modal).show();
+      });
+    }
+
+    console.log('✅ Escáner Vision inicializado');
+
+  })();
+
+  // PROCESAR RESULTADOS
+  function procesarResultados(data) {
+    const productos = data.productos || data.products || [];
+
+    console.log(`🎯 Productos encontrados: ${productos.length}`);
+
+    if (productos.length === 0) {
+      Swal.fire({
+        icon: 'question',
+        title: 'Producto no encontrado',
+        html: `
+          <div class="text-center">
+            <p>Este producto no existe en tu inventario.</p>
+            <p class="text-muted">Debes registrarlo primero en <strong>"Crear Producto"</strong></p>
+            <hr>
+            <p class="small">💡 El sistema prellenará los datos detectados</p>
+          </div>
+        `,
+        showCancelButton: true,
+        confirmButtonText: '<i class="bi bi-plus-circle me-1"></i>Ir a Crear Producto',
+        cancelButtonText: 'Cancelar',
+        confirmButtonColor: '#28a745',
+        cancelButtonColor: '#6c757d'
+      }).then((result) => {
+        if (result.isConfirmed) {
+          const datosDetectados = {
+            nombre: data.debug?.textos?.[0] || (data.debug?.search_terms?.[0] || ''),
+            codigo_barras: data.codigo_detectado || ''
+          };
+          try {
+            localStorage.setItem('producto_prefill', JSON.stringify(datosDetectados));
+          } catch (e) {}
+          window.location.href = "{% url 'empresa:crear_producto' %}";
+        }
+      });
+    } else if (productos.length === 1) {
+      seleccionarProductoConConfirmacion(productos[0]);
+    } else {
+      mostrarOpcionesProductos(productos);
+    }
+  }
+
+  function seleccionarProductoConConfirmacion(producto) {
+    Swal.fire({
+      icon: 'success',
+      title: '✅ Producto encontrado',
+      html: `
+        <div style="text-align:left; padding:15px;">
+          <h4>${producto.nombre}</h4>
+          <p><strong>📦 Código:</strong> ${producto.codigo_barras || producto.codigo || 'N/A'}</p>
+          <p><strong>📊 Stock actual:</strong> ${producto.stock} unidades</p>
+          <p><strong>💰 Último precio:</strong> $${producto.precio_unitario.toFixed(2)}</p>
+          <p><strong>🏷️ PVP:</strong> $${producto.pvp.toFixed(2)}</p>
+        </div>
+      `,
+      showCancelButton: true,
+      confirmButtonText: '✔️ Usar este producto',
+      cancelButtonText: 'Buscar otro'
+    }).then((result) => {
+      if (result.isConfirmed) {
+        autoRellenarFormulario(producto);
+      }
+    });
+  }
+
+  function autoRellenarFormulario(producto) {
+    const selectProd = document.getElementById('id_producto');
+    if (selectProd) {
+      selectProd.value = producto.id;
+      selectProd.dispatchEvent(new Event('change', { bubbles: true }));
+    }
+
+    const inputCant = document.getElementById('id_cantidad');
+    if (inputCant) {
+      inputCant.value = 1;
+    }
+
+    const inputPvp = document.getElementById('id_pvp');
+    if (inputPvp && producto.pvp > 0) {
+      inputPvp.value = producto.pvp.toFixed(2);
+    }
+
+    const inputStockMin = document.getElementById('id_stock_minimo');
+    if (inputStockMin && producto.stock_minimo) {
+      inputStockMin.value = producto.stock_minimo;
+    }
+
+    calcularTotales();
+
+    Swal.fire({
+      toast: true,
+      position: 'top-end',
+      icon: 'success',
+      title: 'Producto seleccionado',
+      showConfirmButton: false,
+      timer: 3000
+    });
+
+    console.log('✅ Formulario rellenado:', producto.nombre);
+  }
+
+  function mostrarOpcionesProductos(productos) {
+    const productCards = productos.map(p => `
+      <div style="border:1px solid #ddd; padding:10px; margin:10px 0; border-radius:8px; cursor:pointer;" 
+           onclick="window.autoRellenarFormulario({id:${p.id}, nombre:'${p.nombre}', codigo:'${p.codigo}', precio_unitario:${p.precio_unitario}, pvp:${p.pvp}, stock:${p.stock}, stock_minimo:${p.stock_minimo}}); Swal.close();">
+        <h5>${p.nombre}</h5>
+        <p>Código: ${p.codigo} | Stock: ${p.stock}</p>
+        <p style="color:#28a745; font-weight:bold;">$${p.precio_unitario.toFixed(2)}</p>
+      </div>
+    `).join('');
+
+    Swal.fire({
+      title: '🔍 Selecciona el producto correcto',
+      html: `<div style="max-height:400px; overflow-y:auto;">${productCards}</div>`,
+      showConfirmButton: false,
+      showCancelButton: true,
+      cancelButtonText: 'Cancelar'
+    });
+  }
+</script>
+
 {% endblock %}

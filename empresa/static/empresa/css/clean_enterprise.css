@@ -354,3 +354,71 @@ h6 {
     font-size: 1.5rem;
     margin-bottom: 1rem;
 }
+
+/* --- ESCÁNER UNIFICADO (Inventario, Compras, Ventas) --- */
+:root {
+    --scanner-accent: #0ea5e9;
+}
+
+/* Forzar visibilidad de los botones de escáner IA en todas las vistas */
+.btn-scanner-unified {
+    display: inline-block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+}
+    --scanner-accent-hover: #0284c7;
+}
+
+.btn-scanner-unified {
+    background: linear-gradient(135deg, var(--scanner-accent) 0%, #06b6d4 100%);
+    border: none;
+    font-weight: 600;
+    transition: transform 0.15s, box-shadow 0.15s;
+}
+
+.btn-scanner-unified:hover {
+    background: linear-gradient(135deg, var(--scanner-accent-hover) 0%, #0891b2 100%);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(14, 165, 233, 0.35);
+}
+
+.scanner-modal-unified .modal-header {
+    background: linear-gradient(135deg, #0ea5e9 0%, #06b6d4 100%);
+    color: white;
+    border: none;
+}
+
+.scanner-modal-unified .modal-content {
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+/* --- CARDS DE FORMULARIOS PÁGINA --- */
+.form-page-card {
+    border-radius: 12px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+    border: 1px solid var(--border-color, #e5e7eb);
+}
+
+.form-page-card-header {
+    background: linear-gradient(135deg, var(--accent-color, #3b82f6) 0%, var(--primary-color, #6366f1) 100%);
+    color: white;
+    font-weight: 600;
+    border: none;
+    padding: 0.75rem 1.25rem;
+    border-radius: 12px 12px 0 0;
+}
+
+.form-page-card-header.form-page-card-header-success {
+    background: linear-gradient(135deg, var(--success-color, #10b981) 0%, #059669 100%);
+}
+
+.form-page-card-header i {
+    margin-right: 0.5rem;
+    opacity: 0.9;
+}
+
+.page-header-module {
+    color: var(--text-primary, var(--primary-color));
+    margin-bottom: 1.5rem;
+}

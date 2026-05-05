@@ -6,9 +6,9 @@
 <div class="container-fluid mt-4">
     <div class="row justify-content-center">
         <div class="col-12 col-xl-10">
-            <h2 class="mb-4 text-success text-center">Registrar nueva venta</h2>
+            <h2 class="page-header-module text-success mb-4"><i class="bi bi-cart-plus me-2"></i>Registrar nueva venta</h2>
 
-            <form method="post" class="border rounded bg-white shadow-sm p-4">
+            <form method="post" id="form-venta">
                 {% csrf_token %}
                 {% if form.errors %}
                 <div class="alert alert-danger">
@@ -25,9 +25,119 @@
                 </div>
                 {% endif %}
 
-                <!-- Fila 1: Código de Barras y Cliente -->
-                <div class="row mb-4">
-                    <div class="col-md-6">
+                <!-- Quick help removed for POS-first UX -->
+
+                <!-- POS Quick Layout: scanner + cart + summary -->
+                <div class="row mb-4 pos-quick-layout">
+                    <div class="col-lg-8">
+                        <!-- Card: Escanear / Añadir productos -->
+                        <div class="card form-page-card mb-3">
+                            <div class="card-header form-page-card-header form-page-card-header-success py-3">
+                                <i class="bi bi-upc-scan me-2"></i>Escanear / Añadir productos
+                            </div>
+                            <div class="card-body">
+                                <div class="input-group position-relative input-group-lg">
+                                    <input id="pos-scan-input" class="form-control" placeholder="Escanea o escribe código o producto" aria-label="Buscar o escanear" data-pos-scan-input autocomplete="off">
+                                    <button type="button" class="btn btn-scanner-unified text-white" data-bs-toggle="modal" data-bs-target="#visionScannerModalVentas" title="Escanear producto con cámara">
+                                        <i class="bi bi-camera-fill me-1"></i>Escanear
+                                    </button>
+                                    <button type="button" id="pos-btn-cliente" class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#clienteModal" title="Nuevo cliente">Cliente</button>
+                                    <div id="pos-scan-dropdown" class="dropdown-menu w-100" style="display:none; position:absolute; top:100%; left:0; z-index:1050; max-height:240px; overflow:auto;"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="card form-page-card">
+                            <div class="card-header form-page-card-header py-3">
+                                <i class="bi bi-cart3 me-2"></i>Carrito
+                            </div>
+                            <div class="card-body p-2">
+                                <div class="table-responsive">
+                                    <table class="table table-sm" id="pos-cart-table">
+                                        <thead>
+                                            <tr>
+                                                <th>Producto</th>
+                                                <th>Cant.</th>
+                                                <th>P.Unit</th>
+                                                <th>Subtotal</th>
+                                                <th></th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="pos-cart-body">
+                                            <tr><td colspan="5" class="text-center text-muted">No hay productos</td></tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-lg-4">
+                        <div class="card form-page-card">
+                            <div class="card-header form-page-card-header py-3">
+                                <i class="bi bi-cash-stack me-2"></i>Resumen / Totales
+                            </div>
+                            <div class="card-body">
+                            <div class="d-flex justify-content-between mb-2">
+                                <div>Subtotal:</div>
+                                <div id="pos-subtotal">$0.00</div>
+                            </div>
+                            <div class="d-flex justify-content-between mb-2">
+                                <div>IVA:</div>
+                                <div id="pos-iva">$0.00</div>
+                            </div>
+                            <hr>
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <div class="small">TOTAL</div>
+                                <div class="pos-total" id="pos-total">$0.00</div>
+                            </div>
+
+                            <div class="mb-2">
+                                <label class="form-label small">Tipo pago</label>
+                                {{ form.tipo_pago }}
+                            </div>
+
+                            <div class="mb-2">
+                                <label class="form-label small">Recibido</label>
+                                <input type="number" step="0.01" id="pos-monto-recibido" class="form-control" placeholder="0.00">
+                                <input type="hidden" name="monto_recibido" id="id_monto_recibido_hidden">
+                            </div>
+
+                            <div class="d-flex justify-content-between mt-2">
+                                <div>Cambio:</div>
+                                <div id="pos-change">$0.00</div>
+                            </div>
+
+                            <button type="button" id="pos-btn-cobrar" class="btn btn-success btn-cobrar mt-3 w-100 py-3">💰 Cobrar</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <style>
+                    .pos-total { font-size: 2.2rem; font-weight: 700; color: #198754; }
+                    .total-principal { font-size: 2.5rem; font-weight: 700; color: #16a34a; }
+                    .btn-cobrar { width: 100%; font-size: 1.1rem; padding: 10px; }
+
+                    /* POS mode - hide legacy blocks to avoid duplication
+                       NOTE: hide by default for a true POS-first experience.
+                       Use ?legacy=1 in the URL to force showing legacy UI during testing. */
+                    #original-scan-row, #original-scan-block, #scanner-container, #modo-toggle-row,
+                    #venta-simple, #venta-multiple, #calculadora-cambio-simple, #legacy-save-row, #legacy-save-button,
+                    #fila-iva-tipo {
+                        display: none !important;
+                    }
+                    /* Make POS layout dominant on small screens */
+                    @media (max-width: 992px) {
+                        .pos-layout { grid-template-columns: 1fr; }
+                        .pos-right { order: 2; }
+                        .pos-left { order: 1; }
+                    }
+                </style>
+
+                <!-- Fila 1: Código de Barras and Cliente (legacy - hidden in POS mode) -->
+                <div class="row mb-4" id="original-scan-row">
+                    <div class="col-md-6" id="original-scan-block">
                         <label for="codigo_barras" class="form-label">Código de Barras:</label>
                         <div class="input-group">
                             <input type="text" id="codigo_barras" class="form-control"
@@ -56,7 +166,7 @@
                     </div>
                 </div>
 
-                <!-- Contenedor del escáner -->
+                <!-- Contenedor del escáner (legacy camera - hidden in POS mode) -->
                 <div id="scanner-container" class="mb-4" style="display: none;">
                     <div class="card">
                         <div class="card-header d-flex justify-content-between align-items-center">
@@ -96,7 +206,7 @@
                     </div>
                 </div>
                 {% else %}
-                <div class="row mb-4">
+                <div class="row mb-4" id="modo-toggle-row">
                     <div class="col-12">
                         <label class="form-label">Modo de venta</label>
                         <div class="btn-group w-100" role="group">
@@ -244,7 +354,7 @@
                 </div>
 
                 <!-- Fila 3: IVA y Tipo de Pago -->
-                <div class="row mb-4">
+                <div class="row mb-4" id="fila-iva-tipo">
                     <div class="col-md-6">
                         <div class="form-check mb-3">
                             <input class="form-check-input" type="checkbox" id="incluirIva">
@@ -295,6 +405,7 @@
 
                         <!-- Stock info -->
                         <div id="stock-info" class="fw-bold text-center mb-3"></div>
+                        <div id="scan-actions-venta" class="mb-3 text-center" style="display:none;"></div>
                     </div>
                 </div>
 
@@ -325,10 +436,10 @@
                     </div>
                 </div>
 
-                <!-- Botón de guardar -->
-                <div class="row">
+                <!-- Legacy footer save button (hidden in POS) -->
+                <div class="row" id="legacy-save-row">
                     <div class="col-12">
-                        <button type="submit" class="btn btn-success btn-lg w-100">💾 Guardar Venta</button>
+                        <button type="submit" class="btn btn-success btn-lg w-100" id="legacy-save-button">💾 Guardar Venta</button>
                     </div>
                 </div>
             </form>
@@ -343,6 +454,87 @@
     const productos = {};
     for (const p of {{ productos_json | safe }}) {
         productos[p.id] = p;
+    }
+
+    // Prefill desde scan para la venta: busca en inventario y selecciona producto si existe,
+    // o muestra opción para crear producto rápido en inventario.
+    async function prefillFromScanVenta(codigo) {
+        const actions = document.getElementById('scan-actions-venta');
+        actions.style.display = 'none';
+        try {
+            const resp = await fetch('{% url "empresa:producto_prefill_from_scan" %}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                },
+                body: JSON.stringify({ barcode: codigo })
+            });
+            const json = await resp.json();
+            const found = (json && ((json.success && json.found) || json.encontrado));
+            const prod = (json && (json.product || json));
+            if (found) {
+                for (const option of selectProducto.options) {
+                    if (option.value == prod.id) {
+                        selectProducto.value = prod.id;
+                        actualizarVenta();
+                        stockInfo.textContent = `✅ Producto encontrado en inventario: ${prod.nombre}`;
+                        stockInfo.className = 'fw-bold mb-3 text-center text-success';
+                        actions.style.display = 'none';
+                        return;
+                    }
+                }
+            }
+
+            // No encontrado: ofrecer crear producto rápido en inventario
+            actions.innerHTML = `<div class="alert alert-warning">Producto no registrado en inventario.</div>` +
+                `<button type="button" id="btn-create-from-scan-venta" class="btn btn-outline-primary">Crear producto en inventario</button>`;
+            actions.style.display = 'block';
+            document.getElementById('btn-create-from-scan-venta').addEventListener('click', () => createProductFromScanVenta(codigo));
+        } catch (err) {
+            console.error('Prefill venta error:', err);
+        }
+    }
+
+    // Crear producto mínimo desde escaneo y añadirlo a los selects de la venta
+    async function createProductFromScanVenta(codigo) {
+        const actions = document.getElementById('scan-actions-venta');
+        actions.innerHTML = '<div class="form-text">Creando producto...</div>';
+        try {
+            const resp = await fetch('{% url "empresa:inventario_create_from_scan" %}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                },
+                body: JSON.stringify({ barcode: codigo, stock: 0, precio_unitario: 0 })
+            });
+            const json = await resp.json();
+            if (json.success && json.product) {
+                const prod = json.product;
+                // Añadir al select de producto simple y multiple
+                try {
+                    const opt = new Option(prod.nombre, prod.id, true, true);
+                    selectProducto.add(opt);
+                } catch(e) {}
+                try {
+                    const opt2 = new Option(prod.nombre + ' - $' + (prod.precio_unitario || 0), prod.id, true, true);
+                    const multiSelect = document.getElementById('producto-multiple-select');
+                    if (multiSelect) multiSelect.add(opt2);
+                } catch(e) {}
+
+                selectProducto.value = prod.id;
+                actualizarVenta();
+                stockInfo.textContent = `✅ Producto creado: ${prod.nombre}`;
+                stockInfo.className = 'fw-bold mb-3 text-center text-success';
+                actions.style.display = 'none';
+            } else {
+                actions.innerHTML = '<div class="alert alert-danger">Error creando producto</div>';
+            }
+        } catch (err) {
+            console.error('Create product venta error:', err);
+            actions.innerHTML = '<div class="alert alert-danger">Error de red creando producto</div>';
+        }
     }
 
     // Instancia del escáner
@@ -365,18 +557,18 @@
     const ivaDetails = document.getElementById('ivaDetails');
 
     function calcularIVA() {
-        const cantidad = parseFloat(inputCantidad.value) || 0;
-        const precio = parseFloat(inputPrecio.value) || 0;
-        const incluirIva = checkboxIva.checked;
-        const tasaIva = parseFloat(inputTasaIva.value) || 0;
+        const cantidad = parseFloat(inputCantidad?.value || 0) || 0;
+        const precio = parseFloat(inputPrecio?.value || 0) || 0;
+        const incluirIva = !!(checkboxIva && checkboxIva.checked);
+        const tasaIva = parseFloat(inputTasaIva?.value || 0) || 0;
 
         const montoNeto = cantidad * precio;
         const iva = incluirIva ? montoNeto * (tasaIva / 100) : 0;
         const total = montoNeto + iva;
 
-        inputMontoNeto.value = montoNeto.toFixed(2);
-        inputIva.value = iva.toFixed(2);
-        inputTotal.value = total.toFixed(2);
+        if (inputMontoNeto) inputMontoNeto.value = montoNeto.toFixed(2);
+        if (inputIva) inputIva.value = iva.toFixed(2);
+        if (inputTotal) inputTotal.value = total.toFixed(2);
 
         // Actualizar calculadora de cambio
         if (tipoPagoSelect && tipoPagoSelect.value === 'contado') {
@@ -384,7 +576,7 @@
         }
 
         // Actualizar tasa IVA a 0 si no incluye IVA
-        if (!incluirIva) {
+        if (!incluirIva && inputTasaIva) {
             inputTasaIva.value = '0';
         }
 
@@ -395,18 +587,19 @@
     }
 
     function setTasaIvaVenta(tasa) {
-        inputTasaIva.value = tasa;
-        if (tasa > 0) {
+        if (inputTasaIva) inputTasaIva.value = tasa;
+        if (tasa > 0 && checkboxIva) {
             checkboxIva.checked = true;
         }
-        if (modoSimple.checked) {
+        if (modoSimple && modoSimple.checked) {
             calcularIVA();
         } else {
             calcularTotalMultiple();
         }
-        // Actualizar botones activos
-        document.querySelectorAll('#ivaDetails .btn-group button').forEach(btn => btn.classList.remove('active'));
-        event.target.classList.add('active');
+        // Actualizar botones activos (best-effort)
+        try {
+            document.querySelectorAll('#ivaDetails .btn-group button').forEach(btn => btn.classList.remove('active'));
+        } catch(e){}
     }
 
     function actualizarVenta() {
@@ -460,26 +653,34 @@
     if (selectServicio) {
         selectServicio.addEventListener('change', actualizarVenta);
     }
-    inputCantidad.addEventListener('input', function () {
-        if (modoSimple.checked) calcularIVA();
-    });
-    inputPrecio.addEventListener('input', function () {
-        if (modoSimple.checked) calcularIVA();
-    });
-    inputTasaIva.addEventListener('input', function () {
-        if (modoSimple.checked) {
-            calcularIVA();
-        } else {
-            calcularTotalMultiple();
-        }
-    });
-    checkboxIva.addEventListener('change', function () {
-        if (modoSimple.checked) {
-            calcularIVA();
-        } else {
-            calcularTotalMultiple();
-        }
-    });
+    if (inputCantidad) {
+        inputCantidad.addEventListener('input', function () {
+            if (modoSimple && modoSimple.checked) calcularIVA();
+        });
+    }
+    if (inputPrecio) {
+        inputPrecio.addEventListener('input', function () {
+            if (modoSimple && modoSimple.checked) calcularIVA();
+        });
+    }
+    if (inputTasaIva) {
+        inputTasaIva.addEventListener('input', function () {
+            if (modoSimple && modoSimple.checked) {
+                calcularIVA();
+            } else {
+                calcularTotalMultiple();
+            }
+        });
+    }
+    if (checkboxIva) {
+        checkboxIva.addEventListener('change', function () {
+            if (modoSimple && modoSimple.checked) {
+                calcularIVA();
+            } else {
+                calcularTotalMultiple();
+            }
+        });
+    }
 
     // Calculadora de cambio para venta simple
     const tipoPagoSelect = document.getElementById('id_tipo_pago');
@@ -498,7 +699,7 @@
     }
 
     function actualizarTotalCobrar() {
-        const total = parseFloat(inputTotal.value) || 0;
+        const total = parseFloat(inputTotal?.value || 0) || 0;
         if (totalCobrarDisplay) {
             totalCobrarDisplay.textContent = '$' + total.toFixed(2);
         }
@@ -506,8 +707,8 @@
     }
 
     function calcularCambioSimple() {
-        const total = parseFloat(inputTotal.value) || 0;
-        const recibido = parseFloat(montoRecibidoSimple.value) || 0;
+        const total = parseFloat(inputTotal?.value || 0) || 0;
+        const recibido = parseFloat(montoRecibidoSimple?.value || 0) || 0;
         const cambio = recibido - total;
 
         if (cambioDisplaySimple) {
@@ -826,6 +1027,8 @@
             `;
             tbody.appendChild(fila);
         });
+        // Also update the POS cart view if present
+        renderPosCart();
     }
 
     function cambiarCantidadMultiple(index, nuevaCantidad) {
@@ -862,14 +1065,92 @@
         if (tipoPagoSelect && tipoPagoSelect.value === 'contado') {
             actualizarTotalCobrar();
         }
+        // reflect values on POS panel
+        const posSubtotal = document.getElementById('pos-subtotal');
+        const posIva = document.getElementById('pos-iva');
+        const posTotal = document.getElementById('pos-total');
+        if (posSubtotal) posSubtotal.textContent = '$' + (subtotal || 0).toFixed(2);
+        if (posIva) posIva.textContent = '$' + (iva || 0).toFixed(2);
+        if (posTotal) posTotal.textContent = '$' + (total || 0).toFixed(2);
+        // ensure hidden form fields reflect values for server-side validation
+        try { if (inputMontoNeto) inputMontoNeto.value = subtotal.toFixed(2); } catch(e){}
+        try { if (inputIva) inputIva.value = iva.toFixed(2); } catch(e){}
+        try { if (inputTotal) inputTotal.value = total.toFixed(2); } catch(e){}
     }
 
-    // Modificar el envío del formulario para venta múltiple
+    // Modificar el envío del formulario: validar antes de enviar
     const form = document.querySelector('form');
+    function showFormError(msg) {
+        alert(msg);
+    }
+
+    function validateSingleSale() {
+        // simple mode validation: ensure product selected, cantidad positive integer and <= stock, precio positive
+        if (!selectProducto || !selectProducto.value) {
+            showFormError('Selecciona un producto válido antes de guardar la venta.');
+            return false;
+        }
+        const prodId = selectProducto.value;
+        const cantidad = parseInt(inputCantidad.value) || 0;
+        if (cantidad <= 0) {
+            showFormError('La cantidad debe ser un entero positivo.');
+            return false;
+        }
+        const prodData = productos[prodId] || {};
+        const stock = parseInt(prodData.stock || 0);
+        if (stock < cantidad) {
+            showFormError(`Stock insuficiente. Disponible: ${stock}, solicitado: ${cantidad}`);
+            return false;
+        }
+        const precio = parseFloat(inputPrecio.value) || 0;
+        if (precio <= 0) {
+            showFormError('El precio unitario debe ser mayor que 0.');
+            return false;
+        }
+        return true;
+    }
+
+    function validateMultipleProducts() {
+        if (!productosMultiple || productosMultiple.length === 0) {
+            showFormError('Agrega al menos un producto antes de guardar la venta múltiple.');
+            return false;
+        }
+        for (const p of productosMultiple) {
+            const cantidad = parseInt(p.cantidad) || 0;
+            if (cantidad <= 0) {
+                showFormError(`Cantidad inválida para ${p.nombre}. Debe ser entero positivo.`);
+                return false;
+            }
+            const prodData = productos[p.id] || null;
+            const stock = prodData ? parseInt(prodData.stock || 0) : null;
+            if (stock !== null && cantidad > stock) {
+                showFormError(`Stock insuficiente para ${p.nombre}. Disponible: ${stock}, solicitado: ${cantidad}`);
+                return false;
+            }
+            const precio = parseFloat(p.precio) || 0;
+            if (precio <= 0) {
+                showFormError(`Precio inválido para ${p.nombre}.`);
+                return false;
+            }
+        }
+        return true;
+    }
+
     form.addEventListener('submit', function (e) {
-        if (modoMultiple.checked && productosMultiple.length > 0) {
-            e.preventDefault();
-            procesarVentaMultiple();
+        if (modoMultiple && modoMultiple.checked) {
+            if (productosMultiple.length > 0) {
+                e.preventDefault();
+                if (!validateMultipleProducts()) return;
+                procesarVentaMultiple();
+            } else {
+                e.preventDefault();
+                showFormError('No hay productos agregados para la venta múltiple.');
+            }
+        } else {
+            // simple mode: validate before allowing default POST
+            if (!validateSingleSale()) {
+                e.preventDefault();
+            }
         }
     });
 
@@ -893,8 +1174,17 @@
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    alert('Venta procesada exitosamente');
-                    window.location.href = '{% url "empresa:home" %}';
+                    // Limpiar tabla local de productos múltiples
+                    productosMultiple = [];
+                    actualizarTablaMultiple();
+                    calcularTotalMultiple();
+
+                    // Mostrar confirmación
+                    alert('Venta procesada exitosamente. Total: $' + (data.total || 0));
+
+                    // listo para siguiente venta (no redirigir)
+                    try{ if (typeof window.playBeep === 'function') window.playBeep(150,1200,0.06); }catch(e){}
+                    try{ if (posScanInput) posScanInput.focus(); }catch(e){}
                 } else {
                     alert('Error: ' + (data.error || 'No se pudo procesar la venta'));
                 }
@@ -903,6 +1193,41 @@
                 console.error('Error:', error);
                 alert('Error procesando la venta');
             });
+    }
+
+    // Render POS cart from productosMultiple
+    function renderPosCart() {
+        const body = document.getElementById('pos-cart-body');
+        if (!body) return;
+        body.innerHTML = '';
+        if (!productosMultiple || productosMultiple.length === 0) {
+            body.innerHTML = '<tr><td colspan="5" class="text-center text-muted">No hay productos</td></tr>';
+            return;
+        }
+        productosMultiple.forEach((p, idx) => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td>${p.nombre}</td>
+                <td><input type="number" class="form-control form-control-sm" value="${p.cantidad}" min="1" onchange="cambiarCantidadMultiple(${idx}, this.value)"></td>
+                <td>$${p.precio.toFixed(2)}</td>
+                <td>$${p.subtotal.toFixed(2)}</td>
+                <td><button class="btn btn-sm btn-outline-danger" onclick="eliminarProductoMultiple(${idx})">✖</button></td>
+            `;
+            body.appendChild(tr);
+            // flash newly added row briefly
+            tr.classList.add('vision-highlight-anim');
+            setTimeout(()=> tr.classList.remove('vision-highlight-anim'), 900);
+        });
+        // update totals from existing inputs
+        const subtotal = parseFloat(inputMontoNeto.value) || 0;
+        const iva = parseFloat(inputIva.value) || 0;
+        const total = parseFloat(inputTotal.value) || 0;
+        const posSubtotal = document.getElementById('pos-subtotal');
+        const posIva = document.getElementById('pos-iva');
+        const posTotal = document.getElementById('pos-total');
+        if (posSubtotal) posSubtotal.textContent = '$' + subtotal.toFixed(2);
+        if (posIva) posIva.textContent = '$' + iva.toFixed(2);
+        if (posTotal) posTotal.textContent = '$' + total.toFixed(2);
     }
 
     // Autocompletado con dropdown de productos
@@ -1050,6 +1375,51 @@
         calcularIVA(); // Asegurar que los detalles de IVA estén ocultos inicialmente
         mostrarCalculadoraCambio();
         cambiarModoVenta();
+        // Activate POS mode visuals
+        try{ document.body.classList.add('pos-active'); }catch(e){}
+        // Allow developers to force legacy UI with ?legacy=1
+        try {
+            const params = new URLSearchParams(window.location.search);
+            if (params.get('legacy') === '1') {
+                // reveal legacy blocks for debugging/testing
+                ['original-scan-row','original-scan-block','scanner-container','modo-toggle-row','venta-simple','venta-multiple','calculadora-cambio-simple','legacy-save-row','legacy-save-button'].forEach(id => {
+                    const el = document.getElementById(id);
+                    if (el) el.style.display = '';
+                });
+                document.body.classList.remove('pos-active');
+            }
+        } catch(e) {}
+        // Ensure POS scan input focused
+        try{ document.getElementById('pos-scan-input')?.focus(); }catch(e){}
+
+        // Initialize POS suggestions binding (defensive: ensure productos are loaded)
+        try {
+            const scanInput = document.getElementById('pos-scan-input');
+            const scanDropdown = document.getElementById('pos-scan-dropdown');
+            if (scanInput && scanDropdown) {
+                scanInput.addEventListener('input', function(){
+                    const q = this.value.trim().toLowerCase();
+                    if (!q) { scanDropdown.style.display = 'none'; return; }
+                    const all = Object.values(productos || {});
+                    if (!all || all.length === 0) {
+                        console.warn('POS suggestions: no productos loaded');
+                    }
+                    const matches = all.filter(p =>
+                        (p.nombre && p.nombre.toLowerCase().includes(q)) ||
+                        (p.codigo && p.codigo.toLowerCase().includes(q)) ||
+                        String(p.id) === q
+                    ).slice(0,20);
+                    if (matches.length > 0) {
+                        // small debug
+                        console.debug('POS suggestions found', matches.length, 'for', q);
+                        // reuse showPosSuggestions
+                        try { showPosSuggestions(matches); } catch(e){ console.error(e); }
+                    } else {
+                        scanDropdown.style.display = 'none';
+                    }
+                });
+            }
+        } catch(e) { console.warn('init pos suggestions', e); }
     });
 
     // Buscar producto por código (mejorado con API)
@@ -1133,6 +1503,239 @@
         scannerStatus.textContent = 'Escáner detenido';
         scannerStatus.className = 'form-text text-muted';
     });
+
+    // POS scan input bindings
+    const posScanInput = document.getElementById('pos-scan-input');
+    if (posScanInput) {
+        posScanInput.addEventListener('keydown', function(e){
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                const query = this.value.trim();
+                if (!query) return;
+
+                // 1) Try exact local match by barcode or id
+                let found = Object.values(productos).find(p => (p.codigo && String(p.codigo).toLowerCase() === query.toLowerCase()) || String(p.id) === query);
+
+                // 2) Try exact id in selects
+                if (!found && selectProducto) {
+                    const opt = Array.from(selectProducto.options).find(o => String(o.value) === query);
+                    if (opt) found = productos[opt.value] || { id: opt.value, nombre: opt.textContent };
+                }
+
+                // 3) Fuzzy match by name
+                if (!found) {
+                    const ql = query.toLowerCase();
+                    found = Object.values(productos).find(p => p.nombre && p.nombre.toLowerCase().includes(ql));
+                }
+
+                if (found) {
+                    // add to POS cart (productosMultiple)
+                    addProductToPosCart(found, 1);
+                } else {
+                    // fallback: try server-side barcode lookup and prefill/create flow
+                    buscarProductoPorCodigo(query);
+                    // also offer create product flow
+                    try { prefillFromScanVenta(query); } catch(e) {}
+                }
+
+                this.value = '';
+            }
+        });
+    }
+
+    // POS smart dropdown suggestions
+    const posScanDropdown = document.getElementById('pos-scan-dropdown');
+    function showPosSuggestions(list) {
+        if (!posScanDropdown || !posScanInput) return;
+        if (!list || list.length === 0) { posScanDropdown.style.display = 'none'; return; }
+        let html = '';
+        list.forEach(p => {
+            const code = (p.codigo || p.codigo_barras || p.barcode) ? ` <small class="text-muted">(${p.codigo||p.codigo_barras||p.barcode})</small>` : '';
+            const priceVal = (p.precio_venta || p.precio_unitario || p.precio || p.precio_costo) || 0;
+            const price = priceVal ? ` - $${(Number(priceVal) || 0).toFixed(2)}` : '';
+            const name = p.nombre || p.nombre_comercial || p.descripcion || p.marca || ('Producto ' + (p.id || ''));
+            html += `<a href="#" class="dropdown-item" data-id="${p.id}">${name}${code}${price}</a>`;
+        });
+        posScanDropdown.innerHTML = html;
+
+        // Position dropdown aligned to input (use viewport coords to avoid clipping)
+        try {
+            const rect = posScanInput.getBoundingClientRect();
+            posScanDropdown.style.position = 'fixed';
+            posScanDropdown.style.left = rect.left + 'px';
+            posScanDropdown.style.top = rect.bottom + 'px';
+            posScanDropdown.style.width = rect.width + 'px';
+            posScanDropdown.style.zIndex = 2000;
+            posScanDropdown.style.display = 'block';
+        } catch(e) {
+            posScanDropdown.style.display = 'block';
+        }
+
+        // attach click handlers
+        posScanDropdown.querySelectorAll('.dropdown-item').forEach(item => {
+            item.addEventListener('click', function(e){
+                e.preventDefault();
+                const id = this.dataset.id;
+                const prod = productos[id] || null;
+                if (prod) addProductToPosCart(prod, 1);
+                posScanDropdown.style.display = 'none';
+                try{ posScanInput.focus(); }catch(e){}
+            });
+        });
+    }
+
+    if (posScanInput && posScanDropdown) {
+        posScanInput.addEventListener('input', function(){
+            const q = this.value.trim().toLowerCase();
+            if (!q) { posScanDropdown.style.display = 'none'; return; }
+            const all = Object.values(productos || {});
+            const matches = all.filter(p => {
+                const name = (p.nombre || p.nombre_comercial || '').toString().toLowerCase();
+                const desc = (p.descripcion || '').toString().toLowerCase();
+                const code = (p.codigo || p.codigo_barras || p.barcode || p.sku || '').toString().toLowerCase();
+                const idStr = String(p.id || '');
+                return name.includes(q) || desc.includes(q) || code.includes(q) || idStr === q;
+            }).slice(0,20);
+            showPosSuggestions(matches);
+        });
+
+        document.addEventListener('click', function(ev){
+            if (!posScanInput.contains(ev.target) && !posScanDropdown.contains(ev.target)) {
+                posScanDropdown.style.display = 'none';
+            }
+        });
+    }
+
+    function addProductToPosCart(prodData, qty) {
+        try {
+            const price = parseFloat(prodData.precio_venta || prodData.precio_unitario || prodData.precio || prodData.precio_costo || 0) || 0;
+            const id = String(prodData.id);
+            const nombre = prodData.nombre || prodData.nombre_comercial || prodData.codigo || ('Prod ' + id);
+
+            // stock check if available
+            const stock = parseInt((productos[id] && productos[id].stock) || prodData.stock || 0);
+            if (stock !== null && stock !== undefined && !String(id).startsWith('serv_')) {
+                if ((qty || 1) > stock) {
+                    alert(`Stock insuficiente. Disponible: ${stock}`);
+                    return;
+                }
+            }
+
+            const existente = productosMultiple.find(p => String(p.id) === id);
+            if (existente) {
+                existente.cantidad = existente.cantidad + (qty || 1);
+                existente.subtotal = existente.cantidad * existente.precio;
+            } else {
+                productosMultiple.push({ id: id, nombre: nombre, cantidad: qty || 1, precio: price, subtotal: (qty || 1) * price });
+            }
+
+            actualizarTablaMultiple();
+            calcularTotalMultiple();
+            // visual feedback
+            try { window.playBeep && window.playBeep(60,600,0.06); } catch(e) {}
+        } catch (e) {
+            console.error('Error adding product to pos cart', e);
+        }
+    }
+    // monto recibido input handling (POS)
+    const posMontoRecibido = document.getElementById('pos-monto-recibido');
+    const idMontoHidden = document.getElementById('id_monto_recibido_hidden');
+    function updatePosChange(){
+        const total = parseFloat(inputTotal.value) || 0;
+        const recibido = parseFloat(posMontoRecibido.value) || 0;
+        const cambio = recibido - total;
+        const posChange = document.getElementById('pos-change');
+        if (posChange) posChange.textContent = '$' + Math.max(0, cambio).toFixed(2);
+        if (idMontoHidden) idMontoHidden.value = recibido.toFixed(2);
+    }
+    if (posMontoRecibido){ posMontoRecibido.addEventListener('input', updatePosChange); }
+
+    // UI hook: respond to vision auto_agregar events with visual + audio feedback (non-intrusive)
+    (function(){
+        function ensureStyle(){
+            if (document.getElementById('vision-highlight-style')) return;
+            const css = `.vision-highlight-anim{box-shadow:0 0 0 4px rgba(16,185,129,0.15);transition:box-shadow 0.4s ease;}`;
+            const s = document.createElement('style'); s.id='vision-highlight-style'; s.innerHTML = css; document.head.appendChild(s);
+        }
+
+        function flashEl(el){
+            if(!el) return;
+            el.classList.add('vision-highlight-anim');
+            setTimeout(()=>{ el.classList.remove('vision-highlight-anim'); }, 1400);
+        }
+
+        function toast(msg, kind='info'){
+            try{
+                const wrap = document.createElement('div');
+                wrap.className = `toastify toast-${kind}`;
+                wrap.style.position='fixed'; wrap.style.right='20px'; wrap.style.bottom='20px'; wrap.style.zIndex=1050;
+                wrap.style.background='#fff'; wrap.style.padding='10px 14px'; wrap.style.border='1px solid #ddd'; wrap.style.borderRadius='6px'; wrap.style.boxShadow='0 6px 18px rgba(0,0,0,0.08)';
+                wrap.innerText = msg;
+                document.body.appendChild(wrap);
+                setTimeout(()=>{ wrap.style.opacity='0'; setTimeout(()=>wrap.remove(),300); }, 2200);
+            }catch(e){}
+        }
+
+        window.addEventListener('vision:auto_agregar', function(ev){
+            try{
+                ensureStyle();
+                const det = ev.detail || {};
+                const prod = det.producto || {};
+                const prodId = prod.id || '';
+                const prodName = prod.nombre || prod.marca || '';
+                // Prefer highlighting select and showing toast
+                if (prodId && selectProducto) {
+                    // find option
+                    const opt = Array.from(selectProducto.options).find(o=>String(o.value)===String(prodId));
+                    if (opt) {
+                        // if product-search visible, highlight it
+                        const searchInput = document.getElementById('producto-search');
+                        if (searchInput) flashEl(searchInput);
+                        // if multiple list contains the product, highlight the row
+                        const rows = document.querySelectorAll('#productos-tbody-multiple tr');
+                        rows.forEach(r=>{ if (r.innerText.indexOf(opt.text) !== -1) flashEl(r); });
+                        toast(`✅ Producto agregado: ${opt.text}`,'success');
+                        try{ window.playBeep && window.playBeep(100,1000,0.06); }catch(e){}
+                        return;
+                    }
+                }
+                // fallback: highlight producto-search input and toast with name
+                const searchInput = document.getElementById('producto-search');
+                if (searchInput) flashEl(searchInput);
+                toast(prodName ? `✅ Producto agregado: ${prodName}` : '✅ Producto agregado', 'success');
+                try{ window.playBeep && window.playBeep(100,1000,0.06); }catch(e){}
+            }catch(e){console.warn('auto_agregar handler', e)}
+        });
+    })();
+
+    // Override Cobrar button to always use the multiple-sale AJAX path (ensures stock/accounting logic runs server-side)
+    const posBtnCobrar = document.getElementById('pos-btn-cobrar');
+    if (posBtnCobrar) {
+        posBtnCobrar.addEventListener('click', function(e){
+            e.preventDefault();
+            // if there are multiple items in the POS cart, process them
+            if (productosMultiple && productosMultiple.length > 0) {
+                if (!validateMultipleProducts()) return;
+                procesarVentaMultiple();
+                return;
+            }
+
+            // fallback: if simple mode selected and a product is chosen, convert to productosMultiple and process
+            if (modoSimple && modoSimple.checked) {
+                const prodId = selectProducto && selectProducto.value;
+                const cantidad = parseInt(inputCantidad.value) || 1;
+                const precio = parseFloat(inputPrecio.value) || 0;
+                if (!prodId) { showFormError('Selecciona un producto antes de cobrar.'); return; }
+                const prodData = productos[prodId] || { id: prodId, nombre: selectProducto.options[selectProducto.selectedIndex]?.text || '' };
+                productosMultiple = [{ id: prodId, nombre: prodData.nombre || '', cantidad: cantidad, precio: precio, subtotal: cantidad * precio }];
+                if (!validateMultipleProducts()) return;
+                procesarVentaMultiple();
+                return;
+            }
+
+            showFormError('No hay productos en el carrito para cobrar.');
+        });
+    }
 </script>
 
 <!-- Modal Crear Cliente -->
@@ -1219,5 +1822,293 @@
                 alert('Error creando cliente');
             });
     }
+</script>
+
+<!-- SweetAlert2 CSS -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+
+<!-- ========================================== -->
+<!-- MODAL ESCÁNER VISION PARA VENTAS (POS) -->
+<!-- ========================================== -->
+<div class="modal fade scanner-modal-unified modal-fullscreen-sm-down" id="visionScannerModalVentas" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="bi bi-camera-fill me-2"></i>Escáner IA - Punto de Venta</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-0">
+                {% csrf_token %}
+                <div style="position: relative; background: #000; min-height: 400px;">
+                    <video id="vision-video-ventas" autoplay playsinline 
+                           style="width: 100%; height: auto; display: block;"></video>
+                    <canvas id="vision-canvas-ventas" style="display: none;"></canvas>
+                    <div id="vision-overlay-ventas" style="display: none; position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.8); display: flex; align-items: center; justify-content: center;">
+                        <div class="text-center text-white">
+                            <div class="spinner-border mb-3" role="status"></div>
+                            <h5>🔍 Analizando producto...</h5>
+                            <p class="text-muted">Detectando marca, nombre y precio</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">❌ Cancelar</button>
+                <button type="button" id="btn-capture-ventas" class="btn btn-success" disabled>
+                    📸 Capturar y Detectar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- SweetAlert2 JS -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.js"></script>
+
+<!-- ========================================== -->
+<!-- ESCÁNER VISION PARA VENTAS (POS) -->
+<!-- ========================================== -->
+<script>
+(function() {
+    'use strict';
+    console.log('🔧 [VENTAS] Inicializando escáner Vision...');
+    
+    const modal = document.getElementById('visionScannerModalVentas');
+    const video = document.getElementById('vision-video-ventas');
+    const canvas = document.getElementById('vision-canvas-ventas');
+    const btnCapture = document.getElementById('btn-capture-ventas');
+    const overlay = document.getElementById('vision-overlay-ventas');
+    
+    if (!modal || !video || !canvas || !btnCapture) {
+        console.error('❌ [VENTAS] Elementos del escáner no encontrados');
+        return;
+    }
+    
+    let currentStream = null;
+    let isProcessing = false;
+    
+    function getCookie(name) {
+        // Primero intentar buscar en cookies
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        
+        // Si no está en cookies, buscar en input hidden de Django
+        if (!cookieValue) {
+            const csrfInput = document.querySelector('[name=csrfmiddlewaretoken]');
+            if (csrfInput) {
+                cookieValue = csrfInput.value;
+            }
+        }
+        
+        return cookieValue;
+    }
+    
+    modal.addEventListener('show.bs.modal', async function() {
+        console.log('🎥 [VENTAS] Abriendo escáner...');
+        btnCapture.disabled = true;
+        btnCapture.textContent = '⏳ Activando cámara...';
+        
+        try {
+            if (!navigator.mediaDevices?.getUserMedia) {
+                throw new Error('Tu navegador no soporta acceso a cámara');
+            }
+            
+            currentStream = await navigator.mediaDevices.getUserMedia({
+                video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } }
+            });
+            
+            video.srcObject = currentStream;
+            
+            await new Promise((resolve, reject) => {
+                video.onloadedmetadata = () => {
+                    video.play().then(() => {
+                        console.log('✅ [VENTAS] Cámara activada');
+                        btnCapture.disabled = false;
+                        btnCapture.textContent = '📸 Capturar y Detectar';
+                        resolve();
+                    }).catch(reject);
+                };
+                video.onerror = () => reject(new Error('Error al cargar video'));
+                setTimeout(() => reject(new Error('Timeout')), 10000);
+            });
+        } catch (error) {
+            console.error('❌ [VENTAS] Error:', error);
+            alert('❌ Error de cámara: ' + error.message);
+            const bsModal = bootstrap.Modal.getInstance(modal);
+            if (bsModal) bsModal.hide();
+        }
+    });
+    
+    modal.addEventListener('hidden.bs.modal', function() {
+        console.log('🔴 [VENTAS] Cerrando escáner');
+        if (currentStream) {
+            currentStream.getTracks().forEach(track => track.stop());
+            currentStream = null;
+        }
+        video.srcObject = null;
+        btnCapture.disabled = true;
+        isProcessing = false;
+        overlay.style.display = 'none';
+    });
+    
+    btnCapture.addEventListener('click', async function() {
+        if (isProcessing) return;
+        console.log('📸 [VENTAS] Capturando...');
+        isProcessing = true;
+        
+        try {
+            await new Promise(resolve => setTimeout(resolve, 300));
+            if (video.paused || video.ended) throw new Error('Video no activo');
+            
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            
+            if (canvas.width === 0 || canvas.height === 0) throw new Error('Dimensiones inválidas');
+            
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+            
+            const imageDataURL = canvas.toDataURL('image/jpeg', 0.85);
+            const sizeInMB = (imageDataURL.length * 0.75) / (1024 * 1024);
+            
+            if (sizeInMB < 0.01) throw new Error('Imagen capturada vacía');
+            if (sizeInMB > 5) throw new Error('Imagen muy grande');
+            
+            overlay.style.display = 'flex';
+            btnCapture.disabled = true;
+            
+            console.log('🚀 [VENTAS] Enviando...');
+            
+            // Validar CSRF token
+            const csrfToken = getCookie('csrftoken');
+            if (!csrfToken) {
+                console.error('❌ CSRF Token no encontrado');
+                throw new Error('CSRF token no encontrado. Recarga la página (F5).');
+            }
+            console.log('🔑 CSRF Token presente');
+            
+            // API Unificada (misma que Compras e Inventario)
+            const response = await fetch("{% url 'empresa:vision_search_api' %}", {
+                method: 'POST',
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrfToken
+                },
+                body: JSON.stringify({
+                    image: imageDataURL,
+                    contexto: 'venta'
+                })
+            });
+            
+            if (!response.ok) throw new Error(`Error ${response.status}`);
+            
+            const result = await response.json();
+            console.log('✅ [VENTAS] Respuesta:', result);
+            
+            if (!result.success && !result.ok) throw new Error(result.error || 'Error en análisis');
+            
+            const bsModal = bootstrap.Modal.getInstance(modal);
+            if (bsModal) bsModal.hide();
+            
+            setTimeout(() => procesarResultadosVentas(result), 300);
+            
+        } catch (error) {
+            console.error('❌ [VENTAS] Error:', error);
+            alert('❌ Error: ' + error.message);
+        } finally {
+            overlay.style.display = 'none';
+            btnCapture.disabled = false;
+            isProcessing = false;
+        }
+    });
+    
+    function procesarResultadosVentas(result) {
+        const productos = result.productos || result.products || [];
+        const debug = result.debug || {};
+        console.log(`🎯 [VENTAS] Productos encontrados: ${productos.length}`);
+        console.log('🔍 Detectado:', debug);
+        
+        if (productos.length === 0) {
+            Swal.fire({
+                icon: 'warning',
+                title: '❌ Producto no encontrado',
+                text: 'No se encontró en el inventario',
+                confirmButtonText: 'OK'
+            });
+        } else if (productos.length === 1) {
+            agregarProductoAlCarritoPOS(productos[0]);
+        } else {
+            mostrarOpcionesProductos(productos, debug);
+        }
+    }
+    
+    function mostrarOpcionesProductos(productos, debug) {
+        const searchTerms = (debug && debug.search_terms) ? debug.search_terms : (debug.textos || []);
+        
+        let html = `
+            <div style="background: #f8f9fa; padding: 10px; margin-bottom: 15px; border-radius: 5px; font-size: 0.85em;">
+                <strong>🔍 Detectado:</strong> ${searchTerms.join(', ') || 'N/A'}
+            </div>
+        `;
+        
+        productos.forEach(function(p) {
+            const bgColor = p.match_score >= 15 ? '#d4edda' : '#fff';
+            const scoreBadge = p.match_score ? `<span style="background: #28a745; color: white; padding: 2px 8px; border-radius: 10px; font-size: 0.75em;">Score: ${p.match_score}</span>` : '';
+            
+            html += `
+            <div style="border: 1px solid #ddd; padding: 15px; margin: 10px 0; border-radius: 8px; cursor: pointer; background: ${bgColor};" onclick='seleccionarProducto(${JSON.stringify(p).replace(/'/g, "&#39;")})'>
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <h5 style="margin: 0;">${p.nombre}</h5>
+                    ${scoreBadge}
+                </div>
+                <p style="margin: 5px 0 0 0;"><strong>Stock:</strong> ${p.stock} | <strong>Precio:</strong> $${p.pvp}</p>
+            </div>`;
+        });
+        
+        Swal.fire({
+            title: '🔍 Selecciona el producto',
+            html: html,
+            showConfirmButton: false,
+            showCancelButton: true,
+            cancelButtonText: 'Cancelar',
+            width: '600px'
+        });
+    }
+    
+    window.seleccionarProducto = function(producto) {
+        Swal.close();
+        agregarProductoAlCarritoPOS(producto);
+    };
+    
+    function agregarProductoAlCarritoPOS(producto) {
+        console.log('➕ [VENTAS] Agregando:', producto);
+        
+        if (typeof addProductToPosCart === 'function') {
+            addProductToPosCart(producto, 1);
+            Swal.fire({
+                toast: true,
+                position: 'top-end',
+                icon: 'success',
+                title: '✅ Agregado al carrito',
+                text: producto.nombre,
+                showConfirmButton: false,
+                timer: 2000
+            });
+        } else {
+            console.error('❌ Función addProductToPosCart no encontrada');
+        }
+    }
+    
+    console.log('✅ [VENTAS] Escáner Vision inicializado');
+})();
 </script>
 {% endblock %}

@@ -305,6 +305,61 @@
     })();
   </script>
   <script>
+    // Endpoint for Vision API (resolved via Django URL)
+    window.empresaVisionEndpoint = "{% url 'empresa:vision_recognize' %}";
+  </script>
+  <script>
+    // Fallback ligero para abrir la cámara si `vision_scanner.js` no fue cargado
+    (function(){
+      function getEl(id){return document.getElementById(id);}
+      function openFallbackCamera(){
+        console.log('vision_scanner fallback invoked');
+        if (document.getElementById('visionFallbackModal')) {
+          new bootstrap.Modal(document.getElementById('visionFallbackModal')).show();
+          return;
+        }
+        const html = `
+        <div class="modal fade" id="visionFallbackModal" tabindex="-1">
+          <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+              <div class="modal-header"><h5 class="modal-title">Cámara (fallback)</h5><button class="btn-close" data-bs-dismiss="modal"></button></div>
+              <div class="modal-body text-center">
+                <video id="visionFallbackVideo" width="100%" height="360" autoplay playsinline style="background:#000"></video>
+                <div class="mt-3"><button id="visionFallbackStop" class="btn btn-danger">Detener</button></div>
+              </div>
+            </div>
+          </div>
+        </div>`;
+        document.body.insertAdjacentHTML('beforeend', html);
+        const modalEl = document.getElementById('visionFallbackModal');
+        const modal = new bootstrap.Modal(modalEl);
+        const video = getEl('visionFallbackVideo');
+        let stream = null;
+        modalEl.addEventListener('shown.bs.modal', async function(){
+          try{
+            stream = await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'}});
+            video.srcObject = stream;
+          }catch(e){
+            alert('No se pudo acceder a la cámara: '+e.message);
+            modal.hide();
+          }
+        }, {once:true});
+        modalEl.addEventListener('hidden.bs.modal', function(){ if(stream) stream.getTracks().forEach(t=>t.stop()); });
+        modal.show();
+        document.getElementById('visionFallbackStop').onclick = function(){ modal.hide(); };
+      }
+
+      // Registrar globalmente si no existe la función del scanner
+      document.addEventListener('DOMContentLoaded', function(){
+        if (!window.initVisionScanner) {
+          window.escanearCodigo = openFallbackCamera;
+          document.querySelectorAll('#btn-scanner').forEach(btn=>btn.addEventListener('click', function(e){ e.preventDefault(); openFallbackCamera(); }));
+          console.log('vision_scanner fallback registered');
+        }
+      });
+    })();
+  </script>
+  <script>
     // Mobile touch improvements
     document.addEventListener('touchstart', function (event) {
       if (event.touches.length > 1) {
@@ -437,6 +492,22 @@
         }
       });
     }
+
+    // Simple beep utility for UI feedback (short tone)
+    window.playBeep = function(duration = 120, frequency = 880, volume = 0.05) {
+      try {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        const o = ctx.createOscillator();
+        const g = ctx.createGain();
+        o.type = 'sine';
+        o.frequency.value = frequency;
+        g.gain.value = volume;
+        o.connect(g);
+        g.connect(ctx.destination);
+        o.start();
+        setTimeout(() => { o.stop(); ctx.close(); }, duration);
+      } catch (e) { /* ignore audio errors */ }
+    };
   </script>
 </body>
 

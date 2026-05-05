@@ -13,6 +13,7 @@ from datetime import datetime, timedelta
 from django.utils import timezone
 from django.http import JsonResponse
 import json
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 
 @login_required
 @require_power('puede_registrar_ventas')
@@ -25,7 +26,7 @@ def crear_venta(request):
         from empresa.models import TipoServicio
         servicios_queryset = TipoServicio.objects.filter(empresa=empresa, activo=True)
         servicios = [{
-            'id': s.id,
+            'id': getattr(s, 'id'),
             'nombre': s.nombre,
             'precio_base': float(s.precio_base),
             'costo_directo': float(s.costo_directo),
@@ -59,8 +60,11 @@ def crear_venta(request):
                             fecha_vencimiento=date.today() + timedelta(days=30)
                         )
                     
-                    # Actualizar stock del producto
-                    producto = venta.producto
+                    # Actualizar stock del producto (lock row to avoid over-selling)
+                    from django.shortcuts import get_object_or_404
+                    producto = Producto.objects.select_for_update().get(pk=venta.producto.pk, empresa=empresa)
+                    if producto.stock < venta.cantidad:
+                        raise Exception(f'Stock insuficiente para {producto.nombre}. Disponible: {producto.stock}')
                     producto.stock -= venta.cantidad
                     producto.save()
                     
@@ -158,7 +162,7 @@ def crear_venta(request):
     productos = Producto.objects.filter(empresa=empresa)
     productos_json = [
         {
-            'id': p.id,
+            'id': getattr(p, 'id'),
             'codigo': p.codigo,
             'codigo_barras': p.codigo_barras or '',
             'nombre': f"{p.nombre} ({p.descripcion})" if p.descripcion else p.nombre,
@@ -200,7 +204,7 @@ def procesar_venta_servicio(request, empresa):
         # Crear o buscar producto equivalente
         producto, created = Producto.objects.get_or_create(
             empresa=empresa,
-            codigo=f'SERV-{servicio.id}',
+            codigo=f"SERV-{getattr(servicio, 'id')}",
             defaults={
                 'nombre': servicio.nombre,
                 'descripcion': f'Servicio: {servicio.descripcion}',
@@ -235,7 +239,6 @@ def procesar_venta_servicio(request, empresa):
 
 @login_required
 @require_power('puede_registrar_ventas')
-from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 
 def listar_ventas(request):
     empresa = request.user.empresa
@@ -397,7 +400,7 @@ def crear_venta_multiple(request):
             from empresa.models import TipoServicio
             servicios_queryset = TipoServicio.objects.filter(empresa=empresa, activo=True)
             servicios = [{
-                'id': s.id,
+                'id': getattr(s, 'id'),
                 'nombre': s.nombre,
                 'precio_base': float(s.precio_base),
                 'stock': 999999
@@ -436,7 +439,7 @@ def crear_venta_multiple(request):
                         servicio = TipoServicio.objects.get(id=producto_id, empresa=empresa)
                         producto, created = Producto.objects.get_or_create(
                             empresa=empresa,
-                            codigo=f'SERV-{servicio.id}',
+                            codigo=f"SERV-{getattr(servicio, 'id')}",
                             defaults={
                                 'nombre': servicio.nombre,
                                 'precio_unitario': servicio.costo_directo,
@@ -445,10 +448,11 @@ def crear_venta_multiple(request):
                             }
                         )
                     else:
-                        producto = Producto.objects.get(id=producto_id, empresa=empresa)
+                        # Lock product row to avoid race conditions between concurrent sales
+                        producto = Producto.objects.select_for_update().get(id=producto_id, empresa=empresa)
                         if producto.stock < cantidad:
                             return JsonResponse({
-                                'success': False, 
+                                'success': False,
                                 'error': f'Stock insuficiente para {producto.nombre}. Disponible: {producto.stock}'
                             })
                     
@@ -485,15 +489,157 @@ def crear_venta_multiple(request):
                 
                 cambio = monto_recibido - total_venta if tipo_pago == 'contado' else 0
                 
+                # Construir items para ticket
+                items = []
+                venta_ids = []
+                for v in ventas_creadas:
+                    venta_ids.append(v.id)
+                    items.append({'nombre': v.producto.nombre, 'cantidad': v.cantidad, 'precio': float(v.precio_unitario)})
+
+                from django.utils import timezone
+                fecha = timezone.now().isoformat()
+
                 return JsonResponse({
-                    'success': True, 
+                    'success': True,
                     'message': f'Venta procesada exitosamente. Total: ${total_venta:.2f}',
                     'total': total_venta,
                     'cambio': cambio,
-                    'ventas_count': len(ventas_creadas)
+                    'ventas_count': len(ventas_creadas),
+                    'ventas_ids': venta_ids,
+                    'items': items,
+                    'fecha': fecha
                 })
                 
         except Exception as e:
             return JsonResponse({'success': False, 'error': str(e)})
     
     return JsonResponse({'success': False, 'error': 'Método no permitido'})
+
+
+@login_required
+@require_power('puede_registrar_ventas')
+def producto_scan_vision(request):
+    """
+    Escáner Vision para Ventas POS - VERSIÓN SIMPLIFICADA
+    Recibe una imagen en base64, la analiza y busca productos coincidentes.
+    """
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'error': 'Método no permitido'}, status=405)
+    
+    try:
+        import base64
+        import traceback
+        from django.db.models import Q
+        
+        # Obtener imagen del request
+        image_data = request.POST.get('image')
+        if not image_data:
+            return JsonResponse({'success': False, 'error': 'No se recibió imagen'}, status=400)
+        
+        empresa = request.user.empresa
+        
+        # Extraer datos base64
+        try:
+            if ',' in image_data:
+                image_data = image_data.split(',')[1]
+            image_bytes = base64.b64decode(image_data)
+        except Exception as e:
+            print(f"❌ Error al decodificar imagen: {e}")
+            return JsonResponse({'success': False, 'error': 'Formato de imagen inválido'}, status=400)
+        
+        print("=" * 60)
+        print("🔍 [VISION] Procesando imagen...")
+        
+        # Variables por defecto
+        logos = []
+        texts = []
+        labels = []
+        
+        # Intentar usar Google Vision API
+        try:
+            from google.cloud import vision
+            client = vision.ImageAnnotatorClient()
+            image = vision.Image(content=image_bytes)
+            
+            # Realizar análisis
+            logo_response = client.logo_detection(image=image)
+            text_response = client.text_detection(image=image)
+            label_response = client.label_detection(image=image, max_results=10)
+            
+            # Extraer resultados
+            logos = [logo.description.lower() for logo in logo_response.logo_annotations]
+            
+            if text_response.text_annotations:
+                full_text = text_response.text_annotations[0].description
+                texts = [t.strip().lower() for t in full_text.split('\n') if len(t.strip()) > 2]
+            
+            labels = [label.description.lower() for label in label_response.label_annotations]
+            
+            print(f"✅ Vision API OK")
+            
+        except Exception as e:
+            print(f"⚠️ Vision API no disponible: {e}")
+            # Continuar con búsqueda vacía
+        
+        # LOGS
+        print(f"🏷️ Logos ({len(logos)}): {logos}")
+        print(f"📝 Textos ({len(texts)}): {texts[:10]}")
+        print(f"🔖 Labels ({len(labels)}): {labels[:5]}")
+        
+        # Construir búsqueda simple
+        from empresa.models import Producto
+        query = Q()
+        
+        # Buscar por logos
+        for logo in logos:
+            query |= Q(nombre__icontains=logo)
+            query |= Q(descripcion__icontains=logo)
+        
+        # Buscar por textos
+        for text in texts[:15]:
+            if len(text) > 3 and not text.isdigit():
+                query |= Q(nombre__icontains=text)
+                query |= Q(codigo_barras__icontains=text)
+        
+        # Ejecutar búsqueda
+        if query:
+            productos = Producto.objects.filter(query, empresa=empresa).distinct()[:5]
+        else:
+            productos = Producto.objects.none()
+        
+        print(f"✅ Productos encontrados: {productos.count()}")
+        for p in productos:
+            print(f"  - {p.nombre}")
+        
+        # Preparar respuesta simple
+        productos_list = []
+        for p in productos:
+            productos_list.append({
+                'id': p.id,
+                'nombre': p.nombre,
+                'codigo': getattr(p, 'codigo', ''),
+                'codigo_barras': getattr(p, 'codigo_barras', ''),
+                'pvp': float(getattr(p, 'pvp', 0) or 0),
+                'stock': getattr(p, 'stock', 0) or 0,
+            })
+        
+        print("=" * 60)
+        
+        return JsonResponse({
+            'success': True,
+            'found': len(productos_list) > 0,
+            'count': len(productos_list),
+            'productos': productos_list,
+            'debug': {
+                'logos': logos,
+                'textos': texts[:10],
+                'labels': labels[:5]
+            }
+        })
+        
+    except Exception as e:
+        print("=" * 60)
+        print("❌ ERROR CRÍTICO:")
+        traceback.print_exc()
+        print("=" * 60)
+        return JsonResponse({'success': False, 'error': str(e)}, status=500)

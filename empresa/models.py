@@ -1007,39 +1007,17 @@ class MetaFinanciera(models.Model):
     @property
     def progreso_actual(self):
         """Calcula el progreso actual hacia la meta"""
-        from django.db.models import Sum
-        from datetime import datetime
-        
-        # Obtener el valor actual según el tipo de meta
-        if self.tipo == 'ventas':
-            valor_actual = Venta.objects.filter(
-                empresa=self.empresa,
-                fecha__month=self.mes,
-                fecha__year=self.anio
-            ).aggregate(total=Sum('monto'))['total'] or 0
-        elif self.tipo == 'gastos':
-            valor_actual = Gasto.objects.filter(
-                empresa=self.empresa,
-                fecha__month=self.mes,
-                fecha__year=self.anio
-            ).aggregate(total=Sum('monto'))['total'] or 0
-        elif self.tipo == 'utilidad':
-            ventas = Venta.objects.filter(
-                empresa=self.empresa,
-                fecha__month=self.mes,
-                fecha__year=self.anio
-            ).aggregate(total=Sum('monto'))['total'] or 0
-            gastos = Gasto.objects.filter(
-                empresa=self.empresa,
-                fecha__month=self.mes,
-                fecha__year=self.anio
-            ).aggregate(total=Sum('monto'))['total'] or 0
-            valor_actual = ventas - gastos
-        else:
-            valor_actual = 0
+        valor = self.valor_actual
         
         if self.objetivo_mensual > 0:
-            return min((valor_actual / self.objetivo_mensual) * 100, 100)
+            if self.tipo == 'gastos':
+                # Para gastos: estar por debajo del presupuesto = 100%
+                # Gastar exactamente el presupuesto = 100%, excederlo reduce el progreso
+                if valor <= self.objetivo_mensual:
+                    return 100
+                else:
+                    return max(0, (1 - (valor - self.objetivo_mensual) / self.objetivo_mensual) * 100)
+            return min((valor / self.objetivo_mensual) * 100, 100)
         return 0
     
     @property
@@ -1058,7 +1036,7 @@ class MetaFinanciera(models.Model):
     @property
     def valor_actual(self):
         """Obtiene el valor actual de la meta"""
-        from django.db.models import Sum
+        from django.db.models import Sum, Count
         
         if self.tipo == 'ventas':
             return Venta.objects.filter(
@@ -1084,6 +1062,19 @@ class MetaFinanciera(models.Model):
                 fecha__year=self.anio
             ).aggregate(total=Sum('monto'))['total'] or 0
             return ventas - gastos
+        elif self.tipo == 'clientes':
+            from empresa.models import Cliente
+            return Cliente.objects.filter(
+                empresa=self.empresa,
+                creado_en__month=self.mes,
+                creado_en__year=self.anio
+            ).count()
+        elif self.tipo == 'productos':
+            return Producto.objects.filter(
+                empresa=self.empresa,
+                fecha_creacion__month=self.mes,
+                fecha_creacion__year=self.anio
+            ).count()
         else:
             return 0
     
@@ -1101,7 +1092,7 @@ class MetaFinanciera(models.Model):
     def generar_recomendacion(self):
         """Genera recomendaciones basadas en el progreso"""
         progreso = self.progreso_actual
-        dias_restantes = self.dias_restantes_mes()
+        dias_restantes = max(self.dias_restantes_mes(), 1)  # Evitar división por cero
         
         if progreso >= 100:
             return "¡Excelente! Has superado tu meta. Considera establecer una meta más ambiciosa para el próximo mes."
