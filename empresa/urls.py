@@ -37,7 +37,7 @@ def lazy_view(module_name, attr):
 from .views.metas import gestionar_metas, historial_meta, marcar_notificacion_leida, comparacion_sector
 from .views.inventario import inventario, descargar_plantilla_inventario, subir_inventario_excel, saldos_iniciales, inventario_detallado_inicial
 from .views.actividad import actividad_reciente, asignar_usuarios_auditoria
-from .views.test_filtros import test_filtros_fecha, verificar_datos_fecha
+
 from .views.barcode_api import buscar_por_codigo_barras, validar_codigo_barras, crear_categoria_api, materias_primas_api
 from .views.manufactura import (
     dashboard_manufactura, listar_materias_primas, crear_materia_prima,
@@ -328,11 +328,9 @@ urlpatterns += [
     path('niif/', include('empresa.urls_niif')),
 ]
 
-# URLs de prueba y debug (solo en modo DEBUG)
+# URLs de debug (solo en modo DEBUG)
 if settings.DEBUG:
     urlpatterns += [
-        path('test/filtros/', test_filtros_fecha, name='test_filtros_fecha'),
-        path('test/verificar-fecha/', verificar_datos_fecha, name='verificar_datos_fecha'),
         path('debug/datos/', debug_datos, name='debug_datos'),
     ]
 
