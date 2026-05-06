@@ -165,11 +165,14 @@ elif IS_DOCKER or IS_PRODUCTION:
     }
 else:
     # SQLite para desarrollo local
+    # CONN_MAX_AGE=0: SQLite no soporta connection pooling, mantener en 0
+    # para evitar errores "database is locked" por conexiones persistentes.
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.sqlite3',
             'NAME': BASE_DIR / 'contafy_sistema.db',
             'ATOMIC_REQUESTS': True,
+            'CONN_MAX_AGE': 0,
             'OPTIONS': {
                 'timeout': 20,
                 'check_same_thread': False,
@@ -183,16 +186,39 @@ BACKUP_RETENTION_DAYS = env.int('BACKUP_RETENTION_DAYS', default=30)  # type: ig
 BACKUP_SCHEDULE = env('BACKUP_SCHEDULE', default='daily')  # type: ignore[arg-type]  # daily, weekly, monthly
 
 # Configuración de caché
-CACHES = {
-    'default': {
-        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
-        'LOCATION': 'contafy-cache',
-        'TIMEOUT': 300,
-        'OPTIONS': {
-            'MAX_ENTRIES': 1000,
+# Usa Redis si REDIS_URL está definido, LocMemCache como fallback para desarrollo local
+REDIS_URL = env('REDIS_URL', default='')  # type: ignore[arg-type]
+
+if REDIS_URL:
+    CACHES = {
+        'default': {
+            'BACKEND': 'django_redis.cache.RedisCache',
+            'LOCATION': REDIS_URL,
+            'TIMEOUT': 300,
+            'OPTIONS': {
+                'CLIENT_CLASS': 'django_redis.client.DefaultClient',
+                'SOCKET_CONNECT_TIMEOUT': 5,
+                'SOCKET_TIMEOUT': 5,
+                'RETRY_ON_TIMEOUT': True,
+                'MAX_CONNECTIONS': 50,
+            },
+            'KEY_PREFIX': 'contafy',
         }
     }
-}
+    # Usar Redis como backend de sesiones cuando está disponible
+    SESSION_ENGINE = 'django.contrib.sessions.backends.cache'
+    SESSION_CACHE_ALIAS = 'default'
+else:
+    CACHES = {
+        'default': {
+            'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+            'LOCATION': 'contafy-cache',
+            'TIMEOUT': 300,
+            'OPTIONS': {
+                'MAX_ENTRIES': 1000,
+            }
+        }
+    }
 
 # Validación de contraseñas
 AUTH_PASSWORD_VALIDATORS = [
@@ -287,6 +313,9 @@ TWILIO_AUTH_TOKEN = env('TWILIO_AUTH_TOKEN', default='')  # type: ignore[arg-typ
 # Configuración de APIs de IA
 OPENAI_API_KEY = env('OPENAI_API_KEY', default='')  # type: ignore[arg-type]
 GEMINI_API_KEY = env('GEMINI_API_KEY', default='')  # type: ignore[arg-type]
+
+# Proveedor de IA: 'openai', 'gemini', 'mock' (para tests sin API keys)
+AI_PROVIDER = env('AI_PROVIDER', default='gemini')  # type: ignore[arg-type]
 
 # Configuración de sesiones persistentes
 SESSION_ENGINE = 'django.contrib.sessions.backends.db'

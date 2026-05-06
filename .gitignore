@@ -163,4 +163,14 @@ empresa/templates/empresa/test_filtros.html
 /MIGRATION_REPAIR*.md
 /PASO5_*.md
 /START_HERE_*.md
-empresa/**/## *.md
+empresa/**/## *.md
+
+# ============================================================================
+# SCRIPTS DE AUDITORÍA (uso local, no versionar)
+# ============================================================================
+/audit_migrations.py
+
+# ============================================================================
+# BASE DE DATOS DE TESTS
+# ============================================================================
+test_contafy.db

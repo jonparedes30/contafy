@@ -185,7 +185,10 @@ python manage.py createsuperuser
 python manage.py collectstatic
 
 # Ejecutar pruebas
-python manage.py test
+pytest                          # Todas las pruebas
+pytest -m "not slow"            # Solo pruebas rápidas
+pytest empresa/tests/test_modelos.py  # Solo modelos
+pytest -x                       # Parar al primer fallo
 ```
 
 ## Estructura del proyecto

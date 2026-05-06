@@ -47,3 +47,7 @@ services:
         value: "INFO"
       - key: PYTHONUNBUFFERED
         value: "1"
+      - key: REDIS_URL
+        sync: false  # Configurar manualmente con la URL de Redis (ej: Render Redis addon)
+      - key: AI_PROVIDER
+        value: "gemini"

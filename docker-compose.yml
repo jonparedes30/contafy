@@ -31,6 +31,27 @@ services:
     env_file:
       - .env
 
+  # Redis para caché y sesiones
+  redis:
+    image: redis:7-alpine
+    container_name: contafy_redis
+    restart: unless-stopped
+    
+    ports:
+      - "6379:6379"
+    
+    networks:
+      - contafy_network
+    
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    
+    volumes:
+      - redis_data:/data
+
   # Aplicación Django + Gunicorn
   web:
     build:
@@ -53,6 +74,7 @@ services:
       DATABASE_URL: ""
       DOCKER_RUNNING: "true"
       LOG_LEVEL: ${LOG_LEVEL:-INFO}
+      REDIS_URL: redis://redis:6379/0
     
     volumes:
       - ./:/app
@@ -67,6 +89,8 @@ services:
     
     depends_on:
       db:
+        condition: service_healthy
+      redis:
         condition: service_healthy
     
     healthcheck:
@@ -92,6 +116,8 @@ services:
 # Volúmenes nombrados para persistencia
 volumes:
   postgres_data:
+    driver: local
+  redis_data:
     driver: local
   static_volume:
   media_volume:
