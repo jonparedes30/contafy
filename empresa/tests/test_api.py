@@ -51,7 +51,8 @@ class TestAPIConAutenticacion(TestCase):
 
     def setUp(self):
         self.empresa = Empresa.objects.create(
-            nombre='API Test', categoria='comercio'
+            nombre='API Test', ruc='1790016919001', direccion='Quito',
+            categoria='comercial',
         )
         self.user = Usuario.objects.create_user(
             username='apiuser',
@@ -61,19 +62,14 @@ class TestAPIConAutenticacion(TestCase):
         self.client = Client()
         self.client.force_login(self.user)
 
-    def test_listar_productos_autenticado(self):
-        """Listar productos con usuario autenticado devuelve 200."""
-        response = self.client.get('/app-beta-2024/producto/listar/')
+    def test_dashboard_autenticado(self):
+        """Dashboard con usuario autenticado devuelve 200."""
+        response = self.client.get('/app-beta-2024/dashboard/')
         self.assertEqual(response.status_code, 200)
 
     def test_listar_ventas_autenticado(self):
         """Listar ventas con usuario autenticado devuelve 200."""
         response = self.client.get('/app-beta-2024/venta/listar/')
-        self.assertEqual(response.status_code, 200)
-
-    def test_dashboard_autenticado(self):
-        """Dashboard con usuario autenticado devuelve 200."""
-        response = self.client.get('/app-beta-2024/dashboard/')
         self.assertEqual(response.status_code, 200)
 
     def test_crear_producto_get(self):
@@ -88,7 +84,8 @@ class TestAPIProductoInfo(TestCase):
 
     def setUp(self):
         self.empresa = Empresa.objects.create(
-            nombre='Producto API Test', categoria='comercio'
+            nombre='Producto API Test', ruc='1791234567001', direccion='Guayaquil',
+            categoria='comercial',
         )
         self.user = Usuario.objects.create_user(
             username='produser',

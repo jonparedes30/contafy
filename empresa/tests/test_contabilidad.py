@@ -25,7 +25,8 @@ class TestTransaccionBalanceada(TestCase):
 
     def setUp(self):
         self.empresa = Empresa.objects.create(
-            nombre='Empresa Contable', categoria='comercio'
+            nombre='Empresa Contable', ruc='1790016919001',
+            direccion='Quito', categoria='comercial',
         )
 
     def test_transaccion_balanceada_simple(self):
@@ -164,7 +165,8 @@ class TestIVAEcuador(TestCase):
     def test_asientos_venta_con_iva(self):
         """Los asientos de una venta deben reflejar el IVA correctamente."""
         empresa = Empresa.objects.create(
-            nombre='IVA Test', categoria='comercio'
+            nombre='IVA Test', ruc='1791234567001',
+            direccion='Guayaquil', categoria='comercial',
         )
         monto_neto = Decimal('100.00')
         iva = monto_neto * self.IVA_TASA / Decimal('100')
@@ -214,7 +216,8 @@ class TestIntegridadContable(TestCase):
 
     def setUp(self):
         self.empresa = Empresa.objects.create(
-            nombre='Integridad Test', categoria='comercio'
+            nombre='Integridad Test', ruc='1792345678001',
+            direccion='Cuenca', categoria='comercial',
         )
 
     def test_empresa_sin_movimientos_ok(self):

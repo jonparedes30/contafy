@@ -50,24 +50,41 @@ class TestEmpresaModel(TestCase):
         )
 
     def test_crear_empresa(self):
-        """Una empresa se crea con nombre y categoría."""
+        """Una empresa se crea con nombre, ruc y categoría."""
         empresa = Empresa.objects.create(
             nombre='Mi Tienda',
-            categoria='comercio',
+            ruc='1790016919001',
+            direccion='Quito, Ecuador',
+            categoria='comercial',
         )
         self.assertEqual(empresa.nombre, 'Mi Tienda')
-        self.assertEqual(empresa.categoria, 'comercio')
+        self.assertEqual(empresa.categoria, 'comercial')
         self.assertIsNotNone(empresa.pk)
 
     def test_empresa_str(self):
-        empresa = Empresa.objects.create(nombre='Test Corp', categoria='servicios')
+        empresa = Empresa.objects.create(
+            nombre='Test Corp', ruc='1791234567001', direccion='Guayaquil',
+            categoria='servicios',
+        )
         self.assertIn('Test Corp', str(empresa))
 
     def test_empresa_categorias_validas(self):
-        """Las categorías válidas son: comercio, manufactura, servicios."""
-        for cat in ['comercio', 'manufactura', 'servicios']:
-            empresa = Empresa.objects.create(nombre=f'Empresa {cat}', categoria=cat)
+        """Las categorías válidas son: comercial, manufactura, servicios."""
+        rucs = ['1790016919001', '1791234567001', '1792345678001']
+        for cat, ruc in zip(['comercial', 'manufactura', 'servicios'], rucs):
+            empresa = Empresa.objects.create(
+                nombre=f'Empresa {cat}', ruc=ruc, direccion='Ecuador',
+                categoria=cat,
+            )
             self.assertEqual(empresa.categoria, cat)
+
+    def test_empresa_relacion_propietario(self):
+        """Una empresa puede tener un propietario."""
+        empresa = Empresa.objects.create(
+            nombre='Con Dueño', ruc='1793456789001', direccion='Cuenca',
+            categoria='comercial', propietario=self.user,
+        )
+        self.assertEqual(empresa.propietario, self.user)
 
 
 @pytest.mark.django_db
@@ -76,7 +93,8 @@ class TestProductoModel(TestCase):
 
     def setUp(self):
         self.empresa = Empresa.objects.create(
-            nombre='Tienda Test', categoria='comercio'
+            nombre='Tienda Test', ruc='1790016919001', direccion='Quito',
+            categoria='comercial',
         )
 
     def test_crear_producto(self):
@@ -100,6 +118,7 @@ class TestProductoModel(TestCase):
                 precio_unitario=Decimal('10.00'),
                 pvp=Decimal('15.00'),
                 stock=1,
+                codigo='PROD-NO-EMP',
             )
 
     def test_producto_relacion_empresa(self):
@@ -110,6 +129,7 @@ class TestProductoModel(TestCase):
             precio_unitario=Decimal('25.00'),
             pvp=Decimal('35.00'),
             stock=50,
+            codigo='PROD-002',
         )
         productos = Producto.objects.filter(empresa=self.empresa)
         self.assertEqual(productos.count(), 1)
@@ -122,7 +142,8 @@ class TestVentaModel(TestCase):
 
     def setUp(self):
         self.empresa = Empresa.objects.create(
-            nombre='Tienda Ventas', categoria='comercio'
+            nombre='Tienda Ventas', ruc='1790016919001', direccion='Quito',
+            categoria='comercial',
         )
         self.user = Usuario.objects.create_user(
             username='vendedor', password='pass123', empresa=self.empresa
@@ -133,6 +154,7 @@ class TestVentaModel(TestCase):
             precio_unitario=Decimal('10.00'),
             pvp=Decimal('15.00'),
             stock=100,
+            codigo='VENTA-PROD-001',
         )
 
     def test_crear_venta_contado(self):
@@ -148,6 +170,20 @@ class TestVentaModel(TestCase):
         )
         self.assertEqual(venta.cantidad, 2)
         self.assertEqual(venta.monto, Decimal('34.50'))
+
+    def test_venta_calcula_iva_desde_neto(self):
+        """Si solo se da monto_neto, el IVA se calcula automáticamente."""
+        venta = Venta.objects.create(
+            empresa=self.empresa,
+            producto=self.producto,
+            cantidad=1,
+            monto_neto=Decimal('100.00'),
+            tasa_iva=Decimal('15'),
+            monto=Decimal('0'),  # Se calculará
+            tipo_pago='contado',
+        )
+        self.assertEqual(venta.iva, Decimal('15.00'))
+        self.assertEqual(venta.monto, Decimal('115.00'))
 
     def test_venta_relacion_producto(self):
         venta = Venta.objects.create(
@@ -169,7 +205,8 @@ class TestCompraModel(TestCase):
 
     def setUp(self):
         self.empresa = Empresa.objects.create(
-            nombre='Tienda Compras', categoria='comercio'
+            nombre='Tienda Compras', ruc='1790016919001', direccion='Quito',
+            categoria='comercial',
         )
         self.producto = Producto.objects.create(
             empresa=self.empresa,
@@ -177,6 +214,7 @@ class TestCompraModel(TestCase):
             precio_unitario=Decimal('200.00'),
             pvp=Decimal('280.00'),
             stock=5,
+            codigo='COMPRA-PROD-001',
         )
 
     def test_crear_compra(self):
@@ -184,7 +222,6 @@ class TestCompraModel(TestCase):
             empresa=self.empresa,
             producto=self.producto,
             cantidad=3,
-            precio_unitario=Decimal('200.00'),
             monto_neto=Decimal('600.00'),
             tasa_iva=Decimal('15'),
             iva=Decimal('90.00'),
@@ -201,7 +238,8 @@ class TestGastoModel(TestCase):
 
     def setUp(self):
         self.empresa = Empresa.objects.create(
-            nombre='Empresa Gastos', categoria='servicios'
+            nombre='Empresa Gastos', ruc='1790016919001', direccion='Quito',
+            categoria='servicios',
         )
 
     def test_crear_gasto(self):
@@ -229,7 +267,8 @@ class TestCuentaContableModel(TestCase):
 
     def setUp(self):
         self.empresa = Empresa.objects.create(
-            nombre='Contable Test', categoria='comercio'
+            nombre='Contable Test', ruc='1790016919001', direccion='Quito',
+            categoria='comercial',
         )
 
     def test_crear_cuenta(self):
