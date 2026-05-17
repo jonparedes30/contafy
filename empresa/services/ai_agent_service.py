@@ -8,43 +8,21 @@ from datetime import datetime, timedelta
 import json
 import re
 
-# Imports opcionales para APIs de IA
-try:
-    import openai
-    OPENAI_AVAILABLE = True
-except ImportError:
-    OPENAI_AVAILABLE = False
-
-try:
-    import google.generativeai as genai
-    GEMINI_AVAILABLE = True
-except ImportError:
-    GEMINI_AVAILABLE = False
+# Usar la capa de abstracción de proveedores de IA
+from empresa.services.ai_provider import get_ai_provider
 
 class ContafyAIAgent:
     
     def __init__(self):
-        # Usar Gemini como prioridad
-        if GEMINI_AVAILABLE and getattr(settings, 'GEMINI_API_KEY', None):
-            try:
-                genai.configure(api_key=settings.GEMINI_API_KEY)
-                self.model = genai.GenerativeModel('gemini-1.5-flash')
-                self.provider = 'gemini'
-                print("DEBUG: Usando Gemini AI")
-            except Exception as e:
-                print(f"DEBUG: Error configurando Gemini: {e}")
-                self.provider = 'local'
-        # OpenAI como respaldo (deshabilitado por ahora)
-        # elif OPENAI_AVAILABLE and getattr(settings, 'OPENAI_API_KEY', None):
-        #     try:
-        #         openai.api_key = settings.OPENAI_API_KEY
-        #         self.provider = 'openai'
-        #         print("DEBUG: Usando OpenAI")
-        #     except:
-        #         self.provider = 'local'
+        # Usar la capa de abstracción de IA (soporta OpenAI, Gemini, Mock)
+        self._ai_provider = get_ai_provider()
+        if self._ai_provider.is_available():
+            provider_name = type(self._ai_provider).__name__
+            self.provider = getattr(settings, 'AI_PROVIDER', 'gemini').lower()
+            print(f"DEBUG: Usando {provider_name}")
         else:
             self.provider = 'local'
-            print("DEBUG: Usando análisis local (Gemini no disponible)")
+            print("DEBUG: Usando análisis local (proveedor IA no disponible)")
     
     def obtener_datos_empresa(self, empresa):
         """Obtiene datos financieros de la empresa - CORREGIDO para coincidir con reportes"""
@@ -369,14 +347,7 @@ class ContafyAIAgent:
             }}
             """
             
-            response = self.model.generate_content(prompt)
-            # Limpiar la respuesta de markdown si existe
-            text = response.text.strip()
-            if text.startswith('```json'):
-                text = text[7:]
-            if text.endswith('```'):
-                text = text[:-3]
-            text = text.strip()
+            text = self._ai_provider.complete(prompt)
             
             return json.loads(text)
             
@@ -657,11 +628,9 @@ INSTRUCCIONES:
 Ejemplo: "Tu liquidez de 1.5 significa que por cada dólar que debes, tienes $1.50 para pagarlo. Eso está bien."
                 """
             
-            print(f"DEBUG Gemini: Enviando prompt con datos reales para '{pregunta}'...")
-            response = self.model.generate_content(prompt)
-            print(f"DEBUG Gemini: Respuesta recibida exitosamente")
-            
-            respuesta_texto = response.text
+            print(f"DEBUG AI: Enviando prompt con datos reales para '{pregunta}'...")
+            respuesta_texto = self._ai_provider.complete(prompt)
+            print(f"DEBUG AI: Respuesta recibida exitosamente")
             
             # Si Gemini detectó un comando, ejecutarlo
             if respuesta_texto.startswith('EJECUTAR_COMANDO:'):
