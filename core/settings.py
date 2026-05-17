@@ -132,6 +132,7 @@ if DATABASE_URL:
     DATABASES = {
         'default': dj_database_url.config(
             default=DATABASE_URL,  # type: ignore[arg-type]
+            # CONN_MAX_AGE=600: mantiene conexiones vivas 10 min (pool de conexiones)
             conn_max_age=env.int('CONN_MAX_AGE', default=600),  # type: ignore[arg-type]
             conn_health_checks=True,
         )
@@ -156,7 +157,7 @@ elif IS_DOCKER or IS_PRODUCTION:
             'HOST': POSTGRES_HOST,
             'PORT': POSTGRES_PORT,
             'ATOMIC_REQUESTS': True,
-            'CONN_MAX_AGE': 600,
+            'CONN_MAX_AGE': 600,  # CONN_MAX_AGE=600: mantiene conexiones vivas 10 min (pool de conexiones)
             'CONN_HEALTH_CHECKS': True,
             'OPTIONS': {
                 'sslmode': 'require' if IS_PRODUCTION else 'disable',
