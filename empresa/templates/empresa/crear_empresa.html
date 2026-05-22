@@ -3,21 +3,80 @@
 {% block title %}Registrar Empresa{% endblock %}
 
 {% block content %}
-    <h2>Registrar una nueva empresa</h2>
-    <form method="post" style="background-color: #fff; padding: 20px; border-radius: 8px; max-width: 400px; box-shadow: 0 0 10px rgba(0,0,0,0.1);">
-        {% csrf_token %}
-        {% if form.errors %}
-    <ul style="color: red; margin-bottom: 10px;">
-        {% for field in form %}
-            {% for error in field.errors %}
-                <li>{{ error }}</li>
-            {% endfor %}
-        {% endfor %}
-    </ul>
-{% endif %}
-        {{ form.as_p }}
-        <button type="submit" style="background-color: #4CAF50; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer;">
-            Guardar
-        </button>
-    </form>
+<div class="container-fluid mt-4">
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 page-header">
+        <div>
+            <h1 class="h3 mb-1 fw-bold text-dark">
+                <i class="bi bi-building me-2"></i>Registrar nueva empresa
+            </h1>
+            <p class="text-muted mb-0">Completa los datos básicos para crear tu empresa en el sistema</p>
+        </div>
+    </div>
+
+    <div class="row justify-content-center">
+        <div class="col-lg-7 col-md-9">
+            <div class="card form-page-card mb-4">
+                <div class="card-header form-page-card-header form-page-card-header-success py-3">
+                    <i class="bi bi-pencil-square me-2"></i>Datos de la empresa
+                </div>
+                <div class="card-body">
+                    {% if form.errors %}
+                        <div class="alert alert-danger mb-3">
+                            <strong><i class="bi bi-exclamation-triangle me-1"></i>Revisa los siguientes errores:</strong>
+                            <ul class="mb-0 mt-2">
+                                {% for field in form %}
+                                    {% for error in field.errors %}
+                                        <li><strong>{{ field.label }}:</strong> {{ error }}</li>
+                                    {% endfor %}
+                                {% endfor %}
+                                {% for error in form.non_field_errors %}
+                                    <li>{{ error }}</li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                    {% endif %}
+
+                    <form method="post" novalidate>
+                        {% csrf_token %}
+                        {% for field in form %}
+                            <div class="mb-3">
+                                <label for="{{ field.id_for_label }}" class="form-label fw-semibold">
+                                    {{ field.label }}
+                                    {% if field.field.required %}<span class="text-danger">*</span>{% endif %}
+                                </label>
+                                {{ field }}
+                                {% if field.help_text %}
+                                    <div class="form-text">{{ field.help_text }}</div>
+                                {% endif %}
+                            </div>
+                        {% endfor %}
+
+                        <div class="d-flex gap-2 justify-content-end mt-4">
+                            <a href="{% url 'empresa:home' %}" class="btn btn-outline-secondary">
+                                <i class="bi bi-x-lg me-1"></i>Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-success">
+                                <i class="bi bi-check-lg me-1"></i>Guardar empresa
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        document.querySelectorAll('form input, form select, form textarea').forEach(function (el) {
+            if (el.type === 'checkbox' || el.type === 'radio') {
+                el.classList.add('form-check-input');
+            } else if (el.tagName === 'SELECT') {
+                el.classList.add('form-select');
+            } else if (el.type !== 'hidden' && el.type !== 'submit' && el.type !== 'button') {
+                el.classList.add('form-control');
+            }
+        });
+    });
+</script>
 {% endblock %}

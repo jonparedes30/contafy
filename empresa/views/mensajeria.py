@@ -86,8 +86,17 @@ Responde desde el panel de administración de CONTAFY
         'conversacion': conversacion
     })
 
+@login_required
 def responder_conversacion(request, conversacion_id):
-    """Vista para que el administrador responda (acceso directo por URL)"""
+    """Vista para que el administrador responda (acceso directo por URL).
+
+    Solo accesible para staff/superuser, ya que es la vista de respuesta
+    del equipo de soporte. Usuarios normales usan otros canales.
+    """
+    if not (request.user.is_staff or request.user.is_superuser):
+        from django.core.exceptions import PermissionDenied
+        raise PermissionDenied("Solo el equipo de soporte puede acceder a esta vista")
+
     if request.method == 'POST':
         try:
             conversacion = get_object_or_404(ConversacionSoporte, id=conversacion_id)

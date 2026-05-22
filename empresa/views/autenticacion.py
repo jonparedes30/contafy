@@ -89,43 +89,66 @@ def logout_usuario(request):
     return redirect('empresa:login')
 
 from django.db import transaction
+from django.utils import timezone
+from datetime import timedelta
 
 def registrar_usuario(request):
+    modo_demo = request.GET.get('modo') == 'demo' or request.POST.get('modo_demo') == '1'
+
     if request.method == 'POST':
         codigo_invitacion = request.POST.get('codigo_invitacion', '').strip()
-        
-        # Verificar código de invitación primero
-        if not codigo_invitacion:
-            messages.error(request, 'El código de invitación es obligatorio.')
-            return render(request, 'empresa/registro.html', {'form': RegistroForm()})
-        
-        try:
-            from empresa.models import CodigoInvitacion
-            codigo = CodigoInvitacion.objects.get(codigo=codigo_invitacion, usado=False)
-        except CodigoInvitacion.DoesNotExist:
-            messages.error(request, 'Código de invitación inválido o ya utilizado. Verifique el código e intente nuevamente.')
-            return render(request, 'empresa/registro.html', {'form': RegistroForm()})
-        
+        modo_demo = request.POST.get('modo_demo') == '1'
+
+        if not modo_demo:
+            # Verificar código de invitación (flujo normal / beta)
+            if not codigo_invitacion:
+                messages.error(request, 'El código de invitación es obligatorio.')
+                return render(request, 'empresa/registro.html', {'form': RegistroForm(), 'modo_demo': False})
+
+            try:
+                from empresa.models import CodigoInvitacion
+                codigo = CodigoInvitacion.objects.get(codigo=codigo_invitacion, usado=False)
+            except CodigoInvitacion.DoesNotExist:
+                messages.error(request, 'Código de invitación inválido o ya utilizado. Verifique el código e intente nuevamente.')
+                return render(request, 'empresa/registro.html', {'form': RegistroForm(), 'modo_demo': False})
+
         form = RegistroForm(request.POST)
         if form.is_valid():
             try:
                 with transaction.atomic():
                     user = form.save()  # El formulario ya maneja el orden correcto
                     logger.info(f"Usuario creado exitosamente: {user.username}, Empresa: {user.empresa.nombre}")
-                    
-                    # Marcar código como usado
-                    codigo.usado = True
-                    codigo.usado_por = user
-                    codigo.save()
-                    
-                    messages.success(request, f'¡Registro exitoso! Bienvenido {user.first_name}. Tu cuenta y empresa "{user.empresa.nombre}" han sido creadas correctamente.')
+
+                    if modo_demo:
+                        # Marcar la empresa como demo y fijar expiración a 7 días
+                        empresa = user.empresa
+                        empresa.es_demo = True
+                        empresa.demo_expira = timezone.now() + timedelta(days=7)
+                        empresa.save(update_fields=['es_demo', 'demo_expira'])
+                        logger.info(f"Cuenta demo creada para: {user.username}, expira: {empresa.demo_expira}")
+                        messages.success(
+                            request,
+                            f'¡Bienvenido a tu demo, {user.first_name}! '
+                            f'Tienes 7 días para explorar Contafy. '
+                            f'Tu acceso expira el {empresa.demo_expira.strftime("%d/%m/%Y")}.'
+                        )
+                    else:
+                        # Marcar código como usado (flujo beta)
+                        codigo.usado = True
+                        codigo.usado_por = user
+                        codigo.save()
+                        messages.success(
+                            request,
+                            f'¡Registro exitoso! Bienvenido {user.first_name}. '
+                            f'Tu cuenta y empresa "{user.empresa.nombre}" han sido creadas correctamente.'
+                        )
                     return redirect('empresa:login')
             except Exception as e:
                 logger.error(f"Error crítico al crear usuario: {str(e)}")
                 messages.error(request, f'Error interno del sistema. Por favor contacte al soporte técnico. Detalle: {str(e)}')
         else:
             logger.error(f"Errores de validación en formulario: {form.errors}")
-            
+
             # Mostrar errores específicos por campo
             error_count = 0
             for field_name, errors in form.errors.items():
@@ -136,12 +159,13 @@ def registrar_usuario(request):
                         messages.error(request, f'Error general: {error}')
                     else:
                         messages.error(request, f'{field_label}: {error}')
-            
+
             if error_count == 0:
                 messages.error(request, 'Hay errores en el formulario. Por favor revise todos los campos.')
     else:
         form = RegistroForm()
-    
+
     return render(request, 'empresa/registro.html', {
         'form': form,
+        'modo_demo': modo_demo,
     })

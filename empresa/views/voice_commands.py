@@ -1,11 +1,9 @@
 from django.http import JsonResponse
 from django.contrib.auth.decorators import login_required
-from django.views.decorators.csrf import csrf_exempt
 from empresa.services.ai_comandos_service import procesar_comando_ia
 import json
 
 @login_required
-@csrf_exempt
 def procesar_comando_voz(request):
     """Procesa comandos de voz y genera respuesta hablada"""
     if request.method == 'POST':

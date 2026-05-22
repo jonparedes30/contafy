@@ -99,6 +99,7 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'empresa.middleware.CurrentUserMiddleware',
     'empresa.middleware.EmpresaValidationMiddleware',
+    'empresa.middleware.DemoExpiryMiddleware',
     'empresa.middleware.SecurityMiddleware',
 ]
 
@@ -245,9 +246,13 @@ CURRENCY_NAME = 'Dólares Americanos'
 STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
-# Google Vision API key (se recomienda configurar en entorno; aquí queda un
-# valor por defecto temporal si no se configura la variable de entorno).
-GOOGLE_VISION_API_KEY = env('GOOGLE_VISION_API_KEY', default='AIzaSyDD4cb3ZQPtnl30MQxv_Pvs1TmM6O-3yE4')  # provided by user
+# Google Vision API key — configurar en variable de entorno GOOGLE_VISION_API_KEY
+GOOGLE_VISION_API_KEY = env('GOOGLE_VISION_API_KEY', default='')
+
+# Stripe — configurar en variables de entorno
+STRIPE_PUBLIC_KEY     = env('STRIPE_PUBLIC_KEY',     default='')
+STRIPE_SECRET_KEY     = env('STRIPE_SECRET_KEY',     default='')
+STRIPE_WEBHOOK_SECRET = env('STRIPE_WEBHOOK_SECRET', default='')
 
 # Storage para estáticos (usar WhiteNoise si está instalado)
 try:

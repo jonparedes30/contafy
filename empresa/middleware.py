@@ -40,13 +40,15 @@ class EmpresaValidationMiddleware(MiddlewareMixin):
     EXCLUDED_PATHS = [
         '/admin/', '/api/', '/static/', '/media/',
         '/app-beta-2024/login/', '/app-beta-2024/logout/',
-        '/app-beta-2024/registro/', '/health/'
+        '/app-beta-2024/registro/', '/app-beta-2024/beta/',
+        '/app-beta-2024/pago/', '/app-beta-2024/demos/',
+        '/health/',
     ]
-    
+
     def process_request(self, request):
         if not request.user.is_authenticated:
             return None
-        
+
         # Excluir rutas específicas
         if any(request.path.startswith(path) for path in self.EXCLUDED_PATHS):
             return None
@@ -65,6 +67,49 @@ class EmpresaValidationMiddleware(MiddlewareMixin):
             return redirect('/admin/')
         
         return None
+
+class DemoExpiryMiddleware(MiddlewareMixin):
+    """Cierra sesión automáticamente cuando una cuenta demo expira."""
+
+    EXCLUDED_PATHS = [
+        '/admin/', '/static/', '/media/',
+        '/app-beta-2024/login/', '/app-beta-2024/logout/',
+        '/app-beta-2024/registro/', '/app-beta-2024/beta/',
+        '/app-beta-2024/pago/', '/app-beta-2024/demos/',
+        '/login/', '/logout/', '/registro/', '/beta/', '/pago/', '/demos/',
+    ]
+
+    def process_request(self, request):
+        if not request.user.is_authenticated:
+            return None
+        if request.user.is_superuser:
+            return None
+        if any(request.path.startswith(p) for p in self.EXCLUDED_PATHS):
+            return None
+
+        empresa = getattr(request.user, 'empresa', None)
+        if not empresa:
+            return None
+
+        # Solo aplica a cuentas demo con fecha de expiración
+        if not empresa.es_demo or not empresa.demo_expira:
+            return None
+
+        from django.utils import timezone
+        if timezone.now() > empresa.demo_expira:
+            from django.contrib.auth import logout
+            from django.contrib import messages
+            from django.shortcuts import redirect
+            logout(request)
+            messages.warning(
+                request,
+                'Tu acceso demo ha expirado. '
+                'Elige un plan para continuar usando Contafy.'
+            )
+            return redirect('empresa:landing')
+
+        return None
+
 
 class SecurityMiddleware(MiddlewareMixin):
     """Middleware de seguridad adicional"""

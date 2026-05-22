@@ -113,6 +113,15 @@ class Empresa(models.Model):
         related_name='empresas_propias',
         help_text="Usuario propietario de la empresa"
     )
+    es_demo = models.BooleanField(
+        default=False,
+        help_text="Indica si esta empresa es una cuenta de demostración"
+    )
+    demo_expira = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text="Fecha/hora en que expira el acceso demo (solo si es_demo=True)"
+    )
 
     def __init__(self, *args, **kwargs):
         # Soporte retrocompatible para tests/constructores que pasan `usuario=` al crear
@@ -2414,3 +2423,54 @@ class MaterialServicio(AuditModel):
     def costo_total(self):
         """Calcula el costo total del material para el servicio"""
         return self.costo_unitario * self.cantidad_necesaria
+
+
+# ─── Planes y Suscripciones ───────────────────────────────────────────────────
+
+class Plan(models.Model):
+    SLUG_CHOICES = [
+        ('basico', 'Básico'),
+        ('pro', 'Pro'),
+        ('enterprise', 'Enterprise'),
+    ]
+    slug = models.CharField(max_length=20, unique=True, choices=SLUG_CHOICES)
+    nombre = models.CharField(max_length=50)
+    precio_mensual = models.DecimalField(max_digits=8, decimal_places=2)
+    stripe_price_id = models.CharField(max_length=100, blank=True,
+        help_text="ID del precio en Stripe (price_xxx). Dejar vacío hasta configurar Stripe.")
+    descripcion = models.TextField(blank=True)
+    activo = models.BooleanField(default=True)
+
+    class Meta:
+        ordering = ['precio_mensual']
+        verbose_name = 'Plan'
+        verbose_name_plural = 'Planes'
+
+    def __str__(self):
+        return self.nombre
+
+
+class Suscripcion(models.Model):
+    ESTADO_CHOICES = [
+        ('activa', 'Activa'),
+        ('cancelada', 'Cancelada'),
+        ('expirada', 'Expirada'),
+        ('pendiente', 'Pendiente'),
+    ]
+    empresa = models.OneToOneField(
+        Empresa, on_delete=models.CASCADE, related_name='suscripcion'
+    )
+    plan = models.ForeignKey(Plan, on_delete=models.SET_NULL, null=True, blank=True)
+    stripe_subscription_id = models.CharField(max_length=100, blank=True)
+    stripe_customer_id = models.CharField(max_length=100, blank=True)
+    estado = models.CharField(max_length=20, choices=ESTADO_CHOICES, default='pendiente')
+    fecha_inicio = models.DateTimeField(null=True, blank=True)
+    fecha_vencimiento = models.DateTimeField(null=True, blank=True)
+    creado = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = 'Suscripción'
+        verbose_name_plural = 'Suscripciones'
+
+    def __str__(self):
+        return f"{self.empresa} — {self.plan}"
