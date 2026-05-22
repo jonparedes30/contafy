@@ -139,8 +139,8 @@
 
         const endpoint =
             window.location.pathname.indexOf('/app-beta-2024/') !== -1
-            ? '/app-beta-2024/empresa/prefill_producto_from_scan/'
-            : '/empresa/prefill_producto_from_scan/';
+            ? '/app-beta-2024/producto/prefill_from_scan/'
+            : '/empresa/producto/prefill_from_scan/';
 
         try{
 

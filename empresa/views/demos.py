@@ -1,4 +1,4 @@
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import login
 from django.contrib import messages
 from django.utils import timezone
@@ -8,84 +8,29 @@ from empresa.models import (
     Usuario, Venta, Producto, OrdenProduccion
 )
 
-def demos_disponibles(request):
-    """Muestra las demos disponibles y permite acceso rápido"""
-    
-    demos = [
-        {
-            'tipo': 'Comercio',
-            'nombre': 'Minimarket Don Pepe',
-            'descripcion': 'Tienda de abarrotes con inventario, ventas y control de stock',
-            'ubicacion': 'Quito, Pichincha',
-            'username': 'demo_comercio',
-            'password': 'demo123',
-            'icon': 'bi-shop',
-            'color': 'primary',
-            'caracteristicas': [
-                '6 productos en inventario',
-                '50+ ventas registradas',
-                'Control de proveedores',
-                'Gestión de clientes',
-                'Reportes financieros'
-            ]
-        },
-        {
-            'tipo': 'Manufactura',
-            'nombre': 'Panadería El Buen Pan',
-            'descripcion': 'Panadería artesanal con producción y ventas',
-            'ubicacion': 'Cuenca, Azuay',
-            'username': 'demo_manufactura',
-            'password': 'demo123',
-            'icon': 'bi-basket',
-            'color': 'warning',
-            'caracteristicas': [
-                '6 productos manufacturados',
-                '60+ ventas realizadas',
-                'Control de materias primas',
-                'Costos de producción',
-                'Órdenes de producción'
-            ]
-        },
-        {
-            'tipo': 'Servicios',
-            'nombre': 'Peluquería Estilo & Belleza',
-            'descripcion': 'Salón de belleza con servicios y productos',
-            'ubicacion': 'Guayaquil, Guayas',
-            'username': 'demo_servicios',
-            'password': 'demo123',
-            'icon': 'bi-scissors',
-            'color': 'success',
-            'caracteristicas': [
-                '7 servicios disponibles',
-                '80+ servicios prestados',
-                'Venta de productos',
-                'Clientes frecuentes',
-                'Agenda de citas'
-            ]
-        }
-    ]
-    
-    context = {
-        'demos': demos
-    }
-    
-    return render(request, 'empresa/demos_disponibles.html', context)
+DEMO_USERNAMES = ['demo_comercio', 'demo_manufactura', 'demo_servicios']
+
 
 def acceso_rapido_demo(request, username):
-    """Acceso rápido a una cuenta demo"""
+    """Loguea automáticamente con la cuenta demo indicada y redirige al home."""
+    if username not in DEMO_USERNAMES:
+        messages.error(request, 'Demo no encontrada.')
+        return redirect('empresa:landing')
+
+    # Si ya hay sesión activa con esta misma cuenta demo, ir directo
+    if request.user.is_authenticated and request.user.username == username:
+        return redirect('empresa:home')
+
     try:
         usuario = Usuario.objects.get(username=username)
-        
-        # Autenticar automáticamente
-        usuario.backend = 'django.contrib.auth.backends.ModelBackend'
-        login(request, usuario)
-        
-        messages.success(request, f'¡Bienvenido a la demo de {usuario.empresa.nombre}! Explora todas las funcionalidades.')
-        return redirect('empresa:home')
-        
     except Usuario.DoesNotExist:
-        messages.error(request, 'Demo no encontrada. Por favor, ejecuta el comando crear_demos primero.')
-        return redirect('empresa:entrada_beta')
+        messages.warning(request, 'La cuenta demo no está disponible. Contáctanos.')
+        return redirect('empresa:landing')
+
+    # Autenticar sin contraseña (confiamos en que son cuentas demo controladas)
+    usuario.backend = 'django.contrib.auth.backends.ModelBackend'
+    login(request, usuario)
+    return redirect('empresa:home')
 
 
 def selector_demo(request):

@@ -31,19 +31,14 @@
             <div class="card-body">
                 <div class="row">
                     <div class="col-md-6 mb-3 mb-md-0">
-                        <button type="button" id="btn-scanner-producto" class="btn btn-scanner-unified text-white w-100 py-3" style="background: red !important;">
+                        <button type="button" id="btn-scanner-producto" class="btn btn-scanner-unified text-white w-100 py-3">
                             <i class="bi bi-camera-fill me-2"></i>Escanear Producto (Cámara + IA)
                         </button>
                     </div>
                     <div class="col-md-6">
                         <label for="id_codigo_barras" class="form-label"><i class="bi bi-upc me-2"></i>Código de barras</label>
-                        <div class="input-group">
-                            {{ form.codigo_barras }}
-                            <button type="button" class="btn btn-outline-primary" onclick="escanearCodigo()">
-                                <i class="bi bi-camera-fill me-1"></i>Escanear
-                            </button>
-                        </div>
-                        <div class="form-text">Escanea o ingresa manualmente</div>
+                        {{ form.codigo_barras }}
+                        <div class="form-text">El escáner IA lo detecta automáticamente, o ingrésalo manualmente</div>
                         <div id="scan-actions-producto" class="mt-2 text-center" style="display:none;"></div>
                     </div>
                 </div>
@@ -459,137 +454,6 @@ document.addEventListener('DOMContentLoaded', function () {
     function flashField(el){ if(!el) return; el.style.transition='box-shadow 0.25s ease'; el.style.boxShadow='0 0 0 4px rgba(16,185,129,0.18)'; setTimeout(()=>el.style.boxShadow='',1200); }
 });
 
-// Función para escanear código de barras
-function escanearCodigo() {
-    const inputCodigoBarras = document.getElementById('id_codigo_barras');
-    
-    // Crear modal para la cámara
-    const modalHtml = `
-        <div class="modal fade" id="scannerModal" tabindex="-1">
-            <div class="modal-dialog modal-lg">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title">Escanear Código de Barras</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                    </div>
-                    <div class="modal-body text-center">
-                        <video id="scanner-video" width="100%" height="300" style="border: 2px solid #007bff; border-radius: 8px;"></video>
-                        <div class="mt-3">
-                            <div id="scanner-result" class="alert alert-info" style="display: none;"></div>
-                            <button id="stop-scanner" class="btn btn-danger">Detener Escáner</button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    `;
-    
-    // Agregar modal al DOM si no existe
-    if (!document.getElementById('scannerModal')) {
-        document.body.insertAdjacentHTML('beforeend', modalHtml);
-    }
-    
-    const modal = new bootstrap.Modal(document.getElementById('scannerModal'));
-    const video = document.getElementById('scanner-video');
-    const result = document.getElementById('scanner-result');
-    const stopBtn = document.getElementById('stop-scanner');
-    
-    let stream = null;
-    let scanning = false;
-    
-    // Función para detener el escáner
-    function stopScanner() {
-        scanning = false;
-        if (stream) {
-            stream.getTracks().forEach(track => track.stop());
-        }
-        modal.hide();
-    }
-    
-    // Función para procesar frame y detectar código
-    function processFrame() {
-        if (!scanning) return;
-        
-        // Simulación de detección
-        const mockDetection = Math.random() > 0.95; // 5% chance cada frame
-        
-        if (mockDetection) {
-            // Generar código de barras simulado
-            const mockBarcode = '123456789012' + Math.floor(Math.random() * 10);
-            if (result) {
-                result.style.display = 'block';
-                result.innerHTML = `<strong>Código detectado:</strong> ${mockBarcode}`;
-            }
-            if (inputCodigoBarras) inputCodigoBarras.value = mockBarcode;
-            
-            setTimeout(() => {
-                stopScanner();
-                // Buscar información del producto automáticamente
-                const event = new Event('DOMContentLoaded');
-                document.dispatchEvent(event);
-                const sugerenciaInfo = document.getElementById('sugerencia-info');
-                const inputNombre = document.getElementById('id_nombre');
-                const inputDescripcion = document.getElementById('id_descripcion');
-                const inputPrecio = document.getElementById('id_precio_unitario');
-                
-                sugerenciaInfo.textContent = "🔄 Buscando información del código...";
-                sugerenciaInfo.style.color = 'gray';
-
-                fetch(`{% url "empresa:producto_info_api" %}?codigo=${mockBarcode}`)
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data.nombre) {
-                            if (inputNombre && !inputNombre.value) inputNombre.value = data.nombre;
-                            if (inputDescripcion && !inputDescripcion.value) inputDescripcion.value = data.descripcion || '';
-                            if (inputPrecio && !inputPrecio.value && data.precio_unitario) inputPrecio.value = data.precio_unitario;
-                            
-                            sugerenciaInfo.textContent = `🔍 Sugerido: ${data.nombre} (código de barras)`;
-                            sugerenciaInfo.style.color = 'green';
-                        } else {
-                            sugerenciaInfo.textContent = '⚠️ No se encontró información. Puedes ingresar los datos manualmente.';
-                            sugerenciaInfo.style.color = 'gray';
-                        }
-                    })
-                    .catch(() => {
-                        sugerenciaInfo.textContent = '⚠️ Código no encontrado. Puedes ingresar los datos manualmente.';
-                        sugerenciaInfo.style.color = 'gray';
-                    });
-            }, 1500);
-            return;
-        }
-        
-        requestAnimationFrame(processFrame);
-    }
-    
-    // Iniciar cámara
-    navigator.mediaDevices.getUserMedia({ 
-        video: { 
-            facingMode: 'environment',
-            width: { ideal: 640 },
-            height: { ideal: 480 }
-        } 
-    })
-    .then(mediaStream => {
-        stream = mediaStream;
-        video.srcObject = stream;
-        video.play();
-        scanning = true;
-        
-        video.addEventListener('loadedmetadata', () => {
-            processFrame();
-        });
-        
-        modal.show();
-    })
-    .catch(error => {
-        console.error('Error accediendo a la cámara:', error);
-        alert('No se pudo acceder a la cámara. Verifica los permisos o ingresa el código manualmente.');
-    });
-    
-    // Event listeners
-    stopBtn.addEventListener('click', stopScanner);
-    document.getElementById('scannerModal').addEventListener('hidden.bs.modal', stopScanner);
-}
 </script>
 
 <!-- SweetAlert2 para diálogos del escáner Vision -->
@@ -627,42 +491,38 @@ function escanearCodigo() {
 (function() {
   'use strict';
   let streamProducto = null;
-  const videoProducto = document.getElementById('video-producto');
-  const canvasProducto = document.getElementById('canvas-producto');
-  const loadingProducto = document.getElementById('loading-producto');
-  const btnScannerProducto = document.getElementById('btn-scanner-producto');
+  const modal            = document.getElementById('visionScannerModalProducto');
+  const videoProducto    = document.getElementById('video-producto');
+  const canvasProducto   = document.getElementById('canvas-producto');
+  const loadingProducto  = document.getElementById('loading-producto');
+  const btnScannerProducto  = document.getElementById('btn-scanner-producto');
   const btnCapturarProducto = document.getElementById('btn-capturar-producto');
 
-  if (!videoProducto || !canvasProducto || !btnScannerProducto || !btnCapturarProducto) return;
+  if (!modal || !videoProducto || !canvasProducto || !btnScannerProducto || !btnCapturarProducto) return;
 
-  document.getElementById('visionScannerModalProducto').addEventListener('shown.bs.modal', function() {
+  // Arrancar cámara al abrir el modal
+  modal.addEventListener('shown.bs.modal', function() {
     if (!navigator.mediaDevices?.getUserMedia) {
       Swal.fire('Error', 'Tu navegador no soporta acceso a cámara', 'error');
       return;
     }
     navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
-      .then(function(stream) {
-        streamProducto = stream;
-        videoProducto.srcObject = stream;
-      })
-      .catch(function(err) {
-        Swal.fire('Error', 'No se pudo acceder a la cámara: ' + err.message, 'error');
-      });
+      .then(function(stream) { streamProducto = stream; videoProducto.srcObject = stream; })
+      .catch(function(err) { Swal.fire('Error', 'No se pudo acceder a la cámara: ' + err.message, 'error'); });
   });
 
-  document.getElementById('visionScannerModalProducto').addEventListener('hidden.bs.modal', function() {
-    if (streamProducto) {
-      streamProducto.getTracks().forEach(track => track.stop());
-      streamProducto = null;
-    }
-    if (loadingProducto) loadingProducto.style.display = 'none';
-    if (btnCapturarProducto) btnCapturarProducto.disabled = false;
+  // Detener cámara al cerrar el modal
+  modal.addEventListener('hidden.bs.modal', function() {
+    if (streamProducto) { streamProducto.getTracks().forEach(t => t.stop()); streamProducto = null; }
+    loadingProducto.style.display = 'none';
+    btnCapturarProducto.disabled = false;
   });
 
   btnScannerProducto.addEventListener('click', function() {
-    bootstrap.Modal.getOrCreateInstance(document.getElementById('visionScannerModalProducto')).show();
+    bootstrap.Modal.getOrCreateInstance(modal).show();
   });
 
+  // Capturar imagen y enviar a Google Vision API (vision_recognize)
   btnCapturarProducto.addEventListener('click', function() {
     if (!videoProducto.videoWidth || !videoProducto.videoHeight) {
       Swal.fire('Espera', 'El video no está listo. Espera un momento.', 'warning');
@@ -671,67 +531,94 @@ function escanearCodigo() {
     loadingProducto.style.display = 'block';
     btnCapturarProducto.disabled = true;
 
-    canvasProducto.width = videoProducto.videoWidth;
+    canvasProducto.width  = videoProducto.videoWidth;
     canvasProducto.height = videoProducto.videoHeight;
-    const ctx = canvasProducto.getContext('2d');
-    ctx.drawImage(videoProducto, 0, 0);
+    canvasProducto.getContext('2d').drawImage(videoProducto, 0, 0);
     const imageDataURL = canvasProducto.toDataURL('image/jpeg', 0.85);
+    const csrfToken    = document.querySelector('[name=csrfmiddlewaretoken]').value;
 
-    fetch("{% url 'empresa:vision_search_api' %}", {
+    // Llamar a vision_recognize → Google Vision analiza la imagen en su base de datos global
+    fetch("{% url 'empresa:vision_recognize' %}", {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
-      },
-      body: JSON.stringify({ image: imageDataURL, contexto: 'inventario' })
+      headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken },
+      body: JSON.stringify({ image: imageDataURL })
     })
-    .then(r => r.ok ? r.json() : r.json().then(j => { throw new Error(j.error || 'Error servidor'); }))
+    .then(r => r.json())
     .then(function(data) {
       loadingProducto.style.display = 'none';
       btnCapturarProducto.disabled = false;
-      const productos = data.productos || data.products || [];
 
-      if (productos.length === 0) {
-        bootstrap.Modal.getInstance(document.getElementById('visionScannerModalProducto')).hide();
-        const nombreDetectado = (data.debug && data.debug.textos && data.debug.textos[0]) || (data.debug && data.debug.search_terms && data.debug.search_terms[0]) || '';
-        const codigoDetectado = data.codigo_detectado || '';
+      if (!data.ok) {
+        Swal.fire('Error', data.error || 'No se pudo analizar la imagen', 'error');
+        return;
+      }
 
-        const inputNombre = document.getElementById('id_nombre');
-        const inputCodigoBarras = document.getElementById('id_codigo_barras');
-        if (inputNombre && nombreDetectado) inputNombre.value = nombreDetectado;
-        if (inputCodigoBarras && codigoDetectado) inputCodigoBarras.value = codigoDetectado;
+      const logos  = data.results.logos  || [];
+      const labels = data.results.labels || [];
+      const texts  = data.results.texts  || [];
 
-        Swal.fire({
-          toast: true,
-          position: 'top-end',
-          icon: 'success',
-          title: 'Producto nuevo detectado',
-          text: 'Completa los campos restantes',
-          showConfirmButton: false,
-          timer: 3000
-        });
-      } else if (productos.length === 1) {
-        const p = productos[0];
-        bootstrap.Modal.getInstance(document.getElementById('visionScannerModalProducto')).hide();
-        Swal.fire({
-          title: '⚠️ Producto ya registrado',
-          html: '<div class="text-start"><p><strong>Este producto ya existe:</strong></p><p><strong>Nombre:</strong> ' + p.nombre + '</p><p><strong>Stock:</strong> ' + p.stock + '</p><hr><p class="text-muted small">Si quieres agregar más stock, ve a <strong>Crear Compra</strong></p></div>',
-          icon: 'warning',
-          showCancelButton: true,
-          confirmButtonText: 'Ir a Crear Compra',
-          cancelButtonText: 'Entendido',
-          confirmButtonColor: '#0d6efd'
-        }).then(function(result) {
-          if (result.isConfirmed) {
-            window.location.href = "{% url 'empresa:crear_compra' %}";
-          }
-        });
+      // Nombre: primer logo detectado (marca) o primera label (tipo de objeto)
+      const nombre = logos[0]?.description || labels[0]?.description || '';
+
+      // Código de barras: extraer número de 8–14 dígitos del texto OCR
+      const codigoBarras = (texts.join(' ').match(/\b\d{8,14}\b/) || [])[0] || '';
+
+      // Descripción: primeras 3 labels relevantes unidas
+      const descripcion = labels.slice(0, 3).map(l => l.description).join(', ');
+
+      // Rellenar campos del formulario
+      const inputNombre = document.getElementById('id_nombre');
+      const inputCodigo = document.getElementById('id_codigo_barras');
+      const inputDesc   = document.getElementById('id_descripcion');
+      if (inputNombre && nombre)       inputNombre.value = nombre;
+      if (inputCodigo && codigoBarras) inputCodigo.value = codigoBarras;
+      if (inputDesc   && descripcion)  inputDesc.value   = descripcion;
+
+      // Cerrar el modal de la cámara
+      bootstrap.Modal.getInstance(modal).hide();
+
+      // Si hay código de barras, verificar si el producto ya existe en el inventario
+      if (codigoBarras) {
+        fetch("{% url 'empresa:obtener_info_producto' %}?codigo=" + encodeURIComponent(codigoBarras))
+          .then(r => r.json())
+          .then(function(info) {
+            if (info.id) {
+              // Producto ya registrado — advertir al usuario
+              Swal.fire({
+                title: '⚠️ Producto ya registrado',
+                html: '<p><strong>Este producto ya existe en tu inventario:</strong></p>'
+                    + '<p><strong>' + info.nombre + '</strong> — Stock: ' + info.stock + '</p>'
+                    + '<p class="text-muted small">Si necesitas añadir más unidades, ve a <strong>Crear Compra</strong>.</p>',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonText: 'Ir a Crear Compra',
+                cancelButtonText: 'Continuar de todas formas',
+                confirmButtonColor: '#0d6efd'
+              }).then(function(res) {
+                if (res.isConfirmed) window.location.href = "{% url 'empresa:crear_compra' %}";
+              });
+            } else {
+              Swal.fire({
+                toast: true, position: 'top-end', icon: 'success',
+                title: nombre ? 'Detectado: ' + nombre : 'Producto detectado',
+                text: codigoBarras ? 'Código: ' + codigoBarras : 'Revisa y completa los campos',
+                showConfirmButton: false, timer: 3500, timerProgressBar: true
+              });
+            }
+          })
+          .catch(function() {
+            Swal.fire({ toast: true, position: 'top-end', icon: 'success',
+              title: nombre ? 'Detectado: ' + nombre : 'Producto detectado',
+              showConfirmButton: false, timer: 3000 });
+          });
       } else {
-        let html = '<div class="text-start"><p><strong>Productos similares encontrados:</strong></p><ul>';
-        productos.forEach(function(pr) { html += '<li>' + pr.nombre + ' (Stock: ' + pr.stock + ')</li>'; });
-        html += '</ul><p class="text-muted small">Verifica que no estés duplicando.</p></div>';
-        bootstrap.Modal.getInstance(document.getElementById('visionScannerModalProducto')).hide();
-        Swal.fire({ title: 'Posibles coincidencias', html: html, icon: 'info' });
+        // Sin código de barras — mostrar lo que se detectó
+        Swal.fire({
+          toast: true, position: 'top-end', icon: 'success',
+          title: nombre ? 'Detectado: ' + nombre : 'Imagen analizada',
+          text: 'Revisa y completa los campos del formulario',
+          showConfirmButton: false, timer: 3500, timerProgressBar: true
+        });
       }
     })
     .catch(function(err) {

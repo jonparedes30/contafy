@@ -1,5 +1,4 @@
 from django.http import JsonResponse
-from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
 from django.contrib.auth.decorators import login_required
 from django.utils.decorators import method_decorator
@@ -7,7 +6,6 @@ from django.views import View
 import json
 from empresa.services.ai_comandos_service import procesar_comando_ia
 
-@method_decorator(csrf_exempt, name='dispatch')
 @method_decorator(login_required, name='dispatch')
 class AIComandosView(View):
     """Vista para procesar comandos de IA por texto natural"""
@@ -36,7 +34,6 @@ class AIComandosView(View):
         except Exception as e:
             return JsonResponse({'error': f'Error procesando comando: {str(e)}'})
 
-@csrf_exempt
 @require_http_methods(["POST"])
 @login_required
 def procesar_comando_rapido(request):

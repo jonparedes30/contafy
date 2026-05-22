@@ -358,6 +358,7 @@ h6 {
 /* --- ESCÁNER UNIFICADO (Inventario, Compras, Ventas) --- */
 :root {
     --scanner-accent: #0ea5e9;
+    --scanner-accent-hover: #0284c7;
 }
 
 /* Forzar visibilidad de los botones de escáner IA en todas las vistas */
@@ -365,11 +366,6 @@ h6 {
     display: inline-block !important;
     visibility: visible !important;
     opacity: 1 !important;
-}
-    --scanner-accent-hover: #0284c7;
-}
-
-.btn-scanner-unified {
     background: linear-gradient(135deg, var(--scanner-accent) 0%, #06b6d4 100%);
     border: none;
     font-weight: 600;
@@ -411,6 +407,15 @@ h6 {
 
 .form-page-card-header.form-page-card-header-success {
     background: linear-gradient(135deg, var(--success-color, #10b981) 0%, #059669 100%);
+}
+
+.form-page-card-header.form-page-card-header-danger {
+    background: linear-gradient(135deg, var(--danger-color, #ef4444) 0%, #dc2626 100%);
+}
+
+.form-page-card-header.form-page-card-header-warning {
+    background: linear-gradient(135deg, var(--warning-color, #f59e0b) 0%, #d97706 100%);
+    color: #1a1a1a;
 }
 
 .form-page-card-header i {

@@ -297,7 +297,6 @@ def eliminar_compra(request, compra_id):
 # ESCÁNER VISION - API UNIFICADA para Inventario, Compras y Ventas
 # ============================================================================
 from django.http import JsonResponse
-from django.views.decorators.csrf import csrf_exempt
 import requests
 from django.conf import settings
 import time
@@ -309,7 +308,6 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-@csrf_exempt
 @login_required
 def vision_search_api(request):
     """

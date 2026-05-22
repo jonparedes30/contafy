@@ -4,7 +4,6 @@ from django.http import JsonResponse
 from django.contrib import messages
 from django.db.models import Sum, Q
 from django.db import transaction
-from django.views.decorators.csrf import csrf_exempt
 from decimal import Decimal
 from datetime import date, timedelta
 from empresa.models import CuentaPorCobrar, CuentaPorPagar, PagoCuentaPorCobrar, PagoCuentaPorPagar
@@ -61,7 +60,6 @@ def gestion_deudas(request):
         }, status=500)
 
 @login_required
-@csrf_exempt
 def registrar_pago_cobrar(request):
     """Registrar pago recibido de cuenta por cobrar"""
     if request.method == 'POST':
@@ -102,7 +100,6 @@ def registrar_pago_cobrar(request):
     return JsonResponse({'success': False, 'error': 'Método no permitido'})
 
 @login_required
-@csrf_exempt
 def registrar_pago_pagar(request):
     """Registrar pago realizado de cuenta por pagar"""
     if request.method == 'POST':

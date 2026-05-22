@@ -1,0 +1,32 @@
+{% extends 'empresa/base_auth.html' %}
+
+{% block title %}Pago exitoso — Contafy{% endblock %}
+
+{% block content %}
+<div class="min-vh-100 d-flex align-items-center justify-content-center bg-light py-5">
+  <div class="text-center px-3" style="max-width:520px">
+    <div class="mb-4">
+      <div style="width:80px;height:80px;background:rgba(16,185,129,.12);border-radius:50%;display:inline-flex;align-items:center;justify-content:center;">
+        <i class="bi bi-check-circle-fill text-success" style="font-size:2.5rem"></i>
+      </div>
+    </div>
+    <h2 class="fw-800 mb-2" style="color:#0f172a">¡Pago confirmado!</h2>
+    <p class="text-muted mb-4">
+      Tu suscripción ha sido activada correctamente. Ahora crea tu cuenta para comenzar a usar Contafy.
+    </p>
+    {% if session_id %}
+    <p class="text-muted" style="font-size:.8rem">
+      Referencia: <code>{{ session_id }}</code>
+    </p>
+    {% endif %}
+    <div class="d-flex flex-column gap-3 mt-4">
+      <a href="{% url 'empresa:registro' %}" class="btn btn-primary btn-lg">
+        <i class="bi bi-person-plus me-2"></i>Crear mi cuenta
+      </a>
+      <a href="{% url 'empresa:landing' %}" class="btn btn-outline-secondary">
+        Volver al inicio
+      </a>
+    </div>
+  </div>
+</div>
+{% endblock %}

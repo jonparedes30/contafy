@@ -1,15 +1,32 @@
 {% extends 'empresa/base_auth.html' %}
 {% load static %}
-{% block title %}Crear Cuenta - CONTAFY{% endblock %}
+{% block title %}{% if modo_demo %}Crear Cuenta Demo — CONTAFY{% else %}Crear Cuenta - CONTAFY{% endif %}{% endblock %}
 
 {% block content %}
 <div class="container mt-4">
   <div class="row justify-content-center">
     <div class="col-lg-8">
+
+      {% if modo_demo %}
+      <div class="alert alert-info border-0 mb-4" style="background:linear-gradient(135deg,#eff6ff,#dbeafe);border-left:4px solid #3b82f6 !important">
+        <div class="d-flex align-items-center gap-2">
+          <i class="bi bi-clock fs-4 text-primary"></i>
+          <div>
+            <strong>Cuenta Demo Gratuita</strong> — 7 días sin compromiso, sin tarjeta de crédito.<br>
+            <small class="text-muted">Podrás explorar todas las funciones del sistema. Los datos se borran al expirar.</small>
+          </div>
+        </div>
+      </div>
+      {% endif %}
+
       <div class="card shadow">
-        <div class="card-header text-white text-center py-4" style="background: linear-gradient(135deg, #27ae60 0%, #2c3e50 100%);">
-          <h2 class="mb-0"><i class="fas fa-user-plus"></i> Crear Cuenta en CONTAFY</h2>
-          <p class="mb-0 mt-2">Gestiona tu negocio de forma inteligente</p>
+        <div class="card-header text-white text-center py-4"
+             style="background: linear-gradient(135deg, {% if modo_demo %}#3b82f6 0%, #1e3a5f{% else %}#27ae60 0%, #2c3e50{% endif %} 100%);">
+          <h2 class="mb-0">
+            <i class="fas {% if modo_demo %}fa-clock{% else %}fa-user-plus{% endif %}"></i>
+            {% if modo_demo %}Crear Cuenta Demo{% else %}Crear Cuenta en CONTAFY{% endif %}
+          </h2>
+          <p class="mb-0 mt-2">{% if modo_demo %}7 días gratis para explorar el sistema{% else %}Gestiona tu negocio de forma inteligente{% endif %}</p>
         </div>
         
         <div class="card-body p-4">
@@ -36,19 +53,23 @@
 
           <form method="post" novalidate>
             {% csrf_token %}
-            
-            <!-- CÓDIGO DE INVITACIÓN -->
+            <!-- modo_demo flag -->
+            <input type="hidden" name="modo_demo" value="{% if modo_demo %}1{% else %}0{% endif %}">
+
+            {% if not modo_demo %}
+            <!-- CÓDIGO DE INVITACIÓN (solo flujo normal/beta) -->
             <div class="mb-4">
               <h5 class="text-warning border-bottom pb-2 mb-3">
                 <i class="fas fa-key"></i> Código de Invitación
               </h5>
               <div class="mb-3">
                 <label for="codigo_invitacion" class="form-label">Código de Invitación <span class="text-danger">*</span></label>
-                <input type="text" class="form-control" id="codigo_invitacion" name="codigo_invitacion" 
+                <input type="text" class="form-control" id="codigo_invitacion" name="codigo_invitacion"
                        placeholder="Ej: CONTAFY-ABC123XYZ" required value="{{ request.POST.codigo_invitacion|default:'' }}">
                 <small class="text-muted">Ingresa el código que recibiste por email o WhatsApp</small>
               </div>
             </div>
+            {% endif %}
 
             <!-- SECCIÓN 1: DATOS PERSONALES -->
             <div class="mb-4">
@@ -285,8 +306,9 @@
 
             <!-- Botón de envío -->
             <div class="d-grid">
-              <button type="submit" class="btn btn-primary btn-lg">
-                <i class="fas fa-rocket"></i> Crear Mi Cuenta
+              <button type="submit" class="btn btn-{% if modo_demo %}primary{% else %}success{% endif %} btn-lg">
+                <i class="fas fa-{% if modo_demo %}clock{% else %}rocket{% endif %}"></i>
+                {% if modo_demo %}Crear Mi Cuenta Demo (7 días gratis){% else %}Crear Mi Cuenta{% endif %}
               </button>
             </div>
             
