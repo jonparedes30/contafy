@@ -7,6 +7,7 @@ from empresa.forms import CapitalForm
 from empresa.decorators import require_power
 from django.contrib import messages
 from django.db.models import Sum
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 
 @login_required
 @require_power('puede_gestionar_cuentas')
@@ -43,8 +44,19 @@ def listar_capital(request):
     total_retiros = movimientos_capital.filter(tipo='retiro').aggregate(total=Sum('monto'))['total'] or 0
     capital_neto = total_aportes - total_retiros
     
+    # Paginación: 15 registros por página
+    paginator = Paginator(movimientos_capital, 15)
+    page_number = request.GET.get('page')
+    try:
+        page_obj = paginator.page(page_number)
+    except PageNotAnInteger:
+        page_obj = paginator.page(1)
+    except EmptyPage:
+        page_obj = paginator.page(paginator.num_pages)
+
     contexto = {
-        'movimientos_capital': movimientos_capital,
+        'page_obj': page_obj,
+        'movimientos_capital': page_obj.object_list,
         'total_aportes': total_aportes,
         'total_retiros': total_retiros,
         'capital_neto': capital_neto,

@@ -4,6 +4,7 @@ from django.contrib import messages
 from django.db import transaction
 from empresa.models import TipoServicio, MaterialServicio, Empresa
 from empresa.decorators import empresa_required
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 
 @login_required
 @empresa_required
@@ -13,9 +14,20 @@ def listar_tipos_servicios(request):
         empresa=request.user.empresa,
         activo=True
     ).order_by('nombre')
-    
+
+    # Paginación: 15 registros por página
+    paginator = Paginator(servicios, 15)
+    page_number = request.GET.get('page')
+    try:
+        page_obj = paginator.page(page_number)
+    except PageNotAnInteger:
+        page_obj = paginator.page(1)
+    except EmptyPage:
+        page_obj = paginator.page(paginator.num_pages)
+
     context = {
-        'servicios': servicios,
+        'servicios': page_obj.object_list,
+        'page_obj': page_obj,
         'total_servicios': servicios.count(),
     }
     return render(request, 'empresa/servicios/listar_servicios.html', context)

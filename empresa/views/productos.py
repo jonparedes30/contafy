@@ -14,6 +14,7 @@ import json
 import uuid
 import traceback
 import logging
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 
 logger = logging.getLogger(__name__)
 
@@ -166,22 +167,33 @@ def listar_productos(request):
     from empresa.models import CategoriaProducto
     categorias = CategoriaProducto.objects.filter(empresa=empresa, activa=True).order_by('nombre')
     
-    # Calcular estadísticas (usar Decimal para evitar errores de precisión)
+    # Estadísticas (sobre el queryset completo, antes de paginar)
     from empresa.utils.money import to_decimal, quantize_currency
     total_inventario = sum((to_decimal(p.stock) * to_decimal(p.precio_unitario)) for p in productos)
     total_inventario = quantize_currency(total_inventario)
     total_pvp = sum((to_decimal(p.stock) * to_decimal(p.pvp or 0)) for p in productos)
     total_pvp = quantize_currency(total_pvp)
     productos_bajo_stock = productos.filter(stock__lte=10).count()
-    
+
+    # Paginación: 15 registros por página
+    paginator = Paginator(productos, 15)
+    page_number = request.GET.get('page')
+    try:
+        page_obj = paginator.page(page_number)
+    except PageNotAnInteger:
+        page_obj = paginator.page(1)
+    except EmptyPage:
+        page_obj = paginator.page(paginator.num_pages)
+
     context = {
-        'productos': productos,
+        'productos': page_obj.object_list,
+        'page_obj': page_obj,
         'categorias': categorias,
         'total_inventario': total_inventario,
         'total_pvp': total_pvp,
         'productos_bajo_stock': productos_bajo_stock,
     }
-    
+
     return render(request, 'empresa/listar_productos_final.html', context)
 
 

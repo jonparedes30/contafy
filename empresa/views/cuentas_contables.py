@@ -4,6 +4,7 @@ from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.db.models import Sum
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 
 from empresa.forms import CuentaContableForm
 from empresa.models import CuentaContable, MovimientoContable
@@ -202,6 +203,18 @@ def listar_cuentas_contables(request):
         cuentas.append(CuentaVirtual('Caja (Capital)', 'activo', capital_neto))
         cuentas.append(CuentaVirtual('Capital Social', 'capital', capital_neto))
     
+    # Paginación: 15 registros por página
+    paginator = Paginator(cuentas, 15)
+    page_number = request.GET.get('page')
+    try:
+        page_obj = paginator.page(page_number)
+    except PageNotAnInteger:
+        page_obj = paginator.page(1)
+    except EmptyPage:
+        page_obj = paginator.page(paginator.num_pages)
+
     return render(request, 'empresa/listar_cuentas_contables.html', {
-        'cuentas': cuentas
+        'cuentas': page_obj.object_list,
+        'page_obj': page_obj,
+        'total_cuentas': len(cuentas),
     })

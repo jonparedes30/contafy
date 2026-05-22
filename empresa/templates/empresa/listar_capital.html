@@ -6,7 +6,7 @@
     <h2 class="mb-4 text-center text-success">Historial de Capital Social</h2>
 
     {% if movimientos_capital %}
-        <table class="table table-bordered table-hover">
+        <table class="table contafy-table align-middle table-hover">
             <thead class="table-success">
                 <tr>
                     <th>Fecha</th>
@@ -26,6 +26,8 @@
                 {% endfor %}
             </tbody>
         </table>
+        <!-- Paginación -->
+        {% include 'empresa/components/pagination.html' %}
         
         <!-- Estadísticas -->
         <div class="row mt-4">

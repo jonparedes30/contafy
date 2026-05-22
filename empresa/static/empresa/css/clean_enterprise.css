@@ -356,26 +356,27 @@ h6 {
 }
 
 /* --- ESCÁNER UNIFICADO (Inventario, Compras, Ventas) --- */
-:root {
-    --scanner-accent: #0ea5e9;
-    --scanner-accent-hover: #0284c7;
-}
 
 /* Forzar visibilidad de los botones de escáner IA en todas las vistas */
 .btn-scanner-unified {
-    display: inline-block !important;
+    display: inline-flex !important;
+    align-items: center;
     visibility: visible !important;
     opacity: 1 !important;
-    background: linear-gradient(135deg, var(--scanner-accent) 0%, #06b6d4 100%);
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%) !important;
     border: none;
-    font-weight: 600;
+    font-weight: 700;
+    color: #ffffff !important;
+    letter-spacing: 0.02em;
+    box-shadow: 0 2px 8px rgba(16, 185, 129, 0.35);
     transition: transform 0.15s, box-shadow 0.15s;
 }
 
 .btn-scanner-unified:hover {
-    background: linear-gradient(135deg, var(--scanner-accent-hover) 0%, #0891b2 100%);
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(14, 165, 233, 0.35);
+    background: linear-gradient(135deg, #059669 0%, #047857 100%) !important;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(5, 150, 105, 0.45);
+    color: #ffffff !important;
 }
 
 .scanner-modal-unified .modal-header {

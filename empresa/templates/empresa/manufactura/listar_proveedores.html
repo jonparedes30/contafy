@@ -23,7 +23,7 @@
                 <div class="card-body">
                     {% if proveedores %}
                         <div class="table-responsive">
-                            <table class="table table-striped">
+                            <table class="table contafy-table table-hover align-middle">
                                 <thead>
                                     <tr>
                                         <th>Nombre</th>
@@ -70,6 +70,8 @@
                         </div>
                     {% endif %}
                 </div>
+                <!-- Paginación -->
+                {% include 'empresa/components/pagination.html' %}
             </div>
         </div>
     </div>

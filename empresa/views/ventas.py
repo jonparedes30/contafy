@@ -254,7 +254,9 @@ def listar_ventas(request):
         ventas = ventas.filter(
             Q(producto__nombre__icontains=buscar) |
             Q(producto__codigo__icontains=buscar) |
-            Q(cliente__icontains=buscar)
+            Q(cliente_nombre__icontains=buscar) |
+            Q(cliente_fk__nombre__icontains=buscar) |
+            Q(cliente_fk__email__icontains=buscar)
         )
     if fecha_desde:
         ventas = ventas.filter(fecha__date__gte=fecha_desde)

@@ -10,6 +10,7 @@ from django.db import transaction
 from django.contrib import messages
 from django.db.models import Sum, Avg, Count, Q
 from django import forms
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 
 class VentaManufacturaForm(forms.Form):
     cliente_fk = forms.ModelChoiceField(
@@ -296,13 +297,24 @@ def listar_ventas_manufactura(request):
     if fecha_hasta:
         ventas = ventas.filter(fecha__date__lte=fecha_hasta)
 
-    # Estadísticas
+    # Estadísticas (sobre el total, no solo la página)
     total_ventas = ventas.aggregate(total=Sum('monto'))['total'] or 0
     total_transacciones = ventas.count()
     promedio_venta = ventas.aggregate(promedio=Avg('monto'))['promedio'] or 0
 
+    # Paginación: 15 registros por página
+    paginator = Paginator(ventas, 15)
+    page_number = request.GET.get('page')
+    try:
+        page_obj = paginator.page(page_number)
+    except PageNotAnInteger:
+        page_obj = paginator.page(1)
+    except EmptyPage:
+        page_obj = paginator.page(paginator.num_pages)
+
     contexto = {
-        'ventas': ventas,
+        'page_obj': page_obj,
+        'ventas': page_obj.object_list,
         'total_ventas': total_ventas,
         'total_transacciones': total_transacciones,
         'promedio_venta': promedio_venta,

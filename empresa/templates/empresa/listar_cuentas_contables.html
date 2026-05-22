@@ -25,7 +25,7 @@
         <div class="card shadow">
             <div class="card-body">
                 <div class="table-responsive">
-                    <table class="table table-striped table-hover">
+                    <table class="table contafy-table table-hover align-middle">
                         <thead class="table-dark">
                             <tr>
                                 <th><i class="bi bi-hash"></i> ID</th>
@@ -83,6 +83,8 @@
                 </div>
             </div>
         </div>
+        <!-- Paginación -->
+        {% include 'empresa/components/pagination.html' %}
 
         <!-- Resumen -->
         <div class="row mt-4">
@@ -90,7 +92,7 @@
                 <div class="card bg-primary text-white">
                     <div class="card-body text-center">
                         <h5><i class="bi bi-list-ul"></i> Total Cuentas</h5>
-                        <h3>{{ cuentas.count }}</h3>
+                        <h3>{{ total_cuentas }}</h3>
                     </div>
                 </div>
             </div>

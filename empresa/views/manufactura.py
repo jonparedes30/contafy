@@ -14,6 +14,7 @@ from empresa.models import (
     OrdenProduccion
 )
 from empresa.forms import MateriaPrimaForm, ProductoManufacturadoForm
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 
 
 @login_required
@@ -63,15 +64,26 @@ def listar_materias_primas(request):
     
     empresa = request.user.empresa
     materias_primas = MateriaPrima.objects.filter(empresa=empresa).order_by('nombre')
-    
+
+    # Paginación: 15 registros por página
+    paginator = Paginator(materias_primas, 15)
+    page_number = request.GET.get('page')
+    try:
+        page_obj = paginator.page(page_number)
+    except PageNotAnInteger:
+        page_obj = paginator.page(1)
+    except EmptyPage:
+        page_obj = paginator.page(paginator.num_pages)
+
     # Detectar si es móvil
     user_agent = request.META.get('HTTP_USER_AGENT', '').lower()
     is_mobile = any(device in user_agent for device in ['mobile', 'android', 'iphone', 'ipad'])
-    
+
     template = 'empresa/manufactura/listar_materias_primas_mobile.html' if is_mobile else 'empresa/manufactura/listar_materias_primas.html'
-    
+
     return render(request, template, {
-        'materias_primas': materias_primas
+        'materias_primas': page_obj.object_list,
+        'page_obj': page_obj,
     })
 
 
@@ -134,9 +146,20 @@ def listar_productos_manufacturados(request):
     """Lista todos los productos manufacturados"""
     empresa = request.user.empresa
     productos = ProductoManufacturado.objects.filter(empresa=empresa).order_by('nombre')
-    
+
+    # Paginación: 15 registros por página
+    paginator = Paginator(productos, 15)
+    page_number = request.GET.get('page')
+    try:
+        page_obj = paginator.page(page_number)
+    except PageNotAnInteger:
+        page_obj = paginator.page(1)
+    except EmptyPage:
+        page_obj = paginator.page(paginator.num_pages)
+
     return render(request, 'empresa/manufactura/listar_productos.html', {
-        'productos': productos
+        'productos': page_obj.object_list,
+        'page_obj': page_obj,
     })
 
 
@@ -203,9 +226,20 @@ def listar_ordenes_produccion(request):
     """Lista todas las órdenes de producción"""
     empresa = request.user.empresa
     ordenes = OrdenProduccion.objects.filter(empresa=empresa).order_by('-creado_en')
-    
+
+    # Paginación: 15 registros por página
+    paginator = Paginator(ordenes, 15)
+    page_number = request.GET.get('page')
+    try:
+        page_obj = paginator.page(page_number)
+    except PageNotAnInteger:
+        page_obj = paginator.page(1)
+    except EmptyPage:
+        page_obj = paginator.page(paginator.num_pages)
+
     return render(request, 'empresa/manufactura/listar_ordenes.html', {
-        'ordenes': ordenes
+        'ordenes': page_obj.object_list,
+        'page_obj': page_obj,
     })
 
 
@@ -528,7 +562,18 @@ def listar_proveedores(request):
     """Lista todos los proveedores"""
     empresa = request.user.empresa
     proveedores = Proveedor.objects.filter(empresa=empresa, activo=True).order_by('nombre')
-    
+
+    # Paginación: 15 registros por página
+    paginator = Paginator(proveedores, 15)
+    page_number = request.GET.get('page')
+    try:
+        page_obj = paginator.page(page_number)
+    except PageNotAnInteger:
+        page_obj = paginator.page(1)
+    except EmptyPage:
+        page_obj = paginator.page(paginator.num_pages)
+
     return render(request, 'empresa/manufactura/listar_proveedores.html', {
-        'proveedores': proveedores
+        'proveedores': page_obj.object_list,
+        'page_obj': page_obj,
     })

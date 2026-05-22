@@ -1157,7 +1157,7 @@
             cliente_nombre: document.querySelector('[name="cliente_nombre"]')?.value || '',
             incluir_iva: checkboxIva.checked,
             tipo_pago: tipoPagoSelect.value,
-            monto_recibido: parseFloat(montoRecibidoSimple?.value || 0)
+            monto_recibido: parseFloat(posMontoRecibido?.value || montoRecibidoSimple?.value || 0)
         };
 
         fetch('{% url "empresa:crear_venta_multiple" %}', {
@@ -1168,7 +1168,15 @@
             },
             body: JSON.stringify(ventaData)
         })
-            .then(response => response.json())
+            .then(response => {
+                if (!response.ok) {
+                    return response.text().then(text => {
+                        console.error('Server error ' + response.status + ':', text.substring(0, 500));
+                        throw new Error('HTTP ' + response.status + ' - revisa la consola (F12) para ver el error del servidor.');
+                    });
+                }
+                return response.json();
+            })
             .then(data => {
                 if (data.success) {
                     // Limpiar tabla local de productos múltiples
@@ -1187,8 +1195,8 @@
                 }
             })
             .catch(error => {
-                console.error('Error:', error);
-                alert('Error procesando la venta');
+                console.error('Error procesando venta:', error);
+                alert('Error: ' + error.message);
             });
     }
 
@@ -1215,10 +1223,13 @@
             tr.classList.add('vision-highlight-anim');
             setTimeout(()=> tr.classList.remove('vision-highlight-anim'), 900);
         });
-        // update totals from existing inputs
-        const subtotal = parseFloat(inputMontoNeto.value) || 0;
-        const iva = parseFloat(inputIva.value) || 0;
-        const total = parseFloat(inputTotal.value) || 0;
+        // calculate totals directly from cart items (not from hidden inputs, which may not be updated yet)
+        let subtotal = 0;
+        productosMultiple.forEach(p => { subtotal += p.subtotal; });
+        const incluirIva = !!(checkboxIva && checkboxIva.checked);
+        const tasaIva = parseFloat(inputTasaIva ? inputTasaIva.value : 0) || 15;
+        const iva = incluirIva ? subtotal * (tasaIva / 100) : 0;
+        const total = subtotal + iva;
         const posSubtotal = document.getElementById('pos-subtotal');
         const posIva = document.getElementById('pos-iva');
         const posTotal = document.getElementById('pos-total');
@@ -1546,36 +1557,66 @@
         if (!posScanDropdown || !posScanInput) return;
         if (!list || list.length === 0) { posScanDropdown.style.display = 'none'; return; }
         let html = '';
-        list.forEach(p => {
-            const code = (p.codigo || p.codigo_barras || p.barcode) ? ` <small class="text-muted">(${p.codigo||p.codigo_barras||p.barcode})</small>` : '';
-            const priceVal = (p.precio_venta || p.precio_unitario || p.precio || p.precio_costo) || 0;
-            const price = priceVal ? ` - $${(Number(priceVal) || 0).toFixed(2)}` : '';
-            const name = p.nombre || p.nombre_comercial || p.descripcion || p.marca || ('Producto ' + (p.id || ''));
-            html += `<a href="#" class="dropdown-item" data-id="${p.id}">${name}${code}${price}</a>`;
+        list.forEach((p, idx) => {
+            const codeVal = p.codigo || p.codigo_barras || p.barcode || '';
+            const codeBadge = codeVal
+                ? `<span style="background:#e0f2fe;color:#0369a1;font-size:0.7rem;font-weight:600;padding:1px 7px;border-radius:20px;letter-spacing:0.04em;">${codeVal}</span>`
+                : '';
+            const priceVal = parseFloat(p.precio_venta || p.precio_unitario || p.precio || p.precio_costo || 0) || 0;
+            const priceHtml = priceVal
+                ? `<span style="color:#059669;font-weight:700;font-size:0.95rem;">$${priceVal.toFixed(2)}</span>`
+                : '';
+            const name = p.nombre || p.nombre_comercial || p.descripcion || ('Producto ' + (p.id || ''));
+            const stockVal = p.stock !== undefined && p.stock !== null ? parseInt(p.stock) : null;
+            const stockHtml = stockVal !== null
+                ? `<span style="font-size:0.7rem;color:${stockVal > 5 ? '#64748b' : stockVal > 0 ? '#d97706' : '#ef4444'};">📦 ${stockVal}</span>`
+                : '';
+            html += `
+                <a href="#" class="pos-suggestion-item" data-id="${p.id}" data-idx="${idx}"
+                   style="display:flex;align-items:center;gap:10px;padding:9px 14px;text-decoration:none;color:#0f172a;border-bottom:1px solid #f1f5f9;transition:background 0.12s;">
+                    <span style="width:32px;height:32px;background:linear-gradient(135deg,#10b981,#059669);border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                        <svg width="15" height="15" fill="white" viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/></svg>
+                    </span>
+                    <div style="flex:1;min-width:0;">
+                        <div style="font-weight:600;font-size:0.875rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${name}</div>
+                        <div style="display:flex;align-items:center;gap:6px;margin-top:2px;">${codeBadge}${stockHtml}</div>
+                    </div>
+                    ${priceHtml}
+                </a>`;
         });
-        posScanDropdown.innerHTML = html;
+        posScanDropdown.innerHTML = `<div style="padding:6px 14px 4px;font-size:0.7rem;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:0.08em;">${list.length} resultado${list.length!==1?'s':''}</div>` + html;
 
         // Position dropdown aligned to input (use viewport coords to avoid clipping)
         try {
             const rect = posScanInput.getBoundingClientRect();
             posScanDropdown.style.position = 'fixed';
             posScanDropdown.style.left = rect.left + 'px';
-            posScanDropdown.style.top = rect.bottom + 'px';
+            posScanDropdown.style.top = rect.bottom + 4 + 'px';
             posScanDropdown.style.width = rect.width + 'px';
+            posScanDropdown.style.maxHeight = '320px';
+            posScanDropdown.style.overflowY = 'auto';
+            posScanDropdown.style.overflowX = 'hidden';
             posScanDropdown.style.zIndex = 2000;
+            posScanDropdown.style.borderRadius = '10px';
+            posScanDropdown.style.boxShadow = '0 8px 24px rgba(0,0,0,0.12), 0 2px 8px rgba(0,0,0,0.08)';
+            posScanDropdown.style.border = '1px solid #e2e8f0';
+            posScanDropdown.style.background = '#ffffff';
             posScanDropdown.style.display = 'block';
         } catch(e) {
             posScanDropdown.style.display = 'block';
         }
 
-        // attach click handlers
-        posScanDropdown.querySelectorAll('.dropdown-item').forEach(item => {
+        // attach click handlers + hover highlight
+        posScanDropdown.querySelectorAll('.pos-suggestion-item').forEach(item => {
+            item.addEventListener('mouseover', function(){ this.style.background = '#f0fdf4'; });
+            item.addEventListener('mouseleave', function(){ this.style.background = ''; });
             item.addEventListener('click', function(e){
                 e.preventDefault();
                 const id = this.dataset.id;
                 const prod = productos[id] || null;
                 if (prod) addProductToPosCart(prod, 1);
                 posScanDropdown.style.display = 'none';
+                posScanInput.value = '';
                 try{ posScanInput.focus(); }catch(e){}
             });
         });
@@ -1637,8 +1678,18 @@
     // monto recibido input handling (POS)
     const posMontoRecibido = document.getElementById('pos-monto-recibido');
     const idMontoHidden = document.getElementById('id_monto_recibido_hidden');
+    function getPosTotal() {
+        // Read total from #pos-total display (always correct) or fall back to
+        // inputTotal hidden field. inputTotal may be null if form.monto renders
+        // as id_monto instead of id_monto_total.
+        const posTotalEl = document.getElementById('pos-total');
+        if (posTotalEl) {
+            return parseFloat(posTotalEl.textContent.replace('$', '').trim()) || 0;
+        }
+        return parseFloat((inputTotal && inputTotal.value) || 0) || 0;
+    }
     function updatePosChange(){
-        const total = parseFloat(inputTotal.value) || 0;
+        const total = getPosTotal();
         const recibido = parseFloat(posMontoRecibido.value) || 0;
         const cambio = recibido - total;
         const posChange = document.getElementById('pos-change');
