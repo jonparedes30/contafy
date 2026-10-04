@@ -192,6 +192,9 @@ def crear_venta(request):
     context = {
         'form': form, 
         'productos_json': productos_json,
+        # JSON seguro para incrustar en <script>: escapa "<" para que un nombre
+        # con "</script>" no pueda cerrar la etiqueta.
+        'productos_json_js': json.dumps(productos_json).replace('<', '\\u003c'),
         'servicios': servicios,
         'es_servicios': empresa.categoria == 'servicios'
     }

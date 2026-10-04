@@ -82,8 +82,11 @@
                                 <div>Subtotal:</div>
                                 <div id="pos-subtotal">$0.00</div>
                             </div>
-                            <div class="d-flex justify-content-between mb-2">
-                                <div>IVA:</div>
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <div class="form-check form-switch mb-0">
+                                    <input class="form-check-input" type="checkbox" role="switch" id="pos-incluir-iva">
+                                    <label class="form-check-label" for="pos-incluir-iva">IVA 15%</label>
+                                </div>
                                 <div id="pos-iva">$0.00</div>
                             </div>
                             <hr>
@@ -449,7 +452,7 @@
 
 <script>
     const productos = {};
-    for (const p of {{ productos_json | safe }}) {
+    for (const p of {{ productos_json_js|safe }}) {
         productos[p.id] = p;
     }
 
@@ -1006,21 +1009,24 @@
         calcularTotalMultiple();
     }
 
+    // Igual que el servidor: IVA redondeado (mitad hacia arriba) por cada línea y luego sumado.
+    function redondear2(x) { return Math.round((x + Number.EPSILON) * 100) / 100; }
+    function ivaPorLineas(lineas, tasa) {
+        return lineas.reduce((acc, p) => acc + redondear2(redondear2(p.subtotal) * tasa / 100), 0);
+    }
+
     function calcularTotalMultiple() {
-        const incluirIva = checkboxIva.checked;
-        const tasaIva = parseFloat(inputTasaIva.value) || 15;
+        // En modo POS los campos del formulario clásico no existen: todo con null-check.
+        const incluirIva = !!(checkboxIva && checkboxIva.checked);
+        const tasaIva = parseFloat(inputTasaIva ? inputTasaIva.value : 0) || 15;
 
         let subtotal = 0;
         productosMultiple.forEach(producto => {
             subtotal += producto.subtotal;
         });
 
-        const iva = incluirIva ? subtotal * (tasaIva / 100) : 0;
+        const iva = incluirIva ? ivaPorLineas(productosMultiple, tasaIva) : 0;
         const total = subtotal + iva;
-
-        inputMontoNeto.value = subtotal.toFixed(2);
-        inputIva.value = iva.toFixed(2);
-        inputTotal.value = total.toFixed(2);
 
         // Actualizar calculadora de cambio
         if (tipoPagoSelect && tipoPagoSelect.value === 'contado') {
@@ -1115,13 +1121,23 @@
         }
     });
 
+    let ventaEnCurso = false;
     function procesarVentaMultiple() {
+        // Evita registrar la misma venta dos veces por doble clic.
+        if (ventaEnCurso) return;
+        ventaEnCurso = true;
+        const btnCobrar = document.getElementById('pos-btn-cobrar');
+        if (btnCobrar) { btnCobrar.disabled = true; btnCobrar.dataset.texto = btnCobrar.innerHTML; btnCobrar.innerHTML = 'Procesando…'; }
+        const liberar = () => {
+            ventaEnCurso = false;
+            if (btnCobrar) { btnCobrar.disabled = false; btnCobrar.innerHTML = btnCobrar.dataset.texto || '💰 Cobrar'; }
+        };
         const ventaData = {
             productos: productosMultiple,
             cliente_nombre: document.querySelector('[name="cliente_nombre"]')?.value || '',
-            incluir_iva: checkboxIva.checked,
-            tipo_pago: tipoPagoSelect.value,
-            monto_recibido: parseFloat(posMontoRecibido?.value || montoRecibidoSimple?.value || 0)
+            incluir_iva: !!(checkboxIva && checkboxIva.checked),
+            tipo_pago: tipoPagoSelect ? tipoPagoSelect.value : 'contado',
+            monto_recibido: (posMontoRecibido?.value || montoRecibidoSimple?.value || '0')
         };
 
         fetch('{% url "empresa:crear_venta_multiple" %}', {
@@ -1143,25 +1159,45 @@
             })
             .then(data => {
                 if (data.success) {
-                    // Limpiar tabla local de productos múltiples
+                    // Limpiar carrito y totales para la siguiente venta
                     productosMultiple = [];
-                    actualizarTablaMultiple();
-                    calcularTotalMultiple();
+                    try { actualizarTablaMultiple(); } catch (e) { console.warn(e); }
+                    try { calcularTotalMultiple(); } catch (e) { console.warn(e); }
+                    try { renderPosCart(); } catch (e) { console.warn(e); }
+                    if (posMontoRecibido) posMontoRecibido.value = '';
 
-                    // Mostrar confirmación
-                    alert('Venta procesada exitosamente. Total: $' + (data.total || 0));
-
-                    // listo para siguiente venta (no redirigir)
+                    const total = Number(data.total || 0).toFixed(2);
+                    const cambio = Number(data.cambio || 0).toFixed(2);
+                    const detalle = data.cambio > 0 ? `Total $${total} · Cambio $${cambio}` : `Total $${total}`;
+                    if (window.Swal) {
+                        Swal.fire({ icon: 'success', title: 'Venta registrada', text: detalle, timer: 2500, showConfirmButton: false });
+                    } else {
+                        alert('Venta registrada. ' + detalle);
+                    }
                     try{ if (typeof window.playBeep === 'function') window.playBeep(150,1200,0.06); }catch(e){}
                     try{ if (posScanInput) posScanInput.focus(); }catch(e){}
+                } else if (window.Swal) {
+                    Swal.fire({ icon: 'warning', title: 'No se registró la venta', text: data.error || 'Inténtalo de nuevo.' });
                 } else {
-                    alert('Error: ' + (data.error || 'No se pudo procesar la venta'));
+                    alert('No se registró la venta: ' + (data.error || 'Inténtalo de nuevo.'));
                 }
             })
             .catch(error => {
                 console.error('Error procesando venta:', error);
-                alert('Error: ' + error.message);
-            });
+                alert('No se pudo conectar con el servidor. Revisa tu conexión e inténtalo de nuevo.');
+            })
+            .finally(liberar);
+    }
+
+    // El interruptor de IVA del POS controla la casilla del formulario clásico (oculta en modo POS).
+    const posIncluirIva = document.getElementById('pos-incluir-iva');
+    if (posIncluirIva && checkboxIva) {
+        posIncluirIva.checked = checkboxIva.checked;
+        posIncluirIva.addEventListener('change', () => {
+            checkboxIva.checked = posIncluirIva.checked;
+            try { calcularTotalMultiple(); } catch (e) { console.warn(e); }
+            try { renderPosCart(); } catch (e) { console.warn(e); }
+        });
     }
 
     // Render POS cart from productosMultiple
@@ -1192,7 +1228,7 @@
         productosMultiple.forEach(p => { subtotal += p.subtotal; });
         const incluirIva = !!(checkboxIva && checkboxIva.checked);
         const tasaIva = parseFloat(inputTasaIva ? inputTasaIva.value : 0) || 15;
-        const iva = incluirIva ? subtotal * (tasaIva / 100) : 0;
+        const iva = incluirIva ? ivaPorLineas(productosMultiple, tasaIva) : 0;
         const total = subtotal + iva;
         const posSubtotal = document.getElementById('pos-subtotal');
         const posIva = document.getElementById('pos-iva');
@@ -1379,6 +1415,7 @@
                     const matches = all.filter(p =>
                         (p.nombre && p.nombre.toLowerCase().includes(q)) ||
                         (p.codigo && p.codigo.toLowerCase().includes(q)) ||
+                        (p.codigo_barras && String(p.codigo_barras).includes(q)) ||
                         String(p.id) === q
                     ).slice(0,20);
                     if (matches.length > 0) {
@@ -1395,6 +1432,35 @@
     });
 
     // Buscar producto por código (mejorado con API)
+    async function agregarPorCodigoServidor(codigo) {
+        try {
+            const resp = await fetch('{% url "empresa:buscar_codigo_barras" %}?codigo=' + encodeURIComponent(codigo));
+            const data = await resp.json();
+            if (data.encontrado) {
+                const p = productos[data.id] || {
+                    id: data.id, codigo: data.codigo, codigo_barras: data.codigo_barras, nombre: data.nombre,
+                    precio_venta: parseFloat(data.pvp || data.precio_unitario) || 0, stock: data.stock,
+                };
+                productos[p.id] = p;
+                addProductToPosCart(p, 1);
+                return;
+            }
+            const msg = `No hay ningún producto con el código "${codigo}".`;
+            if (window.Swal) {
+                const r = await Swal.fire({ icon: 'info', title: 'Producto no encontrado', text: msg,
+                    showCancelButton: true, confirmButtonText: 'Crear producto', cancelButtonText: 'Cerrar' });
+                if (r.isConfirmed) {
+                    window.location.href = '{% url "empresa:crear_producto" %}?codigo_barras=' + encodeURIComponent(codigo);
+                }
+            } else {
+                alert(msg);
+            }
+        } catch (error) {
+            console.error('Error buscando producto:', error);
+            alert('No se pudo buscar el producto. Revisa tu conexión.');
+        }
+    }
+
     async function buscarProductoPorCodigo(codigo) {
         if (!codigo.trim()) return;
 
@@ -1476,8 +1542,12 @@
                 const query = this.value.trim();
                 if (!query) return;
 
-                // 1) Try exact local match by barcode or id
-                let found = Object.values(productos).find(p => (p.codigo && String(p.codigo).toLowerCase() === query.toLowerCase()) || String(p.id) === query);
+                // 1) Coincidencia exacta: código de barras (lector USB), código interno o id
+                const ql0 = query.toLowerCase();
+                let found = Object.values(productos).find(p =>
+                    (p.codigo_barras && String(p.codigo_barras) === query) ||
+                    (p.codigo && String(p.codigo).toLowerCase() === ql0) ||
+                    String(p.id) === query);
 
                 // 2) Try exact id in selects
                 if (!found && selectProducto) {
@@ -1492,13 +1562,10 @@
                 }
 
                 if (found) {
-                    // add to POS cart (productosMultiple)
                     addProductToPosCart(found, 1);
                 } else {
-                    // fallback: try server-side barcode lookup and prefill/create flow
-                    buscarProductoPorCodigo(query);
-                    // also offer create product flow
-                    try { prefillFromScanVenta(query); } catch(e) {}
+                    // Último recurso: preguntar al servidor (p. ej. producto creado en otra pestaña).
+                    agregarPorCodigoServidor(query);
                 }
 
                 this.value = '';

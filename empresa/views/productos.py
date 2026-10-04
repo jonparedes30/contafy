@@ -121,7 +121,9 @@ def crear_producto(request):
                     
                 return redirect('empresa:home')
     else:
-        form = ProductoForm(empresa=empresa)
+        # El POS y el escáner envían aquí el código no encontrado para crear el producto.
+        inicial = {'codigo_barras': request.GET.get('codigo_barras', '').strip()[:50]}
+        form = ProductoForm(empresa=empresa, initial=inicial)
 
     return render(request, 'empresa/crear_producto.html', {'form': form})
 
