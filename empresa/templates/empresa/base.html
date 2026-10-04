@@ -236,44 +236,45 @@
             <button class="btn btn-link text-secondary position-relative p-0" type="button" id="notificacionesDropdown"
               data-bs-toggle="dropdown" aria-expanded="false">
               <i class="bi bi-bell fs-5"></i>
-              <span
-                class="position-absolute top-10 start-80 translate-middle p-1 bg-danger border border-light rounded-circle"
-                style="top: 10px; right: 5px;">
-                <span class="visually-hidden">New alerts</span>
+              {% if alertas_navbar.total %}
+              <span class="position-absolute translate-middle badge rounded-pill bg-danger" style="top: 4px; left: 100%; font-size: .6rem;">
+                {{ alertas_navbar.total }}<span class="visually-hidden"> alertas</span>
               </span>
+              {% endif %}
             </button>
             <ul class="dropdown-menu dropdown-menu-end shadow border-0" aria-labelledby="notificacionesDropdown"
               style="width: 300px;">
               <li>
-                <h6 class="dropdown-header text-uppercase small fw-bold text-muted">Notificaciones</h6>
+                <h6 class="dropdown-header text-uppercase small fw-bold text-muted">Alertas</h6>
               </li>
               <li>
                 <hr class="dropdown-divider my-1">
               </li>
-              <!-- Dummy Items -->
+              {% if alertas_navbar.stock_bajo %}
               <li>
-                <a class="dropdown-item py-2 d-flex align-items-start" href="#">
-                  <i class="bi bi-info-circle text-primary mt-1 me-2"></i>
+                <a class="dropdown-item py-2 d-flex align-items-start" href="{% url 'empresa:listar_productos' %}?stock=minimo">
+                  <i class="bi bi-box-seam text-warning mt-1 me-2"></i>
                   <div>
-                    <small class="fw-bold d-block">Bienvenido a Contafy</small>
-                    <small class="text-muted" style="font-size: 0.75rem;">Sistema actualizado a la versión Beta.</small>
+                    <small class="fw-bold d-block">Stock bajo</small>
+                    <small class="text-muted" style="font-size: 0.75rem;">{{ alertas_navbar.stock_bajo }} producto{{ alertas_navbar.stock_bajo|pluralize }} en o bajo su stock mínimo.</small>
                   </div>
                 </a>
               </li>
+              {% endif %}
+              {% if alertas_navbar.cxc_vencidas %}
               <li>
-                <a class="dropdown-item py-2 d-flex align-items-start" href="#">
-                  <i class="bi bi-check-circle text-success mt-1 me-2"></i>
+                <a class="dropdown-item py-2 d-flex align-items-start" href="{% url 'empresa:gestion_deudas' %}">
+                  <i class="bi bi-exclamation-circle text-danger mt-1 me-2"></i>
                   <div>
-                    <small class="fw-bold d-block">Cierre Diario</small>
-                    <small class="text-muted" style="font-size: 0.75rem;">El cierre de ayer se completó
-                      correctamente.</small>
+                    <small class="fw-bold d-block">Cobros vencidos</small>
+                    <small class="text-muted" style="font-size: 0.75rem;">{{ alertas_navbar.cxc_vencidas }} cuenta{{ alertas_navbar.cxc_vencidas|pluralize }} por cobrar vencida{{ alertas_navbar.cxc_vencidas|pluralize }}.</small>
                   </div>
                 </a>
               </li>
-              <li>
-                <hr class="dropdown-divider my-1">
-              </li>
-              <li><a class="dropdown-item text-center small text-primary fw-bold py-2" href="#">Ver todas</a></li>
+              {% endif %}
+              {% if not alertas_navbar.total %}
+              <li class="px-3 py-2 small text-muted"><i class="bi bi-check-circle text-success me-1"></i>Todo en orden: sin alertas pendientes.</li>
+              {% endif %}
             </ul>
           </div>
 

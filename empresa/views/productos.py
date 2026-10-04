@@ -1,8 +1,7 @@
 from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
-from django.db.models import Q
-from django.db.models import F
+from django.db.models import Q, F
 from django.db.models.functions import Greatest
 from django.contrib import messages
 from empresa.models import Producto
@@ -158,6 +157,9 @@ def listar_productos(request):
             productos = productos.filter(stock__gt=0, stock__lte=10)
         elif stock_filter == 'agotado':
             productos = productos.filter(stock=0)
+        elif stock_filter == 'minimo':
+            # Igual que la alerta de la campana: en o bajo el stock mínimo de cada producto
+            productos = productos.filter(es_servicio=False, stock__lte=F('stock_minimo'))
     
     if categoria_filter:
         productos = productos.filter(categoria_id=categoria_filter)

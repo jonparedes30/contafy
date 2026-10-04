@@ -117,6 +117,7 @@ TEMPLATES = [
                 'django.contrib.messages.context_processors.messages',
                 'empresa.context_processors.breadcrumbs',  # Breadcrumbs processor
                 'empresa.context_processors.user_permissions',  # User permissions processor
+                'empresa.context_processors.alertas_navbar',  # Campana de notificaciones
             ],
         },
     },

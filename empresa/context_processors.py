@@ -17,7 +17,8 @@ def user_permissions(request):
     
     try:
         # Verificar si es propietario
-        propietario = request.user.empresa.usuarios.first()
+        from empresa.decorators import _obtener_propietario
+        propietario = _obtener_propietario(request.user.empresa)
         context['is_owner'] = request.user.id == propietario.id if propietario else False
         
         # Obtener poderes del empleado
@@ -57,3 +58,24 @@ def user_permissions(request):
         pass
     
     return context
+
+def alertas_navbar(request):
+    """Alertas reales para la campana: stock bajo y cuentas por cobrar vencidas."""
+    empresa = getattr(request.user, 'empresa', None) if request.user.is_authenticated else None
+    if not empresa:
+        return {}
+    from django.db.models import F
+    from django.utils import timezone
+    from empresa.models import CuentaPorCobrar, Producto
+
+    try:
+        stock_bajo = Producto.objects.filter(
+            empresa=empresa, es_servicio=False, stock__lte=F('stock_minimo')
+        ).count()
+        cxc_vencidas = CuentaPorCobrar.objects.filter(
+            empresa=empresa, monto_pendiente__gt=0, fecha_vencimiento__lt=timezone.localdate()
+        ).count()
+    except Exception:
+        return {}
+    return {'alertas_navbar': {'stock_bajo': stock_bajo, 'cxc_vencidas': cxc_vencidas,
+                               'total': stock_bajo + cxc_vencidas}}
