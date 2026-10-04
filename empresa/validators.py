@@ -5,36 +5,11 @@ from django.core.validators import RegexValidator
 
 
 def validar_ruc_ecuador(ruc):
-    """Valida RUC ecuatoriano según algoritmo oficial"""
-    if not ruc or len(ruc) != 13:
-        raise ValidationError("El RUC debe tener 13 dígitos")
-    
-    if not ruc.isdigit():
-        raise ValidationError("El RUC solo debe contener números")
-    
-    # Validar provincia (primeros 2 dígitos)
-    provincia = int(ruc[:2])
-    if provincia < 1 or provincia > 24:
-        raise ValidationError("Código de provincia inválido")
-    
-    # Validar tercer dígito según tipo
-    tercer_digito = int(ruc[2])
-    if tercer_digito < 0 or tercer_digito > 9:
-        raise ValidationError("RUC inválido")
-    
-    # Algoritmo de validación
-    coeficientes = [2, 1, 2, 1, 2, 1, 2, 1, 2]
-    suma = 0
-    
-    for i in range(9):
-        producto = int(ruc[i]) * coeficientes[i]
-        if producto >= 10:
-            producto = sum(int(d) for d in str(producto))
-        suma += producto
-    
-    digito_verificador = (10 - (suma % 10)) % 10
-    if digito_verificador != int(ruc[9]):
-        raise ValidationError("RUC inválido - dígito verificador incorrecto")
+    """Valida RUC/cédula ecuatoriana (delegando en el validador oficial del SRI)."""
+    from empresa.utils.validador_ruc import validar_ruc_ecuador as _validar
+    valido, mensaje = _validar(ruc or '')
+    if not valido:
+        raise ValidationError(mensaje)
 
 
 def validar_codigo_producto(codigo):

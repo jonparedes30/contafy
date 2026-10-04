@@ -4,16 +4,17 @@ from django.http import HttpResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.views.decorators.csrf import csrf_exempt
 from empresa.models import Plan, Suscripcion
+from django.urls import reverse
 from django.utils import timezone
 
-stripe.api_key = settings.STRIPE_SECRET_KEY
+stripe.api_key = getattr(settings, 'STRIPE_SECRET_KEY', '')
 
 
 def crear_checkout_session(request, plan_slug):
     """Crea una Stripe Checkout Session y redirige al pago."""
     plan = get_object_or_404(Plan, slug=plan_slug, activo=True)
 
-    if not settings.STRIPE_SECRET_KEY or not plan.stripe_price_id:
+    if not getattr(settings, 'STRIPE_SECRET_KEY', '') or not plan.stripe_price_id:
         # Stripe no configurado o plan sin price_id → volver a landing con aviso
         from django.contrib import messages
         messages.info(request, 'El sistema de pagos aún no está disponible. Contáctanos para activar tu plan.')
@@ -23,8 +24,8 @@ def crear_checkout_session(request, plan_slug):
         payment_method_types=['card'],
         line_items=[{'price': plan.stripe_price_id, 'quantity': 1}],
         mode='subscription',
-        success_url=request.build_absolute_uri('/pago/success/?session_id={CHECKOUT_SESSION_ID}'),
-        cancel_url=request.build_absolute_uri('/pago/cancel/'),
+        success_url=request.build_absolute_uri(reverse('empresa:checkout_success')) + '?session_id={CHECKOUT_SESSION_ID}',
+        cancel_url=request.build_absolute_uri(reverse('empresa:checkout_cancel')),
         metadata={'plan_slug': plan.slug},
     )
     return redirect(session.url, permanent=False)
@@ -45,12 +46,13 @@ def stripe_webhook(request):
     payload    = request.body
     sig_header = request.META.get('HTTP_STRIPE_SIGNATURE', '')
 
-    if not settings.STRIPE_WEBHOOK_SECRET:
+    webhook_secret = getattr(settings, 'STRIPE_WEBHOOK_SECRET', '')
+    if not webhook_secret:
         return HttpResponse(status=400)
 
     try:
         event = stripe.Webhook.construct_event(
-            payload, sig_header, settings.STRIPE_WEBHOOK_SECRET
+            payload, sig_header, webhook_secret
         )
     except (ValueError, stripe.error.SignatureVerificationError):
         return HttpResponse(status=400)

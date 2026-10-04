@@ -11,5 +11,5 @@ def landing(request):
     planes = Plan.objects.filter(activo=True).order_by('precio_mensual')
     return render(request, 'empresa/landing.html', {
         'planes': planes,
-        'stripe_public_key': settings.STRIPE_PUBLIC_KEY,
+        'stripe_public_key': getattr(settings, 'STRIPE_PUBLIC_KEY', ''),
     })

@@ -49,7 +49,10 @@ class ModelTestCase(TestCase):
             producto=self.producto,
             cantidad=5,
             precio_unitario=Decimal('10.00'),
-            total=Decimal('50.00')
+            monto_neto=Decimal('50.00'),
+            tasa_iva=Decimal('15'),
+            monto=Decimal('0'),
         )
-        self.assertEqual(venta.total, Decimal('50.00'))
-        self.assertEqual(venta.cantidad * venta.precio_unitario, venta.total)
+        self.assertEqual(venta.cantidad * venta.precio_unitario, venta.monto_neto)
+        self.assertEqual(venta.iva, Decimal('7.50'))
+        self.assertEqual(venta.monto, Decimal('57.50'))

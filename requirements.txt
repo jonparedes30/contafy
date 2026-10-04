@@ -19,3 +19,4 @@ django-redis==5.4.0
 pytest==8.3.4
 pytest-django==4.9.0
 stripe>=8.0.0
+google-genai>=1.0.0
