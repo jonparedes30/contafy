@@ -180,38 +180,6 @@
 </div>
 
 <!-- ============================================================================ -->
-<!-- MODAL ESCÁNER VISION -->
-<!-- ============================================================================ -->
-<div class="modal fade scanner-modal-unified" id="visionScannerModal" tabindex="-1">
-  <div class="modal-dialog modal-fullscreen-sm-down">
-    <div class="modal-content">
-      <div class="modal-header bg-brand text-white">
-        <h5 class="modal-title"><i class="bi bi-camera-video me-2"></i>Escáner IA - Identificar Producto</h5>
-        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-      </div>
-      <div class="modal-body">
-        <div id="scanner-placeholder" class="text-center py-5">
-          <div style="font-size: 3em;">📷</div>
-          <p class="text-muted">Haz clic en "Activar Cámara" para comenzar</p>
-        </div>
-        <video id="vision-video" width="100%" style="display:none; border-radius: 8px; background: #000;"></video>
-        <canvas id="vision-canvas" style="display:none;"></canvas>
-        <div id="vision-loading" style="display:none; text-align:center; padding:20px;">
-          <div class="spinner-border text-primary" role="status"></div>
-          <p class="mt-2 text-muted">Analizando imagen con IA...</p>
-        </div>
-      </div>
-      <div class="modal-footer">
-        <button type="button" id="btn-capture-vision" class="btn btn-scanner-unified text-white">
-          <i class="bi bi-camera-fill me-1"></i>Escanear
-        </button>
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- ============================================================================ -->
 <!-- MODAL CREAR PROVEEDOR -->
 <!-- ============================================================================ -->
 <div class="modal fade" id="proveedorModal" tabindex="-1">
@@ -439,232 +407,14 @@
 <!-- ESCÁNER VISION (IIFE) -->
 <!-- ============================================================================ -->
 <script>
-  (function() {
-    'use strict';
-    console.log('🔧 Inicializando escáner Vision...');
-
-    const modal = document.getElementById('visionScannerModal');
-    const video = document.getElementById('vision-video');
-    const canvas = document.getElementById('vision-canvas');
-    const btnCapture = document.getElementById('btn-capture-vision');
-    const loading = document.getElementById('vision-loading');
-    const placeholder = document.getElementById('scanner-placeholder');
-    const btnOpenScanner = document.getElementById('btn-open-scanner');
-
-    if (!modal || !video || !canvas || !btnCapture) {
-      console.error('❌ Elementos del escáner no encontrados');
-      return;
-    }
-
-    let currentStream = null;
-    let isProcessing = false;
-
-    function getCookie(name) {
-      let cookieValue = null;
-      if (document.cookie && document.cookie !== '') {
-        const cookies = document.cookie.split(';');
-        for (let i = 0; i < cookies.length; i++) {
-          const cookie = cookies[i].trim();
-          if (cookie.substring(0, name.length + 1) === (name + '=')) {
-            cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-            break;
-          }
-        }
-      }
-      return cookieValue;
-    }
-
-    modal.addEventListener('shown.bs.modal', async function() {
-      console.log('📱 Modal abierto - Activando cámara automáticamente...');
-      if (placeholder) placeholder.style.display = 'block';
-      video.style.display = 'none';
-      video.srcObject = null;
-      if (loading) loading.style.display = 'none';
-      if (btnCapture) btnCapture.disabled = false;
-      
-      // Auto-activar cámara
-      try {
-        if (!navigator.mediaDevices?.getUserMedia) {
-          throw new Error('Tu navegador no soporta acceso a cámara');
-        }
-
-        currentStream = await navigator.mediaDevices.getUserMedia({
-          video: {
-            facingMode: 'environment',
-            width: { ideal: 1280 },
-            height: { ideal: 720 }
-          }
-        });
-
-        video.srcObject = currentStream;
-
-        await new Promise((resolve, reject) => {
-          video.onloadedmetadata = () => {
-            video.play().then(resolve).catch(reject);
-          };
-          video.onerror = () => reject(new Error('Error al cargar video'));
-          setTimeout(() => reject(new Error('Timeout')), 10000);
-        });
-
-        let frameCheckAttempts = 0;
-        while ((!video.videoWidth || video.readyState < 4) && frameCheckAttempts < 30) {
-          await new Promise(resolve => setTimeout(resolve, 100));
-          frameCheckAttempts++;
-        }
-
-        if (!video.videoWidth) {
-          throw new Error('No se pudo obtener video');
-        }
-
-        await new Promise(resolve => setTimeout(resolve, 500));
-
-        video.style.display = 'block';
-        if (placeholder) placeholder.style.display = 'none';
-
-        console.log('✅ Cámara lista automáticamente');
-      } catch (error) {
-        console.error('❌ Error al activar cámara:', error);
-        if (placeholder) placeholder.style.display = 'block';
-        video.style.display = 'none';
-        Swal.fire({
-          icon: 'error',
-          title: 'Error de cámara',
-          text: error.message
-        });
-      }
+  // Escáner único: lee el código de barras en vivo o identifica por foto (static/js/contafy_scanner.js)
+  document.getElementById('btn-open-scanner')?.addEventListener('click', function () {
+    ContafyScanner.abrir({
+      contexto: 'compra',
+      endpoint: window.CONTAFY_SCANNER_ENDPOINT,
+      onResultado: procesarResultados,
     });
-
-
-
-    modal.addEventListener('hidden.bs.modal', function() {
-      console.log('🔴 Cerrando escáner');
-      if (currentStream) {
-        currentStream.getTracks().forEach(track => track.stop());
-        currentStream = null;
-      }
-      video.srcObject = null;
-      video.style.display = 'none';
-      if (placeholder) placeholder.style.display = 'block';
-      if (loading) loading.style.display = 'none';
-      btnCapture.disabled = true;
-      isProcessing = false;
-    });
-
-    if (btnCapture) {
-      btnCapture.addEventListener('click', async function() {
-        if (isProcessing) return;
-
-        console.log('📸 Capturando...');
-        isProcessing = true;
-
-        try {
-          if (!video.videoWidth || !video.videoHeight || video.readyState < 2) {
-            let attempts = 0;
-            while ((!video.videoWidth || video.readyState < 2) && attempts < 50) {
-              await new Promise(resolve => setTimeout(resolve, 100));
-              attempts++;
-            }
-            if (!video.videoWidth) {
-              throw new Error('No se pudo acceder al stream de video');
-            }
-          }
-
-          await new Promise(resolve => setTimeout(resolve, 300));
-
-          if (video.paused || video.ended) {
-            throw new Error('El video no está activo');
-          }
-
-          canvas.width = video.videoWidth;
-          canvas.height = video.videoHeight;
-
-          if (canvas.width === 0 || canvas.height === 0) {
-            throw new Error('Video sin dimensiones válidas');
-          }
-
-          const ctx = canvas.getContext('2d');
-          ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-
-          const imageData = ctx.getImageData(0, 0, Math.min(canvas.width, 100), Math.min(canvas.height, 100));
-          const data = imageData.data;
-
-          let hasContent = false;
-          for (let i = 0; i < data.length; i += 16) {
-            const r = data[i];
-            const g = data[i + 1];
-            const b = data[i + 2];
-            if ((r !== 0 || g !== 0 || b !== 0) && (r !== 255 || g !== 255 || b !== 255)) {
-              hasContent = true;
-              break;
-            }
-          }
-
-          if (!hasContent) {
-            throw new Error('El video está en negro o sin contenido');
-          }
-
-          const imageDataURL = canvas.toDataURL('image/jpeg', 0.85);
-          const sizeInMB = (imageDataURL.length * 0.75) / (1024 * 1024);
-
-          if (sizeInMB < 0.01) {
-            throw new Error('Imagen vacía (menos de 0.01 MB)');
-          }
-
-          if (sizeInMB > 5) {
-            throw new Error('Imagen muy grande (más de 5 MB)');
-          }
-
-          if (loading) loading.style.display = 'flex';
-          btnCapture.disabled = true;
-
-          console.log('🚀 Enviando imagen...');
-
-          const response = await fetch('{% url "empresa:vision_search_api" %}', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'X-CSRFToken': getCookie('csrftoken')
-            },
-            body: JSON.stringify({ image: imageDataURL, contexto: 'compra' })
-          });
-
-          if (!response.ok) {
-            const errorText = await response.text();
-            throw new Error(`Error del servidor (${response.status}): ${errorText}`);
-          }
-
-          const data_resp = await response.json();
-          console.log('✅ Respuesta:', data_resp);
-
-          if (!data_resp.success && !data_resp.ok) {
-            throw new Error(data_resp.error || 'Error en análisis');
-          }
-
-          const bsModal = bootstrap.Modal.getInstance(modal);
-          if (bsModal) bsModal.hide();
-
-          procesarResultados(data_resp);
-
-        } catch (error) {
-          console.error('❌ Error:', error);
-          alert('Error: ' + error.message);
-        } finally {
-          if (loading) loading.style.display = 'none';
-          btnCapture.disabled = false;
-          isProcessing = false;
-        }
-      });
-    }
-
-    if (btnOpenScanner) {
-      btnOpenScanner.addEventListener('click', function() {
-        new bootstrap.Modal(modal).show();
-      });
-    }
-
-    console.log('✅ Escáner Vision inicializado');
-
-  })();
+  });
 
   // PROCESAR RESULTADOS
   function procesarResultados(data) {
@@ -691,14 +441,8 @@
         cancelButtonColor: '#94a3b8'
       }).then((result) => {
         if (result.isConfirmed) {
-          const datosDetectados = {
-            nombre: data.debug?.textos?.[0] || (data.debug?.search_terms?.[0] || ''),
-            codigo_barras: data.codigo_detectado || ''
-          };
-          try {
-            localStorage.setItem('producto_prefill', JSON.stringify(datosDetectados));
-          } catch (e) {}
-          window.location.href = "{% url 'empresa:crear_producto' %}";
+          const codigo = encodeURIComponent(data.codigo_detectado || '');
+          window.location.href = "{% url 'empresa:crear_producto' %}" + (codigo ? '?codigo_barras=' + codigo : '');
         }
       });
     } else if (productos.length === 1) {
@@ -768,21 +512,22 @@
   }
 
   function mostrarOpcionesProductos(productos) {
-    const productCards = productos.map(p => `
-      <div style="border:1px solid #ddd; padding:10px; margin:10px 0; border-radius:8px; cursor:pointer;" 
-           onclick="window.autoRellenarFormulario({id:${p.id}, nombre:'${p.nombre}', codigo:'${p.codigo}', precio_unitario:${p.precio_unitario}, pvp:${p.pvp}, stock:${p.stock}, stock_minimo:${p.stock_minimo}}); Swal.close();">
-        <h5>${p.nombre}</h5>
-        <p>Código: ${p.codigo} | Stock: ${p.stock}</p>
-        <p style="color:#28a745; font-weight:bold;">$${p.precio_unitario.toFixed(2)}</p>
-      </div>
-    `).join('');
-
+    const escapar = (t) => { const d = document.createElement('div'); d.textContent = t == null ? '' : String(t); return d.innerHTML; };
+    const items = productos.map((p, i) => `
+      <button type="button" class="list-group-item list-group-item-action d-flex justify-content-between" data-idx="${i}">
+        <span>${escapar(p.nombre)} <small class="text-muted">${escapar(p.codigo)}</small></span>
+        <span class="small">Stock ${escapar(p.stock)} · $${Number(p.precio_unitario || 0).toFixed(2)}</span>
+      </button>`).join('');
     Swal.fire({
-      title: '🔍 Selecciona el producto correcto',
-      html: `<div style="max-height:400px; overflow-y:auto;">${productCards}</div>`,
+      title: '¿Cuál de estos productos es?',
+      html: `<div class="list-group text-start" style="max-height:400px; overflow-y:auto;">${items}</div>`,
       showConfirmButton: false,
       showCancelButton: true,
-      cancelButtonText: 'Cancelar'
+      cancelButtonText: 'Cancelar',
+      didOpen: (popup) => popup.querySelectorAll('[data-idx]').forEach(btn => btn.addEventListener('click', () => {
+        Swal.close();
+        autoRellenarFormulario(productos[Number(btn.dataset.idx)]);
+      })),
     });
   }
 </script>

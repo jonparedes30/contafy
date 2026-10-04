@@ -2,12 +2,16 @@ from django.http import JsonResponse
 from empresa.models import Producto
 from django.conf import settings
 import json
+import logging
 import requests
 
 # Pos identifier
 from core.pos_identifier import identify_products
 from django.contrib.auth.decorators import login_required
 
+
+
+logger = logging.getLogger(__name__)
 
 @login_required
 def obtener_info_producto(request):
@@ -127,6 +131,8 @@ def vision_recognize(request):
             detection = {'modo': 'single', 'producto': {'id':'','nombre':'','marca':'','presentacion':'','confianza':0.0}, 'accion': 'no_detectado'}
 
         return JsonResponse({'ok': True, 'results': result, 'detection': detection})
-    except Exception as exc:
-        return JsonResponse({'error': str(exc)}, status=500)
+    except Exception:
+        # No devolver str(exc): el error de requests incluye la URL con la API key.
+        logger.exception('Error en vision_recognize')
+        return JsonResponse({'error': 'No se pudo analizar la foto en este momento.'}, status=500)
 

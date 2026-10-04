@@ -316,257 +316,47 @@ logger = logging.getLogger(__name__)
 @login_required
 def vision_search_api(request):
     """
-    API Unificada de Escáner para Inventario, Compras y Ventas.
+    API única del escáner para Ventas (POS), Compras e Inventario.
 
-    Entrada JSON:
-    {
-        "image": "data:image/jpeg;base64,...",
-        "contexto": "inventario" | "compra" | "venta"
-    }
+    Entrada JSON (una de las dos):
+        {"codigo": "7861234567890", "contexto": "venta"}        # código leído por cámara/lector
+        {"image": "data:image/jpeg;base64,...", "contexto": "compra"}  # foto -> Google Vision
 
-    Salida JSON:
-    {
-        "success": True,
-        "ok": True,
-        "found": True/False,
-        "productos": [...],
-        "products": [...],
-        "codigo_detectado": "...",
-        "meta": {...},
-        "debug": {...}
-    }
+    Salida: ver empresa.services.escaner_service.identificar().
     """
-    if request.method != 'POST':
-        return JsonResponse({
-            'success': False,
-            'ok': False,
-            'error': 'Solo se permite método POST'
-        }, status=405)
+    from empresa.services.escaner_service import EscanerError, identificar
 
-    inicio = time.time()
-    empresa = request.user.empresa
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'ok': False, 'error': 'Solo se permite método POST'}, status=405)
 
     try:
         data = json.loads(request.body.decode('utf-8'))
-        image_data = data.get('image', '')
-        contexto = data.get('contexto', 'compra')
+    except (json.JSONDecodeError, UnicodeDecodeError):
+        return JsonResponse({'success': False, 'error': 'Solicitud inválida'}, status=400)
 
-        if not image_data:
-            return JsonResponse({
-                'success': False,
-                'error': 'Falta el campo "image" en la solicitud'
-            }, status=400)
-
-        if 'base64,' in image_data:
-            image_data = image_data.split('base64,', 1)[1]
-
+    contexto = data.get('contexto', 'compra')
+    codigo = str(data.get('codigo') or '').strip()[:50]
+    imagen = data.get('image') or ''
+    if 'base64,' in imagen:
+        imagen = imagen.split('base64,', 1)[1]
+    if imagen and not codigo:
         try:
-            decoded_image = base64.b64decode(image_data)
-            image_size_mb = len(decoded_image) / (1024 * 1024)
+            tamano_mb = len(base64.b64decode(imagen, validate=False)) / (1024 * 1024)
+        except (ValueError, TypeError):
+            return JsonResponse({'success': False, 'error': 'La imagen no es válida.'}, status=400)
+        if tamano_mb < 0.01 or tamano_mb > 10:
+            return JsonResponse({'success': False, 'error': 'La foto debe pesar entre 10 KB y 10 MB.'}, status=400)
 
-            if image_size_mb < 0.01:
-                return JsonResponse({
-                    'success': False,
-                    'error': 'La imagen es demasiado pequeña (mínimo 10 KB)'
-                }, status=400)
+    inicio = time.time()
+    try:
+        respuesta = identificar(request.user.empresa, contexto=contexto, codigo=codigo, imagen_b64=imagen)
+    except EscanerError as e:
+        return JsonResponse({'success': False, 'ok': False, 'error': str(e), 'productos': [], 'products': []})
+    except Exception:
+        logger.exception('Error inesperado en vision_search_api')
+        return JsonResponse({'success': False, 'ok': False, 'error': 'No se pudo identificar el producto.',
+                             'productos': [], 'products': []}, status=500)
 
-            if image_size_mb > 10:
-                return JsonResponse({
-                    'success': False,
-                    'error': 'La imagen es demasiado grande (máximo 10 MB)'
-                }, status=400)
-        except Exception as e:
-            return JsonResponse({
-                'success': False,
-                'error': f'Error al decodificar la imagen: {str(e)}'
-            }, status=400)
-
-        api_key = getattr(settings, 'GOOGLE_VISION_API_KEY', None)
-        if not api_key:
-            return JsonResponse({
-                'success': False,
-                'error': 'GOOGLE_VISION_API_KEY no configurada en settings.py'
-            }, status=500)
-
-        vision_url = f'https://vision.googleapis.com/v1/images:annotate?key={api_key}'
-        payload = {
-            'requests': [{
-                'image': {'content': image_data},
-                'features': [
-                    {'type': 'LOGO_DETECTION', 'maxResults': 5},
-                    {'type': 'TEXT_DETECTION', 'maxResults': 1},
-                    {'type': 'LABEL_DETECTION', 'maxResults': 5}
-                ]
-            }]
-        }
-
-        try:
-            vision_response = requests.post(vision_url, json=payload, timeout=10)
-            vision_response.raise_for_status()
-            vision_data = vision_response.json()
-        except requests.exceptions.RequestException as e:
-            return JsonResponse({
-                'success': False,
-                'error': f'Error al llamar a Google Vision API: {str(e)}'
-            }, status=500)
-
-        responses = vision_data.get('responses', [])
-        if not responses:
-            return JsonResponse({
-                'success': False,
-                'error': 'Google Vision no devolvió respuestas'
-            }, status=500)
-
-        response = responses[0]
-
-        logos = []
-        for annotation in response.get('logoAnnotations', []):
-            logo_name = annotation.get('description', '')
-            if logo_name:
-                logos.append(logo_name)
-
-        full_text_ann = response.get('fullTextAnnotation') or {}
-        texto_completo = full_text_ann.get('text', '') if isinstance(full_text_ann, dict) else ''
-        if not texto_completo and response.get('textAnnotations'):
-            texto_completo = response['textAnnotations'][0].get('description', '')
-
-        labels = []
-        for label in response.get('labelAnnotations', []):
-            label_name = label.get('description', '')
-            if label_name:
-                labels.append(label_name)
-
-        palabras_blacklist = [
-            'peso', 'neto', 'ingredientes', 'tabla', 'nutricional', 'información',
-            'calorías', 'proteínas', 'grasas', 'carbohidratos', 'sodio',
-            'contiene', 'elaborado', 'conservar', 'fecha', 'lote', 'reg',
-            'sanitario', 'hecho', 'producto', 'alimento', 'natural', 'artificial',
-            'cont', 'grasa', 'azucar', 'exceso', 'min', 'max', 'valor', 'total', 'precio',
-            'g', 'kg', 'ml', 'l', 'oz', 'lb', 'exp', 'pvp'
-        ]
-
-        lines = texto_completo.split('\n')
-        lineas_limpias = []
-
-        for linea in lines[:10]:
-            linea = linea.strip()
-            if len(linea) < 3:
-                continue
-            es_ruido = any(palabra in linea.lower() for palabra in palabras_blacklist)
-            if es_ruido:
-                continue
-            lineas_limpias.append(linea)
-
-        codigo_detectado = None
-        patron_codigo = r'\b\d{8,14}\b'
-        for linea in lines:
-            match = re.search(patron_codigo, linea)
-            if match:
-                codigo_detectado = match.group()
-                break
-
-        query = Q()
-
-        if codigo_detectado:
-            query |= Q(codigo_barras__exact=codigo_detectado)
-            query |= Q(codigo__exact=codigo_detectado)
-            query |= Q(codigo_barras__icontains=codigo_detectado)
-            query |= Q(codigo__icontains=codigo_detectado)
-
-        for logo in logos:
-            if len(logo) >= 3:
-                query |= Q(nombre__icontains=logo)
-
-        for linea in lineas_limpias[:3]:
-            if len(linea) >= 3:
-                query |= Q(nombre__icontains=linea)
-
-        productos_qs = Producto.objects.filter(empresa=empresa)
-
-        if contexto == 'venta':
-            productos_qs = productos_qs.filter(stock__gt=0)
-
-        if query:
-            productos_qs = productos_qs.filter(query).distinct()[:5]
-        else:
-            productos_qs = productos_qs.none()
-
-        productos_list = []
-
-        for producto in productos_qs:
-            item = {
-                'id': producto.id,
-                'nombre': producto.nombre,
-                'codigo': producto.codigo or '',
-                'codigo_barras': producto.codigo_barras or '',
-                'stock': producto.stock,
-            }
-
-            if hasattr(producto, 'categoria') and producto.categoria:
-                item['categoria'] = producto.categoria.nombre
-            else:
-                item['categoria'] = ''
-
-            if contexto == 'compra':
-                item['precio_unitario'] = float(producto.precio_unitario or 0)
-                item['ultimo_costo'] = float(producto.precio_unitario or 0)
-                item['pvp'] = float(producto.pvp or 0)
-                item['stock_minimo'] = getattr(producto, 'stock_minimo', 0) or 0
-
-            elif contexto == 'venta':
-                item['pvp'] = float(producto.pvp or 0)
-                item['precio_venta'] = float(producto.pvp or producto.precio_unitario or 0)
-                item['precio'] = float(producto.pvp or producto.precio_unitario or 0)
-                item['stock_disponible'] = producto.stock
-
-            elif contexto == 'inventario':
-                item['precio_unitario'] = float(producto.precio_unitario or 0)
-                item['pvp'] = float(producto.pvp or 0)
-                item['activo'] = getattr(producto, 'activo', True)
-
-            productos_list.append(item)
-
-        tiempo_total = time.time() - inicio
-        logger.info(f'vision_search_api: {len(productos_list)} productos en {tiempo_total:.2f}s (contexto={contexto})')
-
-        response_data = {
-            'success': True,
-            'ok': True,
-            'found': len(productos_list) > 0,
-            'productos': productos_list,
-            'products': productos_list,
-            'codigo_detectado': codigo_detectado or '',
-            'meta': {
-                'total': len(productos_list),
-                'contexto': contexto,
-                'api_version': '2.0'
-            },
-            'debug': {
-                'logos': logos,
-                'textos': lineas_limpias[:5],
-                'labels': labels[:5],
-                'texto_completo': texto_completo[:200],
-                'search_terms': lineas_limpias[:3] + logos[:2]
-            }
-        }
-
-        return JsonResponse(response_data)
-
-    except json.JSONDecodeError:
-        return JsonResponse({
-            'success': False,
-            'error': 'JSON inválido en el cuerpo de la solicitud'
-        }, status=400)
-    except Exception as e:
-        error_msg = str(e)
-        error_trace = traceback.format_exc()
-        logger.error(f'Error en vision_search_api: {error_msg}', exc_info=True)
-        return JsonResponse({
-            'success': False,
-            'ok': False,
-            'error': f'Error interno del servidor: {str(e)}',
-            'traceback': error_trace if getattr(settings, 'DEBUG', False) else None,
-            'productos': [],
-            'products': []
-        }, status=500)
-
+    logger.info('vision_search_api: %s productos por %s en %.2fs (contexto=%s)',
+                respuesta['meta']['total'], respuesta['origen'], time.time() - inicio, contexto)
+    return JsonResponse(respuesta)
