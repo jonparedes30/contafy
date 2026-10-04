@@ -9,8 +9,37 @@ logger = logging.getLogger(__name__)
 
 class ContabilidadService:
     """
-    Servicio centralizado para garantizar integridad contable.
-    Todas las transacciones contables deben pasar por este servicio.
+    Servicio centralizado para garantizar integridad contable (partida doble).
+
+    ════════════════════════════════════════════════════════════════════════
+    FUENTES DE VERDAD EN CONTAFY (importante para evitar el "no cuadra")
+    ════════════════════════════════════════════════════════════════════════
+
+    El sistema mantiene DOS perspectivas paralelas sobre las transacciones:
+
+    1) DATOS DIRECTOS (modelos Venta/Compra/Gasto)
+       - Para vistas rápidas, dashboards de KPIs y el `estado_resultados_simple`.
+       - Cada operación se guarda como una fila en su tabla.
+       - Veloz, simple, pero NO incluye costo de ventas calculado por PEPS.
+
+    2) PARTIDA DOBLE (modelos MovimientoContable + CuentaContable)
+       - Es la fuente de verdad CONTABLE estricta — usada por reportes NIIF
+         (Estado de Resultados NIIF, Estado de Situación Financiera, Balance).
+       - Cada operación genera N movimientos con `transaccion_id` compartido.
+       - Validado: suma de débitos = suma de créditos por transacción.
+
+    REGLA IMPORTANTE:
+       - Para crear movimientos contables SIEMPRE usar
+         `crear_transaccion_contable()` — nunca `MovimientoContable.objects.create()`
+         directo en código nuevo, porque pierde el agrupamiento por
+         `transaccion_id` y rompe el verificador de integridad.
+
+    SI VES "NO CUADRA":
+       - Probablemente existen movimientos contables creados sin pasar por
+         este servicio (huérfanos sin transaccion_id agrupado).
+       - Ejecuta `python manage.py verificar_cuadre` para identificar
+         las transacciones desbalanceadas y aplicar correcciones.
+    ════════════════════════════════════════════════════════════════════════
     """
     
     @staticmethod
@@ -236,6 +265,70 @@ class ContabilidadService:
             empresa, asientos, f"Gasto #{gasto.id}"
         )
     
+    @staticmethod
+    @transaction.atomic
+    def sincronizar_asientos(empresa, instancia, crear_asientos_fn):
+        """
+        Sincroniza los asientos contables de una entidad (Venta/Compra/Gasto).
+
+        - Si la instancia tiene `transaccion_id_contable` previo, elimina sus
+          movimientos contables antes de crear los nuevos.
+        - Crea los nuevos asientos usando `crear_asientos_fn(empresa, instancia)`.
+        - Guarda el nuevo `transaccion_id` en `instancia.transaccion_id_contable`.
+
+        Args:
+            empresa: Empresa actual
+            instancia: Venta, Compra o Gasto
+            crear_asientos_fn: ContabilidadService.crear_asientos_venta/compra/gasto
+
+        Returns:
+            str: nuevo transaccion_id
+        """
+        # 1) Eliminar movimientos previos si los hay (caso UPDATE)
+        tid_anterior = getattr(instancia, 'transaccion_id_contable', None)
+        if tid_anterior:
+            count = MovimientoContable.objects.filter(
+                empresa=empresa, transaccion_id=tid_anterior
+            ).delete()[0]
+            logger.info(
+                f'Eliminados {count} movimientos contables previos '
+                f'(tid={tid_anterior}) para {type(instancia).__name__} #{instancia.pk}'
+            )
+
+        # 2) Crear nuevos asientos
+        nuevo_tid = crear_asientos_fn(empresa, instancia)
+
+        # 3) Actualizar el campo en la instancia SIN re-triggerar save() completo
+        type(instancia).objects.filter(pk=instancia.pk).update(
+            transaccion_id_contable=nuevo_tid
+        )
+        instancia.transaccion_id_contable = nuevo_tid
+
+        return nuevo_tid
+
+    @staticmethod
+    @transaction.atomic
+    def eliminar_asientos(empresa, instancia):
+        """
+        Elimina los movimientos contables asociados a una Venta/Compra/Gasto
+        antes de borrarla. Usar en el método `delete()` del modelo.
+
+        Returns:
+            int: cantidad de movimientos eliminados
+        """
+        tid = getattr(instancia, 'transaccion_id_contable', None)
+        if not tid:
+            return 0
+
+        count = MovimientoContable.objects.filter(
+            empresa=empresa, transaccion_id=tid
+        ).delete()[0]
+        logger.info(
+            f'Eliminados {count} movimientos contables (tid={tid}) por borrado '
+            f'de {type(instancia).__name__} #{instancia.pk}'
+        )
+        return count
+
     @staticmethod
     def verificar_integridad_empresa(empresa):
         """

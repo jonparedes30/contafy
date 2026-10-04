@@ -875,7 +875,7 @@ def exportar_pdf_usuario(request):
     for i in range(meses_atras):
         fecha_inicio = timezone.now() - timedelta(days=30*(i+1))
         fecha_fin = timezone.now() - timedelta(days=30*i)
-        venta_mes = ventas.filter(fecha__range=[fecha_inicio, fecha_fin]).aggregate(total=Sum('total'))['total'] or 0
+        venta_mes = ventas.filter(fecha__range=[fecha_inicio, fecha_fin]).aggregate(total=Sum('monto'))['total'] or 0
         # Convertir a float para el gráfico
         ventas_mensuales.append(float(venta_mes))
     
@@ -1024,7 +1024,7 @@ def exportar_pdf_usuario(request):
     # Productos más vendidos
     productos_vendidos = ventas.values('producto__nombre').annotate(
         total_vendido=Sum('cantidad'),
-        total_ingresos=Sum('total')
+        total_ingresos=Sum('monto')
     ).order_by('-total_ingresos')[:5]
     
     if productos_vendidos:
@@ -1252,7 +1252,7 @@ def exportar_pdf_profesional(request):
     for i in range(12):
         fecha_inicio = timezone.now() - timedelta(days=30*(i+1))
         fecha_fin = timezone.now() - timedelta(days=30*i)
-        venta_mes = ventas.filter(fecha__range=[fecha_inicio, fecha_fin]).aggregate(total=Sum('total'))['total'] or 0
+        venta_mes = ventas.filter(fecha__range=[fecha_inicio, fecha_fin]).aggregate(total=Sum('monto'))['total'] or 0
         ventas_mensuales.append(venta_mes)
         meses_labels.append(f'{fecha_inicio.strftime("%b")}')
     
@@ -1310,7 +1310,7 @@ def exportar_pdf_profesional(request):
     cobertura_gastos = total_ventas / total_gastos if total_gastos > 0 else 0
     
     # Concentración de productos
-    productos_vendidos = ventas.values('producto__nombre').annotate(total=Sum('total')).order_by('-total')
+    productos_vendidos = ventas.values('producto__nombre').annotate(total=Sum('monto')).order_by('-total')
     if productos_vendidos:
         producto_principal = productos_vendidos[0]['total']
         concentracion = (producto_principal / total_ventas * 100) if total_ventas > 0 else 0

@@ -141,7 +141,7 @@
     <div class="card border-0 shadow-sm">
         <div class="card-body p-0">
             <div class="table-responsive">
-                <table class="table table-hover align-middle mb-0">
+                <table class="table contafy-table table-hover align-middle align-middle mb-0">
                     <thead class="bg-light text-muted">
                         <tr>
                             <th class="ps-4 border-0">Código</th>
@@ -159,8 +159,7 @@
                         <tr data-product-id="{{ producto.id }}"
                             data-delete-url="{% url 'empresa:eliminar_producto' producto.id %}">
                             <td class="ps-4">
-                                <span class="badge bg-light text-dark border font-monospace">{{ producto.codigo
-                                    }}</span>
+                                <span class="badge bg-light text-dark border font-monospace">{{ producto.codigo }}</span>
                             </td>
                             <td>
                                 <div class="fw-medium text-dark">{{ producto.nombre }}</div>
@@ -182,18 +181,14 @@
                             </td>
                             <td class="text-center">
                                 {% if producto.margen_ganancia > 20 %}
-                                <span class="badge bg-success bg-opacity-10 text-success rounded-pill">{{
-                                    producto.margen_ganancia|floatformat:0 }}%</span>
+                                <span class="badge bg-success bg-opacity-10 text-success rounded-pill">{{ producto.margen_ganancia|floatformat:0 }}%</span>
                                 {% elif producto.margen_ganancia > 10 %}
-                                <span class="badge bg-warning bg-opacity-10 text-warning rounded-pill">{{
-                                    producto.margen_ganancia|floatformat:0 }}%</span>
+                                <span class="badge bg-warning bg-opacity-10 text-warning rounded-pill">{{ producto.margen_ganancia|floatformat:0 }}%</span>
                                 {% else %}
-                                <span class="badge bg-danger bg-opacity-10 text-danger rounded-pill">{{
-                                    producto.margen_ganancia|floatformat:0 }}%</span>
+                                <span class="badge bg-danger bg-opacity-10 text-danger rounded-pill">{{ producto.margen_ganancia|floatformat:0 }}%</span>
                                 {% endif %}
                             </td>
-                            <td class="text-end text-muted">${{
-                                producto.stock|multiply:producto.precio_unitario|floatformat:2 }}</td>
+                            <td class="text-end text-muted">${{ producto.stock|multiply:producto.precio_unitario|floatformat:2 }}</td>
                             <td class="text-end pe-4">
                                 <div class="btn-group">
                                     <a href="{% url 'empresa:editar_producto' producto.id %}"
@@ -245,9 +240,9 @@
 <div class="modal fade" id="categoriasModal" tabindex="-1">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
-            <div class="modal-header">
+            <div class="modal-header bg-brand text-white">
                 <h5 class="modal-title"><i class="bi bi-tags"></i> Gestión de Categorías</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
                 <!-- Formulario nueva categoría -->

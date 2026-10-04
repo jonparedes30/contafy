@@ -61,23 +61,19 @@
                                                 <div class="d-flex align-items-center mb-2">
                                                     {% if rec.estado == 'completada' %}
                                                     <i class="bi bi-check-circle-fill me-2"></i>
-                                                    <strong>{{ rec.meta.get_tipo_display }} ({{ rec.meta.mes }}/{{
-                                                        rec.meta.anio }})</strong>
+                                                    <strong>{{ rec.meta.get_tipo_display }} ({{ rec.meta.mes }}/{{ rec.meta.anio }})</strong>
                                                     <span class="badge bg-success ms-2">¡Meta Cumplida!</span>
                                                     {% elif rec.estado == 'en_progreso' %}
                                                     <i class="bi bi-arrow-up-circle me-2"></i>
-                                                    <strong>{{ rec.meta.get_tipo_display }} ({{ rec.meta.mes }}/{{
-                                                        rec.meta.anio }})</strong>
+                                                    <strong>{{ rec.meta.get_tipo_display }} ({{ rec.meta.mes }}/{{ rec.meta.anio }})</strong>
                                                     <span class="badge bg-primary ms-2">En Progreso</span>
                                                     {% elif rec.estado == 'atrasada' %}
                                                     <i class="bi bi-exclamation-triangle me-2"></i>
-                                                    <strong>{{ rec.meta.get_tipo_display }} ({{ rec.meta.mes }}/{{
-                                                        rec.meta.anio }})</strong>
+                                                    <strong>{{ rec.meta.get_tipo_display }} ({{ rec.meta.mes }}/{{ rec.meta.anio }})</strong>
                                                     <span class="badge bg-warning ms-2">Atrasada</span>
                                                     {% else %}
                                                     <i class="bi bi-x-circle-fill me-2"></i>
-                                                    <strong>{{ rec.meta.get_tipo_display }} ({{ rec.meta.mes }}/{{
-                                                        rec.meta.anio }})</strong>
+                                                    <strong>{{ rec.meta.get_tipo_display }} ({{ rec.meta.mes }}/{{ rec.meta.anio }})</strong>
                                                     <span class="badge bg-danger ms-2">Crítica</span>
                                                     {% endif %}
                                                 </div>
@@ -107,7 +103,7 @@
                             {% endif %}
                             {% if metas %}
                             <div class="table-responsive">
-                                <table class="table table-hover">
+                                <table class="table contafy-table table-hover align-middle">
                                     <thead class="table-dark">
                                         <tr>
                                             <th>Tipo</th>
@@ -237,38 +233,32 @@
                                     <div class="list-group">
                                         <div class="list-group-item d-flex justify-content-between align-items-center">
                                             <span>Conservadora (+5%)</span>
-                                            <span class="badge bg-success">${{
-                                                metas_dinamicas.ventas.conservadora|floatformat:2 }}</span>
+                                            <span class="badge bg-success">${{ metas_dinamicas.ventas.conservadora|floatformat:2 }}</span>
                                         </div>
                                         <div class="list-group-item d-flex justify-content-between align-items-center">
                                             <span>Moderada (+10%)</span>
-                                            <span class="badge bg-warning">${{
-                                                metas_dinamicas.ventas.moderada|floatformat:2 }}</span>
+                                            <span class="badge bg-warning">${{ metas_dinamicas.ventas.moderada|floatformat:2 }}</span>
                                         </div>
                                         <div class="list-group-item d-flex justify-content-between align-items-center">
                                             <span>Ambiciosa (+20%)</span>
-                                            <span class="badge bg-danger">${{
-                                                metas_dinamicas.ventas.ambiciosa|floatformat:2 }}</span>
+                                            <span class="badge bg-danger">${{ metas_dinamicas.ventas.ambiciosa|floatformat:2 }}</span>
                                         </div>
                                     </div>
                                 </div>
                                 <div class="col-md-6">
-                                    <h6>Gastos</h6>
+                                    <h6>Gastos <small class="text-muted">(metas de reducción)</small></h6>
                                     <div class="list-group">
                                         <div class="list-group-item d-flex justify-content-between align-items-center">
-                                            <span>Conservadora (+5%)</span>
-                                            <span class="badge bg-success">${{
-                                                metas_dinamicas.gastos.conservadora|floatformat:2 }}</span>
+                                            <span>Conservadora (−5%)</span>
+                                            <span class="badge bg-success">${{ metas_dinamicas.gastos.conservadora|floatformat:2 }}</span>
                                         </div>
                                         <div class="list-group-item d-flex justify-content-between align-items-center">
-                                            <span>Moderada (+15%)</span>
-                                            <span class="badge bg-warning">${{
-                                                metas_dinamicas.gastos.moderada|floatformat:2 }}</span>
+                                            <span>Moderada (−10%)</span>
+                                            <span class="badge bg-warning">${{ metas_dinamicas.gastos.moderada|floatformat:2 }}</span>
                                         </div>
                                         <div class="list-group-item d-flex justify-content-between align-items-center">
-                                            <span>Ambiciosa (+25%)</span>
-                                            <span class="badge bg-danger">${{
-                                                metas_dinamicas.gastos.ambiciosa|floatformat:2 }}</span>
+                                            <span>Ambiciosa (−20%)</span>
+                                            <span class="badge bg-danger">${{ metas_dinamicas.gastos.ambiciosa|floatformat:2 }}</span>
                                         </div>
                                     </div>
                                 </div>
@@ -276,8 +266,7 @@
                             <div class="mt-3">
                                 <small class="text-muted">
                                     <i class="bi bi-info-circle"></i>
-                                    Crecimiento actual: {{ metas_dinamicas.tendencia.crecimiento_ventas|floatformat:1
-                                    }}%.
+                                    Crecimiento actual: {{ metas_dinamicas.tendencia.crecimiento_ventas|floatformat:1 }}%.
                                     Recomendación: {{ metas_dinamicas.tendencia.recomendacion|title }}.
                                 </small>
                             </div>

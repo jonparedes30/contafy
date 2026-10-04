@@ -189,12 +189,6 @@
                     <i class="bi bi-bar-chart-line"></i> Dashboard General
                 </a>
             </li>
-            <li class="nav-item">
-                <a class="nav-link {% if 'actividad_reciente' in request.path %}active{% endif %}"
-                    href="{% url 'empresa:actividad_reciente' %}">
-                    <i class="bi bi-clock-history"></i> Historial Actividad
-                </a>
-            </li>
 
 
             <!-- ==============================================
@@ -240,8 +234,8 @@
                 </a>
             </li>
             <li class="nav-item">
-                <a class="nav-link {% if 'listar_empresas' in request.path %}active{% endif %}"
-                    href="{% url 'empresa:listar_empresas' %}">
+                <a class="nav-link {% if '/centro/' in request.path %}active{% endif %}"
+                    href="{% url 'empresa:centro_empresa' %}">
                     <i class="bi bi-building"></i> Mi Empresa
                 </a>
             </li>

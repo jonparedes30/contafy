@@ -23,9 +23,7 @@
                     <button type="submit" class="btn btn-primary btn-sm">
                         <i class="bi bi-funnel"></i> Filtrar
                     </button>
-                    <button type="button" class="btn btn-outline-secondary btn-sm" onclick="window.print()">
-                        <i class="bi bi-printer"></i> Imprimir
-                    </button>
+
                     <div class="btn-group ml-2" role="group">
                         <a href="?{% if request.GET.fecha_inicio %}fecha_inicio={{ request.GET.fecha_inicio }}&fecha_fin={{ request.GET.fecha_fin }}&{% endif %}niif=false" 
                            class="btn btn-sm {% if not formato_niif %}btn-primary{% else %}btn-outline-primary{% endif %}">
@@ -153,18 +151,18 @@
                                 {% endfor %}
                                 <tr class="table-success"><td><strong>Total Patrimonio</strong></td><td class="text-right"><strong>${{ reporte_niif.totales.total_patrimonio|floatformat:2 }}</strong></td></tr>
                                 
-                                <tr class="table-success"><td><strong>TOTAL PASIVOS + PATRIMONIO</strong></td><td class="text-right"><strong>${{ reporte_niif.totales.total_pasivos|add:reporte_niif.totales.total_patrimonio|floatformat:2 }}</strong></td></tr>
+                                <tr class="table-success"><td><strong>TOTAL PASIVOS + PATRIMONIO</strong></td><td class="text-right"><strong>${{ reporte_niif.totales.total_pasivos_y_patrimonio|floatformat:2 }}</strong></td></tr>
                             </tbody>
                         </table>
-                        
-                        <!-- Verificación de Balance -->
-                        <div class="alert {% if reporte_niif.totales.total_activos == reporte_niif.totales.total_pasivos|add:reporte_niif.totales.total_patrimonio %}alert-success{% else %}alert-danger{% endif %} mt-3">
+
+                        <!-- Verificación de Balance — usa flag `cuadra` calculado en backend con tolerancia 0.01 -->
+                        <div class="alert {% if reporte_niif.totales.cuadra %}alert-success{% else %}alert-danger{% endif %} mt-3">
                             <small>
-                                <i class="fas fa-{% if reporte_niif.totales.total_activos == reporte_niif.totales.total_pasivos|add:reporte_niif.totales.total_patrimonio %}check{% else %}exclamation-triangle{% endif %}"></i>
-                                {% if reporte_niif.totales.total_activos == reporte_niif.totales.total_pasivos|add:reporte_niif.totales.total_patrimonio %}
+                                <i class="fas fa-{% if reporte_niif.totales.cuadra %}check{% else %}exclamation-triangle{% endif %}"></i>
+                                {% if reporte_niif.totales.cuadra %}
                                     ✅ Balance cuadrado según NIIF
                                 {% else %}
-                                    ❌ Balance no cuadrado
+                                    ❌ Balance no cuadrado · Diferencia: ${{ reporte_niif.totales.diferencia_cuadre|floatformat:2 }}
                                 {% endif %}
                             </small>
                         </div>

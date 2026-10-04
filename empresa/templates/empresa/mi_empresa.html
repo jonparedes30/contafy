@@ -225,8 +225,8 @@
                     {% for empleado in empleados %}
                     <div class="d-flex align-items-center mb-3 p-2 rounded" style="background-color: #f8f9fa;">
                         <div class="position-relative me-3">
-                            <div class="bg-gradient rounded-circle d-flex align-items-center justify-content-center" 
-                                 style="width: 45px; height: 45px; background: linear-gradient(45deg, #007bff, #0056b3);">
+                            <div class="bg-gradient rounded-circle d-flex align-items-center justify-content-center"
+                                 style="width: 45px; height: 45px; background: var(--grad-brand);">
                                 <i class="bi bi-person text-white fs-5"></i>
                             </div>
                             {% if forloop.first %}
@@ -261,7 +261,7 @@
 
             <!-- Asistente de ayuda -->
             <div class="card shadow-sm">
-                <div class="card-header bg-gradient text-white" style="background: linear-gradient(45deg, #28a745, #20c997);">
+                <div class="card-header bg-gradient text-white" style="background: var(--grad-brand);">
                     <h5 class="mb-0"><i class="bi bi-headset me-2"></i>Asistente de Ayuda</h5>
                 </div>
                 <div class="card-body text-center">
@@ -281,9 +281,9 @@
 <div class="modal fade" id="editarEmpresaModal" tabindex="-1">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
-            <div class="modal-header">
+            <div class="modal-header bg-brand text-white">
                 <h5 class="modal-title"><i class="bi bi-building me-2"></i>Editar Información de la Empresa</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
                 <form id="formEditarEmpresa">
@@ -369,9 +369,9 @@
 <div class="modal fade" id="editarUsuarioModal" tabindex="-1">
     <div class="modal-dialog">
         <div class="modal-content">
-            <div class="modal-header">
+            <div class="modal-header bg-brand text-white">
                 <h5 class="modal-title"><i class="bi bi-person-circle me-2"></i>Editar Mi Perfil</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
                 <form id="formEditarUsuario">
@@ -408,9 +408,9 @@
 <div class="modal fade" id="poderesModal" tabindex="-1">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
-            <div class="modal-header">
+            <div class="modal-header bg-brand text-white">
                 <h5 class="modal-title">Gestionar Poderes - <span id="empleadoNombre"></span></h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
                 <div class="row">

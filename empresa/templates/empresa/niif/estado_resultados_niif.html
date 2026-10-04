@@ -141,7 +141,42 @@
                                 </div>
                             </div>
                             {% endif %}
-                            
+
+                            <!-- UTILIDAD ANTES DE IMPUESTOS -->
+                            {% if reporte.totales.utilidad_antes_impuestos is not None %}
+                            <div class="card mt-3 border-secondary">
+                                <div class="card-body bg-light">
+                                    <div class="row">
+                                        <div class="col-8">
+                                            <h5 class="text-secondary">UTILIDAD ANTES DE IMPUESTOS</h5>
+                                        </div>
+                                        <div class="col-4 text-right">
+                                            <h5 class="text-secondary">${{ reporte.totales.utilidad_antes_impuestos|floatformat:2 }}</h5>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endif %}
+
+                            <!-- IMPUESTOS (Ecuador: 15% PT + 25% IR) -->
+                            {% if reporte.impuestos %}
+                            <div class="card mt-3">
+                                <div class="card-header bg-warning text-dark">
+                                    <h5><i class="fas fa-receipt"></i> IMPUESTOS</h5>
+                                </div>
+                                <div class="card-body">
+                                    <table class="table table-sm">
+                                        {% for concepto, valor in reporte.impuestos.items %}
+                                        <tr>
+                                            <td>{{ concepto }}</td>
+                                            <td class="text-right text-danger">(${{ valor|floatformat:2 }})</td>
+                                        </tr>
+                                        {% endfor %}
+                                    </table>
+                                </div>
+                            </div>
+                            {% endif %}
+
                             <!-- UTILIDAD NETA -->
                             <div class="card mt-3 border-{% if reporte.totales.utilidad_neta >= 0 %}success{% else %}danger{% endif %}">
                                 <div class="card-body bg-{% if reporte.totales.utilidad_neta >= 0 %}success{% else %}danger{% endif %} text-white">

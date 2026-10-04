@@ -6,12 +6,14 @@ from django.contrib.auth.decorators import login_required
 from empresa.models import Compra, Producto
 from empresa.forms import CompraForm
 from empresa.views.contabilidad import registrar_movimiento_contable
+from empresa.decorators import require_power
 from django.db import transaction
 from django.contrib import messages
 from django.db.models import Sum, Avg, Count, Q
 from decimal import Decimal
 
 @login_required
+@require_power('puede_registrar_compras')
 def crear_compra(request):
     empresa = request.user.empresa
 
@@ -176,6 +178,7 @@ def crear_compra(request):
 
 
 @login_required
+@require_power('puede_registrar_compras')
 def listar_compras(request):
     empresa = request.user.empresa
     compras = Compra.objects.filter(empresa=empresa).order_by('-fecha')
@@ -232,6 +235,7 @@ def listar_compras(request):
     return render(request, 'empresa/listar_compra.html', contexto)
 
 @login_required
+@require_power('puede_editar_compras')
 def editar_compra(request, compra_id):
     from django.shortcuts import get_object_or_404
     
@@ -267,6 +271,7 @@ def editar_compra(request, compra_id):
     return render(request, 'empresa/editar_compra.html', context)
 
 @login_required
+@require_power('puede_eliminar_compras')
 def eliminar_compra(request, compra_id):
     from django.shortcuts import get_object_or_404
     from django.http import JsonResponse

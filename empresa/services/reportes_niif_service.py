@@ -7,6 +7,11 @@ from django.utils import timezone
 
 logger = logging.getLogger(__name__)
 
+# Tasas impositivas Ecuador (LRTI + Código del Trabajo).
+# Pueden externalizarse a settings si se requiere multi-país.
+TASA_PARTICIPACION_TRABAJADORES = Decimal('0.15')  # 15% Participación Trabajadores
+TASA_IMPUESTO_RENTA            = Decimal('0.25')   # 25% Impuesto a la Renta
+
 class ReportesNIIFService:
     """Servicio para generar reportes NIIF completos"""
     
@@ -31,24 +36,41 @@ class ReportesNIIFService:
             'totales': {}
         }
         
+        # Heurística de clasificación NIIF (corriente vs no corriente)
+        # Futuro: agregar campo `clasificacion_niif` al modelo CuentaContable
+        def _es_activo_corriente(nombre):
+            n = nombre.lower().strip()
+            return (n.startswith('caja') or n.startswith('banco')
+                    or n.startswith('cuentas por cobrar')
+                    or n.startswith('inventario') or n.startswith('iva')
+                    or n.startswith('anticipo') or 'efectivo' in n
+                    or 'corto plazo' in n)
+
+        def _es_pasivo_corriente(nombre):
+            n = nombre.lower().strip()
+            return (n.startswith('cuentas por pagar')
+                    or 'iva por pagar' in n
+                    or 'sueldos por pagar' in n
+                    or 'impuestos por pagar' in n
+                    or 'corto plazo' in n)
+
         for cuenta in cuentas:
             saldo = cuenta.valor
             if abs(saldo) < 0.01:  # Ignorar saldos insignificantes
                 continue
-                
+
             if cuenta.tipo == 'activo':
-                # Clasificar en corriente/no corriente
-                if cuenta.nombre in ['Caja', 'Bancos', 'Cuentas por Cobrar', 'Inventario']:
+                if _es_activo_corriente(cuenta.nombre):
                     reporte['activos_corrientes'][cuenta.nombre] = float(saldo)
                 else:
                     reporte['activos_no_corrientes'][cuenta.nombre] = float(saldo)
-                    
+
             elif cuenta.tipo == 'pasivo':
-                if cuenta.nombre in ['Cuentas por Pagar', 'IVA por Pagar']:
+                if _es_pasivo_corriente(cuenta.nombre):
                     reporte['pasivos_corrientes'][cuenta.nombre] = float(saldo)
                 else:
                     reporte['pasivos_no_corrientes'][cuenta.nombre] = float(saldo)
-                    
+
             elif cuenta.tipo == 'capital':
                 reporte['patrimonio'][cuenta.nombre] = float(saldo)
         
@@ -61,16 +83,26 @@ class ReportesNIIFService:
             reporte['activos_corrientes']['Provisión Deterioro CxC'] = -float(deterioro_total)
         
         # Calcular totales
+        total_activos = sum(reporte['activos_corrientes'].values()) + sum(reporte['activos_no_corrientes'].values())
+        total_pasivos = sum(reporte['pasivos_corrientes'].values()) + sum(reporte['pasivos_no_corrientes'].values())
+        total_patrimonio = sum(reporte['patrimonio'].values())
+        total_pasivos_y_patrimonio = total_pasivos + total_patrimonio
+        diferencia_cuadre = abs(total_activos - total_pasivos_y_patrimonio)
+
         reporte['totales'] = {
             'activos_corrientes': sum(reporte['activos_corrientes'].values()),
             'activos_no_corrientes': sum(reporte['activos_no_corrientes'].values()),
-            'total_activos': sum(reporte['activos_corrientes'].values()) + sum(reporte['activos_no_corrientes'].values()),
+            'total_activos': total_activos,
             'pasivos_corrientes': sum(reporte['pasivos_corrientes'].values()),
             'pasivos_no_corrientes': sum(reporte['pasivos_no_corrientes'].values()),
-            'total_pasivos': sum(reporte['pasivos_corrientes'].values()) + sum(reporte['pasivos_no_corrientes'].values()),
-            'total_patrimonio': sum(reporte['patrimonio'].values())
+            'total_pasivos': total_pasivos,
+            'total_patrimonio': total_patrimonio,
+            # Pre-calculados para evitar pérdida de precisión con |add: en template
+            'total_pasivos_y_patrimonio': total_pasivos_y_patrimonio,
+            'diferencia_cuadre': diferencia_cuadre,
+            'cuadra': diferencia_cuadre < 0.01,
         }
-        
+
         return reporte
     
     @staticmethod
@@ -156,18 +188,46 @@ class ReportesNIIFService:
             pass
         
         # Calcular totales
-        total_ingresos = sum(reporte['ingresos_ordinarios'].values())
-        total_costos = sum(reporte['costos_ventas'].values())
-        total_gastos = sum(reporte['gastos_operativos'].values())
-        
-        reporte['totales'] = {
-            'ingresos_ordinarios': total_ingresos,
-            'utilidad_bruta': total_ingresos - total_costos,
-            'gastos_operativos': total_gastos,
-            'utilidad_operativa': total_ingresos - total_costos - total_gastos,
-            'utilidad_neta': total_ingresos - total_costos - total_gastos
+        total_ingresos = Decimal(str(sum(reporte['ingresos_ordinarios'].values())))
+        total_costos = Decimal(str(sum(reporte['costos_ventas'].values())))
+        total_gastos = Decimal(str(sum(reporte['gastos_operativos'].values())))
+        total_otros_ingresos = Decimal(str(sum(reporte['otros_ingresos'].values())))
+        total_gastos_financieros = Decimal(str(sum(reporte['gastos_financieros'].values())))
+
+        utilidad_bruta = total_ingresos - total_costos
+        utilidad_operativa = utilidad_bruta - total_gastos
+        utilidad_antes_impuestos = utilidad_operativa + total_otros_ingresos - total_gastos_financieros
+
+        # Impuestos Ecuador (solo si hay utilidad positiva)
+        if utilidad_antes_impuestos > 0:
+            participacion_trabajadores = utilidad_antes_impuestos * TASA_PARTICIPACION_TRABAJADORES
+            utilidad_post_pt = utilidad_antes_impuestos - participacion_trabajadores
+            impuesto_renta = utilidad_post_pt * TASA_IMPUESTO_RENTA
+        else:
+            participacion_trabajadores = Decimal('0')
+            impuesto_renta = Decimal('0')
+
+        utilidad_neta = utilidad_antes_impuestos - participacion_trabajadores - impuesto_renta
+
+        reporte['impuestos'] = {
+            'Participación Trabajadores (15%)': float(participacion_trabajadores),
+            'Impuesto a la Renta (25%)': float(impuesto_renta),
         }
-        
+
+        reporte['totales'] = {
+            'ingresos_ordinarios': float(total_ingresos),
+            'costos_ventas': float(total_costos),
+            'utilidad_bruta': float(utilidad_bruta),
+            'gastos_operativos': float(total_gastos),
+            'utilidad_operativa': float(utilidad_operativa),
+            'otros_ingresos': float(total_otros_ingresos),
+            'gastos_financieros': float(total_gastos_financieros),
+            'utilidad_antes_impuestos': float(utilidad_antes_impuestos),
+            'participacion_trabajadores': float(participacion_trabajadores),
+            'impuesto_renta': float(impuesto_renta),
+            'utilidad_neta': float(utilidad_neta),
+        }
+
         return reporte
     
     @staticmethod

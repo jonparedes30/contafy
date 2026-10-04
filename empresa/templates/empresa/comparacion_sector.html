@@ -204,16 +204,98 @@
             </div>
             {% endif %}
 
-            <!-- Proyecciones Futuras -->
-            {% if benchmarking_sectorial.proyecciones_posicion %}
+            <!-- Proyecciones Futuras con 3 escenarios -->
+            {% with esc=benchmarking_sectorial.proyecciones_escenarios %}
+            {% if esc %}
+            <div class="card mb-4">
+                <div class="card-header border-0 pb-0 d-flex justify-content-between align-items-center">
+                    <h6 class="mb-0 text-primary">
+                        <i class="bi bi-graph-up me-2"></i>Proyección de Posición Futura (3 años)
+                    </h6>
+                    {% if esc.calidad_datos == 'alta' %}
+                        <span class="badge bg-success"><i class="bi bi-check-circle me-1"></i>Datos históricos</span>
+                    {% else %}
+                        <span class="badge bg-warning text-dark"><i class="bi bi-info-circle me-1"></i>Estimación sectorial</span>
+                    {% endif %}
+                </div>
+                <div class="card-body">
+                    <p class="text-muted small mb-3">
+                        <i class="bi bi-info-circle me-1"></i>{{ esc.nota }}
+                    </p>
+
+                    <!-- Tabs de escenarios -->
+                    <ul class="nav nav-pills mb-3" role="tablist">
+                        <li class="nav-item">
+                            <button class="nav-link active" data-bs-toggle="pill" data-bs-target="#esc-base">
+                                <i class="bi bi-bullseye me-1"></i>Base ({{ esc.tasa_base_aplicada|floatformat:1 }}%)
+                            </button>
+                        </li>
+                        <li class="nav-item">
+                            <button class="nav-link" data-bs-toggle="pill" data-bs-target="#esc-conservador">
+                                <i class="bi bi-shield me-1"></i>Conservador
+                            </button>
+                        </li>
+                        <li class="nav-item">
+                            <button class="nav-link" data-bs-toggle="pill" data-bs-target="#esc-optimista">
+                                <i class="bi bi-rocket me-1"></i>Optimista
+                            </button>
+                        </li>
+                    </ul>
+
+                    <div class="tab-content">
+                        {% for nombre, proyecciones in esc.items %}
+                            {% if nombre == 'base' or nombre == 'conservador' or nombre == 'optimista' %}
+                            <div class="tab-pane fade {% if nombre == 'base' %}show active{% endif %}" id="esc-{{ nombre }}">
+                                <div class="table-responsive">
+                                    <table class="table table-sm contafy-table align-middle">
+                                        <thead>
+                                            <tr>
+                                                <th>Año</th>
+                                                <th>Ventas Proyectadas</th>
+                                                <th>Utilidad Proyectada</th>
+                                                <th>Tasa Efectiva</th>
+                                                <th>Posición Estimada</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for proj in proyecciones %}
+                                            <tr>
+                                                <td><strong>Año {{ proj.anio }}</strong></td>
+                                                <td>${{ proj.ventas_proyectadas|floatformat:0 }}</td>
+                                                <td>${{ proj.utilidad_proyectada|floatformat:0 }}</td>
+                                                <td>
+                                                    <small class="text-muted">{{ proj.tasa_crecimiento_efectiva|floatformat:1 }}%/año</small>
+                                                </td>
+                                                <td><span class="badge bg-info">{{ proj.posicion_estimada }}</span></td>
+                                            </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+
+                    {% if not esc.tiene_historico %}
+                    <div class="alert alert-info mt-3 mb-0 py-2">
+                        <small>
+                            <i class="bi bi-lightbulb me-1"></i>
+                            <strong>Tip:</strong> Registra más ventas históricas (al menos 6 meses) para que el sistema use tu propio crecimiento en las proyecciones.
+                        </small>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% elif benchmarking_sectorial.proyecciones_posicion %}
+            <!-- Fallback: si todavía viene la estructura antigua (lista plana) -->
             <div class="card mb-4">
                 <div class="card-header border-0 pb-0">
-                    <h6 class="mb-0 text-primary"><i class="bi bi-graph-up me-2"></i>Proyección de Posición Futura (3
-                        años)</h6>
+                    <h6 class="mb-0 text-primary"><i class="bi bi-graph-up me-2"></i>Proyección de Posición Futura (3 años)</h6>
                 </div>
                 <div class="card-body">
                     <div class="table-responsive">
-                        <table class="table table-sm">
+                        <table class="table table-sm contafy-table align-middle">
                             <thead>
                                 <tr>
                                     <th>Año</th>
@@ -237,6 +319,7 @@
                 </div>
             </div>
             {% endif %}
+            {% endwith %}
 
             <!-- Gráficos de Comparación -->
             <div class="row mt-4">
@@ -281,14 +364,14 @@
         datasets: [{
             label: 'Tu Empresa',
             data: [{% for nivel, datos in benchmarking_sectorial.comparaciones.items %}{% if datos.tiene_datos %}{{ benchmarking_sectorial.metricas_propias.ventas_mensuales|default:0 }}, {% endif %}{% endfor %}],
-    backgroundColor: 'rgba(54, 162, 235, 0.8)',
-        borderColor: 'rgba(54, 162, 235, 1)',
+    backgroundColor: 'rgba(16, 185, 129, 0.8)',
+        borderColor: 'rgba(16, 185, 129, 1)',
             borderWidth: 2
             }, {
         label: 'Promedio Sector',
             data: [{% for nivel, datos in benchmarking_sectorial.comparaciones.items %}{% if datos.tiene_datos %}{{ datos.ventas_promedio|default:0 }}, {% endif %}{% endfor %}],
-    backgroundColor: 'rgba(255, 99, 132, 0.8)',
-        borderColor: 'rgba(255, 99, 132, 1)',
+    backgroundColor: 'rgba(59, 130, 246, 0.8)',
+        borderColor: 'rgba(59, 130, 246, 1)',
             borderWidth: 2
             }]
         };
@@ -298,14 +381,14 @@
     datasets: [{
         label: 'Tu Empresa',
         data: [{% for nivel, datos in benchmarking_sectorial.comparaciones.items %}{% if datos.tiene_datos %}{{ benchmarking_sectorial.metricas_propias.margen_neto|default:0 }}, {% endif %}{% endfor %}],
-    backgroundColor: 'rgba(75, 192, 192, 0.8)',
-        borderColor: 'rgba(75, 192, 192, 1)',
+    backgroundColor: 'rgba(20, 184, 166, 0.8)',
+        borderColor: 'rgba(20, 184, 166, 1)',
             borderWidth: 2
             }, {
         label: 'Promedio Sector',
             data: [{% for nivel, datos in benchmarking_sectorial.comparaciones.items %}{% if datos.tiene_datos %}{{ datos.margen_neto_promedio|default:0 }}, {% endif %}{% endfor %}],
-    backgroundColor: 'rgba(255, 206, 86, 0.8)',
-        borderColor: 'rgba(255, 206, 86, 1)',
+    backgroundColor: 'rgba(245, 158, 11, 0.8)',
+        borderColor: 'rgba(245, 158, 11, 1)',
             borderWidth: 2
             }]
         };
@@ -378,15 +461,15 @@
             datasets: [{
                 label: 'Ventas',
                 data: ventas,
-                backgroundColor: 'rgba(54, 162, 235, 0.7)',
-                borderColor: 'rgba(54, 162, 235, 1)',
+                backgroundColor: 'rgba(16, 185, 129, 0.8)',
+                borderColor: 'rgba(16, 185, 129, 1)',
                 borderWidth: 2,
                 borderRadius: 6
             }, {
                 label: 'Gastos',
                 data: gastos,
-                backgroundColor: 'rgba(255, 99, 132, 0.7)',
-                borderColor: 'rgba(255, 99, 132, 1)',
+                backgroundColor: 'rgba(239, 68, 68, 0.8)',
+                borderColor: 'rgba(239, 68, 68, 1)',
                 borderWidth: 2,
                 borderRadius: 6
             }]
@@ -424,19 +507,19 @@
             datasets: [{
                 label: 'Rentabilidad (%)',
                 data: rentabilidad,
-                borderColor: 'rgba(75, 192, 192, 1)',
-                backgroundColor: 'rgba(75, 192, 192, 0.15)',
+                borderColor: 'rgba(20, 184, 166, 1)',
+                backgroundColor: 'rgba(20, 184, 166, 0.15)',
                 borderWidth: 3,
                 fill: true,
                 tension: 0.3,
                 pointRadius: 5,
-                pointBackgroundColor: 'rgba(75, 192, 192, 1)',
+                pointBackgroundColor: 'rgba(20, 184, 166, 1)',
                 yAxisID: 'y'
             }, {
                 label: 'Utilidad ($)',
                 data: utilidad,
-                borderColor: 'rgba(255, 206, 86, 1)',
-                backgroundColor: 'rgba(255, 206, 86, 0.15)',
+                borderColor: 'rgba(245, 158, 11, 1)',
+                backgroundColor: 'rgba(245, 158, 11, 0.15)',
                 borderWidth: 2,
                 fill: false,
                 tension: 0.3,

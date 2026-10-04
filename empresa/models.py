@@ -1,6 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser
 from django.conf import settings
+from django.utils.functional import cached_property
 from empresa.middleware import get_current_user
 from django.core.validators import RegexValidator
 
@@ -338,6 +339,10 @@ class Venta(AuditModel):
     tasa_iva = models.DecimalField(max_digits=5, decimal_places=2, default=15, help_text="Tasa de IVA (%)")
     tipo_pago = models.CharField(max_length=15, choices=TIPO_PAGO_CHOICES, default='contado')
     fecha = models.DateTimeField(auto_now_add=True)
+    transaccion_id_contable = models.CharField(
+        max_length=50, null=True, blank=True,
+        help_text="ID de la transacción contable asociada (para edición/eliminación de asientos)"
+    )
 
     def __init__(self, *args, **kwargs):
         # Compatibilidad con tests/clients que pasan `total=` en lugar de `monto=`.
@@ -357,7 +362,7 @@ class Venta(AuditModel):
         return f"Venta de {self.producto} - {self.monto}"
     
     def save(self, *args, **kwargs):
-        """Calcular IVA y crear asientos contables según NIIF"""
+        """Calcular IVA y crear/actualizar asientos contables según NIIF"""
         es_nuevo = not self.pk
         # Calcular IVA según NIC 12 usando Decimal para evitar mezclas float/Decimal
         from decimal import Decimal, ROUND_HALF_UP
@@ -375,25 +380,39 @@ class Venta(AuditModel):
         elif self.monto > 0 and (self.monto_neto == 0 or self.monto_neto is None):
             self.monto_neto = (Decimal(self.monto) / (one + tasa)).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
             self.iva = Decimal(self.monto) - self.monto_neto
-        
+
         super().save(*args, **kwargs)
-        
+
+        # Sincronizar asientos (crear nuevos en INSERT, regenerar en UPDATE)
+        self.crear_asientos_contables()
+
         if es_nuevo:
-            self.crear_asientos_contables()
             self.crear_cuenta_por_cobrar_si_credito()
             self.crear_movimiento_inventario()
             self.aplicar_niif15_si_aplica()
-    
-    def crear_asientos_contables(self):
-        """Crear partida doble para la venta usando servicio centralizado"""
+
+    def delete(self, *args, **kwargs):
+        """Eliminar asientos contables asociados antes de borrar la venta"""
         from empresa.services.contabilidad_service import ContabilidadService
-        
         try:
-            ContabilidadService.crear_asientos_venta(self.empresa, self)
+            ContabilidadService.eliminar_asientos(self.empresa, self)
+        except Exception as e:
+            import logging
+            logging.getLogger(__name__).error(f'Error eliminando asientos venta {self.id}: {e}')
+        super().delete(*args, **kwargs)
+
+    def crear_asientos_contables(self):
+        """Crear/actualizar partida doble para la venta usando servicio centralizado"""
+        from empresa.services.contabilidad_service import ContabilidadService
+
+        try:
+            ContabilidadService.sincronizar_asientos(
+                self.empresa, self, ContabilidadService.crear_asientos_venta
+            )
         except Exception as e:
             import logging
             logger = logging.getLogger(__name__)
-            logger.error(f'Error creando asientos contables para venta {self.id}: {str(e)}')
+            logger.error(f'Error sincronizando asientos contables venta {self.id}: {str(e)}')
             raise
     
     def crear_cuenta_por_cobrar_si_credito(self):
@@ -538,7 +557,11 @@ class Compra(AuditModel):
     tasa_iva = models.DecimalField(max_digits=5, decimal_places=2, default=15, help_text="Tasa de IVA (%)")
     tipo_pago = models.CharField(max_length=10, choices=TIPO_PAGO_CHOICES, default='contado')
     fecha = models.DateTimeField(auto_now_add=True)
-    
+    transaccion_id_contable = models.CharField(
+        max_length=50, null=True, blank=True,
+        help_text="ID de la transacción contable asociada (para edición/eliminación de asientos)"
+    )
+
     @property
     def proveedor_display(self):
         """Retorna el nombre del proveedor para mostrar"""
@@ -575,21 +598,35 @@ class Compra(AuditModel):
             self.iva = Decimal(self.monto) - self.monto_neto
         
         super().save(*args, **kwargs)
-        
+
+        # Sincronizar asientos (crear en INSERT, regenerar en UPDATE)
+        self.crear_asientos_contables()
+
         if es_nuevo:
-            self.crear_asientos_contables()
             self.crear_cuenta_por_pagar_si_credito()
-    
-    def crear_asientos_contables(self):
-        """Crear partida doble para la compra usando servicio centralizado"""
+
+    def delete(self, *args, **kwargs):
+        """Eliminar asientos contables asociados antes de borrar la compra"""
         from empresa.services.contabilidad_service import ContabilidadService
-        
         try:
-            ContabilidadService.crear_asientos_compra(self.empresa, self)
+            ContabilidadService.eliminar_asientos(self.empresa, self)
+        except Exception as e:
+            import logging
+            logging.getLogger(__name__).error(f'Error eliminando asientos compra {self.id}: {e}')
+        super().delete(*args, **kwargs)
+
+    def crear_asientos_contables(self):
+        """Crear/actualizar partida doble para la compra usando servicio centralizado"""
+        from empresa.services.contabilidad_service import ContabilidadService
+
+        try:
+            ContabilidadService.sincronizar_asientos(
+                self.empresa, self, ContabilidadService.crear_asientos_compra
+            )
         except Exception as e:
             import logging
             logger = logging.getLogger(__name__)
-            logger.error(f'Error creando asientos contables para compra {self.id}: {str(e)}')
+            logger.error(f'Error sincronizando asientos contables compra {self.id}: {str(e)}')
             raise
     
     def crear_cuenta_por_pagar_si_credito(self):
@@ -649,25 +686,41 @@ class Gasto(AuditModel):
         ('Variable', 'Variable'),
     ]
     categoria = models.CharField(max_length=20, choices=CATEGORIA_CHOICES, default='Fijo')
+    transaccion_id_contable = models.CharField(
+        max_length=50, null=True, blank=True,
+        help_text="ID de la transacción contable asociada (para edición/eliminación de asientos)"
+    )
 
     def __str__(self):
         return f"{self.descripcion} - {self.monto}"
     
     def save(self, *args, **kwargs):
-        """Crear asientos contables automáticamente"""
+        """Crear/actualizar asientos contables automáticamente"""
         super().save(*args, **kwargs)
         self.crear_asientos_contables()
-    
-    def crear_asientos_contables(self):
-        """Crear partida doble para el gasto usando servicio centralizado"""
+
+    def delete(self, *args, **kwargs):
+        """Eliminar asientos contables asociados antes de borrar el gasto"""
         from empresa.services.contabilidad_service import ContabilidadService
-        
         try:
-            ContabilidadService.crear_asientos_gasto(self.empresa, self)
+            ContabilidadService.eliminar_asientos(self.empresa, self)
+        except Exception as e:
+            import logging
+            logging.getLogger(__name__).error(f'Error eliminando asientos gasto {self.id}: {e}')
+        super().delete(*args, **kwargs)
+
+    def crear_asientos_contables(self):
+        """Crear/actualizar partida doble para el gasto usando servicio centralizado"""
+        from empresa.services.contabilidad_service import ContabilidadService
+
+        try:
+            ContabilidadService.sincronizar_asientos(
+                self.empresa, self, ContabilidadService.crear_asientos_gasto
+            )
         except Exception as e:
             import logging
             logger = logging.getLogger(__name__)
-            logger.error(f'Error creando asientos contables para gasto {self.id}: {str(e)}')
+            logger.error(f'Error sincronizando asientos contables gasto {self.id}: {str(e)}')
             raise
 
 # Movimiento Contable
@@ -708,6 +761,44 @@ class MovimientoContable(AuditModel):
         help_text="ID único para agrupar movimientos de la misma transacción"
     )
 
+    # Thread-local para agrupar movimientos en la misma transacción
+    # Inicializado a nivel de clase para soportar concurrencia (uno por request)
+    _tx_context = None  # se asigna dinámicamente vía agrupar_transaccion()
+
+    @classmethod
+    def agrupar_transaccion(cls, descripcion_general=""):
+        """
+        Context manager: agrupa todos los movimientos creados dentro del bloque
+        con el mismo transaccion_id, garantizando la partida doble.
+
+        Uso:
+            with MovimientoContable.agrupar_transaccion("Venta #123"):
+                MovimientoContable.objects.create(...)  # debito
+                MovimientoContable.objects.create(...)  # credito
+            # Ambos comparten transaccion_id automaticamente.
+
+        Esto previene el bug histórico de movimientos huérfanos con ID auto-
+        generado distinto (que aparecían como "no cuadra" en el verificador).
+        """
+        import threading
+        import uuid
+        from contextlib import contextmanager
+
+        # Thread-local lazy init (mejor que atributo de clase: aísla por thread)
+        if not hasattr(cls, '_thread_local'):
+            cls._thread_local = threading.local()
+
+        @contextmanager
+        def _ctx():
+            tid_anterior = getattr(cls._thread_local, 'tid', None)
+            cls._thread_local.tid = str(uuid.uuid4())[:12]
+            try:
+                yield cls._thread_local.tid
+            finally:
+                cls._thread_local.tid = tid_anterior  # restaurar para anidamiento
+
+        return _ctx()
+
     def save(self, *args, **kwargs):
         # Asegurar que siempre tenga cuenta_fk
         if not self.cuenta_fk and self.cuenta_text:
@@ -717,21 +808,26 @@ class MovimientoContable(AuditModel):
                 defaults={'tipo': 'activo'}  # Tipo por defecto
             )
             self.cuenta_fk = cuenta
-        
+
         # Generar transaccion_id si no existe
         if not self.transaccion_id:
-            import uuid
-            self.transaccion_id = str(uuid.uuid4())[:8]
-        
+            # Si estamos dentro de un agrupar_transaccion(), heredar el ID
+            tid_ctx = getattr(getattr(MovimientoContable, '_thread_local', None), 'tid', None)
+            if tid_ctx:
+                self.transaccion_id = tid_ctx
+            else:
+                import uuid
+                self.transaccion_id = str(uuid.uuid4())[:8]
+
         super().save(*args, **kwargs)
-    
+
     def clean(self):
         from django.core.exceptions import ValidationError
-        
+
         # Validar que el monto sea positivo
         if self.monto <= 0:
             raise ValidationError('El monto debe ser mayor a cero')
-        
+
         # Validar que tenga cuenta_fk o cuenta_text
         if not self.cuenta_fk and not self.cuenta_text:
             raise ValidationError('Debe especificar una cuenta contable')
@@ -771,30 +867,31 @@ class CuentaContable(models.Model):
     def crear_asientos_iniciales(self):
         """Crear asientos contables iniciales para la cuenta"""
         try:
-            # Débito: Caja/Banco (recibimos el dinero)
-            cuenta_caja = CuentaContable.objects.get_or_create(
-                empresa=self.empresa,
-                nombre='Caja/Banco',
-                defaults={'tipo': 'activo'}
-            )[0]
-            
-            MovimientoContable.objects.create(
-                empresa=self.empresa,
-                cuenta_fk=cuenta_caja,
-                tipo='debito',
-                monto=self.monto_inicial,
-                descripcion=f'Ingreso por {self.nombre}'
-            )
-            
-            # Crédito: Esta cuenta (la deuda)
-            MovimientoContable.objects.create(
-                empresa=self.empresa,
-                cuenta_fk=self,
-                tipo='credito',
-                monto=self.monto_inicial,
-                descripcion=f'Registro de {self.nombre}'
-            )
-            
+            with MovimientoContable.agrupar_transaccion(f'Asientos iniciales {self.nombre}'):
+                # Débito: Caja/Banco (recibimos el dinero)
+                cuenta_caja = CuentaContable.objects.get_or_create(
+                    empresa=self.empresa,
+                    nombre='Caja/Banco',
+                    defaults={'tipo': 'activo'}
+                )[0]
+
+                MovimientoContable.objects.create(
+                    empresa=self.empresa,
+                    cuenta_fk=cuenta_caja,
+                    tipo='debito',
+                    monto=self.monto_inicial,
+                    descripcion=f'Ingreso por {self.nombre}'
+                )
+
+                # Crédito: Esta cuenta (la deuda)
+                MovimientoContable.objects.create(
+                    empresa=self.empresa,
+                    cuenta_fk=self,
+                    tipo='credito',
+                    monto=self.monto_inicial,
+                    descripcion=f'Registro de {self.nombre}'
+                )
+
         except Exception as e:
             print(f'Error creando asientos iniciales para cuenta contable: {e}')
     
@@ -1013,79 +1110,129 @@ class MetaFinanciera(models.Model):
     def __str__(self):
         return f"{self.empresa.nombre} - {self.get_tipo_display()} ({self.mes}/{self.anio})"
     
-    @property
+    @cached_property
     def progreso_actual(self):
-        """Calcula el progreso actual hacia la meta"""
-        valor = self.valor_actual
-        
-        if self.objetivo_mensual > 0:
+        """
+        Calcula el progreso actual hacia la meta.
+        Cacheado por instancia para evitar N+1 queries en el template.
+        """
+        # Convertir a float para evitar mezcla con Decimal en cálculos
+        valor = float(self.valor_actual or 0)
+        objetivo = float(self.objetivo_mensual or 0)
+
+        if objetivo > 0:
             if self.tipo == 'gastos':
-                # Para gastos: estar por debajo del presupuesto = 100%
-                # Gastar exactamente el presupuesto = 100%, excederlo reduce el progreso
-                if valor <= self.objetivo_mensual:
+                # Gastos: estar por debajo del presupuesto = 100%
+                if valor <= objetivo:
                     return 100
-                else:
-                    return max(0, (1 - (valor - self.objetivo_mensual) / self.objetivo_mensual) * 100)
-            return min((valor / self.objetivo_mensual) * 100, 100)
+                return max(0, (1 - (valor - objetivo) / objetivo) * 100)
+            return min((valor / objetivo) * 100, 100)
         return 0
-    
-    @property
+
+    @cached_property
     def estado(self):
-        """Retorna el estado de la meta"""
-        progreso = self.progreso_actual
+        """
+        Estado contextual basado en progreso + días transcurridos.
+        Compara progreso esperado a la fecha vs progreso real.
+        """
+        progreso = float(self.progreso_actual)
+
+        # Calcular % del mes transcurrido (para metas en el mes en curso)
+        from datetime import datetime
+        from calendar import monthrange
+        hoy = datetime.now()
+        if hoy.year == self.anio and hoy.month == self.mes:
+            _, ultimo_dia = monthrange(self.anio, self.mes)
+            pct_mes_transcurrido = (hoy.day / ultimo_dia) * 100
+        elif (hoy.year, hoy.month) > (self.anio, self.mes):
+            # Mes ya pasado
+            pct_mes_transcurrido = 100
+        else:
+            # Mes futuro
+            pct_mes_transcurrido = 0
+
         if progreso >= 100:
             return 'completada'
-        elif progreso >= 75:
+
+        # Mes futuro: aún no hay nada que evaluar
+        if pct_mes_transcurrido == 0:
             return 'en_progreso'
-        elif progreso >= 50:
-            return 'atrasada'
+
+        # Comparar progreso real vs progreso esperado a la fecha
+        ratio = progreso / pct_mes_transcurrido if pct_mes_transcurrido > 0 else 0
+
+        if ratio >= 0.9:
+            return 'en_progreso'      # Va al ritmo
+        elif ratio >= 0.6:
+            return 'atrasada'          # Va lento pero alcanzable
         else:
-            return 'crítica'
-    
-    @property
+            return 'crítica'           # Va muy mal
+
+    @cached_property
     def valor_actual(self):
-        """Obtiene el valor actual de la meta"""
+        """
+        Obtiene el valor actual de la meta usando criterios contables consistentes:
+        - Ventas: usa monto_neto (sin IVA) — consistente con Estado de Resultados
+        - Gastos: usa monto total
+        - Utilidad: ingresos_netos − costo_ventas (compras) − gastos (cascada NIIF)
+        - Clientes/Productos: total acumulado a fin del mes (no solo "nuevos en el mes")
+        """
         from django.db.models import Sum, Count
-        
+
+        rango = {'fecha__date__month': self.mes, 'fecha__date__year': self.anio}
+
         if self.tipo == 'ventas':
-            return Venta.objects.filter(
-                empresa=self.empresa,
-                fecha__month=self.mes,
-                fecha__year=self.anio
-            ).aggregate(total=Sum('monto'))['total'] or 0
+            # Usar monto_neto (sin IVA). Fallback a monto si monto_neto está vacío.
+            qs = Venta.objects.filter(empresa=self.empresa, **rango)
+            neto = qs.aggregate(t=Sum('monto_neto'))['t'] or 0
+            bruto = qs.aggregate(t=Sum('monto'))['t'] or 0
+            return neto if neto > 0 else bruto
+
         elif self.tipo == 'gastos':
             return Gasto.objects.filter(
-                empresa=self.empresa,
-                fecha__month=self.mes,
-                fecha__year=self.anio
-            ).aggregate(total=Sum('monto'))['total'] or 0
+                empresa=self.empresa, **rango
+            ).aggregate(t=Sum('monto'))['t'] or 0
+
         elif self.tipo == 'utilidad':
-            ventas = Venta.objects.filter(
-                empresa=self.empresa,
-                fecha__month=self.mes,
-                fecha__year=self.anio
-            ).aggregate(total=Sum('monto'))['total'] or 0
+            # Fórmula NIIF correcta: ingresos_netos − costo_ventas − gastos_operativos
+            ventas_qs = Venta.objects.filter(empresa=self.empresa, **rango)
+            ventas_netas = (ventas_qs.aggregate(t=Sum('monto_neto'))['t']
+                            or ventas_qs.aggregate(t=Sum('monto'))['t'] or 0)
+
+            compras_qs = Compra.objects.filter(empresa=self.empresa, **rango)
+            costo_ventas = (compras_qs.aggregate(t=Sum('monto_neto'))['t']
+                            or compras_qs.aggregate(t=Sum('monto'))['t'] or 0)
+
             gastos = Gasto.objects.filter(
-                empresa=self.empresa,
-                fecha__month=self.mes,
-                fecha__year=self.anio
-            ).aggregate(total=Sum('monto'))['total'] or 0
-            return ventas - gastos
+                empresa=self.empresa, **rango
+            ).aggregate(t=Sum('monto'))['t'] or 0
+
+            return float(ventas_netas) - float(costo_ventas) - float(gastos)
+
         elif self.tipo == 'clientes':
+            # Total acumulado de clientes a fin del mes (no solo nuevos del mes)
             from empresa.models import Cliente
+            from datetime import datetime
+            from calendar import monthrange
+            _, ultimo_dia = monthrange(self.anio, self.mes)
+            fin_mes = datetime(self.anio, self.mes, ultimo_dia, 23, 59, 59)
             return Cliente.objects.filter(
                 empresa=self.empresa,
-                creado_en__month=self.mes,
-                creado_en__year=self.anio
+                creado_en__lte=fin_mes
             ).count()
+
         elif self.tipo == 'productos':
+            # Total acumulado de productos a fin del mes
+            from datetime import datetime
+            from calendar import monthrange
+            _, ultimo_dia = monthrange(self.anio, self.mes)
+            fin_mes = datetime(self.anio, self.mes, ultimo_dia, 23, 59, 59)
             return Producto.objects.filter(
                 empresa=self.empresa,
-                fecha_creacion__month=self.mes,
-                fecha_creacion__year=self.anio
+                fecha_creacion__lte=fin_mes
             ).count()
-        else:
-            return 0
+
+        return 0
     
     def actualizar_historial(self):
         """Actualiza el historial de la meta"""
@@ -1099,28 +1246,50 @@ class MetaFinanciera(models.Model):
         )
     
     def generar_recomendacion(self):
-        """Genera recomendaciones basadas en el progreso"""
-        progreso = self.progreso_actual
-        dias_restantes = max(self.dias_restantes_mes(), 1)  # Evitar división por cero
-        
+        """Genera recomendaciones basadas en el progreso y la temporalidad de la meta"""
+        progreso = float(self.progreso_actual)
+        from datetime import datetime
+        hoy = datetime.now()
+        meta_actual = (hoy.year == self.anio and hoy.month == self.mes)
+        meta_pasada = (hoy.year, hoy.month) > (self.anio, self.mes)
+
         if progreso >= 100:
             return "¡Excelente! Has superado tu meta. Considera establecer una meta más ambiciosa para el próximo mes."
-        elif progreso >= 75:
-            return f"Vas muy bien. Con {dias_restantes} días restantes, mantén el ritmo actual para alcanzar tu meta."
+
+        if meta_pasada:
+            # Meta de mes pasado, sin "días restantes" significativos
+            if progreso >= 75:
+                return f"Cerca de tu objetivo: alcanzaste el {progreso:.1f}%. Buen mes."
+            elif progreso >= 50:
+                return f"Quedaste en {progreso:.1f}%. Analiza qué cambiar para el próximo período."
+            else:
+                return f"Meta no alcanzada ({progreso:.1f}%). Revisa la estrategia para los próximos meses."
+
+        if not meta_actual:
+            # Meta futura
+            return "Meta aún no iniciada. Prepara tu estrategia para llegar al objetivo."
+
+        # Meta del mes actual
+        dias_restantes = max(self.dias_restantes_mes(), 1)
+        falta = max(100 - progreso, 0)
+        esfuerzo_diario = (falta / dias_restantes)
+
+        if progreso >= 75:
+            return f"Vas muy bien. Con {dias_restantes} días restantes, mantén el ritmo actual."
         elif progreso >= 50:
-            return f"Estás a mitad de camino. Necesitas acelerar un {((100-progreso)/dias_restantes)*100:.1f}% diario para alcanzar tu meta."
+            return f"A mitad de camino. Necesitas acelerar {esfuerzo_diario:.1f}% diario para alcanzar tu meta."
         else:
-            return f"Meta en riesgo. Necesitas un esfuerzo extraordinario de {((100-progreso)/dias_restantes)*100:.1f}% diario para alcanzar tu objetivo."
-    
+            return f"Meta en riesgo. Necesitas un esfuerzo de {esfuerzo_diario:.1f}% diario para alcanzar tu objetivo."
+
     def dias_restantes_mes(self):
-        """Calcula los días restantes del mes"""
+        """Calcula los días restantes del mes (solo si la meta es del mes actual)"""
         from datetime import datetime
         from calendar import monthrange
-        
+
         hoy = datetime.now()
         if hoy.month == self.mes and hoy.year == self.anio:
             _, ultimo_dia = monthrange(self.anio, self.mes)
-            return ultimo_dia - hoy.day
+            return max(ultimo_dia - hoy.day, 0)
         return 0
 
 class CategoriaGastoKeyword(models.Model):
@@ -1246,15 +1415,59 @@ class NotificacionMeta(models.Model):
         self.save()
 
 class PoderEmpleado(models.Model):
+    """
+    Permisos granulares de un empleado en una empresa.
+
+    Sistema de roles predefinidos + customización fina.
+    Ver `empresa/services/roles_service.py` para la matriz que define qué
+    poderes activa cada rol predefinido.
+    """
+
+    ROLES_CHOICES = [
+        ('propietario',    'Propietario (acceso total)'),
+        ('gerente',        'Gerente (todo excepto eliminar empleados)'),
+        ('contador',       'Contador (transacciones + reportes + estados financieros)'),
+        ('vendedor',       'Vendedor / Cajero (crear ventas + ver inventario)'),
+        ('bodeguero',      'Bodeguero (gestión de inventario y productos)'),
+        ('comprador',      'Comprador (compras y proveedores)'),
+        ('auditor',        'Auditor (solo lectura: reportes + estados + actividad)'),
+        ('personalizado',  'Personalizado (configuración manual)'),
+    ]
+
     empleado = models.ForeignKey(Usuario, on_delete=models.CASCADE, related_name='poderes')
     empresa = models.ForeignKey(Empresa, on_delete=models.CASCADE, related_name='poderes_empleados')
-    puede_ver_reportes = models.BooleanField(default=False)
-    puede_registrar_ventas = models.BooleanField(default=False)
-    puede_editar_productos = models.BooleanField(default=False)
-    puede_gestionar_cuentas = models.BooleanField(default=False)
-    puede_registrar_gastos = models.BooleanField(default=False)
+
+    # Rol predefinido (si es 'personalizado', se respetan los booleanos individuales)
+    rol = models.CharField(max_length=20, choices=ROLES_CHOICES, default='personalizado')
+
+    # ─── Poderes originales (preservados) ─────────────────────────
+    puede_ver_reportes         = models.BooleanField(default=False)
+    puede_registrar_ventas     = models.BooleanField(default=False)
+    puede_editar_productos     = models.BooleanField(default=False)
+    puede_gestionar_cuentas    = models.BooleanField(default=False)
+    puede_registrar_gastos     = models.BooleanField(default=False)
     puede_gestionar_inventario = models.BooleanField(default=False)
-    puede_gestionar_metas = models.BooleanField(default=False)
+    puede_gestionar_metas      = models.BooleanField(default=False)
+
+    # ─── Poderes granulares de operación (nuevos — Fix #3) ────────
+    puede_editar_ventas        = models.BooleanField(default=False)
+    puede_eliminar_ventas      = models.BooleanField(default=False)
+    puede_registrar_compras    = models.BooleanField(default=False)
+    puede_editar_compras       = models.BooleanField(default=False)
+    puede_eliminar_compras     = models.BooleanField(default=False)
+    puede_editar_gastos        = models.BooleanField(default=False)
+    puede_eliminar_gastos      = models.BooleanField(default=False)
+    puede_eliminar_productos   = models.BooleanField(default=False)
+
+    # ─── Poderes nuevos por funcionalidad (Fix #3) ────────────────
+    puede_ver_estados_financieros = models.BooleanField(
+        default=False, help_text='Balance, Estado de Resultados, Flujo de Caja')
+    puede_gestionar_empleados     = models.BooleanField(
+        default=False, help_text='Delegar gestión de empleados a un gerente')
+    puede_exportar_datos          = models.BooleanField(
+        default=False, help_text='Excel/PDF/SRI ATS')
+    puede_gestionar_proveedores   = models.BooleanField(default=False)
+    puede_gestionar_clientes      = models.BooleanField(default=False)
 
     class Meta:
         unique_together = ('empleado', 'empresa')
@@ -1400,38 +1613,39 @@ class CuentaPorCobrar(models.Model):
         """Crea asiento contable para deterioro"""
         if monto == 0:
             return
-            
+
         from empresa.models import CuentaContable, MovimientoContable
-        
-        # Débito: Gasto por Deterioro
-        cuenta_deterioro = CuentaContable.objects.get_or_create(
-            empresa=self.empresa,
-            nombre='Deterioro Cuentas por Cobrar',
-            defaults={'tipo': 'gasto'}
-        )[0]
-        
-        # Crédito: Provisión para Deterioro
-        cuenta_provision = CuentaContable.objects.get_or_create(
-            empresa=self.empresa,
-            nombre='Provisión Deterioro CxC',
-            defaults={'tipo': 'activo'}
-        )[0]
-        
-        MovimientoContable.objects.create(
-            empresa=self.empresa,
-            cuenta_fk=cuenta_deterioro,
-            tipo='debito',
-            monto=abs(monto),
-            descripcion=f'Deterioro CxC {self.cliente.nombre}'
-        )
-        
-        MovimientoContable.objects.create(
-            empresa=self.empresa,
-            cuenta_fk=cuenta_provision,
-            tipo='credito',
-            monto=abs(monto),
-            descripcion=f'Provisión deterioro {self.cliente.nombre}'
-        )
+
+        with MovimientoContable.agrupar_transaccion(f'Deterioro CxC {self.cliente.nombre}'):
+            # Débito: Gasto por Deterioro
+            cuenta_deterioro = CuentaContable.objects.get_or_create(
+                empresa=self.empresa,
+                nombre='Deterioro Cuentas por Cobrar',
+                defaults={'tipo': 'gasto'}
+            )[0]
+
+            # Crédito: Provisión para Deterioro
+            cuenta_provision = CuentaContable.objects.get_or_create(
+                empresa=self.empresa,
+                nombre='Provisión Deterioro CxC',
+                defaults={'tipo': 'activo'}
+            )[0]
+
+            MovimientoContable.objects.create(
+                empresa=self.empresa,
+                cuenta_fk=cuenta_deterioro,
+                tipo='debito',
+                monto=abs(monto),
+                descripcion=f'Deterioro CxC {self.cliente.nombre}'
+            )
+
+            MovimientoContable.objects.create(
+                empresa=self.empresa,
+                cuenta_fk=cuenta_provision,
+                tipo='credito',
+                monto=abs(monto),
+                descripcion=f'Provisión deterioro {self.cliente.nombre}'
+            )
     
     def __str__(self):
         return f"{self.cliente.nombre} - ${self.monto_pendiente}"
@@ -1493,38 +1707,39 @@ class PagoCuentaPorCobrar(AuditModel):
     def crear_asientos_contables(self):
         """Crear asientos contables para el pago recibido"""
         from empresa.models import CuentaContable, MovimientoContable
-        
+
         try:
-            # Débito: Caja (Activo)
-            cuenta_caja = CuentaContable.objects.get_or_create(
-                empresa=self.empresa,
-                nombre='Caja',
-                defaults={'tipo': 'activo'}
-            )[0]
-            
-            MovimientoContable.objects.create(
-                empresa=self.empresa,
-                cuenta_fk=cuenta_caja,
-                tipo='debito',
-                monto=self.monto_pagado,
-                descripcion=f'Pago recibido de {self.cuenta_por_cobrar.cliente.nombre} - {self.get_metodo_pago_display()}'
-            )
-            
-            # Crédito: Cuentas por Cobrar (Activo)
-            cuenta_por_cobrar = CuentaContable.objects.get_or_create(
-                empresa=self.empresa,
-                nombre='Cuentas por Cobrar',
-                defaults={'tipo': 'activo'}
-            )[0]
-            
-            MovimientoContable.objects.create(
-                empresa=self.empresa,
-                cuenta_fk=cuenta_por_cobrar,
-                tipo='credito',
-                monto=self.monto_pagado,
-                descripcion=f'Pago recibido de {self.cuenta_por_cobrar.cliente.nombre} - {self.get_metodo_pago_display()}'
-            )
-            
+            with MovimientoContable.agrupar_transaccion(f'Pago CxC {self.cuenta_por_cobrar.cliente.nombre}'):
+                # Débito: Caja (Activo)
+                cuenta_caja = CuentaContable.objects.get_or_create(
+                    empresa=self.empresa,
+                    nombre='Caja',
+                    defaults={'tipo': 'activo'}
+                )[0]
+
+                MovimientoContable.objects.create(
+                    empresa=self.empresa,
+                    cuenta_fk=cuenta_caja,
+                    tipo='debito',
+                    monto=self.monto_pagado,
+                    descripcion=f'Pago recibido de {self.cuenta_por_cobrar.cliente.nombre} - {self.get_metodo_pago_display()}'
+                )
+
+                # Crédito: Cuentas por Cobrar (Activo)
+                cuenta_por_cobrar = CuentaContable.objects.get_or_create(
+                    empresa=self.empresa,
+                    nombre='Cuentas por Cobrar',
+                    defaults={'tipo': 'activo'}
+                )[0]
+
+                MovimientoContable.objects.create(
+                    empresa=self.empresa,
+                    cuenta_fk=cuenta_por_cobrar,
+                    tipo='credito',
+                    monto=self.monto_pagado,
+                    descripcion=f'Pago recibido de {self.cuenta_por_cobrar.cliente.nombre} - {self.get_metodo_pago_display()}'
+                )
+
         except Exception as e:
             print(f'Error creando asientos para pago de cuenta por cobrar: {e}')
     
@@ -1572,38 +1787,39 @@ class PagoCuentaPorPagar(AuditModel):
     def crear_asientos_contables(self):
         """Crear asientos contables para el pago realizado"""
         from empresa.models import CuentaContable, MovimientoContable
-        
+
         try:
-            # Débito: Cuentas por Pagar (Pasivo)
-            cuenta_por_pagar = CuentaContable.objects.get_or_create(
-                empresa=self.empresa,
-                nombre='Cuentas por Pagar',
-                defaults={'tipo': 'pasivo'}
-            )[0]
-            
-            MovimientoContable.objects.create(
-                empresa=self.empresa,
-                cuenta_fk=cuenta_por_pagar,
-                tipo='debito',
-                monto=self.monto_pagado,
-                descripcion=f'Pago a {self.cuenta_por_pagar.proveedor.nombre} - {self.get_metodo_pago_display()}'
-            )
-            
-            # Crédito: Caja (Activo)
-            cuenta_caja = CuentaContable.objects.get_or_create(
-                empresa=self.empresa,
-                nombre='Caja',
-                defaults={'tipo': 'activo'}
-            )[0]
-            
-            MovimientoContable.objects.create(
-                empresa=self.empresa,
-                cuenta_fk=cuenta_caja,
-                tipo='credito',
-                monto=self.monto_pagado,
-                descripcion=f'Pago a {self.cuenta_por_pagar.proveedor.nombre} - {self.get_metodo_pago_display()}'
-            )
-            
+            with MovimientoContable.agrupar_transaccion(f'Pago CxP {self.cuenta_por_pagar.proveedor.nombre}'):
+                # Débito: Cuentas por Pagar (Pasivo)
+                cuenta_por_pagar = CuentaContable.objects.get_or_create(
+                    empresa=self.empresa,
+                    nombre='Cuentas por Pagar',
+                    defaults={'tipo': 'pasivo'}
+                )[0]
+
+                MovimientoContable.objects.create(
+                    empresa=self.empresa,
+                    cuenta_fk=cuenta_por_pagar,
+                    tipo='debito',
+                    monto=self.monto_pagado,
+                    descripcion=f'Pago a {self.cuenta_por_pagar.proveedor.nombre} - {self.get_metodo_pago_display()}'
+                )
+
+                # Crédito: Caja (Activo)
+                cuenta_caja = CuentaContable.objects.get_or_create(
+                    empresa=self.empresa,
+                    nombre='Caja',
+                    defaults={'tipo': 'activo'}
+                )[0]
+
+                MovimientoContable.objects.create(
+                    empresa=self.empresa,
+                    cuenta_fk=cuenta_caja,
+                    tipo='credito',
+                    monto=self.monto_pagado,
+                    descripcion=f'Pago a {self.cuenta_por_pagar.proveedor.nombre} - {self.get_metodo_pago_display()}'
+                )
+
         except Exception as e:
             print(f'Error creando asientos para pago de cuenta por pagar: {e}')
     
@@ -1668,34 +1884,35 @@ class ObligacionDesempeno(AuditModel):
     def _crear_asiento_ingreso(self):
         """Crea asiento contable para reconocimiento de ingreso"""
         from empresa.models import CuentaContable, MovimientoContable
-        
-        cuenta_debito = CuentaContable.objects.get_or_create(
-            empresa=self.contrato.empresa,
-            nombre='Cuentas por Cobrar',
-            defaults={'tipo': 'activo'}
-        )[0]
-        
-        cuenta_ingreso = CuentaContable.objects.get_or_create(
-            empresa=self.contrato.empresa,
-            nombre='Ingresos por Contratos',
-            defaults={'tipo': 'ingreso'}
-        )[0]
-        
-        MovimientoContable.objects.create(
-            empresa=self.contrato.empresa,
-            cuenta_fk=cuenta_debito,
-            tipo='debito',
-            monto=self.precio_asignado,
-            descripcion=f'Ingreso reconocido - {self.descripcion}'
-        )
-        
-        MovimientoContable.objects.create(
-            empresa=self.contrato.empresa,
-            cuenta_fk=cuenta_ingreso,
-            tipo='credito',
-            monto=self.precio_asignado,
-            descripcion=f'Ingreso reconocido - {self.descripcion}'
-        )
+
+        with MovimientoContable.agrupar_transaccion(f'Ingreso NIIF 15 - {self.descripcion}'):
+            cuenta_debito = CuentaContable.objects.get_or_create(
+                empresa=self.contrato.empresa,
+                nombre='Cuentas por Cobrar',
+                defaults={'tipo': 'activo'}
+            )[0]
+
+            cuenta_ingreso = CuentaContable.objects.get_or_create(
+                empresa=self.contrato.empresa,
+                nombre='Ingresos por Contratos',
+                defaults={'tipo': 'ingreso'}
+            )[0]
+
+            MovimientoContable.objects.create(
+                empresa=self.contrato.empresa,
+                cuenta_fk=cuenta_debito,
+                tipo='debito',
+                monto=self.precio_asignado,
+                descripcion=f'Ingreso reconocido - {self.descripcion}'
+            )
+
+            MovimientoContable.objects.create(
+                empresa=self.contrato.empresa,
+                cuenta_fk=cuenta_ingreso,
+                tipo='credito',
+                monto=self.precio_asignado,
+                descripcion=f'Ingreso reconocido - {self.descripcion}'
+            )
 
 # ======================
 # MODELO PARA CONTROL DE INVENTARIO NIIF
@@ -1815,35 +2032,36 @@ class RevaluacionActivo(AuditModel):
     def crear_asientos_revaluacion(self):
         """Crea asientos para revaluación"""
         from empresa.models import CuentaContable, MovimientoContable
-        
+
         if self.superavit_revaluacion > 0:
-            cuenta_activo = CuentaContable.objects.get_or_create(
-                empresa=self.empresa,
-                nombre=f'Activo - {self.activo_descripcion}',
-                defaults={'tipo': 'activo'}
-            )[0]
-            
-            cuenta_superavit = CuentaContable.objects.get_or_create(
-                empresa=self.empresa,
-                nombre='Superávit por Revaluación',
-                defaults={'tipo': 'capital'}
-            )[0]
-            
-            MovimientoContable.objects.create(
-                empresa=self.empresa,
-                cuenta_fk=cuenta_activo,
-                tipo='debito',
-                monto=self.superavit_revaluacion,
-                descripcion=f'Revaluación {self.activo_descripcion}'
-            )
-            
-            MovimientoContable.objects.create(
-                empresa=self.empresa,
-                cuenta_fk=cuenta_superavit,
-                tipo='credito',
-                monto=self.superavit_revaluacion,
-                descripcion=f'Superávit revaluación {self.activo_descripcion}'
-            )
+            with MovimientoContable.agrupar_transaccion(f'Revaluación {self.activo_descripcion}'):
+                cuenta_activo = CuentaContable.objects.get_or_create(
+                    empresa=self.empresa,
+                    nombre=f'Activo - {self.activo_descripcion}',
+                    defaults={'tipo': 'activo'}
+                )[0]
+
+                cuenta_superavit = CuentaContable.objects.get_or_create(
+                    empresa=self.empresa,
+                    nombre='Superávit por Revaluación',
+                    defaults={'tipo': 'capital'}
+                )[0]
+
+                MovimientoContable.objects.create(
+                    empresa=self.empresa,
+                    cuenta_fk=cuenta_activo,
+                    tipo='debito',
+                    monto=self.superavit_revaluacion,
+                    descripcion=f'Revaluación {self.activo_descripcion}'
+                )
+
+                MovimientoContable.objects.create(
+                    empresa=self.empresa,
+                    cuenta_fk=cuenta_superavit,
+                    tipo='credito',
+                    monto=self.superavit_revaluacion,
+                    descripcion=f'Superávit revaluación {self.activo_descripcion}'
+                )
     
     def save(self, *args, **kwargs):
         super().save(*args, **kwargs)
@@ -1925,39 +2143,40 @@ class MateriaPrima(AuditModel):
     def crear_asientos_stock_inicial(self):
         """Crear asientos contables para stock inicial de materia prima"""
         from empresa.models import CuentaContable, MovimientoContable
-        
+
         try:
             valor_total = self.stock_actual * self.precio_unitario
-            
-            # Débito: Inventario - Materia Prima (Activo)
-            cuenta_inventario = CuentaContable.objects.get_or_create(
-                empresa=self.empresa,
-                nombre='Inventario - Materia Prima',
-                defaults={'tipo': 'activo'}
-            )[0]
-            
-            MovimientoContable.objects.create(
-                empresa=self.empresa,
-                cuenta_fk=cuenta_inventario,
-                tipo='debito',
-                monto=valor_total,
-                descripcion=f'Stock inicial {self.nombre} - {self.stock_actual} {self.unidad_medida}'
-            )
-            
-            # Crédito: Capital (Capital)
-            cuenta_capital = CuentaContable.objects.get_or_create(
-                empresa=self.empresa,
-                nombre='Capital',
-                defaults={'tipo': 'capital'}
-            )[0]
-            
-            MovimientoContable.objects.create(
-                empresa=self.empresa,
-                cuenta_fk=cuenta_capital,
-                tipo='credito',
-                monto=valor_total,
-                descripcion=f'Stock inicial {self.nombre} - {self.stock_actual} {self.unidad_medida}'
-            )
+
+            with MovimientoContable.agrupar_transaccion(f'Stock inicial MP {self.nombre}'):
+                # Débito: Inventario - Materia Prima (Activo)
+                cuenta_inventario = CuentaContable.objects.get_or_create(
+                    empresa=self.empresa,
+                    nombre='Inventario - Materia Prima',
+                    defaults={'tipo': 'activo'}
+                )[0]
+
+                MovimientoContable.objects.create(
+                    empresa=self.empresa,
+                    cuenta_fk=cuenta_inventario,
+                    tipo='debito',
+                    monto=valor_total,
+                    descripcion=f'Stock inicial {self.nombre} - {self.stock_actual} {self.unidad_medida}'
+                )
+
+                # Crédito: Capital (Capital)
+                cuenta_capital = CuentaContable.objects.get_or_create(
+                    empresa=self.empresa,
+                    nombre='Capital',
+                    defaults={'tipo': 'capital'}
+                )[0]
+
+                MovimientoContable.objects.create(
+                    empresa=self.empresa,
+                    cuenta_fk=cuenta_capital,
+                    tipo='credito',
+                    monto=valor_total,
+                    descripcion=f'Stock inicial {self.nombre} - {self.stock_actual} {self.unidad_medida}'
+                )
             
         except Exception as e:
             print(f'Error creando asientos para stock inicial de materia prima: {e}')
@@ -2118,40 +2337,41 @@ class OrdenProduccion(AuditModel):
     def crear_asientos_produccion_terminada(self):
         """Crear asientos al terminar la producción"""
         from empresa.models import CuentaContable, MovimientoContable
-        
+
         try:
             # Calcular costo total de producción
             costo_total_produccion = self.producto.costo_produccion * self.cantidad_producida
-            
-            # Débito: Inventario - Producto Terminado (Activo)
-            cuenta_producto_terminado = CuentaContable.objects.get_or_create(
-                empresa=self.empresa,
-                nombre='Inventario - Producto Terminado',
-                defaults={'tipo': 'activo'}
-            )[0]
-            
-            MovimientoContable.objects.create(
-                empresa=self.empresa,
-                cuenta_fk=cuenta_producto_terminado,
-                tipo='debito',
-                monto=costo_total_produccion,
-                descripcion=f'Producción terminada {self.producto.nombre} - Orden {self.numero_orden} ({self.cantidad_producida} unidades)'
-            )
-            
-            # Crédito: Producción en Proceso (Activo)
-            cuenta_produccion_proceso = CuentaContable.objects.get_or_create(
-                empresa=self.empresa,
-                nombre='Producción en Proceso',
-                defaults={'tipo': 'activo'}
-            )[0]
-            
-            MovimientoContable.objects.create(
-                empresa=self.empresa,
-                cuenta_fk=cuenta_produccion_proceso,
-                tipo='credito',
-                monto=costo_total_produccion,
-                descripcion=f'Producción terminada {self.producto.nombre} - Orden {self.numero_orden} ({self.cantidad_producida} unidades)'
-            )
+
+            with MovimientoContable.agrupar_transaccion(f'Produccion terminada {self.producto.nombre} - Orden {self.numero_orden}'):
+                # Débito: Inventario - Producto Terminado (Activo)
+                cuenta_producto_terminado = CuentaContable.objects.get_or_create(
+                    empresa=self.empresa,
+                    nombre='Inventario - Producto Terminado',
+                    defaults={'tipo': 'activo'}
+                )[0]
+
+                MovimientoContable.objects.create(
+                    empresa=self.empresa,
+                    cuenta_fk=cuenta_producto_terminado,
+                    tipo='debito',
+                    monto=costo_total_produccion,
+                    descripcion=f'Producción terminada {self.producto.nombre} - Orden {self.numero_orden} ({self.cantidad_producida} unidades)'
+                )
+
+                # Crédito: Producción en Proceso (Activo)
+                cuenta_produccion_proceso = CuentaContable.objects.get_or_create(
+                    empresa=self.empresa,
+                    nombre='Producción en Proceso',
+                    defaults={'tipo': 'activo'}
+                )[0]
+
+                MovimientoContable.objects.create(
+                    empresa=self.empresa,
+                    cuenta_fk=cuenta_produccion_proceso,
+                    tipo='credito',
+                    monto=costo_total_produccion,
+                    descripcion=f'Producción terminada {self.producto.nombre} - Orden {self.numero_orden} ({self.cantidad_producida} unidades)'
+                )
             
             # Actualizar stock y precio_costo del producto
             self.producto.stock_actual += self.cantidad_producida
@@ -2189,36 +2409,37 @@ class ConsumoMateriaPrima(AuditModel):
     def crear_asientos_contables(self):
         """Crear asientos contables para consumo de materia prima"""
         from empresa.models import CuentaContable, MovimientoContable
-        
+
         try:
-            # Débito: Producción en Proceso (Activo)
-            cuenta_produccion = CuentaContable.objects.get_or_create(
-                empresa=self.empresa,
-                nombre='Producción en Proceso',
-                defaults={'tipo': 'activo'}
-            )[0]
-            
-            MovimientoContable.objects.create(
-                empresa=self.empresa,
-                cuenta_fk=cuenta_produccion,
-                tipo='debito',
-                monto=self.costo_total,
-                descripcion=f'Consumo {self.materia_prima.nombre} - Orden {self.orden_produccion.numero_orden if self.orden_produccion else "N/A"}'
-            )
-            
-            # Crédito: Inventario - Materia Prima (Activo)
-            cuenta_inventario = CuentaContable.objects.get_or_create(
-                empresa=self.empresa,
-                nombre='Inventario - Materia Prima',
-                defaults={'tipo': 'activo'}
-            )[0]
-            
-            MovimientoContable.objects.create(
-                empresa=self.empresa,
-                cuenta_fk=cuenta_inventario,
-                tipo='credito',
-                monto=self.costo_total,
-                descripcion=f'Consumo {self.materia_prima.nombre} - Orden {self.orden_produccion.numero_orden if self.orden_produccion else "N/A"}'
+            with MovimientoContable.agrupar_transaccion(f'Consumo MP {self.materia_prima.nombre}'):
+                # Débito: Producción en Proceso (Activo)
+                cuenta_produccion = CuentaContable.objects.get_or_create(
+                    empresa=self.empresa,
+                    nombre='Producción en Proceso',
+                    defaults={'tipo': 'activo'}
+                )[0]
+
+                MovimientoContable.objects.create(
+                    empresa=self.empresa,
+                    cuenta_fk=cuenta_produccion,
+                    tipo='debito',
+                    monto=self.costo_total,
+                    descripcion=f'Consumo {self.materia_prima.nombre} - Orden {self.orden_produccion.numero_orden if self.orden_produccion else "N/A"}'
+                )
+
+                # Crédito: Inventario - Materia Prima (Activo)
+                cuenta_inventario = CuentaContable.objects.get_or_create(
+                    empresa=self.empresa,
+                    nombre='Inventario - Materia Prima',
+                    defaults={'tipo': 'activo'}
+                )[0]
+
+                MovimientoContable.objects.create(
+                    empresa=self.empresa,
+                    cuenta_fk=cuenta_inventario,
+                    tipo='credito',
+                    monto=self.costo_total,
+                    descripcion=f'Consumo {self.materia_prima.nombre} - Orden {self.orden_produccion.numero_orden if self.orden_produccion else "N/A"}'
             )
             
         except Exception as e:
@@ -2474,3 +2695,50 @@ class Suscripcion(models.Model):
 
     def __str__(self):
         return f"{self.empresa} — {self.plan}"
+
+
+# ════════════════════════════════════════════════════════════════════
+# AUDITORÍA — Registro automático de creación/edición/eliminación
+# ════════════════════════════════════════════════════════════════════
+
+class RegistroAuditoria(models.Model):
+    """
+    Trail de auditoría completo de operaciones en el sistema.
+    Se llena automáticamente vía signals (empresa/signals.py) cuando se
+    crea/edita/elimina cualquier modelo auditado.
+
+    Ver docs/IMPLEMENTACIONES_PENDIENTES_CONTABLES.md y plan de Centro de Empresa.
+    """
+    TIPOS_OPERACION = [
+        ('crear',    'Creación'),
+        ('editar',   'Edición'),
+        ('eliminar', 'Eliminación'),
+    ]
+
+    empresa        = models.ForeignKey(Empresa, on_delete=models.CASCADE, related_name='auditoria')
+    usuario        = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name='auditorias_realizadas',
+    )
+    fecha          = models.DateTimeField(auto_now_add=True, db_index=True)
+    tipo_operacion = models.CharField(max_length=10, choices=TIPOS_OPERACION)
+    modelo         = models.CharField(max_length=50)  # 'Venta', 'Producto', 'Empresa', etc.
+    objeto_id      = models.PositiveIntegerField(null=True, blank=True)
+    descripcion    = models.TextField()
+    metadatos      = models.JSONField(default=dict, blank=True)
+    monto          = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
+
+    class Meta:
+        ordering = ['-fecha']
+        verbose_name = 'Registro de Auditoría'
+        verbose_name_plural = 'Registros de Auditoría'
+        indexes = [
+            models.Index(fields=['empresa', '-fecha']),
+            models.Index(fields=['empresa', 'modelo']),
+            models.Index(fields=['usuario', '-fecha']),
+        ]
+
+    def __str__(self):
+        return f"[{self.get_tipo_operacion_display()}] {self.modelo} #{self.objeto_id or '?'} — {self.fecha:%Y-%m-%d %H:%M}"

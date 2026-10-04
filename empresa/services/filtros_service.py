@@ -62,7 +62,7 @@ class FiltrosFechaService:
             fecha__date__gte=fecha_inicio,
             fecha__date__lte=fecha_fin
         ).aggregate(
-            total=Sum('total'),
+            total=Sum('monto'),
             cantidad=Sum('cantidad')
         )
     
@@ -85,7 +85,7 @@ class FiltrosFechaService:
             fecha__date__gte=fecha_inicio,
             fecha__date__lte=fecha_fin
         ).aggregate(
-            total=Sum('total')
+            total=Sum('monto')
         )
     
     @staticmethod

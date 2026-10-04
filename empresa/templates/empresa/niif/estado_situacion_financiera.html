@@ -158,28 +158,28 @@
                             <!-- Total Pasivos + Patrimonio -->
                             <div class="card mt-3 border-success">
                                 <div class="card-body bg-success text-white">
-                                    <h4>TOTAL PASIVOS + PATRIMONIO: ${{ reporte.totales.total_pasivos|add:reporte.totales.total_patrimonio|floatformat:2 }}</h4>
+                                    <h4>TOTAL PASIVOS + PATRIMONIO: ${{ reporte.totales.total_pasivos_y_patrimonio|floatformat:2 }}</h4>
                                 </div>
                             </div>
                         </div>
                     </div>
-                    
-                    <!-- Verificación de Balance -->
+
+                    <!-- Verificación de Balance — flag `cuadra` calculado en backend con tolerancia 0.01 -->
                     <div class="row mt-4">
                         <div class="col-12">
-                            <div class="alert {% if reporte.totales.total_activos == reporte.totales.total_pasivos|add:reporte.totales.total_patrimonio %}alert-success{% else %}alert-danger{% endif %}">
+                            <div class="alert {% if reporte.totales.cuadra %}alert-success{% else %}alert-danger{% endif %}">
                                 <h5>
-                                    <i class="fas fa-{% if reporte.totales.total_activos == reporte.totales.total_pasivos|add:reporte.totales.total_patrimonio %}check{% else %}exclamation-triangle{% endif %}"></i>
+                                    <i class="fas fa-{% if reporte.totales.cuadra %}check{% else %}exclamation-triangle{% endif %}"></i>
                                     Verificación de Balance
                                 </h5>
                                 <p>
-                                    Activos: ${{ reporte.totales.total_activos|floatformat:2 }} | 
-                                    Pasivos + Patrimonio: ${{ reporte.totales.total_pasivos|add:reporte.totales.total_patrimonio|floatformat:2 }}
+                                    Activos: ${{ reporte.totales.total_activos|floatformat:2 }} |
+                                    Pasivos + Patrimonio: ${{ reporte.totales.total_pasivos_y_patrimonio|floatformat:2 }}
                                 </p>
-                                {% if reporte.totales.total_activos == reporte.totales.total_pasivos|add:reporte.totales.total_patrimonio %}
+                                {% if reporte.totales.cuadra %}
                                 <p class="mb-0">✅ El balance está cuadrado según principios contables NIIF</p>
                                 {% else %}
-                                <p class="mb-0">❌ El balance no está cuadrado. Revisar asientos contables.</p>
+                                <p class="mb-0">❌ El balance no está cuadrado. Diferencia: ${{ reporte.totales.diferencia_cuadre|floatformat:2 }}. Revisar asientos contables.</p>
                                 {% endif %}
                             </div>
                         </div>

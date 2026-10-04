@@ -1,35 +1,112 @@
 {% extends 'empresa/base_auth.html' %}
 {% load static %}
-{% block title %}Iniciar Sesión - CONTAFY{% endblock %}
+{% block title %}Iniciar Sesión — CONTAFY{% endblock %}
+
+{% block extra_css %}
+<style>
+  .login-wrapper {
+    min-height: 100vh;
+    background: var(--grad-hero-bg);
+    display: flex;
+    align-items: center;
+    padding: 2rem 1rem;
+    position: relative;
+    overflow: hidden;
+  }
+  .login-wrapper::before {
+    content: '';
+    position: absolute; inset: 0;
+    background:
+      radial-gradient(ellipse 60% 50% at 80% 30%, rgba(16,185,129,.15) 0%, transparent 65%),
+      radial-gradient(ellipse 50% 45% at 25% 75%, rgba(59,130,246,.18) 0%, transparent 65%);
+    pointer-events: none;
+  }
+  .login-wrapper > .container {
+    position: relative;
+    z-index: 1;
+  }
+  .login-card {
+    border-radius: var(--radius-2xl);
+    border: none;
+    box-shadow: var(--shadow-xl);
+    overflow: hidden;
+  }
+  .login-header {
+    background: var(--grad-brand);
+    color: #fff;
+    text-align: center;
+    padding: 2.25rem 1.5rem;
+    border: 0;
+  }
+  .login-header .logo-mark {
+    width: 56px;
+    height: 56px;
+    margin: 0 auto 0.75rem;
+    display: block;
+    filter: drop-shadow(0 4px 12px rgba(0,0,0,.2));
+  }
+  .login-header h2 {
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 900;
+    font-size: 1.8rem;
+    letter-spacing: -0.5px;
+    text-transform: uppercase;
+    margin: 0;
+  }
+  .login-header p {
+    font-size: 0.85rem;
+    opacity: 0.9;
+    margin: 0.35rem 0 0;
+  }
+  .login-features i {
+    transition: transform 0.2s;
+  }
+  .login-features > div:hover i {
+    transform: translateY(-3px);
+  }
+  .login-divider {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    color: var(--c-slate-3);
+    font-size: 0.85rem;
+    margin: 1.5rem 0;
+  }
+  .login-divider::before,
+  .login-divider::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--c-slate-2);
+  }
+</style>
+{% endblock %}
 
 {% block content %}
-<div class="min-vh-100 d-flex align-items-center bg-light">
+<div class="login-wrapper">
   <div class="container">
     <div class="row justify-content-center">
       <div class="col-lg-5 col-md-7">
-        <div class="card shadow-lg border-0">
-          <!-- Header -->
-          <div class="card-header text-white text-center py-4 border-0" style="background: linear-gradient(135deg, #27ae60 0%, #2c3e50 100%);">
-            <div class="mb-3">
-              <i class="fas fa-calculator fa-3x"></i>
-            </div>
-            <h2 class="mb-0 fw-bold">CONTAFY</h2>
-            <p class="mb-0 opacity-75">Gestión Contable para PYMEs</p>
+        <div class="card login-card">
+          <!-- Header con gradiente brand -->
+          <div class="login-header">
+            <img src="{% static 'empresa/img/contafy-logo.png' %}" alt="Contafy" class="logo-mark">
+            <h2>CONTAFY</h2>
+            <p>Gestión Contable para PYMEs</p>
           </div>
-          
+
           <!-- Body -->
-          <div class="card-body p-5">
+          <div class="card-body p-4 p-md-5">
             <div class="text-center mb-4">
-              <h4 class="text-dark mb-2">Bienvenido de vuelta</h4>
-              <p class="text-muted">Ingresa a tu cuenta para continuar</p>
+              <h4 class="fw-700 mb-1" style="color: var(--c-text);">Bienvenido de vuelta</h4>
+              <p class="text-muted small mb-0">Ingresa a tu cuenta para continuar</p>
             </div>
 
-            <!-- Mensajes de error -->
+            <!-- Mensajes -->
             {% if messages %}
               {% for message in messages %}
                 <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                  <i class="fas fa-exclamation-triangle me-2"></i>
-                  {{ message }}
+                  <i class="bi bi-exclamation-triangle-fill me-2"></i>{{ message }}
                   <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                 </div>
               {% endfor %}
@@ -37,128 +114,78 @@
 
             <form method="post" novalidate>
               {% csrf_token %}
-              
-              <div class="mb-4">
-                <label for="username" class="form-label text-dark fw-semibold">
-                  <i class="fas fa-user me-2 text-primary"></i>Usuario
+
+              <div class="mb-3">
+                <label for="username" class="form-label fw-600">
+                  <i class="bi bi-person me-1" style="color: var(--c-green);"></i> Usuario
                 </label>
-                <input type="text" 
-                       name="username" 
-                       id="username"
-                       class="form-control form-control-lg" 
-                       placeholder="Ingresa tu usuario"
-                       required
-                       autocomplete="username">
+                <input
+                  type="text"
+                  name="username"
+                  id="username"
+                  class="form-control form-control-lg"
+                  placeholder="Ingresa tu usuario"
+                  required
+                  autocomplete="username"
+                  autofocus>
               </div>
 
               <div class="mb-4">
-                <label for="password" class="form-label text-dark fw-semibold">
-                  <i class="fas fa-lock me-2 text-primary"></i>Contraseña
+                <label for="password" class="form-label fw-600">
+                  <i class="bi bi-lock me-1" style="color: var(--c-green);"></i> Contraseña
                 </label>
-                <input type="password" 
-                       name="password" 
-                       id="password"
-                       class="form-control form-control-lg" 
-                       placeholder="Ingresa tu contraseña"
-                       required
-                       autocomplete="current-password">
+                <input
+                  type="password"
+                  name="password"
+                  id="password"
+                  class="form-control form-control-lg"
+                  placeholder="Ingresa tu contraseña"
+                  required
+                  autocomplete="current-password">
               </div>
 
-              <div class="d-grid mb-4">
-                <button type="submit" class="btn btn-primary btn-lg fw-semibold">
-                  <i class="fas fa-sign-in-alt me-2"></i>Iniciar Sesión
+              <div class="d-grid mb-3">
+                <button type="submit" class="btn btn-primary btn-lg fw-700">
+                  <i class="bi bi-box-arrow-in-right me-2"></i>Iniciar Sesión
                 </button>
               </div>
             </form>
 
-            <!-- Divider -->
-            <div class="text-center mb-4">
-              <hr class="my-4">
-              <span class="text-muted bg-white px-3">¿Nuevo en CONTAFY?</span>
-            </div>
+            <div class="login-divider">¿Nuevo en CONTAFY?</div>
 
-            <!-- Registro -->
-            <div class="text-center">
-              <a href="{% url 'empresa:registro' %}" class="btn btn-outline-primary btn-lg w-100">
-                <i class="fas fa-user-plus me-2"></i>Crear Cuenta Gratis
+            <div class="d-grid">
+              <a href="{% url 'empresa:registro' %}" class="btn btn-outline-primary btn-lg">
+                <i class="bi bi-person-plus me-2"></i>Crear cuenta gratis
               </a>
             </div>
           </div>
 
           <!-- Footer -->
-          <div class="card-footer bg-light text-center py-3 border-0">
+          <div class="card-footer text-center py-3" style="background: var(--c-slate-1); border-top: 1px solid var(--c-slate-2);">
             <small class="text-muted">
-              <i class="fas fa-shield-alt me-1"></i>
+              <i class="bi bi-shield-check me-1" style="color: var(--c-green);"></i>
               Tus datos están seguros y protegidos
             </small>
           </div>
         </div>
 
-        <!-- Features -->
-        <div class="row mt-4 text-center">
+        <!-- Features mini -->
+        <div class="row mt-4 text-center login-features">
           <div class="col-4">
-            <div class="text-primary mb-2">
-              <i class="fas fa-chart-line fa-2x"></i>
-            </div>
-            <small class="text-muted">Reportes<br>Automáticos</small>
+            <div class="mb-2"><i class="bi bi-graph-up-arrow fs-3" style="color: #34d399;"></i></div>
+            <small class="text-white-50">Reportes<br>automáticos</small>
           </div>
           <div class="col-4">
-            <div class="text-success mb-2">
-              <i class="fas fa-mobile-alt fa-2x"></i>
-            </div>
-            <small class="text-muted">Acceso<br>Móvil</small>
+            <div class="mb-2"><i class="bi bi-phone fs-3" style="color: #60a5fa;"></i></div>
+            <small class="text-white-50">Acceso<br>móvil</small>
           </div>
           <div class="col-4">
-            <div class="text-info mb-2">
-              <i class="fas fa-cloud fa-2x"></i>
-            </div>
-            <small class="text-muted">En la<br>Nube</small>
+            <div class="mb-2"><i class="bi bi-cloud-check fs-3" style="color: #5eead4;"></i></div>
+            <small class="text-white-50">En la<br>nube</small>
           </div>
         </div>
       </div>
     </div>
   </div>
 </div>
-
-<style>
-.min-vh-100 {
-  min-height: 100vh;
-}
-
-.card {
-  border-radius: 15px;
-  overflow: hidden;
-}
-
-.form-control-lg {
-  border-radius: 10px;
-  border: 2px solid #e9ecef;
-  transition: all 0.3s ease;
-}
-
-.form-control-lg:focus {
-  border-color: #0d6efd;
-  box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.15);
-}
-
-.btn-lg {
-  border-radius: 10px;
-  padding: 12px 24px;
-  font-weight: 600;
-}
-
-.btn-primary {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  border: none;
-}
-
-.btn-primary:hover {
-  background: linear-gradient(135deg, #5a6fd8 0%, #6a4190 100%);
-  transform: translateY(-1px);
-}
-
-.btn-outline-primary:hover {
-  transform: translateY(-1px);
-}
-</style>
 {% endblock %}

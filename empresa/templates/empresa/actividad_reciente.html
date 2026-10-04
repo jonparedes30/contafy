@@ -103,7 +103,7 @@
         <div class="card-body">
             {% if actividades %}
                 <div class="table-responsive">
-                    <table class="table table-hover">
+                    <table class="table contafy-table table-hover align-middle">
                         <thead class="table-light">
                             <tr>
                                 <th>Fecha y Hora</th>
@@ -186,12 +186,12 @@
 <div class="modal fade" id="modalDetalle{{ actividad.objeto.id }}" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
-            <div class="modal-header">
+            <div class="modal-header bg-brand text-white">
                 <h5 class="modal-title">
                     <i class="bi bi-info-circle text-primary"></i> 
                     Detalle de {{ actividad.tipo }}
                 </h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
                 <div class="row">

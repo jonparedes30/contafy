@@ -22,53 +22,92 @@ def gestionar_metas(request):
         recordatorio_dias = request.POST.get('recordatorio_dias', 7)
         alertas_activas = request.POST.get('alertas_activas') == 'on'
 
-        if tipo and objetivo_mensual and mes and anio:
+        # ─── Validaciones ───────────────────────────────────────
+        TIPOS_VALIDOS = {choice[0] for choice in MetaFinanciera._meta.get_field('tipo').choices}
+        errores = []
+
+        if not tipo or tipo not in TIPOS_VALIDOS:
+            errores.append('Tipo de meta inválido.')
+
+        try:
+            objetivo_mensual_f = float(objetivo_mensual or 0)
+            if objetivo_mensual_f <= 0:
+                errores.append('El objetivo mensual debe ser mayor a cero.')
+        except (ValueError, TypeError):
+            errores.append('Objetivo mensual inválido.')
+            objetivo_mensual_f = 0
+
+        try:
+            mes_i = int(mes or 0)
+            if not (1 <= mes_i <= 12):
+                errores.append('Mes inválido (debe ser entre 1 y 12).')
+        except (ValueError, TypeError):
+            errores.append('Mes inválido.')
+            mes_i = 0
+
+        try:
+            anio_i = int(anio or 0)
+            anio_actual = datetime.now().year
+            if not (anio_actual - 5 <= anio_i <= anio_actual + 5):
+                errores.append(f'Año fuera de rango (entre {anio_actual - 5} y {anio_actual + 5}).')
+        except (ValueError, TypeError):
+            errores.append('Año inválido.')
+            anio_i = 0
+
+        try:
+            factor_f = float(factor_ajuste or 1.0)
+            if not (0.1 <= factor_f <= 10.0):
+                errores.append('Factor de ajuste fuera de rango (0.1 a 10.0).')
+        except (ValueError, TypeError):
+            errores.append('Factor de ajuste inválido.')
+            factor_f = 1.0
+
+        try:
+            recordatorio_i = int(recordatorio_dias or 7)
+            if not (0 <= recordatorio_i <= 30):
+                errores.append('Días de recordatorio fuera de rango (0 a 30).')
+        except (ValueError, TypeError):
+            errores.append('Días de recordatorio inválido.')
+            recordatorio_i = 7
+
+        if errores:
+            for err in errores:
+                messages.error(request, err)
+        else:
             try:
-                # Verificar si ya existe una meta para este tipo, mes y año
                 meta_existente = MetaFinanciera.objects.filter(
-                    empresa=empresa,
-                    tipo=tipo,
-                    mes=int(mes),
-                    anio=int(anio)
+                    empresa=empresa, tipo=tipo, mes=mes_i, anio=anio_i
                 ).first()
-                
+
                 if meta_existente:
-                    # Actualizar meta existente
-                    meta_existente.objetivo_mensual = float(objetivo_mensual)
+                    meta_existente.objetivo_mensual = objetivo_mensual_f
                     meta_existente.es_dinamica = es_dinamica
-                    meta_existente.factor_ajuste = float(factor_ajuste)
-                    meta_existente.recordatorio_dias = int(recordatorio_dias)
+                    meta_existente.factor_ajuste = factor_f
+                    meta_existente.recordatorio_dias = recordatorio_i
                     meta_existente.alertas_activas = alertas_activas
                     meta_existente.save()
                     messages.success(request, 'Meta actualizada exitosamente.')
                 else:
-                    # Crear nueva meta
                     MetaFinanciera.objects.create(
-                        empresa=empresa,
-                        tipo=tipo,
-                        objetivo_mensual=float(objetivo_mensual),
-                        mes=int(mes),
-                        anio=int(anio),
+                        empresa=empresa, tipo=tipo,
+                        objetivo_mensual=objetivo_mensual_f,
+                        mes=mes_i, anio=anio_i,
                         es_dinamica=es_dinamica,
-                        factor_ajuste=float(factor_ajuste),
-                        recordatorio_dias=int(recordatorio_dias),
+                        factor_ajuste=factor_f,
+                        recordatorio_dias=recordatorio_i,
                         alertas_activas=alertas_activas
                     )
                     messages.success(request, 'Meta creada exitosamente.')
-                
+
                 return redirect('empresa:gestionar_metas')
             except Exception as e:
                 messages.error(request, f'Error al guardar la meta: {str(e)}')
 
-    # Obtener metas existentes y pre-calcular propiedades para evitar N+1 queries
-    metas_qs = MetaFinanciera.objects.filter(empresa=empresa).order_by('-anio', '-mes')
-    metas = []
-    for meta in metas_qs:
-        # Cachear valores calculados para evitar queries repetidas en el template
-        meta._cached_valor_actual = meta.valor_actual
-        meta._cached_progreso_actual = meta.progreso_actual
-        meta._cached_estado = meta.estado
-        metas.append(meta)
+    # Obtener metas existentes — las propiedades son @cached_property,
+    # se calculan UNA VEZ por instancia (no más N+1 en el template)
+    metas = list(
+        MetaFinanciera.objects.filter(empresa=empresa).order_by('-anio', '-mes')
+    )
     
     # Calcular estadísticas de benchmarking
     estadisticas = calcular_benchmarking(empresa)
@@ -179,78 +218,99 @@ def comparacion_sector(request):
     return render(request, 'empresa/comparacion_sector.html', context)
 
 def _obtener_datos_historicos_mensuales(empresa, meses=6):
-    """Obtiene datos mensuales de ventas, gastos y rentabilidad para los últimos N meses."""
+    """
+    Obtiene datos mensuales con cálculo NIIF correcto:
+    - Ventas: netas (sin IVA)
+    - Costo de ventas: compras netas
+    - Gastos: gastos operativos
+    - Utilidad = ventas_netas − costo_ventas − gastos
+    - Rentabilidad = utilidad / ventas_netas * 100
+    """
+    from empresa.models import Compra
     datos = []
     hoy = datetime.now()
-    
-    for i in range(meses - 1, -1, -1):  # Orden cronológico (más antiguo primero)
-        # Cálculo exacto de mes/año retrocediendo i meses
+
+    for i in range(meses - 1, -1, -1):
         mes = hoy.month - i
         anio = hoy.year
         while mes <= 0:
             mes += 12
             anio -= 1
-        
-        ventas_mes = Venta.objects.filter(
-            empresa=empresa,
-            fecha__month=mes,
-            fecha__year=anio
-        ).aggregate(total=Sum('monto'))['total'] or 0
-        
+
+        # Ventas netas
+        ventas_qs = Venta.objects.filter(empresa=empresa, fecha__month=mes, fecha__year=anio)
+        ventas_mes = (ventas_qs.aggregate(t=Sum('monto_neto'))['t']
+                      or ventas_qs.aggregate(t=Sum('monto'))['t'] or 0)
+
+        # Costo de ventas (compras del mes)
+        compras_qs = Compra.objects.filter(empresa=empresa, fecha__month=mes, fecha__year=anio)
+        costo_mes = (compras_qs.aggregate(t=Sum('monto_neto'))['t']
+                     or compras_qs.aggregate(t=Sum('monto'))['t'] or 0)
+
+        # Gastos operativos
         gastos_mes = Gasto.objects.filter(
-            empresa=empresa,
-            fecha__month=mes,
-            fecha__year=anio
-        ).aggregate(total=Sum('monto'))['total'] or 0
-        
-        utilidad = float(ventas_mes) - float(gastos_mes)
+            empresa=empresa, fecha__month=mes, fecha__year=anio
+        ).aggregate(t=Sum('monto'))['t'] or 0
+
+        utilidad = float(ventas_mes) - float(costo_mes) - float(gastos_mes)
         rentabilidad = (utilidad / float(ventas_mes) * 100) if float(ventas_mes) > 0 else 0
-        
+
         datos.append({
             'mes': mes,
             'anio': anio,
             'ventas': ventas_mes,
+            'costo_ventas': costo_mes,
             'gastos': gastos_mes,
             'utilidad': utilidad,
             'rentabilidad': round(rentabilidad, 1),
         })
-    
+
     return datos
 
 
 def calcular_benchmarking(empresa):
-    """Calcula estadísticas de benchmarking para la empresa"""
+    """
+    Estadísticas de benchmarking con cálculo NIIF consistente:
+    Utilidad = ventas_netas − costo_ventas (compras) − gastos_operativos
+    """
     from django.db.models import Avg, Count
-    
-    # Estadísticas de ventas
-    ventas_mensuales = Venta.objects.filter(empresa=empresa).aggregate(
-        promedio_mensual=Avg('monto'),
-        total_ventas=Sum('monto'),
-        cantidad_ventas=Count('id')
-    )
-    
-    # Estadísticas de gastos
-    gastos_mensuales = Gasto.objects.filter(empresa=empresa).aggregate(
-        promedio_mensual=Avg('monto'),
-        total_gastos=Sum('monto'),
-        cantidad_gastos=Count('id')
-    )
-    
-    # Calcular utilidad
-    utilidad_total = (ventas_mensuales['total_ventas'] or 0) - (gastos_mensuales['total_gastos'] or 0)
-    
-    # Margen de utilidad
+    from empresa.models import Compra
+
+    # Ventas netas (sin IVA)
+    ventas_qs = Venta.objects.filter(empresa=empresa)
+    ventas_netas = (ventas_qs.aggregate(t=Sum('monto_neto'))['t']
+                    or ventas_qs.aggregate(t=Sum('monto'))['t'] or 0)
+    promedio_ventas = (ventas_qs.aggregate(p=Avg('monto_neto'))['p']
+                       or ventas_qs.aggregate(p=Avg('monto'))['p'] or 0)
+    cantidad_ventas = ventas_qs.count()
+
+    # Compras netas (costo de ventas) — sin IVA
+    compras_qs = Compra.objects.filter(empresa=empresa)
+    costo_ventas = (compras_qs.aggregate(t=Sum('monto_neto'))['t']
+                    or compras_qs.aggregate(t=Sum('monto'))['t'] or 0)
+
+    # Gastos operativos
+    gastos_qs = Gasto.objects.filter(empresa=empresa)
+    total_gastos = gastos_qs.aggregate(t=Sum('monto'))['t'] or 0
+    promedio_gastos = gastos_qs.aggregate(p=Avg('monto'))['p'] or 0
+    cantidad_gastos = gastos_qs.count()
+
+    # Utilidad NIIF: ventas_netas − costo − gastos
+    utilidad_total = float(ventas_netas) - float(costo_ventas) - float(total_gastos)
+
+    # Margen sobre ventas netas
     margen_utilidad = 0
-    if ventas_mensuales['total_ventas'] and ventas_mensuales['total_ventas'] > 0:
-        margen_utilidad = (utilidad_total / ventas_mensuales['total_ventas']) * 100
-    
+    if ventas_netas and float(ventas_netas) > 0:
+        margen_utilidad = (utilidad_total / float(ventas_netas)) * 100
+
     return {
-        'ventas_promedio_mensual': ventas_mensuales['promedio_mensual'] or 0,
-        'gastos_promedio_mensual': gastos_mensuales['promedio_mensual'] or 0,
+        'ventas_promedio_mensual': promedio_ventas,
+        'gastos_promedio_mensual': promedio_gastos,
         'utilidad_total': utilidad_total,
         'margen_utilidad': margen_utilidad,
-        'total_ventas': ventas_mensuales['total_ventas'] or 0,
-        'total_gastos': gastos_mensuales['total_gastos'] or 0,
-        'cantidad_ventas': ventas_mensuales['cantidad_ventas'] or 0,
-        'cantidad_gastos': gastos_mensuales['cantidad_gastos'] or 0,
+        'total_ventas': ventas_netas,
+        'total_compras': costo_ventas,
+        'total_gastos': total_gastos,
+        'cantidad_ventas': cantidad_ventas,
+        'cantidad_gastos': cantidad_gastos,
     }

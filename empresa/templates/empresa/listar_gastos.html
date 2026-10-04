@@ -12,9 +12,6 @@
             <p class="text-muted mb-0">Registro y control de egresos operativos</p>
         </div>
         <div class="d-flex gap-2">
-            <button onclick="window.print()" class="btn btn-outline-secondary btn-sm">
-                <i class="bi bi-printer"></i> Imprimir
-            </button>
             <a href="{% url 'empresa:crear_gasto' %}" class="btn btn-danger btn-sm">
                 <i class="bi bi-dash-lg"></i> Registrar Gasto
             </a>
@@ -128,14 +125,14 @@
     <div class="card border-0 shadow-sm">
         <div class="card-body p-0">
             <div class="table-responsive">
-                <table class="table table-hover align-middle mb-0">
+                <table class="table contafy-table table-hover align-middle align-middle mb-0">
                     <thead class="bg-light text-muted">
                         <tr>
                             <th class="ps-4 border-0">Fecha</th>
                             <th class="border-0">Concepto</th>
                             <th class="border-0 text-center">Tipo</th>
                             <th class="border-0 text-end">Monto (USD)</th>
-                            {% if es_propietario %}<th class="border-0 text-end pe-4">Acciones</th>{% endif %}
+                            <th class="border-0 text-end pe-4">Acciones</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -157,7 +154,6 @@
                                 {% endif %}
                             </td>
                             <td class="text-end fw-bold text-danger">${{ gasto.monto|floatformat:2 }}</td>
-                            {% if es_propietario %}
                             <td class="text-end pe-4">
                                 <div class="btn-group">
                                     <a href="{% url 'empresa:editar_gasto' gasto.id %}"
@@ -171,11 +167,10 @@
                                     </button>
                                 </div>
                             </td>
-                            {% endif %}
                         </tr>
                         {% empty %}
                         <tr>
-                            <td colspan="{% if es_propietario %}5{% else %}4{% endif %}" class="text-center py-5">
+                            <td colspan="5" class="text-center py-5">
                                 <div class="text-muted">
                                     <i class="bi bi-journal-x fs-1 d-block mb-3"></i>
                                     <p class="mb-0">No se encontraron gastos registrados.</p>

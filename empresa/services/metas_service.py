@@ -151,9 +151,11 @@ class ServicioMetas:
                 'ambiciosa': ventas_promedio * Decimal('1.20')      # 20% de crecimiento
             },
             'gastos': {
-                'conservadora': gastos_promedio * Decimal('1.05'),   # 5% de crecimiento
-                'moderada': gastos_promedio * Decimal('1.15'),      # 15% de crecimiento
-                'ambiciosa': gastos_promedio * Decimal('1.25')      # 25% de crecimiento
+                # Para gastos, una "meta" es un TECHO/PRESUPUESTO — no un objetivo de
+                # crecimiento. Ser "ambicioso" en gastos significa reducirlos más.
+                'conservadora': gastos_promedio * Decimal('0.95'),   # -5%  reducción ligera
+                'moderada':     gastos_promedio * Decimal('0.90'),   # -10% reducción moderada
+                'ambiciosa':    gastos_promedio * Decimal('0.80'),   # -20% reducción ambiciosa
             },
             'utilidad': {
                 'conservadora': utilidad_promedio * Decimal('1.05'),

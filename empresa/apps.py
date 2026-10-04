@@ -10,6 +10,13 @@ class EmpresaConfig(AppConfig):
     def ready(self):
         import empresa.signals  # noqa: F401
 
+        # ── Conectar signals de auditoría (Centro de Empresa) ──
+        try:
+            from empresa.signals import conectar_signals_auditoria
+            conectar_signals_auditoria()
+        except Exception as e:
+            warnings.warn(f"No se pudieron conectar signals de auditoría: {e}", RuntimeWarning)
+
         # ── Warning inmediato si CONN_MAX_AGE es inconsistente ──
         from django.conf import settings
         db = settings.DATABASES.get('default', {})

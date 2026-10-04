@@ -303,14 +303,10 @@ def listar_ventas(request):
     return render(request, 'empresa/listar_ventas.html', contexto)
 
 @login_required
+@require_power('puede_editar_ventas')
 def editar_venta(request, venta_id):
-    """Editar venta - solo para propietarios"""
+    """Editar venta — requiere poder `puede_editar_ventas`"""
     from django.shortcuts import get_object_or_404
-    
-    # Verificar que sea propietario (no empleado)
-    if hasattr(request.user, 'poderes') and not request.user.is_superuser:
-        messages.error(request, 'Solo el propietario puede editar ventas.')
-        return redirect('empresa:listar_ventas')
     
     empresa = request.user.empresa
     venta = get_object_or_404(Venta, id=venta_id, empresa=empresa)
@@ -350,12 +346,19 @@ def editar_venta(request, venta_id):
 
 from django.views.decorators.csrf import csrf_exempt
 
-@csrf_exempt
+@login_required
+@require_power('puede_eliminar_ventas')
 def eliminar_venta(request, venta_id):
-    """Eliminar venta - AJAX compatible"""
+    """
+    Eliminar venta — requiere poder `puede_eliminar_ventas`.
+
+    Fix #2 (seguridad): antes solo tenía @csrf_exempt (sin login_required ni
+    require_power). Cualquier persona con CSRF token podía borrar ventas.
+    Ahora requiere login + poder específico.
+    """
     from django.shortcuts import get_object_or_404
     from django.http import JsonResponse
-    
+
     if not request.user.is_authenticated:
         return JsonResponse({'error': 'No autenticado'}, status=401)
     

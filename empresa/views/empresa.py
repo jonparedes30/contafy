@@ -122,10 +122,11 @@ def gestion_poderes_empleado(request, empresa_id, empleado_id):
         # Verificar que el usuario actual sea el dueño de la empresa
         if request.user.empresa != empresa:
             return JsonResponse({'error': 'No tienes permisos para gestionar esta empresa.'}, status=403)
-        
-        # Verificar que el usuario actual sea el dueño (primer usuario de la empresa)
-        dueño = empresa.usuarios.first()
-        if request.user.id != dueño.id:
+
+        # Verificar que el usuario actual sea el propietario (Fix #5: usar empresa.propietario)
+        from empresa.decorators import _obtener_propietario
+        propietario = _obtener_propietario(empresa)
+        if not propietario or request.user.id != propietario.id:
             return JsonResponse({'error': 'Solo el dueño de la empresa puede gestionar poderes.'}, status=403)
             
     except (Empresa.DoesNotExist, Usuario.DoesNotExist):

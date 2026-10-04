@@ -12,49 +12,54 @@ class NIIFService:
     
     @staticmethod
     def evaluar_deterioro_instrumentos(empresa):
-        """Evalúa deterioro de instrumentos financieros según NIIF 9"""
-        from ..models import InstrumentoFinanciero, CuentaContable, MovimientoContable
-        
+        """Evalúa deterioro de instrumentos financieros según NIIF 9.
+
+        FIX: Ahora usa ContabilidadService.crear_transaccion_contable para
+        garantizar que cada par débito/crédito comparta el mismo transaccion_id
+        y la partida doble esté balanceada (Bug histórico que causaba que el
+        verificador de integridad reportara "no cuadra").
+        """
+        from ..models import InstrumentoFinanciero
+        from .contabilidad_service import ContabilidadService
+
         instrumentos = InstrumentoFinanciero.objects.filter(
             empresa=empresa,
             tipo='activo_financiero'
         )
-        
-        total_deterioro = 0
+
+        total_deterioro = Decimal('0')
         for instrumento in instrumentos:
             deterioro = instrumento.calcular_deterioro_niif9()
-            if deterioro > 0:
-                # Crear asientos de deterioro
-                cuenta_deterioro = CuentaContable.objects.get_or_create(
-                    empresa=empresa,
-                    nombre='Deterioro Instrumentos Financieros',
-                    defaults={'tipo': 'gasto'}
-                )[0]
-                
-                cuenta_provision = CuentaContable.objects.get_or_create(
-                    empresa=empresa,
-                    nombre='Provisión Deterioro IF',
-                    defaults={'tipo': 'activo'}
-                )[0]
-                
-                MovimientoContable.objects.create(
-                    empresa=empresa,
-                    cuenta_fk=cuenta_deterioro,
-                    tipo='debito',
-                    monto=deterioro,
-                    descripcion=f'Deterioro {instrumento.nombre}'
-                )
-                
-                MovimientoContable.objects.create(
-                    empresa=empresa,
-                    cuenta_fk=cuenta_provision,
-                    tipo='credito',
-                    monto=deterioro,
-                    descripcion=f'Provisión deterioro {instrumento.nombre}'
-                )
-                
-                total_deterioro += deterioro
-        
+            if not deterioro or deterioro <= 0:
+                continue
+
+            deterioro = Decimal(str(deterioro))
+
+            asientos = [
+                {
+                    'cuenta': 'Deterioro Instrumentos Financieros',
+                    'tipo_cuenta': 'gasto',
+                    'tipo_movimiento': 'debito',
+                    'monto': deterioro,
+                    'descripcion': f'Deterioro NIIF 9 - {instrumento.nombre}',
+                },
+                {
+                    'cuenta': 'Provisión Deterioro IF',
+                    'tipo_cuenta': 'activo',
+                    'tipo_movimiento': 'credito',
+                    'monto': deterioro,
+                    'descripcion': f'Provisión deterioro NIIF 9 - {instrumento.nombre}',
+                },
+            ]
+
+            ContabilidadService.crear_transaccion_contable(
+                empresa,
+                asientos,
+                descripcion_general=f'Deterioro NIIF 9 instrumento {instrumento.nombre}'
+            )
+
+            total_deterioro += deterioro
+
         return total_deterioro
     
     @staticmethod

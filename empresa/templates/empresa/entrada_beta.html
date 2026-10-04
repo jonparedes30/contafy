@@ -1,52 +1,188 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CONTAFY - Acceso Beta</title>
-    <style>
-        body { font-family: Arial, sans-serif; background: #f5f5f5; margin: 0; padding: 20px; }
-        .container { max-width: 400px; margin: 50px auto; background: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
-        .logo { text-align: center; margin-bottom: 30px; }
-        .logo h1 { color: #2c3e50; margin: 0; font-size: 2.5em; }
-        .form-group { margin-bottom: 20px; }
-        label { display: block; margin-bottom: 5px; font-weight: bold; color: #333; }
-        input[type="text"] { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 5px; font-size: 16px; }
-        .btn { width: 100%; padding: 12px; background: #3498db; color: white; border: none; border-radius: 5px; font-size: 16px; cursor: pointer; }
-        .btn:hover { background: #2980b9; }
-        .alert { padding: 10px; margin-bottom: 20px; border-radius: 5px; }
-        .alert-error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
-        .info { text-align: center; margin-top: 20px; color: #666; font-size: 14px; }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <div class="logo">
-            <h1>CONTAFY</h1>
-            <p>Plataforma Beta - Acceso por Invitación</p>
-        </div>
-        
-        {% if messages %}
-            {% for message in messages %}
-                <div class="alert alert-error">{{ message }}</div>
-            {% endfor %}
-        {% endif %}
-        
-        <form method="post">
-            {% csrf_token %}
-            <div class="form-group">
-                <label for="codigo">Código de Invitación:</label>
-                <input type="text" id="codigo" name="codigo" placeholder="CONTAFY-XXXXXXXX" required>
-            </div>
-            <button type="submit" class="btn">Acceder</button>
-        </form>
-        
-        <div class="info">
-            <p>¿No tienes un código? Contacta al administrador.</p>
-            <div style="margin-top: 15px;">
-                <a href="{% url 'empresa:selector_demo' %}" class="btn" style="background-color: #2ecc71; text-decoration: none; display: block; text-align: center; box-sizing: border-box;">Explorar Demos</a>
-            </div>
-        </div>
+{% extends 'empresa/base_auth.html' %}
+{% load static %}
+
+{% block title %}CONTAFY — Acceso Beta{% endblock %}
+
+{% block extra_css %}
+<style>
+  .beta-wrapper {
+    min-height: 100vh;
+    background: var(--grad-hero-bg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem 1rem;
+    position: relative;
+    overflow: hidden;
+  }
+  .beta-wrapper::before {
+    content: '';
+    position: absolute; inset: 0;
+    background:
+      radial-gradient(ellipse 60% 50% at 80% 30%, rgba(16,185,129,.15) 0%, transparent 65%),
+      radial-gradient(ellipse 50% 45% at 25% 75%, rgba(59,130,246,.18) 0%, transparent 65%);
+    pointer-events: none;
+  }
+  .beta-card {
+    position: relative;
+    z-index: 1;
+    background: #fff;
+    border-radius: var(--radius-2xl);
+    box-shadow: var(--shadow-xl);
+    padding: 2.5rem 2rem;
+    max-width: 440px;
+    width: 100%;
+  }
+  .beta-brand {
+    text-align: center;
+    margin-bottom: 1.75rem;
+  }
+  .beta-brand .logo-mark {
+    width: 64px;
+    height: 64px;
+    margin: 0 auto 1rem;
+    display: block;
+  }
+  .beta-brand h1 {
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 900;
+    font-size: 2rem;
+    letter-spacing: -0.5px;
+    color: var(--c-text);
+    margin: 0;
+    text-transform: uppercase;
+  }
+  .beta-brand h1 span {
+    background: var(--grad-text);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .beta-brand p {
+    color: var(--c-muted);
+    font-size: 0.9rem;
+    margin: 0.5rem 0 0;
+  }
+  .beta-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    background: rgba(16, 185, 129, 0.1);
+    color: var(--c-green-d);
+    padding: 0.3rem 0.85rem;
+    border-radius: var(--radius-pill);
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    margin-bottom: 1.25rem;
+  }
+  .beta-tag .dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--c-green);
+    box-shadow: 0 0 8px var(--c-green);
+  }
+  .beta-divider {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    color: var(--c-slate-3);
+    font-size: 0.8rem;
+    margin: 1.5rem 0;
+  }
+  .beta-divider::before,
+  .beta-divider::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--c-slate-2);
+  }
+  .beta-demo-btn {
+    display: block;
+    width: 100%;
+    background: var(--grad-brand);
+    color: #fff;
+    text-align: center;
+    padding: 0.7rem 1rem;
+    border-radius: var(--radius-md);
+    font-weight: 600;
+    text-decoration: none;
+    transition: all 0.2s;
+  }
+  .beta-demo-btn:hover {
+    color: #fff;
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-brand);
+  }
+  .beta-back {
+    text-align: center;
+    margin-top: 1.25rem;
+  }
+  .beta-back a {
+    color: var(--c-muted);
+    text-decoration: none;
+    font-size: 0.85rem;
+  }
+  .beta-back a:hover {
+    color: var(--c-green-d);
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="beta-wrapper">
+  <div class="beta-card">
+    <div class="beta-brand text-center">
+      <img src="{% static 'empresa/img/contafy-logo.png' %}" alt="Contafy" class="logo-mark">
+      <span class="beta-tag">
+        <span class="dot"></span> Acceso Beta
+      </span>
+      <h1>CONTA<span>FY</span></h1>
+      <p>Plataforma por invitación</p>
     </div>
-</body>
-</html>
+
+    {% if messages %}
+      {% for message in messages %}
+        <div class="alert alert-danger" role="alert">
+          <i class="bi bi-exclamation-triangle-fill me-2"></i>{{ message }}
+        </div>
+      {% endfor %}
+    {% endif %}
+
+    <form method="post">
+      {% csrf_token %}
+      <div class="mb-3">
+        <label for="codigo" class="form-label fw-600">
+          Código de invitación
+        </label>
+        <input
+          type="text"
+          id="codigo"
+          name="codigo"
+          class="form-control"
+          placeholder="CONTAFY-XXXXXXXX"
+          required
+          autocomplete="off"
+          autofocus>
+        <div class="form-text">Ingresa el código que recibiste por email.</div>
+      </div>
+      <button type="submit" class="btn btn-primary w-100 btn-lg">
+        <i class="bi bi-key-fill me-2"></i>Acceder
+      </button>
+    </form>
+
+    <div class="beta-divider">o</div>
+
+    <a href="{% url 'empresa:selector_demo' %}" class="beta-demo-btn">
+      <i class="bi bi-play-circle-fill me-2"></i>Explorar demos sin registro
+    </a>
+
+    <div class="beta-back">
+      <a href="{% url 'empresa:landing' %}">
+        <i class="bi bi-arrow-left me-1"></i>Volver al inicio
+      </a>
+    </div>
+  </div>
+</div>
+{% endblock %}

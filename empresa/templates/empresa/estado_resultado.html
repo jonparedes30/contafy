@@ -23,9 +23,7 @@
                     <button type="submit" class="btn btn-primary btn-sm">
                         <i class="bi bi-funnel"></i> Filtrar
                     </button>
-                    <button type="button" class="btn btn-outline-secondary btn-sm" onclick="window.print()">
-                        <i class="bi bi-printer"></i> Imprimir
-                    </button>
+
                     <div class="btn-group ml-2" role="group">
                         <a href="?{% if request.GET.fecha_inicio %}fecha_inicio={{ request.GET.fecha_inicio }}&fecha_fin={{ request.GET.fecha_fin }}&{% endif %}niif=false" 
                            class="btn btn-sm {% if not formato_niif %}btn-primary{% else %}btn-outline-primary{% endif %}">
@@ -124,7 +122,24 @@
                             <td class="align-middle"><strong>Total Gastos Operativos</strong></td>
                             <td class="align-middle text-end fw-bold">(${{ reporte_niif.totales.gastos_operativos|floatformat:2 }})</td>
                         </tr>
-                        
+
+                        <!-- Utilidad Operativa -->
+                        <tr class="table-primary">
+                            <td class="align-middle"><strong>UTILIDAD OPERATIVA</strong></td>
+                            <td class="align-middle text-end fw-bold">${{ reporte_niif.totales.utilidad_operativa|floatformat:2 }}</td>
+                        </tr>
+
+                        <!-- Impuestos (solo si hay utilidad positiva) -->
+                        {% if reporte_niif.impuestos %}
+                        <tr class="table-warning"><td colspan="2"><strong>IMPUESTOS</strong></td></tr>
+                        {% for concepto, valor in reporte_niif.impuestos.items %}
+                        <tr>
+                            <td class="align-middle">{{ concepto }}</td>
+                            <td class="align-middle text-end fw-bold text-warning">(${{ valor|floatformat:2 }})</td>
+                        </tr>
+                        {% endfor %}
+                        {% endif %}
+
                         <!-- Utilidad Neta -->
                         <tr class="{% if reporte_niif.totales.utilidad_neta >= 0 %}table-success{% else %}table-danger{% endif %}">
                             <td class="align-middle"><strong>UTILIDAD NETA</strong></td>
@@ -159,7 +174,7 @@
                 <table class="table mb-0" style="font-size:1.13rem;">
                     <tbody>
                     <tr>
-                        <td class="align-middle text-muted">Ingresos por Ventas</td>
+                        <td class="align-middle text-muted">Ingresos por Ventas (sin IVA)</td>
                         <td class="align-middle text-end fw-bold text-primary">
                             ${{ ventas|floatformat:2 }}
                             <span class="badge bg-success ms-2">Ingreso</span>
@@ -167,33 +182,67 @@
                     </tr>
                     <tr style="border-top:1.5px solid #e9ecef;">
                         <td class="align-middle text-muted">
-                            {% if user.empresa.categoria == 'manufactura' %}
-                                Costos de Producción
-                            {% else %}
-                                Costos (Compras)
-                            {% endif %}
+                            (–) {% if user.empresa.categoria == 'manufactura' %}Costos de Producción{% else %}Costo de Ventas (Compras){% endif %}
                         </td>
                         <td class="align-middle text-end fw-bold" style="color:#0dcaf0;">
                             ${{ costos|floatformat:2 }}
                             <span class="badge bg-info ms-2">Costo</span>
                         </td>
                     </tr>
+                    <tr class="table-info">
+                        <td class="align-middle"><strong>= Utilidad Bruta</strong></td>
+                        <td class="align-middle text-end fw-bold" style="font-size:1.15rem;">
+                            ${{ utilidad_bruta|floatformat:2 }}
+                        </td>
+                    </tr>
                     <tr>
-                        <td class="align-middle text-muted">Gastos Operativos</td>
+                        <td class="align-middle text-muted">(–) Gastos Operativos</td>
                         <td class="align-middle text-end fw-bold" style="color:#dc3545;">
                             ${{ gastos|floatformat:2 }}
                             <span class="badge bg-danger ms-2">Gasto</span>
                         </td>
                     </tr>
                     <tr class="table-light">
-                        <td class="align-middle text-muted">Utilidad Operativa</td>
+                        <td class="align-middle"><strong>= Utilidad Operativa</strong></td>
                         <td class="align-middle text-end fw-bold" style="font-size:1.18rem;">
                             ${{ utilidad_operativa|floatformat:2 }}
                             <span class="badge bg-primary ms-2">Resultado</span>
                         </td>
                     </tr>
+                    {% if participacion_trabajadores and participacion_trabajadores > 0 %}
+                    <tr>
+                        <td class="align-middle text-muted">(–) Participación Trabajadores (15%)</td>
+                        <td class="align-middle text-end fw-bold" style="color:#fd7e14;">
+                            ${{ participacion_trabajadores|floatformat:2 }}
+                            <span class="badge bg-warning ms-2">Impuesto</span>
+                        </td>
+                    </tr>
+                    {% endif %}
+                    {% if impuesto_renta and impuesto_renta > 0 %}
+                    <tr>
+                        <td class="align-middle text-muted">(–) Impuesto a la Renta (25%)</td>
+                        <td class="align-middle text-end fw-bold" style="color:#fd7e14;">
+                            ${{ impuesto_renta|floatformat:2 }}
+                            <span class="badge bg-warning ms-2">Impuesto</span>
+                        </td>
+                    </tr>
+                    {% endif %}
+                    <tr class="{% if utilidad_neta >= 0 %}table-success{% else %}table-danger{% endif %}" style="border-top:2px solid #198754;">
+                        <td class="align-middle"><strong>= Utilidad Neta</strong></td>
+                        <td class="align-middle text-end fw-bold" style="font-size:1.3rem;">
+                            ${{ utilidad_neta|floatformat:2 }}
+                            <span class="badge bg-{% if utilidad_neta >= 0 %}success{% else %}danger{% endif %} ms-2">Final</span>
+                        </td>
+                    </tr>
                     </tbody>
                 </table>
+
+                {% if cuadra is False %}
+                <div class="alert alert-warning m-3" style="border-radius:0.8rem;">
+                    <i class="bi bi-exclamation-triangle"></i>
+                    <strong>Atención:</strong> Hay una diferencia de redondeo. Revisa los datos del período.
+                </div>
+                {% endif %}
             {% endif %}
         </div>
     </div>

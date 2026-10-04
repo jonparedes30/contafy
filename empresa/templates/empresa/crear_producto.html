@@ -401,10 +401,12 @@ document.addEventListener('DOMContentLoaded', function () {
             sugerenciaInfo.textContent = `🔍 Código aplicado: ${codigo}. Revise los campos y presione Guardar Producto.`;
             sugerenciaInfo.style.color = 'green';
 
-            // Show quick actions: apply & save, or create automatically (explicit)
+            // Solo botón "Aplicar y mostrar" — el usuario completa y guarda el formulario manualmente.
+            // (Eliminado "Crear automáticamente": el endpoint inventario_create_from_scan ya no existe
+            // tras la limpieza del sistema de escáner. La creación se hace al enviar este formulario.)
             actions.innerHTML = `<div class="d-flex justify-content-center gap-2">` +
-                `<button type="button" id="btn-apply-fill" class="btn btn-primary">Aplicar y mostrar</button>` +
-                `<button type="button" id="btn-auto-create" class="btn btn-outline-secondary">Crear automáticamente</button>` +
+                `<button type="button" id="btn-apply-fill" class="btn btn-primary">` +
+                `<i class="bi bi-check-lg me-1"></i> Aplicar al formulario</button>` +
                 `</div>`;
             actions.style.display = 'block';
 
@@ -412,37 +414,6 @@ document.addEventListener('DOMContentLoaded', function () {
                 // Focus the first editable field so user can verify
                 if (inputNombre) { inputNombre.focus(); flashField(inputNombre); }
                 actions.style.display = 'none';
-            });
-
-            document.getElementById('btn-auto-create').addEventListener('click', async function(){
-                // Explicit user action to create now via existing endpoint
-                actions.innerHTML = '<div class="form-text">Creando producto en inventario...</div>';
-                try {
-                    const resp = await fetch('{% url "empresa:inventario_create_from_scan" %}', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
-                        },
-                        body: JSON.stringify({ barcode: codigo, stock: 0, precio_unitario: 0 })
-                    });
-                    const json = await resp.json();
-                    if (json.success && json.product) {
-                        const prod = json.product;
-                        if (inputCodigo) inputCodigo.value = prod.codigo_barras || prod.id || '';
-                        if (inputNombre) inputNombre.value = prod.nombre || '';
-                        if (inputDescripcion) inputDescripcion.value = prod.descripcion || '';
-                        if (inputPrecio) inputPrecio.value = prod.precio_unitario || '';
-                        sugerenciaInfo.textContent = `✅ Producto creado: ${prod.nombre}`;
-                        sugerenciaInfo.style.color = 'green';
-                        actions.style.display = 'none';
-                    } else {
-                        actions.innerHTML = '<div class="alert alert-danger">Error creando producto</div>';
-                    }
-                } catch (err) {
-                    console.error('Create product error:', err);
-                    actions.innerHTML = '<div class="alert alert-danger">Error de red creando producto</div>';
-                }
             });
 
         } catch (err) {
@@ -463,7 +434,7 @@ document.addEventListener('DOMContentLoaded', function () {
 <div class="modal fade scanner-modal-unified modal-fullscreen-sm-down" id="visionScannerModalProducto" tabindex="-1">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
-            <div class="modal-header">
+            <div class="modal-header bg-brand text-white">
                 <h5 class="modal-title"><i class="bi bi-camera-fill me-2"></i>Escáner IA - Identificar Producto</h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
             </div>
@@ -593,7 +564,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 showCancelButton: true,
                 confirmButtonText: 'Ir a Crear Compra',
                 cancelButtonText: 'Continuar de todas formas',
-                confirmButtonColor: '#0d6efd'
+                confirmButtonColor: '#3b82f6'
               }).then(function(res) {
                 if (res.isConfirmed) window.location.href = "{% url 'empresa:crear_compra' %}";
               });
@@ -651,9 +622,9 @@ document.addEventListener('DOMContentLoaded', function() {
 <div class="modal fade" id="categoriaModal" tabindex="-1">
     <div class="modal-dialog">
         <div class="modal-content">
-            <div class="modal-header">
+            <div class="modal-header bg-brand text-white">
                 <h5 class="modal-title">Crear Categoría de Producto</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
                 <form id="formCategoria">

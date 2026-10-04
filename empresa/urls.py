@@ -37,6 +37,7 @@ def lazy_view(module_name, attr):
 from .views.metas import gestionar_metas, historial_meta, marcar_notificacion_leida, comparacion_sector
 from .views.inventario import inventario, descargar_plantilla_inventario, subir_inventario_excel, saldos_iniciales, inventario_detallado_inicial
 from .views.actividad import actividad_reciente, asignar_usuarios_auditoria
+from .views.centro_empresa import centro_empresa, redirect_a_resumen, redirect_a_historial
 
 from .views.barcode_api import buscar_por_codigo_barras, validar_codigo_barras, crear_categoria_api, materias_primas_api
 from .views.manufactura import (
@@ -86,7 +87,13 @@ from empresa.views.ai_comandos import (
 from empresa.views.debug_datos import debug_datos
 from .views.extras import vision_recognize, obtener_info_producto
 from .views.landing import landing
-from .views.pagos import crear_checkout_session, checkout_success, checkout_cancel, stripe_webhook
+try:
+    from .views.pagos import crear_checkout_session, checkout_success, checkout_cancel, stripe_webhook
+except ImportError:
+    from django.http import HttpResponse
+    def _stripe_unavailable(request, *args, **kwargs):
+        return HttpResponse('Stripe no está instalado. Ejecuta: pip install stripe', status=503)
+    crear_checkout_session = checkout_success = checkout_cancel = stripe_webhook = _stripe_unavailable
 
 # Configurar router para la API
 router = DefaultRouter()
@@ -118,7 +125,10 @@ urlpatterns = [
     
     # URLs de empresa
     path('crear/', crear_empresa, name='crear_empresa'),
-    path('listar/', listar_empresas, name='listar_empresas'),
+    # Centro de Empresa — vista unificada (reemplaza listar_empresas y actividad_reciente)
+    path('centro/', centro_empresa, name='centro_empresa'),
+    # URLs antiguas redirigen al Centro de Empresa con el tab correspondiente
+    path('listar/', redirect_a_resumen, name='listar_empresas'),
     path('crear_empleado/', crear_empleado, name='crear_empleado'),
     path('empresa/<int:empresa_id>/empleado/<int:empleado_id>/poderes/', gestion_poderes_empleado, name='gestion_poderes_empleado'),
     path('empleado/<int:empleado_id>/eliminar/', eliminar_empleado, name='eliminar_empleado'),
@@ -206,7 +216,7 @@ urlpatterns = [
     path('metas/notificacion/<int:notificacion_id>/leida/', marcar_notificacion_leida, name='marcar_notificacion_leida'),
     
     # URLs de actividad y auditoría
-    path('actividad/', actividad_reciente, name='actividad_reciente'),
+    path('actividad/', redirect_a_historial, name='actividad_reciente'),
     path('actividad/asignar-usuarios/', asignar_usuarios_auditoria, name='asignar_usuarios_auditoria'),
 ]
 

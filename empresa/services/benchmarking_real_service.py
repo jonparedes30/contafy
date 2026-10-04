@@ -10,14 +10,34 @@ from empresa.utils.normalizador import calcular_distancia_km, normalizar_tipo_ne
 import math
 
 class BenchmarkingRealService:
-    
+
+    # Cache request-level de métricas por empresa para evitar recalcular
+    # las mismas métricas múltiples veces durante una sola request.
+    # Fix #8: antes se recalculaba para cada nivel (categoría, ciudad,
+    # provincia, etc.) lo cual generaba N×K queries innecesarios.
+    _metricas_cache = None
+
+    @staticmethod
+    def _obtener_metricas_cached(empresa):
+        """Versión cacheada de _calcular_metricas_empresa por sesión."""
+        if BenchmarkingRealService._metricas_cache is None:
+            BenchmarkingRealService._metricas_cache = {}
+        if empresa.id not in BenchmarkingRealService._metricas_cache:
+            BenchmarkingRealService._metricas_cache[empresa.id] = (
+                BenchmarkingRealService._calcular_metricas_empresa(empresa)
+            )
+        return BenchmarkingRealService._metricas_cache[empresa.id]
+
     @staticmethod
     def obtener_benchmarking_completo(empresa):
         """Obtiene benchmarking completo con datos reales por niveles geográficos"""
-        
-        # Calcular métricas propias
-        metricas_propias = BenchmarkingRealService._calcular_metricas_empresa(empresa)
-        
+
+        # Resetear cache al inicio de cada análisis para no acarrear datos viejos
+        BenchmarkingRealService._metricas_cache = {}
+
+        # Calcular métricas propias (queda en cache para reuso)
+        metricas_propias = BenchmarkingRealService._obtener_metricas_cached(empresa)
+
         # Obtener comparaciones por niveles
         comparaciones = {
             'categoria': BenchmarkingRealService._benchmarking_por_categoria(empresa),
@@ -27,15 +47,18 @@ class BenchmarkingRealService:
             'pais': BenchmarkingRealService._benchmarking_nacional(empresa),
             'cercanas_100km': BenchmarkingRealService._benchmarking_100km(empresa)
         }
-        
-        # Calcular percentiles y posiciones
+
+        # Calcular percentiles y posiciones (reusa cache de métricas)
         posiciones = BenchmarkingRealService._calcular_posiciones(empresa, comparaciones)
-        
+
         # Generar recomendaciones
         recomendaciones = BenchmarkingRealService._generar_recomendaciones_privadas(
             metricas_propias, comparaciones
         )
-        
+
+        # Limpiar cache para no afectar requests futuras
+        BenchmarkingRealService._metricas_cache = None
+
         return {
             'metricas_propias': metricas_propias,
             'comparaciones': comparaciones,
@@ -45,68 +68,119 @@ class BenchmarkingRealService:
     
     @staticmethod
     def _calcular_metricas_empresa(empresa):
-        """Calcula métricas de la empresa usando datos contables reales"""
+        """
+        Calcula métricas usando los modelos Venta/Compra/Gasto directos
+        (más robusto que cuentas por nombre exacto — fix #4 del audit).
+
+        Cálculo de utilidad NIIF (fix #1):
+            utilidad_bruta  = ventas_netas − costo_ventas (compras)
+            utilidad_neta   = utilidad_bruta − gastos_operativos
+
+        Cálculo de crecimiento mensual correcto (fix #2):
+            compara el mes actual contra el mes inmediato anterior (no contra
+            la fórmula incorrecta `(ventas_3m - ventas_mes) / 2` del código previo).
+        """
+        from empresa.models import Venta, Compra, Gasto
+
         hoy = timezone.now()
-        inicio_mes = hoy.replace(day=1)
+        inicio_mes_actual = hoy.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+
+        # Mes inmediato anterior (rango cerrado [inicio_anterior, inicio_actual))
+        if hoy.month == 1:
+            inicio_mes_anterior = inicio_mes_actual.replace(year=hoy.year - 1, month=12)
+        else:
+            inicio_mes_anterior = inicio_mes_actual.replace(month=hoy.month - 1)
+
         hace_3_meses = hoy - timedelta(days=90)
         hace_6_meses = hoy - timedelta(days=180)
-        
-        # Ventas mensuales (desde movimientos contables)
+
+        # ─── Ventas mensuales (netas, sin IVA) ─────────────────
+        ventas_qs_mes = Venta.objects.filter(empresa=empresa, fecha__gte=inicio_mes_actual)
+        ventas_mes = (ventas_qs_mes.aggregate(t=Sum('monto_neto'))['t']
+                      or ventas_qs_mes.aggregate(t=Sum('monto'))['t'] or 0)
+
+        # Ventas del mes inmediato anterior (para crecimiento real)
+        ventas_qs_mes_ant = Venta.objects.filter(
+            empresa=empresa,
+            fecha__gte=inicio_mes_anterior,
+            fecha__lt=inicio_mes_actual
+        )
+        ventas_mes_anterior = (ventas_qs_mes_ant.aggregate(t=Sum('monto_neto'))['t']
+                               or ventas_qs_mes_ant.aggregate(t=Sum('monto'))['t'] or 0)
+
+        # Ventas trimestre y semestre
+        ventas_qs_3m = Venta.objects.filter(empresa=empresa, fecha__gte=hace_3_meses)
+        ventas_3m = (ventas_qs_3m.aggregate(t=Sum('monto_neto'))['t']
+                     or ventas_qs_3m.aggregate(t=Sum('monto'))['t'] or 0)
+
+        ventas_qs_6m = Venta.objects.filter(empresa=empresa, fecha__gte=hace_6_meses)
+        ventas_6m = (ventas_qs_6m.aggregate(t=Sum('monto_neto'))['t']
+                     or ventas_qs_6m.aggregate(t=Sum('monto'))['t'] or 0)
+
+        # ─── Costo de ventas (compras del mes, sin IVA) ────────
+        compras_qs_mes = Compra.objects.filter(empresa=empresa, fecha__gte=inicio_mes_actual)
+        costos_mes = (compras_qs_mes.aggregate(t=Sum('monto_neto'))['t']
+                      or compras_qs_mes.aggregate(t=Sum('monto'))['t'] or 0)
+
+        # ─── Gastos operativos del mes ─────────────────────────
+        gastos_mes = Gasto.objects.filter(
+            empresa=empresa, fecha__gte=inicio_mes_actual
+        ).aggregate(t=Sum('monto'))['t'] or 0
+
+        # ─── Cálculos derivados (fix #1: utilidad correcta) ────
+        ventas_mes_f = float(ventas_mes)
+        utilidad_bruta = ventas_mes_f - float(costos_mes)
+        utilidad_neta = utilidad_bruta - float(gastos_mes)
+
+        margen_bruto = (utilidad_bruta / ventas_mes_f * 100) if ventas_mes_f > 0 else 0
+        margen_neto = (utilidad_neta / ventas_mes_f * 100) if ventas_mes_f > 0 else 0
+
+        # ─── Crecimiento mensual correcto (fix #2 + cap #6) ────
+        if float(ventas_mes_anterior) > 0:
+            crecimiento_mensual = ((ventas_mes_f - float(ventas_mes_anterior))
+                                   / float(ventas_mes_anterior) * 100)
+            crecimiento_mensual = max(-90.0, min(500.0, crecimiento_mensual))
+        else:
+            crecimiento_mensual = 0
+
+        # ─── Crecimiento interanual (Y-o-Y) — fix #9: estacionalidad ────
+        # Compara el mismo mes del año pasado para evitar distorsión por
+        # estacionalidad (ej. retail en diciembre vs enero)
         try:
-            cuenta_ventas = CuentaContable.objects.get(empresa=empresa, nombre__iexact='Ventas')
-            ventas_mes = MovimientoContable.objects.filter(
-                empresa=empresa, cuenta_fk=cuenta_ventas, tipo='credito',
-                fecha__gte=inicio_mes
-            ).aggregate(total=Sum('monto'))['total'] or 0
-            
-            ventas_3m = MovimientoContable.objects.filter(
-                empresa=empresa, cuenta_fk=cuenta_ventas, tipo='credito',
-                fecha__gte=hace_3_meses
-            ).aggregate(total=Sum('monto'))['total'] or 0
-            
-            ventas_6m = MovimientoContable.objects.filter(
-                empresa=empresa, cuenta_fk=cuenta_ventas, tipo='credito',
-                fecha__gte=hace_6_meses
-            ).aggregate(total=Sum('monto'))['total'] or 0
-        except CuentaContable.DoesNotExist:
-            ventas_mes = ventas_3m = ventas_6m = 0
-        
-        # Gastos mensuales
-        try:
-            cuenta_gastos = CuentaContable.objects.get(empresa=empresa, nombre__iexact='Gastos')
-            gastos_mes = MovimientoContable.objects.filter(
-                empresa=empresa, cuenta_fk=cuenta_gastos, tipo='debito',
-                fecha__gte=inicio_mes
-            ).aggregate(total=Sum('monto'))['total'] or 0
-        except CuentaContable.DoesNotExist:
-            gastos_mes = 0
-        
-        # Costos (Inventario/Compras)
-        try:
-            cuentas_inventario = CuentaContable.objects.filter(
-                empresa=empresa, 
-                nombre__in=['Inventario', 'Inventario de Materias Primas', 'Costo de Ventas']
+            inicio_mes_yoy = inicio_mes_actual.replace(year=inicio_mes_actual.year - 1)
+            if inicio_mes_yoy.month == 1:
+                fin_mes_yoy = inicio_mes_yoy.replace(year=inicio_mes_yoy.year + 1, month=1) if False \
+                              else inicio_mes_yoy.replace(year=inicio_mes_yoy.year, month=2)
+            else:
+                # mes siguiente del mismo año
+                if inicio_mes_yoy.month == 12:
+                    fin_mes_yoy = inicio_mes_yoy.replace(year=inicio_mes_yoy.year + 1, month=1)
+                else:
+                    fin_mes_yoy = inicio_mes_yoy.replace(month=inicio_mes_yoy.month + 1)
+
+            ventas_qs_yoy = Venta.objects.filter(
+                empresa=empresa, fecha__gte=inicio_mes_yoy, fecha__lt=fin_mes_yoy
             )
-            costos_mes = MovimientoContable.objects.filter(
-                empresa=empresa, cuenta_fk__in=cuentas_inventario, tipo='debito',
-                fecha__gte=inicio_mes
-            ).aggregate(total=Sum('monto'))['total'] or 0
-        except:
-            costos_mes = 0
-        
-        # Calcular métricas
-        utilidad_bruta = ventas_mes - costos_mes
-        utilidad_neta = utilidad_bruta - gastos_mes
-        
-        margen_bruto = (utilidad_bruta / ventas_mes * 100) if ventas_mes > 0 else 0
-        margen_neto = (utilidad_neta / ventas_mes * 100) if ventas_mes > 0 else 0
-        
-        # Crecimiento
-        ventas_mes_anterior = (ventas_3m - ventas_mes) / 2 if ventas_3m > ventas_mes else 0
-        crecimiento_mensual = ((ventas_mes - ventas_mes_anterior) / ventas_mes_anterior * 100) if ventas_mes_anterior > 0 else 0
-        
+            ventas_mismo_mes_anio_pasado = (
+                ventas_qs_yoy.aggregate(t=Sum('monto_neto'))['t']
+                or ventas_qs_yoy.aggregate(t=Sum('monto'))['t']
+                or 0
+            )
+
+            if float(ventas_mismo_mes_anio_pasado) > 0:
+                crecimiento_interanual = ((ventas_mes_f - float(ventas_mismo_mes_anio_pasado))
+                                          / float(ventas_mismo_mes_anio_pasado) * 100)
+                crecimiento_interanual = max(-90.0, min(500.0, crecimiento_interanual))
+            else:
+                crecimiento_interanual = 0
+        except Exception:
+            ventas_mismo_mes_anio_pasado = 0
+            crecimiento_interanual = 0
+
         return {
-            'ventas_mensuales': float(ventas_mes),
+            'ventas_mensuales': ventas_mes_f,
+            'ventas_mes_anterior': float(ventas_mes_anterior),
+            'ventas_mismo_mes_anio_pasado': float(ventas_mismo_mes_anio_pasado),
             'gastos_mensuales': float(gastos_mes),
             'costos_mensuales': float(costos_mes),
             'utilidad_bruta': float(utilidad_bruta),
@@ -114,8 +188,9 @@ class BenchmarkingRealService:
             'margen_bruto': float(margen_bruto),
             'margen_neto': float(margen_neto),
             'crecimiento_mensual': float(crecimiento_mensual),
+            'crecimiento_interanual': float(crecimiento_interanual),  # ← fix #9 estacionalidad
             'ventas_trimestre': float(ventas_3m),
-            'ventas_semestre': float(ventas_6m)
+            'ventas_semestre': float(ventas_6m),
         }
     
     @staticmethod
@@ -188,60 +263,122 @@ class BenchmarkingRealService:
         )
     
     @staticmethod
+    def _coordenadas_validas(empresa):
+        """
+        Valida que las coordenadas GPS de una empresa sean numéricamente válidas
+        y estén en rangos terrestres reales (-90 a 90 lat, -180 a 180 lng).
+        Fix #14: antes solo verificaba `if empresa.latitud and empresa.longitud`
+        sin validar que fueran números o rangos válidos.
+        """
+        if empresa.latitud is None or empresa.longitud is None:
+            return False
+        try:
+            lat = float(empresa.latitud)
+            lng = float(empresa.longitud)
+            return -90.0 <= lat <= 90.0 and -180.0 <= lng <= 180.0
+        except (TypeError, ValueError):
+            return False
+
+    @staticmethod
     def _benchmarking_100km(empresa):
         """Benchmarking de empresas en 100km a la redonda"""
-        if not (empresa.latitud and empresa.longitud):
-            return BenchmarkingRealService._resultado_vacio("Coordenadas GPS no disponibles")
-        
+        if not BenchmarkingRealService._coordenadas_validas(empresa):
+            return BenchmarkingRealService._resultado_vacio("Coordenadas GPS no disponibles o inválidas")
+
         empresas_con_gps = Empresa.objects.filter(
             latitud__isnull=False,
             longitud__isnull=False
         ).exclude(id=empresa.id)
-        
+
         empresas_cercanas_ids = []
         for emp in empresas_con_gps:
-            distancia = calcular_distancia_km(
-                float(empresa.latitud), float(empresa.longitud),
-                float(emp.latitud), float(emp.longitud)
-            )
+            if not BenchmarkingRealService._coordenadas_validas(emp):
+                continue
+            try:
+                distancia = calcular_distancia_km(
+                    float(empresa.latitud), float(empresa.longitud),
+                    float(emp.latitud), float(emp.longitud)
+                )
+            except (TypeError, ValueError):
+                continue
             if distancia and distancia <= 100:
                 empresas_cercanas_ids.append(emp.id)
-        
+
         empresas_cercanas = Empresa.objects.filter(id__in=empresas_cercanas_ids)
-        
+
         return BenchmarkingRealService._calcular_metricas_agregadas(
             empresas_cercanas, "100km a la redonda"
         )
     
     @staticmethod
     def _calcular_metricas_agregadas(empresas_queryset, nombre_grupo):
-        """Calcula métricas agregadas manteniendo privacidad"""
-        minimo_empresas = 1
-        if empresas_queryset.count() < minimo_empresas:
-            return BenchmarkingRealService._resultado_vacio(f"Datos insuficientes en {nombre_grupo}")
-        
-        hoy = timezone.now()
-        inicio_mes = hoy.replace(day=1)
-        
+        """
+        Calcula métricas agregadas (promedio, mediana, P25, P75) manteniendo
+        privacidad — no expone datos individuales, solo distribución agregada.
+
+        Fix #13: requiere mínimo 3 empresas para evitar revelar datos individuales
+        cuando hay 1-2 competidores (en ese caso el "promedio" sería esa empresa).
+        """
+        # Mínimo 3 empresas — con menos no hay privacidad ni representatividad
+        MINIMO_PRIVACIDAD = 3
+        if empresas_queryset.count() < MINIMO_PRIVACIDAD:
+            return BenchmarkingRealService._resultado_vacio(
+                f"Datos insuficientes en {nombre_grupo} (mínimo {MINIMO_PRIVACIDAD} empresas)"
+            )
+
         metricas_empresas = []
-        
         for empresa in empresas_queryset:
-            metricas = BenchmarkingRealService._calcular_metricas_empresa(empresa)
-            if metricas['ventas_mensuales'] > 0:  # Solo empresas con actividad
+            # Usa cache para no recalcular si la misma empresa aparece en otro nivel
+            metricas = BenchmarkingRealService._obtener_metricas_cached(empresa)
+            if metricas['ventas_mensuales'] > 0:
                 metricas_empresas.append(metricas)
-        
-        minimo_actividad = 1
-        if len(metricas_empresas) < minimo_actividad:
-            return BenchmarkingRealService._resultado_vacio(f"Actividad insuficiente en {nombre_grupo}")
-        
-        # Calcular promedios (mantiene privacidad)
+
+        if len(metricas_empresas) < MINIMO_PRIVACIDAD:
+            return BenchmarkingRealService._resultado_vacio(
+                f"Actividad insuficiente en {nombre_grupo} (mínimo {MINIMO_PRIVACIDAD} con actividad)"
+            )
+
+        # Extraer series para cálculo de percentiles reales
+        series_ventas = sorted(m['ventas_mensuales'] for m in metricas_empresas)
+        series_margen_bruto = sorted(m['margen_bruto'] for m in metricas_empresas)
+        series_margen_neto = sorted(m['margen_neto'] for m in metricas_empresas)
+        series_crecimiento = sorted(m['crecimiento_mensual'] for m in metricas_empresas)
+
+        def _percentil(serie_ordenada, p):
+            """Calcula el percentil p (0-100) de una serie ya ordenada."""
+            if not serie_ordenada:
+                return 0
+            k = (len(serie_ordenada) - 1) * (p / 100)
+            f = int(k)
+            c = min(f + 1, len(serie_ordenada) - 1)
+            if f == c:
+                return serie_ordenada[f]
+            d0 = serie_ordenada[f] * (c - k)
+            d1 = serie_ordenada[c] * (k - f)
+            return d0 + d1
+
         return {
             'nombre_grupo': nombre_grupo,
             'total_empresas': len(metricas_empresas),
-            'ventas_promedio': sum(m['ventas_mensuales'] for m in metricas_empresas) / len(metricas_empresas),
-            'margen_bruto_promedio': sum(m['margen_bruto'] for m in metricas_empresas) / len(metricas_empresas),
-            'margen_neto_promedio': sum(m['margen_neto'] for m in metricas_empresas) / len(metricas_empresas),
-            'crecimiento_promedio': sum(m['crecimiento_mensual'] for m in metricas_empresas) / len(metricas_empresas),
+
+            # Promedios
+            'ventas_promedio':         sum(series_ventas) / len(series_ventas),
+            'margen_bruto_promedio':   sum(series_margen_bruto) / len(series_margen_bruto),
+            'margen_neto_promedio':    sum(series_margen_neto) / len(series_margen_neto),
+            'crecimiento_promedio':    sum(series_crecimiento) / len(series_crecimiento),
+
+            # Distribución por percentiles reales (fix #7)
+            'ventas_p25':              _percentil(series_ventas, 25),
+            'ventas_mediana':          _percentil(series_ventas, 50),
+            'ventas_p75':              _percentil(series_ventas, 75),
+            'margen_neto_p25':         _percentil(series_margen_neto, 25),
+            'margen_neto_mediana':     _percentil(series_margen_neto, 50),
+            'margen_neto_p75':         _percentil(series_margen_neto, 75),
+
+            # Series ordenadas para cálculo de percentil exacto de la empresa
+            '_series_ventas':          series_ventas,
+            '_series_margen_neto':     series_margen_neto,
+
             'tiene_datos': True
         }
     
@@ -257,32 +394,41 @@ class BenchmarkingRealService:
     
     @staticmethod
     def _calcular_posiciones(empresa, comparaciones):
-        """Calcula posición relativa sin revelar datos individuales"""
-        metricas_propias = BenchmarkingRealService._calcular_metricas_empresa(empresa)
+        """
+        Calcula posición relativa usando percentiles REALES (fix #7).
+        En vez de devolver solo 25/50/75, calcula el percentil exacto
+        ordenando todas las empresas y viendo en qué posición cae la actual.
+        """
+        import bisect
+        metricas_propias = BenchmarkingRealService._obtener_metricas_cached(empresa)
         posiciones = {}
-        
+
         for nivel, datos in comparaciones.items():
-            if datos['tiene_datos']:
-                # Calcular percentil aproximado (sin revelar datos exactos)
-                pos_ventas = 50  # Default
-                pos_margen = 50
-                
-                if metricas_propias['ventas_mensuales'] > datos['ventas_promedio']:
-                    pos_ventas = 75  # Por encima del promedio
-                elif metricas_propias['ventas_mensuales'] < datos['ventas_promedio'] * 0.8:
-                    pos_ventas = 25  # Significativamente por debajo
-                
-                if metricas_propias['margen_neto'] > datos['margen_neto_promedio']:
-                    pos_margen = 75
-                elif metricas_propias['margen_neto'] < datos['margen_neto_promedio'] * 0.8:
-                    pos_margen = 25
-                
-                posiciones[nivel] = {
-                    'percentil_ventas': pos_ventas,
-                    'percentil_margen': pos_margen,
-                    'total_empresas': datos['total_empresas']
-                }
-        
+            if not datos.get('tiene_datos'):
+                continue
+
+            # Usar series ordenadas si están disponibles (calculadas en _calcular_metricas_agregadas)
+            series_ventas = datos.get('_series_ventas') or []
+            series_margen = datos.get('_series_margen_neto') or []
+
+            if series_ventas:
+                pos = bisect.bisect_left(series_ventas, metricas_propias['ventas_mensuales'])
+                percentil_ventas = round((pos / len(series_ventas)) * 100, 1)
+            else:
+                percentil_ventas = 50  # fallback
+
+            if series_margen:
+                pos = bisect.bisect_left(series_margen, metricas_propias['margen_neto'])
+                percentil_margen = round((pos / len(series_margen)) * 100, 1)
+            else:
+                percentil_margen = 50
+
+            posiciones[nivel] = {
+                'percentil_ventas': percentil_ventas,
+                'percentil_margen': percentil_margen,
+                'total_empresas': datos['total_empresas'],
+            }
+
         return posiciones
     
     @staticmethod

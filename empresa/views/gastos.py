@@ -82,6 +82,7 @@ def listar_gastos(request):
     return render(request, 'empresa/listar_gastos.html', contexto)
 
 @login_required
+@require_power('puede_editar_gastos')
 def editar_gasto(request, gasto_id):
     from django.shortcuts import get_object_or_404
     from django.contrib import messages
@@ -109,6 +110,7 @@ def editar_gasto(request, gasto_id):
     return render(request, 'empresa/editar_gasto.html', context)
 
 @login_required
+@require_power('puede_eliminar_gastos')
 def eliminar_gasto(request, gasto_id):
     from django.shortcuts import get_object_or_404
     from django.http import JsonResponse

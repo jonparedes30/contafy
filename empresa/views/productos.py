@@ -593,6 +593,7 @@ def prefill_producto_from_scan(request):
 
 
 @login_required
+@require_power('puede_eliminar_productos')
 def eliminar_producto(request, producto_id):
     empresa = request.user.empresa
     try:

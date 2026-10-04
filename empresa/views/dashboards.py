@@ -24,7 +24,7 @@ def dashboard_ventas(request):
         fecha__date=hoy
     ).aggregate(
         total_ventas=Count('id'),
-        monto_total=Sum('total')
+        monto_total=Sum('monto')
     )
     
     # Ventas del mes actual
@@ -34,7 +34,7 @@ def dashboard_ventas(request):
         fecha__gte=mes_actual
     ).aggregate(
         total_ventas=Count('id'),
-        monto_total=Sum('total')
+        monto_total=Sum('monto')
     )
     
     # Últimas ventas

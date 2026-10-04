@@ -168,9 +168,9 @@
 <div class="modal fade" id="modalPoderes" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog">
     <div class="modal-content">
-      <div class="modal-header">
+      <div class="modal-header bg-brand text-white">
         <h5 class="modal-title">Poderes del empleado</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
       </div>
       <div class="modal-body">
         <form id="formPoderes">
@@ -220,55 +220,47 @@
     border-radius: 50%;
     font-size: 1.5rem;
     font-weight: 700;
-    background: linear-gradient(135deg, #4ecdc4, #45b7d1);
+    background: var(--grad-brand);
+    color: #fff;
 }
 
 /* Estilos para la card de empleados */
 .empleado-card {
     transition: all 0.3s ease;
-    border: 2px solid #e9ecef;
+    border: 1px solid var(--c-slate-2);
 }
 
 .empleado-card:hover {
-    border-color: #667eea;
-    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.15);
+    border-color: var(--c-green);
+    box-shadow: var(--shadow-md);
     transform: translateY(-2px);
 }
 
 .card-header {
-    border-bottom: 2px solid #e9ecef;
-    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border-bottom: 1px solid var(--c-slate-2);
+    background: var(--c-slate-1);
 }
 
 .form-check-input:checked {
-    background-color: #667eea;
-    border-color: #667eea;
+    background-color: var(--c-green);
+    border-color: var(--c-green);
 }
 
 .btn-primary {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    border: none;
-    border-radius: 10px;
-    padding: 0.75rem 1.5rem;
+    background: var(--c-green);
+    border-color: var(--c-green);
+    border-radius: var(--radius-md);
+    padding: 0.6rem 1.4rem;
     font-weight: 600;
     transition: all 0.3s ease;
 }
 
 .btn-primary:hover {
     transform: translateY(-2px);
-    box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+    box-shadow: var(--shadow-brand);
 }
 
-.form-control, .form-select {
-    border-radius: 10px;
-    border: 2px solid #e9ecef;
-    transition: all 0.3s ease;
-}
-
-.form-control:focus, .form-select:focus {
-    border-color: #667eea;
-    box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
-}
+/* form-control y :focus ya estilizados globalmente en clean_enterprise.css */
 
 /* Animación para el panel de poderes */
 .collapse {

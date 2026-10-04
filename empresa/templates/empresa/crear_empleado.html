@@ -169,12 +169,13 @@
 </div>
 
 <style>
+/* Migrado al Design System — Contafy v1.0 (verde→azul brand) */
 .animated-header {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: var(--grad-brand);
     color: white;
     padding: 2rem;
-    border-radius: 15px;
-    box-shadow: 0 8px 32px rgba(102, 126, 234, 0.3);
+    border-radius: var(--radius-xl);
+    box-shadow: var(--shadow-brand);
     position: relative;
     overflow: hidden;
 }
@@ -197,7 +198,7 @@
 
 .card {
     border: none;
-    border-radius: 15px;
+    border-radius: var(--radius-xl);
     transition: transform 0.2s ease-in-out;
 }
 
@@ -206,33 +207,11 @@
 }
 
 .form-check-input:checked {
-    background-color: #667eea;
-    border-color: #667eea;
+    background-color: var(--c-green);
+    border-color: var(--c-green);
 }
 
-.btn-primary {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    border: none;
-    border-radius: 10px;
-    padding: 0.75rem 1.5rem;
-    font-weight: 600;
-    transition: all 0.3s ease;
-}
-
-.btn-primary:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
-}
-
-.form-control, .form-select {
-    border-radius: 10px;
-    border: 2px solid #e9ecef;
-    transition: all 0.3s ease;
-}
-
-.form-control:focus, .form-select:focus {
-    border-color: #667eea;
-    box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
-}
+/* btn-primary, form-control y form-control:focus ya estilizados globalmente
+   en clean_enterprise.css con --grad-brand y --c-green */
 </style>
 {% endblock %} 

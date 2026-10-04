@@ -115,8 +115,8 @@
                 </div>
 
                 <style>
-                    .pos-total { font-size: 2.2rem; font-weight: 700; color: #198754; }
-                    .total-principal { font-size: 2.5rem; font-weight: 700; color: #16a34a; }
+                    .pos-total { font-size: 2.2rem; font-weight: 700; color: var(--c-green-d); }
+                    .total-principal { font-size: 2.5rem; font-weight: 700; color: var(--c-green); }
                     .btn-cobrar { width: 100%; font-size: 1.1rem; padding: 10px; }
 
                     /* POS mode - hide legacy blocks to avoid duplication
@@ -483,54 +483,18 @@
                 }
             }
 
-            // No encontrado: ofrecer crear producto rápido en inventario
-            actions.innerHTML = `<div class="alert alert-warning">Producto no registrado en inventario.</div>` +
-                `<button type="button" id="btn-create-from-scan-venta" class="btn btn-outline-primary">Crear producto en inventario</button>`;
+            // No encontrado: redirigir al usuario a crear_producto con el código pre-llenado
+            const crearProductoUrl = '{% url "empresa:crear_producto" %}?codigo_barras=' + encodeURIComponent(codigo);
+            actions.innerHTML = `<div class="alert alert-warning">
+                <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                Producto no registrado en inventario.
+                <a href="${crearProductoUrl}" class="btn btn-primary btn-sm ms-2">
+                    <i class="bi bi-plus-circle me-1"></i> Registrar producto nuevo
+                </a>
+            </div>`;
             actions.style.display = 'block';
-            document.getElementById('btn-create-from-scan-venta').addEventListener('click', () => createProductFromScanVenta(codigo));
         } catch (err) {
             console.error('Prefill venta error:', err);
-        }
-    }
-
-    // Crear producto mínimo desde escaneo y añadirlo a los selects de la venta
-    async function createProductFromScanVenta(codigo) {
-        const actions = document.getElementById('scan-actions-venta');
-        actions.innerHTML = '<div class="form-text">Creando producto...</div>';
-        try {
-            const resp = await fetch('{% url "empresa:inventario_create_from_scan" %}', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
-                },
-                body: JSON.stringify({ barcode: codigo, stock: 0, precio_unitario: 0 })
-            });
-            const json = await resp.json();
-            if (json.success && json.product) {
-                const prod = json.product;
-                // Añadir al select de producto simple y multiple
-                try {
-                    const opt = new Option(prod.nombre, prod.id, true, true);
-                    selectProducto.add(opt);
-                } catch(e) {}
-                try {
-                    const opt2 = new Option(prod.nombre + ' - $' + (prod.precio_unitario || 0), prod.id, true, true);
-                    const multiSelect = document.getElementById('producto-multiple-select');
-                    if (multiSelect) multiSelect.add(opt2);
-                } catch(e) {}
-
-                selectProducto.value = prod.id;
-                actualizarVenta();
-                stockInfo.textContent = `✅ Producto creado: ${prod.nombre}`;
-                stockInfo.className = 'fw-bold mb-3 text-center text-success';
-                actions.style.display = 'none';
-            } else {
-                actions.innerHTML = '<div class="alert alert-danger">Error creando producto</div>';
-            }
-        } catch (err) {
-            console.error('Create product venta error:', err);
-            actions.innerHTML = '<div class="alert alert-danger">Error de red creando producto</div>';
         }
     }
 
@@ -1468,49 +1432,40 @@
         buscarProductoPorCodigo(inputCodigo.value);
     });
 
-    // Escáner de cámara
+    // Escáner de cámara — redirige al modal Vision unificado
+    // (Reemplaza la lógica legacy de BarcodeScanner que ya no se carga.
+    //  El sistema usa ahora el modal Vision con Google Vision API.)
     const btnScanner = document.getElementById('btn-scanner');
     const btnStopScanner = document.getElementById('btn-stop-scanner');
     const scannerContainer = document.getElementById('scanner-container');
     const scannerStatus = document.getElementById('scanner-status');
 
-    btnScanner.addEventListener('click', async () => {
-        try {
-            scannerStatus.textContent = 'Iniciando escáner...';
-            scannerStatus.className = 'form-text text-info';
+    if (btnScanner) {
+        btnScanner.addEventListener('click', () => {
+            const visionModalEl = document.getElementById('visionScannerModalVentas');
+            if (visionModalEl) {
+                if (scannerStatus) {
+                    scannerStatus.textContent = 'Abriendo escáner Vision...';
+                    scannerStatus.className = 'form-text text-info';
+                }
+                new bootstrap.Modal(visionModalEl).show();
+            } else if (scannerStatus) {
+                scannerStatus.textContent = 'Escáner no disponible en esta vista';
+                scannerStatus.className = 'form-text text-danger';
+            }
+        });
+    }
 
-            scanner = new BarcodeScanner();
-            scannerContainer.style.display = 'block';
-
-            await scanner.init('scanner-viewport', (codigo) => {
-                console.log('Código detectado:', codigo);
-                inputCodigo.value = codigo;  // Llenar campo
-                buscarProductoPorCodigo(codigo);
-                scannerContainer.style.display = 'none';
-                scannerStatus.textContent = `Código escaneado: ${codigo}`;
-                scannerStatus.className = 'form-text text-success';
-            });
-
-            scannerStatus.textContent = 'Escáner activo - Apunta al código de barras';
-            scannerStatus.className = 'form-text text-success';
-
-        } catch (error) {
-            console.error('Error iniciando escáner:', error);
-            scannerStatus.textContent = 'Error: ' + error.message;
-            scannerStatus.className = 'form-text text-danger';
-            scannerContainer.style.display = 'none';
-        }
-    });
-
-    btnStopScanner.addEventListener('click', () => {
-        if (scanner) {
-            scanner.stop();
-            scanner = null;
-        }
-        scannerContainer.style.display = 'none';
-        scannerStatus.textContent = 'Escáner detenido';
-        scannerStatus.className = 'form-text text-muted';
-    });
+    // Botón "detener" del contenedor legacy (oculto por defecto, mantenido por retrocompatibilidad)
+    if (btnStopScanner) {
+        btnStopScanner.addEventListener('click', () => {
+            if (scannerContainer) scannerContainer.style.display = 'none';
+            if (scannerStatus) {
+                scannerStatus.textContent = 'Escáner cerrado';
+                scannerStatus.className = 'form-text text-muted';
+            }
+        });
+    }
 
     // POS scan input bindings
     const posScanInput = document.getElementById('pos-scan-input');
@@ -1790,9 +1745,9 @@
 <div class="modal fade" id="clienteModal" tabindex="-1">
     <div class="modal-dialog">
         <div class="modal-content">
-            <div class="modal-header">
+            <div class="modal-header bg-brand text-white">
                 <h5 class="modal-title">Crear Nuevo Cliente</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
                 <form id="formCliente">
@@ -1881,7 +1836,7 @@
 <div class="modal fade scanner-modal-unified modal-fullscreen-sm-down" id="visionScannerModalVentas" tabindex="-1">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
-            <div class="modal-header">
+            <div class="modal-header bg-brand text-white">
                 <h5 class="modal-title"><i class="bi bi-camera-fill me-2"></i>Escáner IA - Punto de Venta</h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
@@ -2110,7 +2065,7 @@
         
         productos.forEach(function(p) {
             const bgColor = p.match_score >= 15 ? '#d4edda' : '#fff';
-            const scoreBadge = p.match_score ? `<span style="background: #28a745; color: white; padding: 2px 8px; border-radius: 10px; font-size: 0.75em;">Score: ${p.match_score}</span>` : '';
+            const scoreBadge = p.match_score ? `<span style="background: var(--c-green); color: white; padding: 2px 8px; border-radius: 10px; font-size: 0.75em;">Score: ${p.match_score}</span>` : '';
             
             html += `
             <div style="border: 1px solid #ddd; padding: 15px; margin: 10px 0; border-radius: 8px; cursor: pointer; background: ${bgColor};" onclick='seleccionarProducto(${JSON.stringify(p).replace(/'/g, "&#39;")})'>

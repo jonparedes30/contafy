@@ -1,24 +1,68 @@
 :root {
-    /* Color Palette - Clean Enterprise */
-    --primary-color: #0f172a;
-    /* Slate 900 */
-    --secondary-color: #64748b;
-    /* Slate 500 */
-    --accent-color: #3b82f6;
-    /* Blue 500 */
-    --success-color: #10b981;
-    /* Emerald 500 */
-    --warning-color: #f59e0b;
-    /* Amber 500 */
-    --danger-color: #ef4444;
-    /* Red 500 */
+    /* ════════════════════════════════════════════════════════════════════
+       CONTAFY DESIGN SYSTEM — Variables centralizadas (v1.0)
+       Ver docs/DESIGN_SYSTEM.md para uso y guías.
+       ════════════════════════════════════════════════════════════════════ */
 
-    --bg-body: #f8fafc;
-    /* Slate 50 */
+    /* === Brand colors === */
+    --c-green:     #10b981;
+    --c-green-d:   #059669;
+    --c-teal:      #14b8a6;
+    --c-blue:      #3b82f6;
+    --c-blue-d:    #2563eb;
+    --c-navy:      #0f172a;
+    --c-navy-2:    #1e293b;
+
+    /* === Slates === */
+    --c-slate-1:   #f8fafc;
+    --c-slate-2:   #e2e8f0;
+    --c-slate-3:   #94a3b8;
+
+    /* === Texto === */
+    --c-text:      #0f172a;
+    --c-muted:     #64748b;
+
+    /* === Gradientes oficiales === */
+    --grad-brand:    linear-gradient(135deg, #10b981 0%, #14b8a6 35%, #3b82f6 100%);
+    --grad-brand-r:  linear-gradient(135deg, #3b82f6 0%, #14b8a6 65%, #10b981 100%);
+    --grad-text:     linear-gradient(135deg, #34d399 0%, #60a5fa 100%);
+    --grad-hero-bg:  linear-gradient(135deg, #0a1628 0%, #0f3a3a 35%, #0c2540 70%, #0a1628 100%);
+
+    /* === Sombras === */
+    --shadow-sm:    0 1px 2px rgba(15,23,42,.05);
+    --shadow-md:    0 4px 12px rgba(15,23,42,.08);
+    --shadow-lg:    0 12px 40px rgba(15,23,42,.12);
+    --shadow-xl:    0 24px 60px rgba(15,23,42,.18);
+    --shadow-brand: 0 12px 40px rgba(16,185,129,.25);
+    --shadow-blue:  0 12px 40px rgba(59,130,246,.30);
+
+    /* === Tipografía === */
+    --font-display: 'Space Grotesk', 'Inter', system-ui, sans-serif;
+    --font-body:    'Inter', system-ui, sans-serif;
+
+    /* === Border-radius === */
+    --radius-sm:    6px;
+    --radius-md:    8px;
+    --radius-lg:    12px;
+    --radius-xl:    16px;
+    --radius-2xl:   22px;
+    --radius-pill:  50px;
+
+    /* ════════════════════════════════════════════════════════════════════
+       VARIABLES LEGACY — Mantenidas por compatibilidad con CSS existente
+       (No usar en código nuevo — preferir las de arriba)
+       ════════════════════════════════════════════════════════════════════ */
+    --primary-color: #0f172a;     /* alias de --c-navy */
+    --secondary-color: #64748b;   /* alias de --c-muted */
+    --accent-color: #3b82f6;      /* alias de --c-blue */
+    --success-color: #10b981;     /* alias de --c-green */
+    --warning-color: #f59e0b;
+    --danger-color: #ef4444;
+    --info-color: #0dcaf0;
+
+    --bg-body: #f8fafc;           /* alias de --c-slate-1 */
     --bg-surface: #ffffff;
-    /* White */
-    --border-color: #e2e8f0;
-    /* Slate 200 */
+    --border-color: #e2e8f0;      /* alias de --c-slate-2 */
 
     /* Sidebar Specific */
     --sidebar-width: 260px;
@@ -427,4 +471,440 @@ h6 {
 .page-header-module {
     color: var(--text-primary, var(--primary-color));
     margin-bottom: 1.5rem;
+}
+
+/* ════════════════════════════════════════════════════════════════════════
+   DESIGN SYSTEM v1.0 — Componentes globales unificados
+   Ver docs/DESIGN_SYSTEM.md para reglas y ejemplos.
+   ════════════════════════════════════════════════════════════════════════ */
+
+/* === FUENTES BASE === */
+body {
+    font-family: var(--font-body);
+}
+h1, h2, h3, h4 {
+    font-family: var(--font-display);
+}
+h1 { letter-spacing: -0.035em; }
+h2 { letter-spacing: -0.03em; }
+h3, h4 { letter-spacing: -0.02em; }
+
+/* Helper para fw-600 (Bootstrap solo trae fw-bold = 700) */
+.fw-600 { font-weight: 600 !important; }
+.fw-700 { font-weight: 700 !important; }
+.fw-800 { font-weight: 800 !important; }
+
+/* === TABLAS UNIFICADAS (Design System §9) === */
+.contafy-table {
+    width: 100%;
+    margin-bottom: 0;
+}
+.contafy-table thead th {
+    background: var(--c-slate-1);
+    color: var(--c-text);
+    font-weight: 700;
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border-bottom: 2px solid var(--c-slate-2);
+    padding: 0.85rem 1rem;
+    white-space: nowrap;
+}
+.contafy-table tbody td {
+    padding: 0.75rem 1rem;
+    border-top: 1px solid var(--c-slate-2);
+    font-size: 0.9rem;
+    color: var(--c-text);
+    vertical-align: middle;
+}
+.contafy-table tbody tr {
+    transition: background 0.15s ease;
+}
+.contafy-table tbody tr:hover {
+    background: rgba(16, 185, 129, 0.04);
+}
+.contafy-table .text-end,
+.contafy-table .text-right,
+.contafy-table .money {
+    font-variant-numeric: tabular-nums;
+    text-align: right;
+}
+
+/* === MODALES (Design System §10) === */
+.modal-content {
+    border-radius: var(--radius-xl);
+    border: none;
+    box-shadow: var(--shadow-xl);
+    overflow: hidden;
+}
+.modal-header {
+    border-bottom: 1px solid var(--c-slate-2);
+    padding: 1.1rem 1.5rem;
+}
+.modal-header.bg-brand {
+    background: var(--grad-brand);
+    color: #fff;
+    border-bottom: 0;
+}
+.modal-header.bg-brand .btn-close {
+    filter: brightness(0) invert(1);
+    opacity: 0.85;
+}
+.modal-body {
+    padding: 1.5rem;
+}
+.modal-footer {
+    border-top: 1px solid var(--c-slate-2);
+    background: var(--c-slate-1);
+    padding: 1rem 1.5rem;
+}
+
+/* === ALERTAS REFINADAS (Design System §11) === */
+.alert {
+    border-radius: var(--radius-md);
+    border: none;
+    border-left: 4px solid;
+    padding: 0.85rem 1rem;
+    font-size: 0.9rem;
+}
+.alert-success {
+    background: rgba(16, 185, 129, 0.08);
+    color: #065f46;
+    border-left-color: var(--c-green);
+}
+.alert-danger {
+    background: rgba(239, 68, 68, 0.08);
+    color: #7f1d1d;
+    border-left-color: var(--danger-color);
+}
+.alert-warning {
+    background: rgba(245, 158, 11, 0.08);
+    color: #78350f;
+    border-left-color: var(--warning-color);
+}
+.alert-info {
+    background: rgba(59, 130, 246, 0.08);
+    color: #1e3a8a;
+    border-left-color: var(--c-blue);
+}
+
+/* === INPUTS REFINADOS (Design System §12) === */
+.form-control,
+.form-select {
+    border-radius: var(--radius-md);
+    border: 1.5px solid var(--c-slate-2);
+    padding: 0.55rem 0.85rem;
+    font-size: 0.9rem;
+    font-family: var(--font-body);
+    transition: border-color 0.15s, box-shadow 0.15s;
+}
+.form-control:focus,
+.form-select:focus {
+    border-color: var(--c-green);
+    box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.15);
+    outline: none;
+}
+.form-control:disabled,
+.form-select:disabled {
+    background: var(--c-slate-1);
+    opacity: 0.65;
+}
+.form-control::placeholder {
+    color: var(--c-slate-3);
+}
+.form-label {
+    font-size: 0.875rem;
+    margin-bottom: 0.35rem;
+    color: var(--c-text);
+}
+.form-text {
+    font-size: 0.78rem;
+    color: var(--c-muted);
+}
+.input-group-text {
+    background: var(--c-slate-1);
+    border: 1.5px solid var(--c-slate-2);
+    color: var(--c-muted);
+    font-size: 0.9rem;
+}
+.form-switch .form-check-input:checked {
+    background-color: var(--c-green);
+    border-color: var(--c-green);
+}
+.form-check-input:focus {
+    border-color: var(--c-green);
+    box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.15);
+}
+
+/* Marcador de campo requerido */
+.form-label .required,
+.form-label .text-danger {
+    color: var(--danger-color);
+    font-weight: 700;
+    margin-left: 2px;
+}
+
+/* === PAGINACIÓN (Design System §18) === */
+.pagination .page-item .page-link {
+    border-radius: var(--radius-sm);
+    margin: 0 0.15rem;
+    border: 1px solid var(--c-slate-2);
+    color: var(--c-text);
+    font-weight: 600;
+    font-size: 0.88rem;
+    padding: 0.4rem 0.75rem;
+    transition: all 0.15s;
+}
+.pagination .page-item .page-link:hover {
+    background: var(--c-slate-1);
+    border-color: var(--c-slate-3);
+    color: var(--c-text);
+}
+.pagination .page-item.active .page-link {
+    background: var(--grad-brand);
+    border-color: transparent;
+    color: #fff;
+}
+.pagination .page-item.disabled .page-link {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* === TOOLTIPS (Design System §20) === */
+.tooltip-inner {
+    background: var(--c-navy);
+    color: #fff;
+    border-radius: var(--radius-sm);
+    padding: 0.35rem 0.65rem;
+    font-size: 0.8rem;
+    font-family: var(--font-body);
+    max-width: 220px;
+}
+.bs-tooltip-top .tooltip-arrow::before,
+.bs-tooltip-auto[data-popper-placement^="top"] .tooltip-arrow::before {
+    border-top-color: var(--c-navy);
+}
+.bs-tooltip-bottom .tooltip-arrow::before,
+.bs-tooltip-auto[data-popper-placement^="bottom"] .tooltip-arrow::before {
+    border-bottom-color: var(--c-navy);
+}
+.bs-tooltip-start .tooltip-arrow::before,
+.bs-tooltip-auto[data-popper-placement^="left"] .tooltip-arrow::before {
+    border-left-color: var(--c-navy);
+}
+.bs-tooltip-end .tooltip-arrow::before,
+.bs-tooltip-auto[data-popper-placement^="right"] .tooltip-arrow::before {
+    border-right-color: var(--c-navy);
+}
+
+/* === DROPDOWNS (Design System §15) === */
+.dropdown-menu {
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-lg);
+    border: 1px solid var(--c-slate-2);
+    padding: 0.5rem;
+    min-width: 200px;
+    font-size: 0.88rem;
+}
+.dropdown-item {
+    border-radius: var(--radius-sm);
+    padding: 0.5rem 0.75rem;
+    font-size: 0.88rem;
+    color: var(--c-text);
+    transition: background 0.15s;
+}
+.dropdown-item:hover,
+.dropdown-item:focus {
+    background: var(--c-slate-1);
+    color: var(--c-text);
+}
+.dropdown-item.text-danger:hover {
+    background: rgba(239, 68, 68, 0.08);
+    color: var(--danger-color);
+}
+.dropdown-divider {
+    border-color: var(--c-slate-2);
+    margin: 0.35rem 0;
+}
+.dropdown-header {
+    color: var(--c-muted);
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 0.5rem 0.75rem 0.25rem;
+}
+
+/* === BREADCRUMBS (Design System §19) === */
+.breadcrumb {
+    background: transparent;
+    padding: 0.5rem 0;
+    margin-bottom: 1rem;
+    font-size: 0.88rem;
+}
+.breadcrumb-item + .breadcrumb-item::before {
+    content: "›";
+    color: var(--c-slate-3);
+    font-weight: 600;
+    padding: 0 0.25rem;
+}
+.breadcrumb-item a {
+    color: var(--c-muted);
+    text-decoration: none;
+    transition: color 0.15s;
+}
+.breadcrumb-item a:hover {
+    color: var(--c-green-d);
+}
+.breadcrumb-item.active {
+    color: var(--c-text);
+    font-weight: 600;
+}
+
+/* === SPINNERS / LOADERS (Design System §17) === */
+.spinner-border.text-primary {
+    color: var(--c-green) !important;
+}
+.page-loader {
+    position: fixed;
+    inset: 0;
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(4px);
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+/* === EMPTY STATE (Design System §16) === */
+.empty-state {
+    color: var(--c-muted);
+}
+.empty-state h6 {
+    color: var(--c-muted);
+    font-weight: 600;
+}
+.empty-state .display-4 {
+    color: var(--c-slate-3);
+}
+
+/* === BOTONES — override Bootstrap === */
+.btn {
+    border-radius: var(--radius-md);
+    font-weight: 600;
+    font-size: 0.92rem;
+    padding: 0.5rem 1.1rem;
+    transition: all 0.2s;
+}
+.btn-sm {
+    font-size: 0.82rem;
+    padding: 0.3rem 0.7rem;
+    border-radius: var(--radius-sm);
+}
+.btn-lg {
+    font-size: 1rem;
+    padding: 0.75rem 1.5rem;
+    border-radius: var(--radius-lg);
+}
+.btn-primary {
+    background: var(--c-green);
+    border-color: var(--c-green);
+}
+.btn-primary:hover {
+    background: var(--c-green-d);
+    border-color: var(--c-green-d);
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-brand);
+}
+.btn-outline-primary {
+    color: var(--c-green-d);
+    border-color: var(--c-green);
+}
+.btn-outline-primary:hover {
+    background: var(--c-green);
+    border-color: var(--c-green);
+    color: #fff;
+}
+.btn-success { background: var(--c-green); border-color: var(--c-green); }
+.btn-success:hover { background: var(--c-green-d); border-color: var(--c-green-d); }
+.btn-info { background: var(--c-blue); border-color: var(--c-blue); }
+.btn-info:hover { background: var(--c-blue-d); border-color: var(--c-blue-d); color: #fff; }
+
+/* Botón con gradiente brand (CTA principal) */
+.btn-brand-gradient {
+    background: var(--grad-brand);
+    color: #fff;
+    border: none;
+}
+.btn-brand-gradient:hover {
+    color: #fff;
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-brand);
+}
+
+/* === BADGES === */
+.badge {
+    font-weight: 600;
+    padding: 0.35em 0.65em;
+    border-radius: var(--radius-sm);
+}
+
+/* === PRINT / PDF STYLES (Design System §21) === */
+@media print {
+    /* Ocultar navegación y elementos interactivos */
+    .no-print,
+    .sidebar,
+    .topbar,
+    .navbar,
+    .btn,
+    .pagination,
+    .dropdown,
+    nav,
+    .modal,
+    .toast,
+    .alert .btn-close {
+        display: none !important;
+    }
+
+    /* Mostrar solo en print */
+    .print-only {
+        display: block !important;
+    }
+
+    /* Tamaño de página */
+    @page {
+        margin: 1.5cm;
+        size: A4;
+    }
+
+    /* Forzar fondos blancos y texto negro */
+    body,
+    .card,
+    .table {
+        background: white !important;
+        color: black !important;
+        box-shadow: none !important;
+    }
+
+    /* Evitar quebrar tablas y cards */
+    table, tr, td, th { page-break-inside: avoid; }
+    .card { page-break-inside: avoid; }
+
+    /* Convertir gradientes a sólidos para imprimir */
+    .modal-header,
+    [style*="gradient"] {
+        background: var(--c-green) !important;
+        color: white !important;
+    }
+
+    /* Mostrar URLs después de los links */
+    a[href]:not(.no-print-url):after {
+        content: " (" attr(href) ")";
+        font-size: 0.85em;
+        color: #555;
+    }
+}
+.print-only {
+    display: none;
 }

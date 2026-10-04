@@ -1,0 +1,44 @@
+{% comment %}
+  Empty State component — Contafy Design System
+
+  Uso:
+    {% include "empresa/_components/empty_state.html" with
+        title="Sin registros"
+        description="Crea tu primer registro para empezar"
+        icon="bi-inbox"
+        cta_url="..."
+        cta_label="Crear nuevo" %}
+
+  Parámetros:
+    title*       — texto principal (obligatorio)
+    description  — texto secundario opcional
+    icon         — clase de Bootstrap Icon (default: bi-inbox)
+    cta_url      — URL del botón CTA opcional
+    cta_label    — texto del botón CTA opcional
+    cta_icon     — icono del CTA (default: bi-plus-circle)
+
+  Iconos sugeridos por contexto:
+    - Listado vacío:        bi-inbox
+    - Búsqueda sin result:  bi-search
+    - Sin productos:        bi-box-seam
+    - Sin ventas:           bi-cart-x
+    - Sin notificaciones:   bi-bell-slash
+    - Sin datos gráfico:    bi-graph-down
+    - Error:                bi-exclamation-triangle
+
+  Ver docs/DESIGN_SYSTEM.md sección 16 para reglas.
+{% endcomment %}
+
+<div class="empty-state text-center py-5">
+    <i class="bi {{ icon|default:'bi-inbox' }} display-4 text-muted"></i>
+    <h6 class="mt-3 fw-600 text-muted">{{ title }}</h6>
+    {% if description %}
+        <p class="text-muted small mb-3">{{ description }}</p>
+    {% endif %}
+    {% if cta_url and cta_label %}
+        <a href="{{ cta_url }}" class="btn btn-primary mt-2">
+            <i class="bi {{ cta_icon|default:'bi-plus-circle' }} me-1"></i>
+            {{ cta_label }}
+        </a>
+    {% endif %}
+</div>

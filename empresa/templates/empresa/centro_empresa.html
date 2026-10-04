@@ -1,0 +1,551 @@
+{% extends 'empresa/base.html' %}
+{% load static %}
+
+{% block title %}Mi Empresa — {{ empresa.nombre }}{% endblock %}
+
+{% block extra_css %}
+<style>
+  /* Tarjeta destacada de empresa */
+  .empresa-card {
+    background: var(--grad-brand);
+    color: #fff;
+    border: none;
+    border-radius: var(--radius-2xl, 22px);
+    overflow: hidden;
+    position: relative;
+  }
+  .empresa-card::after {
+    content: '';
+    position: absolute;
+    top: -50%; right: -10%;
+    width: 400px; height: 400px;
+    background: radial-gradient(circle, rgba(255,255,255,0.15), transparent 70%);
+    pointer-events: none;
+  }
+  .empresa-card .empresa-icon {
+    width: 84px; height: 84px;
+    background: rgba(255,255,255,0.2);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    backdrop-filter: blur(10px);
+  }
+  .empresa-card .info-chip {
+    background: rgba(255,255,255,0.15);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255,255,255,0.2);
+    border-radius: 10px;
+    padding: 0.75rem 1rem;
+  }
+  .empresa-card .info-chip-label {
+    font-size: 0.7rem;
+    opacity: 0.8;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .empresa-card .info-chip-value {
+    font-weight: 600;
+    font-size: 1rem;
+  }
+  /* Empleado en lista */
+  .empleado-row {
+    transition: background 0.15s;
+  }
+  .empleado-row:hover {
+    background: rgba(16, 185, 129, 0.04);
+  }
+  .empleado-avatar {
+    width: 38px; height: 38px;
+    border-radius: 50%;
+    background: var(--grad-brand);
+    color: #fff;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-weight: 600;
+    flex-shrink: 0;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+
+    <!-- ╔════════════════════════════════════════════════════════════╗
+         ║  HEADER: Tarjeta destacada con datos de la empresa         ║
+         ╚════════════════════════════════════════════════════════════╝ -->
+    <div class="card empresa-card mb-4 shadow-lg">
+        <div class="card-body p-4 position-relative">
+            <div class="row align-items-center g-3">
+                <div class="col-auto">
+                    <div class="empresa-icon">
+                        <i class="bi bi-building fs-1"></i>
+                    </div>
+                </div>
+                <div class="col">
+                    <h2 class="mb-1 fw-bold">{{ empresa.nombre }}</h2>
+                    <p class="mb-0 opacity-75">
+                        <i class="bi bi-tag-fill me-1"></i>{{ empresa.get_categoria_display }}
+                        {% if empresa.tipo_negocio %}
+                            <span class="mx-2">·</span>
+                            <i class="bi bi-shop me-1"></i>{{ empresa.tipo_negocio }}
+                        {% endif %}
+                    </p>
+                </div>
+                <div class="col-auto">
+                    <button type="button" class="btn btn-light btn-sm fw-600"
+                            data-bs-toggle="modal" data-bs-target="#editarEmpresaModal">
+                        <i class="bi bi-pencil-fill me-1"></i>Editar
+                    </button>
+                </div>
+            </div>
+
+            <!-- Info chips: datos rápidos -->
+            <div class="row g-3 mt-3">
+                <div class="col-md-3 col-sm-6">
+                    <div class="info-chip">
+                        <div class="info-chip-label"><i class="bi bi-card-heading me-1"></i>RUC / Cédula</div>
+                        <div class="info-chip-value">{{ empresa.ruc }}</div>
+                    </div>
+                </div>
+                <div class="col-md-3 col-sm-6">
+                    <div class="info-chip">
+                        <div class="info-chip-label"><i class="bi bi-geo-alt-fill me-1"></i>Ubicación</div>
+                        <div class="info-chip-value">
+                            {% if empresa.ciudad %}{{ empresa.ciudad }}{% endif %}{% if empresa.provincia %}, {{ empresa.provincia }}{% endif %}
+                            {% if not empresa.ciudad and not empresa.provincia %}—{% endif %}
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3 col-sm-6">
+                    <div class="info-chip">
+                        <div class="info-chip-label"><i class="bi bi-house-fill me-1"></i>Dirección</div>
+                        <div class="info-chip-value">{{ empresa.direccion|default:"—"|truncatechars:30 }}</div>
+                    </div>
+                </div>
+                <div class="col-md-3 col-sm-6">
+                    <div class="info-chip">
+                        <div class="info-chip-label"><i class="bi bi-whatsapp me-1"></i>WhatsApp</div>
+                        <div class="info-chip-value">{{ empresa.telefono_whatsapp|default:"—" }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ╔════════════════════════════════════════════════════════════╗
+         ║  TABS                                                       ║
+         ╚════════════════════════════════════════════════════════════╝ -->
+    <ul class="nav nav-pills mb-4">
+        <li class="nav-item">
+            <a class="nav-link {% if tab_activo == 'equipo' %}active{% endif %}"
+               href="?tab=equipo">
+                <i class="bi bi-people me-1"></i>Equipo y Actividad
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link {% if tab_activo == 'config' %}active{% endif %}"
+               href="?tab=config">
+                <i class="bi bi-gear me-1"></i>Configuración
+            </a>
+        </li>
+    </ul>
+
+    <!-- ╔════════════════════════════════════════════════════════════╗
+         ║  TAB: EQUIPO Y ACTIVIDAD                                    ║
+         ╚════════════════════════════════════════════════════════════╝ -->
+    {% if tab_activo == 'equipo' %}
+
+    <!-- Métricas resumen -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body d-flex align-items-center">
+                    <div class="me-3" style="width:48px;height:48px;background:rgba(16,185,129,.1);border-radius:12px;display:flex;align-items:center;justify-content:center;">
+                        <i class="bi bi-people text-success fs-4"></i>
+                    </div>
+                    <div>
+                        <div class="text-muted small">Total empleados</div>
+                        <h4 class="mb-0 fw-bold">{{ equipo|length }}</h4>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body d-flex align-items-center">
+                    <div class="me-3" style="width:48px;height:48px;background:rgba(59,130,246,.1);border-radius:12px;display:flex;align-items:center;justify-content:center;">
+                        <i class="bi bi-activity text-primary fs-4"></i>
+                    </div>
+                    <div>
+                        <div class="text-muted small">Actividades ({{ historial.dias }} días)</div>
+                        <h4 class="mb-0 fw-bold">{{ historial.total }}</h4>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body d-flex align-items-center">
+                    <div class="me-3" style="width:48px;height:48px;background:rgba(245,158,11,.1);border-radius:12px;display:flex;align-items:center;justify-content:center;">
+                        <i class="bi bi-person-check text-warning fs-4"></i>
+                    </div>
+                    <div>
+                        <div class="text-muted small">Usuarios activos</div>
+                        <h4 class="mb-0 fw-bold">{{ historial.usuarios_activos }}</h4>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── EQUIPO: tabla de empleados con sus métricas ── -->
+    <div class="card mb-4">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="mb-0"><i class="bi bi-people me-2"></i>Equipo de trabajo</h5>
+            <a href="{% url 'empresa:crear_empleado' %}" class="btn btn-primary btn-sm">
+                <i class="bi bi-plus-circle me-1"></i>Agregar empleado
+            </a>
+        </div>
+        <div class="card-body p-0">
+            {% if equipo %}
+            <div class="table-responsive">
+                <table class="table contafy-table mb-0 align-middle">
+                    <thead>
+                        <tr>
+                            <th>Empleado</th>
+                            <th>Email</th>
+                            <th>Última actividad</th>
+                            <th class="text-center">Actividades este mes</th>
+                            <th class="text-end">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for emp in equipo %}
+                        <tr class="empleado-row">
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    <div class="empleado-avatar me-2">
+                                        {{ emp.first_name|first|default:emp.username|first|upper }}
+                                    </div>
+                                    <div>
+                                        <strong>{{ emp.get_full_name|default:emp.username }}</strong>
+                                        {% if forloop.first %}
+                                            <span class="badge bg-warning text-dark ms-1">
+                                                <i class="bi bi-crown-fill"></i> Propietario
+                                            </span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </td>
+                            <td><small class="text-muted">{{ emp.email|default:"—" }}</small></td>
+                            <td>
+                                {% if emp.ultima_actividad %}
+                                    <small>{{ emp.ultima_actividad|date:"d M Y, H:i" }}</small>
+                                {% else %}
+                                    <small class="text-muted fst-italic">Sin actividad</small>
+                                {% endif %}
+                            </td>
+                            <td class="text-center">
+                                {% if emp.actividades_mes > 0 %}
+                                    <span class="badge bg-success">{{ emp.actividades_mes }}</span>
+                                {% else %}
+                                    <span class="badge bg-light text-muted">0</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-end">
+                                <a href="?tab=equipo&usuario={{ emp.username }}"
+                                   class="btn btn-sm btn-outline-secondary me-1"
+                                   title="Ver solo sus actividades">
+                                    <i class="bi bi-funnel"></i>
+                                </a>
+                                {% if not forloop.first %}
+                                <button class="btn btn-sm btn-outline-primary"
+                                        onclick="gestionarPoderes({{ emp.id }})"
+                                        title="Gestionar poderes">
+                                    <i class="bi bi-gear"></i>
+                                </button>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="text-center py-4 text-muted">
+                <i class="bi bi-people display-4"></i>
+                <p class="mt-2">No hay empleados registrados</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- ── HISTORIAL DE ACTIVIDADES con filtros + paginación ── -->
+    <div class="card">
+        <div class="card-header">
+            <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+                <h5 class="mb-0"><i class="bi bi-clock-history me-2"></i>Historial de actividad</h5>
+                <small class="text-muted">Timeline auditable del sistema</small>
+            </div>
+        </div>
+        <div class="card-body">
+
+            <!-- Filtros compactos -->
+            <form method="GET" class="row g-2 align-items-end mb-3 p-3" style="background:#f8fafc;border-radius:10px;">
+                <input type="hidden" name="tab" value="equipo">
+                <div class="col-md-3">
+                    <label class="form-label small mb-1">Período</label>
+                    <select name="dias" class="form-select form-select-sm">
+                        <option value="1"  {% if historial.dias == 1 %}selected{% endif %}>Último día</option>
+                        <option value="7"  {% if historial.dias == 7 %}selected{% endif %}>Últimos 7 días</option>
+                        <option value="30" {% if historial.dias == 30 %}selected{% endif %}>Últimos 30 días</option>
+                        <option value="90" {% if historial.dias == 90 %}selected{% endif %}>Últimos 90 días</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label small mb-1">Tipo</label>
+                    <select name="tipo" class="form-select form-select-sm">
+                        <option value="">Todos</option>
+                        <option value="Venta"    {% if historial.tipo == 'Venta' %}selected{% endif %}>Ventas</option>
+                        <option value="Compra"   {% if historial.tipo == 'Compra' %}selected{% endif %}>Compras</option>
+                        <option value="Gasto"    {% if historial.tipo == 'Gasto' %}selected{% endif %}>Gastos</option>
+                        <option value="Producto" {% if historial.tipo == 'Producto' %}selected{% endif %}>Productos</option>
+                        <option value="Capital"  {% if historial.tipo == 'Capital' %}selected{% endif %}>Capital</option>
+                        <option value="PagoCuentaPorCobrar" {% if historial.tipo == 'PagoCuentaPorCobrar' %}selected{% endif %}>Cobros</option>
+                        <option value="PagoCuentaPorPagar"  {% if historial.tipo == 'PagoCuentaPorPagar' %}selected{% endif %}>Pagos</option>
+                        <option value="Empresa"  {% if historial.tipo == 'Empresa' %}selected{% endif %}>Empresa</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label small mb-1">Usuario</label>
+                    <input type="text" name="usuario" class="form-control form-control-sm"
+                           placeholder="Buscar..." value="{{ historial.usuario_filtro }}">
+                </div>
+                <div class="col-md-3 d-flex gap-1">
+                    <button type="submit" class="btn btn-primary btn-sm flex-grow-1">
+                        <i class="bi bi-funnel me-1"></i>Filtrar
+                    </button>
+                    <a href="?tab=equipo" class="btn btn-outline-secondary btn-sm" title="Limpiar filtros">
+                        <i class="bi bi-x-lg"></i>
+                    </a>
+                </div>
+            </form>
+
+            <!-- Tabla de actividades -->
+            {% if historial.page_obj and historial.page_obj.object_list %}
+            <div class="table-responsive">
+                <table class="table contafy-table table-hover align-middle">
+                    <thead>
+                        <tr>
+                            <th>Fecha</th>
+                            <th>Tipo</th>
+                            <th>Operación</th>
+                            <th>Descripción</th>
+                            <th>Usuario</th>
+                            <th class="text-end">Monto</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for act in historial.page_obj %}
+                        <tr>
+                            <td><small>{{ act.fecha|date:"d M Y H:i" }}</small></td>
+                            <td><span class="badge bg-light text-dark border">{{ act.modelo }}</span></td>
+                            <td>
+                                {% if act.tipo_operacion == 'crear' %}
+                                    <span class="badge bg-success">Creación</span>
+                                {% elif act.tipo_operacion == 'editar' %}
+                                    <span class="badge bg-warning text-dark">Edición</span>
+                                {% else %}
+                                    <span class="badge bg-danger">Eliminación</span>
+                                {% endif %}
+                            </td>
+                            <td><small>{{ act.descripcion|truncatechars:80 }}</small></td>
+                            <td>
+                                {% if act.usuario %}
+                                    <small><i class="bi bi-person me-1"></i>{{ act.usuario.get_full_name|default:act.usuario.username }}</small>
+                                {% else %}
+                                    <small class="text-muted fst-italic">Sistema</small>
+                                {% endif %}
+                            </td>
+                            <td class="text-end">
+                                {% if act.monto %}
+                                    <strong>${{ act.monto|floatformat:2 }}</strong>
+                                {% else %}
+                                    <span class="text-muted">—</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            {% if historial.page_obj.paginator.num_pages > 1 %}
+            <nav class="mt-3">
+                <ul class="pagination pagination-sm justify-content-center mb-0">
+                    {% if historial.page_obj.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link"
+                           href="?tab=equipo&dias={{ historial.dias }}&tipo={{ historial.tipo }}&usuario={{ historial.usuario_filtro }}&page={{ historial.page_obj.previous_page_number }}">
+                            « Anterior
+                        </a>
+                    </li>
+                    {% endif %}
+                    <li class="page-item active">
+                        <span class="page-link">
+                            Página {{ historial.page_obj.number }} de {{ historial.page_obj.paginator.num_pages }}
+                        </span>
+                    </li>
+                    {% if historial.page_obj.has_next %}
+                    <li class="page-item">
+                        <a class="page-link"
+                           href="?tab=equipo&dias={{ historial.dias }}&tipo={{ historial.tipo }}&usuario={{ historial.usuario_filtro }}&page={{ historial.page_obj.next_page_number }}">
+                            Siguiente »
+                        </a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
+            {% endif %}
+
+            {% else %}
+            <div class="text-center py-4 text-muted">
+                <i class="bi bi-inbox display-4"></i>
+                <p class="mt-2 mb-0">Sin actividades en el período seleccionado</p>
+                <small>Ajusta los filtros o registra ventas, compras o gastos para ver el timeline</small>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    {% endif %}
+
+    <!-- ╔════════════════════════════════════════════════════════════╗
+         ║  TAB: CONFIGURACIÓN                                         ║
+         ╚════════════════════════════════════════════════════════════╝ -->
+    {% if tab_activo == 'config' %}
+    <div class="row g-4">
+        <div class="col-md-7">
+            <div class="card">
+                <div class="card-header">
+                    <i class="bi bi-gear-fill me-2"></i><strong>Editar empresa</strong>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted small">
+                        Los cambios se registran automáticamente en el historial de auditoría.
+                        El RUC/Cédula se valida con el algoritmo del SRI Ecuador.
+                    </p>
+                    <button type="button" class="btn btn-primary"
+                            data-bs-toggle="modal" data-bs-target="#editarEmpresaModal">
+                        <i class="bi bi-pencil me-1"></i>Editar información de la empresa
+                    </button>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-5">
+            <div class="card">
+                <div class="card-header">
+                    <i class="bi bi-clock-history me-2"></i><strong>Cambios recientes</strong>
+                </div>
+                <div class="card-body p-0" style="max-height: 400px; overflow-y: auto;">
+                    {% if cambios_recientes %}
+                    <ul class="list-group list-group-flush">
+                        {% for c in cambios_recientes %}
+                        <li class="list-group-item">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div>
+                                    <span class="badge bg-{% if c.tipo_operacion == 'crear' %}success{% elif c.tipo_operacion == 'editar' %}warning text-dark{% else %}danger{% endif %}">
+                                        {{ c.get_tipo_operacion_display }}
+                                    </span>
+                                    {% if c.usuario %}
+                                        <small class="ms-1">por {{ c.usuario.username }}</small>
+                                    {% endif %}
+                                </div>
+                                <small class="text-muted">{{ c.fecha|date:"d M H:i" }}</small>
+                            </div>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                    {% else %}
+                    <div class="text-center py-4 text-muted small">
+                        Sin cambios registrados aún
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+</div>
+
+<!-- Modal Editar Empresa (compartido por ambos tabs) -->
+<div class="modal fade" id="editarEmpresaModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-brand text-white">
+                <h5 class="modal-title"><i class="bi bi-building me-2"></i>Editar empresa</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="formEditarEmpresa" method="post" action="{% url 'empresa:editar_empresa' %}">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Nombre *</label>
+                            <input type="text" class="form-control" name="nombre" value="{{ empresa.nombre }}" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">RUC / Cédula *</label>
+                            <input type="text" class="form-control" name="ruc" value="{{ empresa.ruc }}" required>
+                            <small class="text-muted">Cédula (10 díg.) o RUC (13 díg.) — validado con SRI</small>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Categoría *</label>
+                            <select class="form-select" name="categoria" required>
+                                <option value="comercial"   {% if empresa.categoria == 'comercial' %}selected{% endif %}>Comercial</option>
+                                <option value="manufactura" {% if empresa.categoria == 'manufactura' %}selected{% endif %}>Manufactura</option>
+                                <option value="servicios"   {% if empresa.categoria == 'servicios' %}selected{% endif %}>Servicios</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Tipo de negocio</label>
+                            <input type="text" class="form-control" name="tipo_negocio" value="{{ empresa.tipo_negocio|default:'' }}">
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Dirección *</label>
+                        <input type="text" class="form-control" name="direccion" value="{{ empresa.direccion }}" required>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Ciudad</label>
+                            <input type="text" class="form-control" name="ciudad" value="{{ empresa.ciudad|default:'' }}">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Provincia</label>
+                            <input type="text" class="form-control" name="provincia" value="{{ empresa.provincia|default:'' }}">
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">WhatsApp</label>
+                        <input type="text" class="form-control" name="telefono_whatsapp"
+                               value="{{ empresa.telefono_whatsapp|default:'' }}"
+                               placeholder="+593...">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Guardar cambios</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    function gestionarPoderes(empleadoId) {
+        window.location = `/app-beta-2024/empresa/{{ empresa.id }}/empleado/${empleadoId}/poderes/`;
+    }
+</script>
+{% endblock %}

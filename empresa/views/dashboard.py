@@ -10,6 +10,12 @@ import json
 from empresa.views.resumen import obtener_totales_contables
 from empresa.services.filtros_service import FiltrosFechaService
 
+# Nombres de meses en español (no depender del locale del sistema)
+MESES_ES = {
+    1: 'Ene', 2: 'Feb', 3: 'Mar', 4: 'Abr', 5: 'May', 6: 'Jun',
+    7: 'Jul', 8: 'Ago', 9: 'Sep', 10: 'Oct', 11: 'Nov', 12: 'Dic',
+}
+
 @login_required
 def dashboard(request):
     empresa = request.user.empresa
@@ -36,7 +42,7 @@ def dashboard(request):
     fecha_iter = fecha_inicio.replace(day=1)
     while fecha_iter <= fecha_fin:
         meses.append((fecha_iter.year, fecha_iter.month))
-        labels_meses.append(f"{fecha_iter.strftime('%b')} {fecha_iter.year}")
+        labels_meses.append(f"{MESES_ES.get(fecha_iter.month, '???')} {fecha_iter.year}")
         # Avanzar al siguiente mes
         if fecha_iter.month == 12:
             fecha_iter = fecha_iter.replace(year=fecha_iter.year+1, month=1)

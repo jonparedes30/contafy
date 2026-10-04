@@ -45,33 +45,73 @@ class EmpresaForm(forms.ModelForm):
             'categoria': forms.Select(attrs={'class': 'form-select'}),
         }
 
+    def clean_ruc(self):
+        """Valida RUC/Cédula con el algoritmo SRI Ecuador."""
+        from empresa.utils.validador_ruc import validar_ruc_ecuador
+        ruc = self.cleaned_data.get('ruc', '').replace(' ', '').replace('-', '')
+        if ruc:
+            valido, mensaje = validar_ruc_ecuador(ruc)
+            if not valido:
+                raise forms.ValidationError(mensaje)
+            # Verificar unicidad
+            qs = Empresa.objects.filter(ruc=ruc)
+            if self.instance.pk:
+                qs = qs.exclude(pk=self.instance.pk)
+            if qs.exists():
+                raise forms.ValidationError('Ya existe una empresa registrada con este RUC/Cédula.')
+        return ruc
+
+# Lista de poderes expuestos como checkboxes (Fix #3 + #4 + #7)
+_PODER_CAMPOS = [
+    'puede_ver_reportes', 'puede_ver_estados_financieros',
+    'puede_registrar_ventas', 'puede_editar_ventas', 'puede_eliminar_ventas',
+    'puede_registrar_compras', 'puede_editar_compras', 'puede_eliminar_compras',
+    'puede_registrar_gastos', 'puede_editar_gastos', 'puede_eliminar_gastos',
+    'puede_editar_productos', 'puede_eliminar_productos',
+    'puede_gestionar_cuentas', 'puede_gestionar_inventario',
+    'puede_gestionar_metas', 'puede_gestionar_empleados',
+    'puede_gestionar_proveedores', 'puede_gestionar_clientes',
+    'puede_exportar_datos',
+]
+
+
 class EmpleadoEmpresaForm(forms.ModelForm):
+    """
+    Formulario de creación de empleado.
+
+    El propietario de la empresa define:
+    - Datos básicos del empleado (username, email, nombre, apellido)
+    - Contraseña inicial (Fix #7: validada con Django password validators)
+    - Rol predefinido (gerente/contador/vendedor/etc.) o "personalizado"
+    - Si elige "personalizado": checkboxes granulares para configurar cada poder
+    """
     password1 = forms.CharField(
         widget=forms.PasswordInput(attrs={'class': 'form-control', 'placeholder': 'Contraseña'}),
         label='Contraseña',
-        help_text='Contraseña temporal para el empleado'
+        help_text='Mínimo 8 caracteres, no puramente numérica, no demasiado común.'
     )
     password2 = forms.CharField(
         widget=forms.PasswordInput(attrs={'class': 'form-control', 'placeholder': 'Confirmar contraseña'}),
         label='Confirmar Contraseña',
     )
-    
-    # Campos de permisos (PoderEmpleado)
-    puede_ver_reportes = forms.BooleanField(required=False, label='Ver reportes',
-        widget=forms.CheckboxInput(attrs={'class': 'form-check-input'}))
-    puede_registrar_ventas = forms.BooleanField(required=False, label='Registrar ventas',
-        widget=forms.CheckboxInput(attrs={'class': 'form-check-input'}))
-    puede_editar_productos = forms.BooleanField(required=False, label='Editar productos',
-        widget=forms.CheckboxInput(attrs={'class': 'form-check-input'}))
-    puede_gestionar_cuentas = forms.BooleanField(required=False, label='Gestionar cuentas',
-        widget=forms.CheckboxInput(attrs={'class': 'form-check-input'}))
-    puede_registrar_gastos = forms.BooleanField(required=False, label='Registrar gastos',
-        widget=forms.CheckboxInput(attrs={'class': 'form-check-input'}))
-    puede_gestionar_inventario = forms.BooleanField(required=False, label='Gestionar inventario',
-        widget=forms.CheckboxInput(attrs={'class': 'form-check-input'}))
-    puede_gestionar_metas = forms.BooleanField(required=False, label='Gestionar metas',
-        widget=forms.CheckboxInput(attrs={'class': 'form-check-input'}))
-    
+
+    # ─── Rol predefinido (Fix #4) ───────────────────────────────────
+    rol = forms.ChoiceField(
+        choices=[
+            ('personalizado', 'Personalizado (configurar manualmente)'),
+            ('gerente',       'Gerente (todo excepto gestionar empleados)'),
+            ('contador',      'Contador (transacciones + reportes + estados financieros)'),
+            ('vendedor',      'Vendedor / Cajero (crear ventas + ver inventario)'),
+            ('bodeguero',     'Bodeguero (gestión de inventario y productos)'),
+            ('comprador',     'Comprador (compras + proveedores)'),
+            ('auditor',       'Auditor (solo lectura)'),
+        ],
+        initial='personalizado',
+        widget=forms.Select(attrs={'class': 'form-select'}),
+        label='Rol del empleado',
+        help_text='Elige un rol predefinido o "Personalizado" para configurar manualmente cada poder.'
+    )
+
     class Meta:
         model = Usuario
         fields = ['username', 'email', 'first_name', 'last_name']
@@ -81,39 +121,71 @@ class EmpleadoEmpresaForm(forms.ModelForm):
             'first_name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Nombres'}),
             'last_name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Apellidos'}),
         }
-    
+
     def __init__(self, *args, **kwargs):
         self.empresa = kwargs.pop('empresa', None)
         super().__init__(*args, **kwargs)
-    
+
+        # Crear dinámicamente checkboxes para todos los poderes (Fix #3)
+        for campo in _PODER_CAMPOS:
+            label = campo.replace('puede_', '').replace('_', ' ').capitalize()
+            self.fields[campo] = forms.BooleanField(
+                required=False,
+                label=label,
+                widget=forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+            )
+
+    def clean_email(self):
+        """Fix #7: validar email único globalmente."""
+        email = self.cleaned_data.get('email')
+        if email and Usuario.objects.filter(email__iexact=email).exists():
+            raise forms.ValidationError('Este email ya está registrado en el sistema.')
+        return email
+
     def clean(self):
         cleaned_data = super().clean()
         password1 = cleaned_data.get('password1')
         password2 = cleaned_data.get('password2')
+
         if password1 and password2 and password1 != password2:
             raise forms.ValidationError('Las contraseñas no coinciden.')
+
+        # Fix #7: validar fortaleza del password (lo escribe el dueño,
+        # pero verificamos que no sea débil tipo "123" o "password")
+        if password1:
+            from django.contrib.auth.password_validation import validate_password
+            try:
+                validate_password(password1)
+            except forms.ValidationError as e:
+                self.add_error('password1', e)
+
         return cleaned_data
-    
+
     def save(self, commit=True):
+        from empresa.models import PoderEmpleado
+        from empresa.services.roles_service import aplicar_rol
+
         empleado = super().save(commit=False)
         if self.empresa:
             empleado.empresa = self.empresa
         if commit:
             empleado.set_password(self.cleaned_data['password1'])
             empleado.save()
-            # Crear poderes del empleado
-            from empresa.models import PoderEmpleado
-            PoderEmpleado.objects.create(
-                empleado=empleado,
-                empresa=self.empresa,
-                puede_ver_reportes=self.cleaned_data.get('puede_ver_reportes', False),
-                puede_registrar_ventas=self.cleaned_data.get('puede_registrar_ventas', False),
-                puede_editar_productos=self.cleaned_data.get('puede_editar_productos', False),
-                puede_gestionar_cuentas=self.cleaned_data.get('puede_gestionar_cuentas', False),
-                puede_registrar_gastos=self.cleaned_data.get('puede_registrar_gastos', False),
-                puede_gestionar_inventario=self.cleaned_data.get('puede_gestionar_inventario', False),
-                puede_gestionar_metas=self.cleaned_data.get('puede_gestionar_metas', False),
-            )
+
+            # Crear PoderEmpleado y aplicar el rol elegido (Fix #4)
+            rol_elegido = self.cleaned_data.get('rol', 'personalizado')
+            poder = PoderEmpleado(empleado=empleado, empresa=self.empresa)
+
+            if rol_elegido == 'personalizado':
+                # Configurar manualmente desde los checkboxes
+                for campo in _PODER_CAMPOS:
+                    setattr(poder, campo, self.cleaned_data.get(campo, False))
+                poder.rol = 'personalizado'
+            else:
+                # Aplicar matriz del rol seleccionado
+                aplicar_rol(poder, rol_elegido)
+
+            poder.save()
         return empleado
 
 class EditarEmpresaForm(forms.ModelForm):
@@ -302,23 +374,16 @@ class RegistroForm(UserCreationForm):
         }
     
     def clean_ruc(self):
-        ruc = self.cleaned_data.get('ruc')
+        """Valida RUC/Cédula con el algoritmo SRI Ecuador (dígito verificador)."""
+        from empresa.utils.validador_ruc import validar_ruc_ecuador
+        from empresa.models import Empresa
+        ruc = self.cleaned_data.get('ruc', '').replace(' ', '').replace('-', '')
         if ruc:
-            # Limpiar espacios y caracteres especiales
-            ruc = ruc.replace(' ', '').replace('-', '')
-            
-            # Validación básica de RUC ecuatoriano
-            if not ruc.isdigit():
-                raise forms.ValidationError('El RUC/Cédula debe contener solo números.')
-            
-            if len(ruc) not in [10, 13]:
-                raise forms.ValidationError('El RUC debe tener 13 dígitos o la cédula 10 dígitos.')
-            
-            # Verificar que no exista otra empresa con el mismo RUC
-            from empresa.models import Empresa
+            valido, mensaje = validar_ruc_ecuador(ruc)
+            if not valido:
+                raise forms.ValidationError(mensaje)
             if Empresa.objects.filter(ruc=ruc).exists():
                 raise forms.ValidationError('Ya existe una empresa registrada con este RUC/Cédula.')
-                
         return ruc
     
     def clean_telefono_whatsapp(self):

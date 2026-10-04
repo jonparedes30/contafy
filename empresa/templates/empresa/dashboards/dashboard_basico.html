@@ -194,14 +194,15 @@
 </div>
 
 <style>
+/* Migrado al Design System — Contafy v1.0 (verde→teal→azul brand) */
 .animated-header {
-    background: linear-gradient(-45deg, #667eea, #764ba2, #f093fb, #f5576c);
+    background: linear-gradient(-45deg, #10b981, #14b8a6, #3b82f6, #2563eb);
     background-size: 400% 400%;
-    animation: gradientShift 12s ease-in-out infinite;
+    animation: gradientShift 14s ease-in-out infinite;
     color: white;
     padding: 2rem;
-    border-radius: 15px;
-    box-shadow: 0 8px 32px rgba(102, 126, 234, 0.3);
+    border-radius: var(--radius-xl);
+    box-shadow: var(--shadow-brand);
 }
 
 @keyframes gradientShift {
@@ -212,28 +213,23 @@
 
 .card {
     border: none;
-    border-radius: 15px;
+    border-radius: var(--radius-xl);
     transition: all 0.3s ease;
 }
 
 .card:hover {
     transform: translateY(-5px);
-    box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+    box-shadow: var(--shadow-lg);
 }
 
-.btn {
-    border-radius: 10px;
-    font-weight: 600;
-    transition: all 0.3s ease;
-}
-
+/* .btn ya estilizado globalmente en clean_enterprise.css */
 .btn:hover {
     transform: translateY(-2px);
 }
 
 .list-group-item {
     border: none;
-    border-bottom: 1px solid #e9ecef;
+    border-bottom: 1px solid var(--c-slate-2);
     padding: 1rem;
 }
 
@@ -250,7 +246,8 @@
     border-radius: 50%;
     font-size: 2rem;
     font-weight: 700;
-    background: linear-gradient(135deg, #4ecdc4, #45b7d1);
+    background: var(--grad-brand);
+    color: #fff;
 }
 </style>
 {% endblock %} 
