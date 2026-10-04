@@ -173,10 +173,13 @@ class ContabilidadService:
             'descripcion': f'Venta {venta.producto.nombre} - {venta.cantidad} unidades'
         })
         
-        # 4. Costo de Ventas (si aplica)
-        costo_unitario = venta.obtener_costo_peps()
-        costo_total = venta.cantidad * costo_unitario
-        
+        # 4. Costo de Ventas (solo bienes; un servicio no sale del inventario)
+        if getattr(venta.producto, 'es_servicio', False):
+            costo_total = 0
+        else:
+            costo_unitario = venta.obtener_costo_peps()
+            costo_total = venta.cantidad * costo_unitario
+
         if costo_total > 0:
             asientos.extend([
                 {

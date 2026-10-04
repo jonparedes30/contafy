@@ -130,8 +130,8 @@
 <div class="container-fluid mt-4">
     <!-- Header del Agente IA -->
     <div class="ai-header">
-        <div class="status-badge">
-            <i class="bi bi-cpu"></i> IA Activa
+        <div class="status-badge" {% if not ia_real %}title="No hay un proveedor de IA conectado: el análisis se calcula con reglas sobre tus datos reales"{% endif %}>
+            {% if ia_real %}<i class="bi bi-cpu"></i> IA Activa{% else %}<i class="bi bi-calculator"></i> Análisis automático (sin IA){% endif %}
         </div>
         <div class="row align-items-center">
             <div class="col-md-8">

@@ -250,7 +250,7 @@
             // Usar AJAX en lugar de formulario
             const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value;
 
-            fetch(`/app-beta-2024/api/venta/${ventaId}/eliminar/`, {
+            fetch('{% url "empresa:eliminar_venta" 0 %}'.replace('/0/', `/${ventaId}/`), {
                 method: 'POST',
                 headers: {
                     'X-CSRFToken': csrfToken,
@@ -260,9 +260,9 @@
             })
                 .then(response => {
                     if (response.ok) {
-                        window.location.href = '{% url "empresa:home" %}';
+                        window.location.reload();
                     } else {
-                        alert('Error al eliminar la venta');
+                        alert('No se pudo eliminar la venta. Verifica que tengas permiso para eliminar ventas.');
                     }
                 })
                 .catch(error => {

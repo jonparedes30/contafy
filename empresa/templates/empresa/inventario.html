@@ -20,7 +20,7 @@
             <a href="{% url 'empresa:crear_producto' %}" class="btn btn-primary btn-sm">
                 <i class="bi bi-plus-lg me-1"></i>Nuevo producto
             </a>
-            <a href="{% url 'empresa:subir_inventario' %}" class="btn btn-outline-success btn-sm">
+            <a href="{% url 'empresa:subir_inventario_excel' %}" class="btn btn-outline-success btn-sm">
                 <i class="bi bi-upload me-1"></i>Subir inventario
             </a>
             <a href="{% url 'empresa:exportar_excel_inventario' %}?{{ request.GET.urlencode }}" class="btn btn-outline-success btn-sm">
@@ -186,9 +186,6 @@
                                 <div class="btn-group" role="group">
                                     <a href="{% url 'empresa:editar_producto' producto.id %}" class="btn btn-sm btn-outline-primary" title="Editar">
                                         <i class="bi bi-pencil"></i>
-                                    </a>
-                                    <a href="{% url 'empresa:ver_producto' producto.id %}" class="btn btn-sm btn-outline-info" title="Ver detalles">
-                                        <i class="bi bi-eye"></i>
                                     </a>
                                     <button type="button"
                                             class="btn btn-sm btn-outline-danger"

@@ -6,259 +6,133 @@ from django.db.models import Sum, Avg
 from empresa.models import Venta, Gasto, Compra, Empresa
 from datetime import datetime, timedelta
 import json
+import logging
 import re
 
 # Usar la capa de abstracción de proveedores de IA
 from empresa.services.ai_provider import get_ai_provider
+
+logger = logging.getLogger(__name__)
 
 class ContafyAIAgent:
     
     def __init__(self):
         # Usar la capa de abstracción de IA (soporta OpenAI, Gemini, Mock)
         self._ai_provider = get_ai_provider()
-        if self._ai_provider.is_available():
-            provider_name = type(self._ai_provider).__name__
-            self.provider = getattr(settings, 'AI_PROVIDER', 'gemini').lower()
-            print(f"DEBUG: Usando {provider_name}")
+        # El simulador (MockProvider) devuelve textos fijos: en ese caso es
+        # mejor el análisis local, que sí razona sobre los datos reales.
+        if self._ai_provider.is_available() and not getattr(self._ai_provider, 'es_simulado', False):
+            self.provider = 'gemini'  # rama "IA real": _analizar_con_gemini / _chat_gemini usan el proveedor configurado
         else:
             self.provider = 'local'
-            print("DEBUG: Usando análisis local (proveedor IA no disponible)")
+
+    @property
+    def usa_ia_real(self):
+        return self.provider != 'local'
     
     def obtener_datos_empresa(self, empresa):
-        """Obtiene datos financieros de la empresa - CORREGIDO para coincidir con reportes"""
+        """Datos financieros REALES de la empresa, tomados del libro contable.
+
+        No se inventan cifras: si un dato no existe (p. ej. no hay pasivos),
+        el indicador vale 0 y `tiene_balance` lo deja explícito para que el
+        análisis no saque conclusiones de datos ausentes.
+        """
         from empresa.models import CuentaContable, MovimientoContable
-        
+        from empresa.services.saldos import resumen_balance, TIPOS_DEUDORES
+
         hoy = datetime.now().date()
         hace_30_dias = hoy - timedelta(days=30)
         hace_90_dias = hoy - timedelta(days=90)
-        
-        # USAR MODELOS DIRECTOS PARA COINCIDIR CON REPORTES
-        ventas_mes = Venta.objects.filter(
-            empresa=empresa,
-            fecha__date__gte=hace_30_dias
-        ).aggregate(total=Sum('monto'))['total'] or 0
-        
-        gastos_mes = Gasto.objects.filter(
-            empresa=empresa,
-            fecha__date__gte=hace_30_dias
-        ).aggregate(total=Sum('monto'))['total'] or 0
-        
-        # Costo de ventas (solo para análisis detallado, no para utilidad principal)
-        
-        # COSTO DE VENTAS - ADAPTADO POR TIPO DE EMPRESA
-        if empresa.categoria == 'servicios':
-            # SERVICIOS: Costo desde precio_unitario del producto (puede ser 0)
-            costo_ventas_mes = 0
-            ventas_detalle = Venta.objects.filter(
-                empresa=empresa,
-                fecha__date__gte=hace_30_dias
-            ).select_related('producto')
-            
-            for venta in ventas_detalle:
-                if venta.producto and venta.producto.precio_unitario:
-                    # precio_unitario = costo del servicio (ej: materiales, subcontratación)
-                    costo_ventas_mes += float(venta.producto.precio_unitario) * float(venta.cantidad)
-        else:
-            # COMERCIO/MANUFACTURA: Usar cuenta contable "Costo de Ventas"
-            try:
-                cuenta_costo = CuentaContable.objects.get(empresa=empresa, nombre__iexact='Costo de Ventas')
-                costo_ventas_mes = MovimientoContable.objects.filter(
-                    empresa=empresa,
-                    cuenta_fk=cuenta_costo,
-                    tipo='debito',
-                    fecha__date__gte=hace_30_dias
-                ).aggregate(total=Sum('monto'))['total'] or 0
-            except CuentaContable.DoesNotExist:
-                costo_ventas_mes = 0
-        
-        # DATOS DE LOS ÚLTIMOS 3 MESES
-        
-        # Ventas 3 meses
-        try:
-            ventas_3m = MovimientoContable.objects.filter(
-                empresa=empresa,
-                cuenta_fk=cuenta_ventas,
-                tipo='credito',
-                fecha__date__gte=hace_90_dias
-            ).aggregate(total=Sum('monto'))['total'] or 0
-        except:
-            ventas_3m = 0
-        
-        # Gastos 3 meses
-        try:
-            gastos_3m = MovimientoContable.objects.filter(
-                empresa=empresa,
-                cuenta_fk=cuenta_gastos,
-                tipo='debito',
-                fecha__date__gte=hace_90_dias
-            ).aggregate(total=Sum('monto'))['total'] or 0
-        except:
-            gastos_3m = 0
-        
-        # Costo de ventas 3 meses
-        if empresa.categoria == 'manufactura':
-            try:
-                costo_ventas_3m = MovimientoContable.objects.filter(
-                    empresa=empresa,
-                    cuenta_fk=cuenta_costo,
-                    tipo='debito',
-                    fecha__date__gte=hace_90_dias
-                ).aggregate(total=Sum('monto'))['total'] or 0
-            except:
-                costo_ventas_3m = 0
-        else:
-            try:
-                cuenta_costo = CuentaContable.objects.get(empresa=empresa, nombre__iexact='Costo de Ventas')
-                costo_ventas_3m = MovimientoContable.objects.filter(
-                    empresa=empresa,
-                    cuenta_fk=cuenta_costo,
-                    tipo='debito',
-                    fecha__date__gte=hace_90_dias
-                ).aggregate(total=Sum('monto'))['total'] or 0
-            except:
-                costo_ventas_3m = float(ventas_3m) * 0.6
-        
-        # Top gastos (desde MovimientoContable para mayor precisión)
-        try:
-            top_gastos = list(MovimientoContable.objects.filter(
-                empresa=empresa,
-                cuenta_fk=cuenta_gastos,
-                tipo='debito',
-                fecha__date__gte=hace_30_dias
-            ).values('descripcion').annotate(
-                total=Sum('monto')
-            ).order_by('-total')[:5])
-        except:
-            top_gastos = []
-        
-        # Top productos vendidos (mantener desde Venta para detalle)
-        from empresa.models import Producto
+
+        def flujo(nombre_cuenta, desde):
+            """Movimiento neto de una cuenta de resultados desde una fecha."""
+            cuenta = CuentaContable.objects.filter(empresa=empresa, nombre__iexact=nombre_cuenta).first()
+            if not cuenta:
+                return 0.0
+            movs = MovimientoContable.objects.filter(empresa=empresa, cuenta_fk=cuenta, fecha__date__gte=desde)
+            debitos = float(movs.filter(tipo='debito').aggregate(s=Sum('monto'))['s'] or 0)
+            creditos = float(movs.filter(tipo='credito').aggregate(s=Sum('monto'))['s'] or 0)
+            return debitos - creditos if cuenta.tipo in TIPOS_DEUDORES else creditos - debitos
+
+        ventas_mes = flujo('Ventas', hace_30_dias)
+        costo_ventas_mes = flujo('Costo de Ventas', hace_30_dias)
+        gastos_mes = flujo('Gastos', hace_30_dias)
+        ventas_3m = flujo('Ventas', hace_90_dias)
+        costo_ventas_3m = flujo('Costo de Ventas', hace_90_dias)
+        gastos_3m = flujo('Gastos', hace_90_dias)
+
+        top_gastos = list(Gasto.objects.filter(
+            empresa=empresa, fecha__date__gte=hace_30_dias
+        ).values('descripcion').annotate(total=Sum('monto')).order_by('-total')[:5])
+
         top_productos = list(Venta.objects.filter(
-            empresa=empresa,
-            fecha__date__gte=hace_30_dias
+            empresa=empresa, fecha__date__gte=hace_30_dias
         ).values('producto__nombre').annotate(
-            total_vendido=Sum('monto'),
+            total_vendido=Sum('monto_neto'),
             cantidad_vendida=Sum('cantidad')
         ).order_by('-total_vendido')[:5])
-        
-        # BALANCE GENERAL COMPLETO SEGUN NIIF
-        try:
-            # ACTIVOS
-            activos_corrientes = sum(c.valor for c in CuentaContable.objects.filter(empresa=empresa, tipo='activo', nombre__in=['Caja', 'Bancos', 'Cuentas por Cobrar', 'Inventario']))
-            activos_no_corrientes = sum(c.valor for c in CuentaContable.objects.filter(empresa=empresa, tipo='activo').exclude(nombre__in=['Caja', 'Bancos', 'Cuentas por Cobrar', 'Inventario']))
-            total_activos = activos_corrientes + activos_no_corrientes
-            
-            # PASIVOS
-            pasivos_corrientes = sum(c.valor for c in CuentaContable.objects.filter(empresa=empresa, tipo='pasivo', nombre__icontains='corto'))
-            pasivos_no_corrientes = sum(c.valor for c in CuentaContable.objects.filter(empresa=empresa, tipo='pasivo').exclude(nombre__icontains='corto'))
-            total_pasivos = pasivos_corrientes + pasivos_no_corrientes
-            
-            # PATRIMONIO
-            total_capital = sum(c.valor for c in CuentaContable.objects.filter(empresa=empresa, tipo='capital'))
-            
-            # Si no hay datos, usar aproximaciones
-            if total_activos == 0:
-                # Aproximar activos basado en ventas (regla general: activos = 0.8 * ventas anuales)
-                total_activos = float(ventas_mes) * 12 * 0.8
-                activos_corrientes = total_activos * 0.6
-                activos_no_corrientes = total_activos * 0.4
-            
-            if total_pasivos == 0:
-                # Aproximar pasivos (regla general: 40% de activos)
-                total_pasivos = total_activos * 0.4
-                pasivos_corrientes = total_pasivos * 0.7
-                pasivos_no_corrientes = total_pasivos * 0.3
-                
-            if total_capital == 0:
-                total_capital = total_activos - total_pasivos
-                
-        except:
-            # Valores por defecto basados en ventas
-            total_activos = float(ventas_mes) * 12 * 0.8
-            activos_corrientes = total_activos * 0.6
-            activos_no_corrientes = total_activos * 0.4
-            total_pasivos = total_activos * 0.4
-            pasivos_corrientes = total_pasivos * 0.7
-            pasivos_no_corrientes = total_pasivos * 0.3
-            total_capital = total_activos - total_pasivos
-        
-        # CALCULO SEGUN NIIF (Normas Internacionales)
-        # ESTRUCTURA NIIF:
-        # Ventas - Costo de Ventas = Utilidad Bruta
-        # Utilidad Bruta - Gastos Operacionales = Utilidad Operacional
-        
-        ventas_float = float(ventas_mes)
-        costo_ventas_float = float(costo_ventas_mes)
-        gastos_operacionales = float(gastos_mes)  # Gastos administrativos y de ventas
-        
-        # CALCULO NIIF CORRECTO:
-        utilidad_bruta = ventas_float - costo_ventas_float
-        utilidad_operacional = utilidad_bruta - gastos_operacionales  # NIIF: Bruta - Gastos Op.
-        
-        # MARGENES SEGUN NIIF:
-        margen_bruto_niif = (utilidad_bruta / ventas_float * 100) if ventas_float > 0 else 0
-        margen_operacional_niif = (utilidad_operacional / ventas_float * 100) if ventas_float > 0 else 0
-        
+
+        balance = resumen_balance(empresa)
+        activos_corrientes = float(balance['activo_corriente'])
+        total_activos = float(balance['activo_total'])
+        activos_no_corrientes = total_activos - activos_corrientes
+        total_pasivos = float(balance['pasivo_total'])
+        # Patrimonio = capital + resultado acumulado (aún no cerrado a capital).
+        resultado_acumulado = flujo('Ventas', datetime(1900, 1, 1).date())             - flujo('Costo de Ventas', datetime(1900, 1, 1).date())             - flujo('Gastos', datetime(1900, 1, 1).date())
+        total_capital = float(balance['capital']) + resultado_acumulado
+
+        utilidad_bruta = ventas_mes - costo_ventas_mes
+        utilidad_operacional = utilidad_bruta - gastos_mes
+        margen_bruto = (utilidad_bruta / ventas_mes * 100) if ventas_mes > 0 else 0
+        margen_operacional = (utilidad_operacional / ventas_mes * 100) if ventas_mes > 0 else 0
+
+        def ratio(a, b):
+            return (a / b) if b > 0 else 0
+
+        liquidez = ratio(activos_corrientes, total_pasivos)
         return {
-            'ventas_mes': float(ventas_mes),
-            'gastos_mes': float(gastos_mes),
-            'ventas_3m': float(ventas_3m),
-            'gastos_3m': float(gastos_3m),
-            'costo_ventas_mes': float(costo_ventas_mes),
-            'costo_ventas_3m': float(costo_ventas_3m),
-            'utilidad_bruta_mes': utilidad_bruta,  # NIIF: Ventas - Costo Ventas
-            'utilidad_mes': utilidad_operacional,  # NIIF: Utilidad Operacional
-            'margen_bruto': margen_bruto_niif,  # NIIF: Margen Bruto
-            'margen_mes': margen_operacional_niif,  # NIIF: Margen Operacional
+            'ventas_mes': ventas_mes,
+            'gastos_mes': gastos_mes,
+            'ventas_3m': ventas_3m,
+            'gastos_3m': gastos_3m,
+            'costo_ventas_mes': costo_ventas_mes,
+            'costo_ventas_3m': costo_ventas_3m,
+            'utilidad_bruta_mes': utilidad_bruta,
+            'utilidad_mes': utilidad_operacional,
+            'margen_bruto': margen_bruto,
+            'margen_mes': margen_operacional,
             'top_gastos': top_gastos,
             'top_productos': top_productos,
-            # BALANCE GENERAL
-            'activos_corrientes': float(activos_corrientes),
-            'activos_no_corrientes': float(activos_no_corrientes),
-            'total_activos': float(total_activos),
-            'pasivos_corrientes': float(pasivos_corrientes),
-            'pasivos_no_corrientes': float(pasivos_no_corrientes),
-            'total_pasivos': float(total_pasivos),
-            'total_capital': float(total_capital),
-            
-            # RATIOS FINANCIEROS NIIF
-            'liquidez_corriente': (float(activos_corrientes) / float(pasivos_corrientes)) if float(pasivos_corrientes) > 0 else 0,
-            'prueba_acida': ((float(activos_corrientes) - (float(ventas_mes) * 0.3)) / float(pasivos_corrientes)) if float(pasivos_corrientes) > 0 else 0,
-            'endeudamiento_total': (float(total_pasivos) / float(total_activos)) if float(total_activos) > 0 else 0,
-            'endeudamiento_patrimonio': (float(total_pasivos) / float(total_capital)) if float(total_capital) > 0 else 0,
-            'apalancamiento': (float(total_activos) / float(total_capital)) if float(total_capital) > 0 else 0,
-            
-            # RATIOS DE RENTABILIDAD
-            'roe': (utilidad_operacional / float(total_capital) * 100) if float(total_capital) > 0 else 0,
-            'roa': (utilidad_operacional / float(total_activos) * 100) if float(total_activos) > 0 else 0,
-            'margen_ebitda': ((utilidad_operacional + (float(gastos_mes) * 0.1)) / ventas_float * 100) if ventas_float > 0 else 0,
-            
-            # RATIOS DE EFICIENCIA
-            'rotacion_activos': (ventas_float / float(total_activos)) if float(total_activos) > 0 else 0,
-            'rotacion_inventario': (float(costo_ventas_mes) * 12 / (float(ventas_mes) * 0.3)) if float(ventas_mes) > 0 else 0,
-            'ciclo_conversion_efectivo': 30,  # Aproximado
-            
-            # RATIOS DE ACTIVIDAD
-            'ventas_por_empleado': float(ventas_mes) * 12 / 5,  # Asumiendo 5 empleados promedio
-            'gastos_por_venta': (float(gastos_mes) / float(ventas_mes)) if float(ventas_mes) > 0 else 0,
-            
-            # FLUJO DE CAJA APROXIMADO
-            'flujo_operativo_mes': utilidad_operacional + (float(gastos_mes) * 0.1),  # + Depreciación aproximada
-            'flujo_libre_mes': utilidad_operacional - (float(ventas_mes) * 0.05),  # - Inversiones aproximadas
-            
-            # INDICADORES DE CRECIMIENTO
-            'crecimiento_ventas': ((float(ventas_mes) * 3 / float(ventas_3m) - 1) * 100) if float(ventas_3m) > 0 else 0,
-            'crecimiento_utilidad': 0,  # Se calculará con más datos históricos
-            
-            # INDICADORES DE RIESGO
-            'cobertura_gastos_fijos': (utilidad_bruta / float(gastos_mes)) if float(gastos_mes) > 0 else 0,
-            'punto_equilibrio': (float(gastos_mes) / (margen_bruto_niif / 100)) if margen_bruto_niif > 0 else 0,
-            'dias_supervivencia': (float(total_activos) / (float(gastos_mes) / 30)) if float(gastos_mes) > 0 else 0,
-            'fuente_costo': 'precio_unitario' if empresa.categoria == 'servicios' else 'cuenta_contable',
+            # Balance general (saldos reales)
+            'tiene_balance': total_activos > 0,
+            'activos_corrientes': activos_corrientes,
+            'activos_no_corrientes': activos_no_corrientes,
+            'total_activos': total_activos,
+            'pasivos_corrientes': total_pasivos,
+            'pasivos_no_corrientes': 0.0,
+            'total_pasivos': total_pasivos,
+            'total_capital': total_capital,
+            # Ratios
+            'liquidez': liquidez,
+            'liquidez_corriente': liquidez,
+            'endeudamiento': ratio(total_pasivos, total_activos),
+            'endeudamiento_total': ratio(total_pasivos, total_activos),
+            'endeudamiento_patrimonio': ratio(total_pasivos, total_capital),
+            'apalancamiento': ratio(total_activos, total_capital),
+            'roe': ratio(utilidad_operacional, total_capital) * 100,
+            'roa': ratio(utilidad_operacional, total_activos) * 100,
+            'rotacion_activos': ratio(ventas_mes, total_activos),
+            'gastos_por_venta': ratio(gastos_mes, ventas_mes),
+            # Crecimiento: mes actual frente al promedio mensual del trimestre
+            'crecimiento_ventas': (ratio(ventas_mes * 3, ventas_3m) - 1) * 100 if ventas_3m > 0 else 0,
+            # Riesgo
+            'cobertura_gastos_fijos': ratio(utilidad_bruta, gastos_mes),
+            'punto_equilibrio': ratio(gastos_mes, margen_bruto / 100) if margen_bruto > 0 else 0,
+            'dias_supervivencia': ratio(activos_corrientes, gastos_mes / 30) if gastos_mes > 0 else 0,
             'categoria': empresa.categoria,
             'ubicacion': empresa.ubicacion_completa or 'Ecuador'
         }
-    
+
     def analizar_empresa(self, empresa):
         """Análisis principal de la empresa"""
         datos = self.obtener_datos_empresa(empresa)
@@ -352,7 +226,8 @@ class ContafyAIAgent:
             return json.loads(text)
             
         except Exception as e:
-            print(f"Error Gemini análisis: {e}")
+            logger.warning("IA no disponible, se usa el análisis local: %s", e)
+            self.provider = 'local'  # no reintentar en esta misma petición
             return self._analizar_local(empresa, datos)
     
     def _analizar_local(self, empresa, datos):

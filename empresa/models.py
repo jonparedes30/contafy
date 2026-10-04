@@ -218,6 +218,10 @@ class Producto(AuditModel):
     precio_unitario = models.DecimalField(max_digits=10, decimal_places=2)
     pvp = models.DecimalField('Precio de Venta al Público', max_digits=10, decimal_places=2, null=True, blank=True)
     stock = models.IntegerField(default=0)
+    es_servicio = models.BooleanField(
+        default=False,
+        help_text="Servicio (corte, consultoría…): no maneja inventario ni costo de inventario"
+    )
     
     # Campos para COMERCIO
     categoria = models.ForeignKey(
@@ -451,6 +455,8 @@ class Venta(AuditModel):
     
     def crear_movimiento_inventario(self):
         """Crear movimiento de inventario para la venta"""
+        if self.producto.es_servicio:
+            return
         try:
             MovimientoInventario.objects.create(
                 empresa=self.empresa,

@@ -54,7 +54,7 @@ class ResumenPresenter:
         # Exponer también una lista de KPI homogénea para incluir en templates
         context['kpis'] = [
             {'label': 'Total Ventas', 'value': ventas, 'type': 'neutro'},
-            {'label': 'Total Compras', 'value': compras, 'type': 'costo'},
+            {'label': 'Costo de Ventas', 'value': compras, 'type': 'costo', 'note': 'Costo de lo vendido'},
             {'label': 'Total Gastos', 'value': gastos, 'type': 'gasto'},
             {'label': 'Utilidad Neta', 'value': utilidad_neta, 'type': 'utilidad', 'positive': utilidad_neta >= 0},
         ]

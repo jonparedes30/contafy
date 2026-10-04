@@ -29,7 +29,8 @@ def agente_ia(request):
     
     return render(request, 'empresa/agente_ia.html', {
         'analisis': analisis,
-        'empresa': empresa
+        'empresa': empresa,
+        'ia_real': agente.usa_ia_real,
     })
 
 @login_required

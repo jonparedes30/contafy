@@ -1,5 +1,5 @@
 {% extends 'empresa/base.html' %}
-{% load static %}
+{% load static l10n %}
 
 {% block title %}Valuación de Empresa - CONTAFY{% endblock %}
 
@@ -214,7 +214,7 @@ const proyeccionChart = new Chart(ctx, {
         labels: ['Actual', {% for proj in proyecciones.proyecciones %}'Año {{ proj.año }}',{% endfor %}],
         datasets: [{
             label: 'Valor de la Empresa',
-            data: [{{ proyecciones.valor_actual }}, {% for proj in proyecciones.proyecciones %}{{ proj.valor_proyectado }},{% endfor %}],
+            data: [{{ proyecciones.valor_actual|unlocalize }}, {% for proj in proyecciones.proyecciones %}{{ proj.valor_proyectado|unlocalize }},{% endfor %}],
             borderColor: 'rgb(75, 192, 192)',
             backgroundColor: 'rgba(20, 184, 166, 0.2)',
             tension: 0.1,

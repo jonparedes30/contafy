@@ -323,6 +323,7 @@ GEMINI_API_KEY = env('GEMINI_API_KEY', default='')  # type: ignore[arg-type]
 
 # Proveedor de IA: 'openai', 'gemini', 'mock' (para tests sin API keys)
 AI_PROVIDER = env('AI_PROVIDER', default='gemini')  # type: ignore[arg-type]
+GEMINI_MODEL = env('GEMINI_MODEL', default='gemini-2.5-flash')  # type: ignore[arg-type]
 
 # Configuración de sesiones persistentes
 SESSION_ENGINE = 'django.contrib.sessions.backends.db'

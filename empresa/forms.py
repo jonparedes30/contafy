@@ -25,14 +25,31 @@ class CapitalForm(forms.ModelForm):
         model = Capital
         fields = ['monto', 'tipo', 'descripcion']
         widgets = {
-            'monto': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01'}),
+            'monto': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01', 'min': '0.01'}),
             'tipo': forms.Select(attrs={'class': 'form-select'}),
             'descripcion': forms.TextInput(attrs={'class': 'form-control'}),
         }
-    
+
     def __init__(self, *args, **kwargs):
         self.empresa = kwargs.pop('empresa', None)
         super().__init__(*args, **kwargs)
+
+    def clean(self):
+        cleaned = super().clean()
+        monto = cleaned.get('monto')
+        if monto is None:
+            return cleaned
+        if monto <= 0:
+            self.add_error('monto', 'El monto debe ser mayor a 0.')
+        elif cleaned.get('tipo') == 'retiro' and self.empresa:
+            from empresa.services.saldos import saldo_cuenta
+            disponible = saldo_cuenta(self.empresa, 'Caja')
+            if monto > disponible:
+                self.add_error(
+                    'monto',
+                    f'No hay suficiente dinero en Caja para este retiro (disponible: ${disponible:,.2f}).'
+                )
+        return cleaned
 
 class EmpresaForm(forms.ModelForm):
     class Meta:
@@ -538,10 +555,17 @@ class GastoForm(forms.ModelForm):
             'categoria': forms.Select(attrs={'class': 'form-select'}),
             'tipo_pago': forms.Select(attrs={'class': 'form-select'}),
         }
-    
+
     def __init__(self, *args, **kwargs):
         self.empresa = kwargs.pop('empresa', None)
         super().__init__(*args, **kwargs)
+        self.fields['monto'].widget.attrs['min'] = '0.01'
+
+    def clean_monto(self):
+        monto = self.cleaned_data.get('monto')
+        if monto is not None and monto <= 0:
+            raise forms.ValidationError('El monto del gasto debe ser mayor a 0.')
+        return monto
 
 class CompraForm(forms.ModelForm):
     precio_unitario = forms.DecimalField(

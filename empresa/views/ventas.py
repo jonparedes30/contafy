@@ -13,7 +13,23 @@ from datetime import datetime, timedelta
 from django.utils import timezone
 from django.http import JsonResponse
 import json
+import logging
+from decimal import Decimal, ROUND_HALF_UP
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
+from empresa.utils.money import parse_monto, MontoInvalido
+
+logger = logging.getLogger(__name__)
+
+
+class VentaRechazada(Exception):
+    """Venta que no debe registrarse; su mensaje se muestra al usuario."""
+
+
+def _a_decimal(valor, campo, permitir_vacio=False):
+    try:
+        return parse_monto(valor, campo, permitir_vacio=permitir_vacio)
+    except MontoInvalido as e:
+        raise VentaRechazada(str(e))
 
 @login_required
 @require_power('puede_registrar_ventas')
@@ -357,38 +373,26 @@ def eliminar_venta(request, venta_id):
     Ahora requiere login + poder específico.
     """
     from django.shortcuts import get_object_or_404
-    from django.http import JsonResponse
+    from empresa.models import CuentaPorCobrar
 
-    if not request.user.is_authenticated:
-        return JsonResponse({'error': 'No autenticado'}, status=401)
-    
-    if hasattr(request.user, 'poderes') and not request.user.is_superuser:
-        return JsonResponse({'error': 'Sin permisos'}, status=403)
-    
-    if request.method == 'POST':
-        try:
-            empresa = request.user.empresa
-            venta = get_object_or_404(Venta, id=venta_id, empresa=empresa)
-            
-            producto_nombre = venta.producto.nombre
-            cantidad = venta.cantidad
-            producto = venta.producto
-            
-            from empresa.models import CuentaPorCobrar
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Método no permitido'}, status=405)
+
+    venta = get_object_or_404(Venta, id=venta_id, empresa=request.user.empresa)
+    producto = venta.producto
+    try:
+        with transaction.atomic():
             CuentaPorCobrar.objects.filter(venta=venta).delete()
-            
-            venta.delete()
-            
-            producto.stock += cantidad
-            producto.save()
-            
-            messages.success(request, f'Venta de {producto_nombre} eliminada correctamente.')
-            return JsonResponse({'success': True, 'message': f'Venta de {producto_nombre} eliminada'})
-            
-        except Exception as e:
-            return JsonResponse({'error': str(e)}, status=500)
-    
-    return JsonResponse({'error': 'Método no permitido'}, status=405)
+            venta.delete()  # revierte también los asientos contables
+            if not producto.es_servicio:
+                producto.stock += venta.cantidad
+                producto.save(update_fields=['stock'])
+    except Exception:
+        logger.exception('Error eliminando venta %s', venta_id)
+        return JsonResponse({'success': False, 'error': 'No se pudo eliminar la venta.'}, status=500)
+
+    messages.success(request, f'Venta de {producto.nombre} eliminada y stock restaurado.')
+    return JsonResponse({'success': True, 'message': f'Venta de {producto.nombre} eliminada'})
 
 
 
@@ -422,23 +426,39 @@ def crear_venta_multiple(request):
         try:
             data = json.loads(request.body)
             productos_venta = data.get('productos', [])
-            cliente_nombre = data.get('cliente_nombre', '').strip()
-            incluir_iva = data.get('incluir_iva', False)
+            cliente_nombre = (data.get('cliente_nombre') or '').strip()
+            incluir_iva = bool(data.get('incluir_iva', False))
             tipo_pago = data.get('tipo_pago', 'contado')
-            monto_recibido = float(data.get('monto_recibido', 0))
-            
+            monto_recibido = _a_decimal(data.get('monto_recibido'), 'Monto recibido', permitir_vacio=True)
+
             if not productos_venta:
                 return JsonResponse({'success': False, 'error': 'No hay productos en la venta'})
-            
+
+            # Validar y calcular TODO antes de escribir en la base de datos.
+            tasa = Decimal('0.15') if incluir_iva else Decimal('0')
+            lineas = []
+            for item in productos_venta:
+                cantidad = int(item.get('cantidad') or 0)
+                precio = _a_decimal(item.get('precio'), 'Precio')
+                if cantidad <= 0:
+                    raise VentaRechazada('La cantidad de cada producto debe ser mayor a 0.')
+                if precio < 0:
+                    raise VentaRechazada('El precio no puede ser negativo.')
+                monto_neto = (precio * cantidad).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+                iva = (monto_neto * tasa).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+                lineas.append((item['id'], cantidad, precio, monto_neto, iva))
+
+            total_venta = sum(neto + iva for _, _, _, neto, iva in lineas)
+            if tipo_pago == 'contado' and monto_recibido < total_venta:
+                raise VentaRechazada(
+                    f'Monto insuficiente. Total: ${total_venta:.2f}, Recibido: ${monto_recibido:.2f}'
+                )
+
+            # Cualquier VentaRechazada dentro del bloque deshace ventas, stock y asientos.
             with transaction.atomic():
-                total_venta = 0
                 ventas_creadas = []
-                
-                for item in productos_venta:
-                    producto_id = item['id']
-                    cantidad = int(item['cantidad'])
-                    precio = float(item['precio'])
-                    
+
+                for producto_id, cantidad, precio, monto_neto, iva in lineas:
                     if empresa.categoria == 'servicios':
                         from empresa.models import TipoServicio
                         servicio = TipoServicio.objects.get(id=producto_id, empresa=empresa)
@@ -449,22 +469,20 @@ def crear_venta_multiple(request):
                                 'nombre': servicio.nombre,
                                 'precio_unitario': servicio.costo_directo,
                                 'pvp': servicio.precio_base,
-                                'stock': 999999
+                                'stock': 999999,
+                                'es_servicio': True,
                             }
                         )
                     else:
                         # Lock product row to avoid race conditions between concurrent sales
                         producto = Producto.objects.select_for_update().get(id=producto_id, empresa=empresa)
                         if producto.stock < cantidad:
-                            return JsonResponse({
-                                'success': False,
-                                'error': f'Stock insuficiente para {producto.nombre}. Disponible: {producto.stock}'
-                            })
-                    
-                    monto_neto = cantidad * precio
-                    iva = monto_neto * 0.15 if incluir_iva else 0
+                            raise VentaRechazada(
+                                f'Stock insuficiente para {producto.nombre}. Disponible: {producto.stock}'
+                            )
+
                     monto_total = monto_neto + iva
-                    
+
                     venta = Venta.objects.create(
                         empresa=empresa,
                         cliente_nombre=cliente_nombre or 'Cliente General',
@@ -484,15 +502,8 @@ def crear_venta_multiple(request):
                         producto.save()
                     
                     ventas_creadas.append(venta)
-                    total_venta += monto_total
-                
-                if tipo_pago == 'contado' and monto_recibido < total_venta:
-                    return JsonResponse({
-                        'success': False, 
-                        'error': f'Monto insuficiente. Total: ${total_venta:.2f}, Recibido: ${monto_recibido:.2f}'
-                    })
-                
-                cambio = monto_recibido - total_venta if tipo_pago == 'contado' else 0
+
+                cambio = monto_recibido - total_venta if tipo_pago == 'contado' else Decimal('0')
                 
                 # Construir items para ticket
                 items = []
@@ -507,16 +518,22 @@ def crear_venta_multiple(request):
                 return JsonResponse({
                     'success': True,
                     'message': f'Venta procesada exitosamente. Total: ${total_venta:.2f}',
-                    'total': total_venta,
-                    'cambio': cambio,
+                    'total': float(total_venta),
+                    'cambio': float(cambio),
                     'ventas_count': len(ventas_creadas),
                     'ventas_ids': venta_ids,
                     'items': items,
                     'fecha': fecha
                 })
-                
-        except Exception as e:
+
+        except VentaRechazada as e:
             return JsonResponse({'success': False, 'error': str(e)})
+        except (Producto.DoesNotExist, KeyError, ValueError, TypeError, json.JSONDecodeError):
+            logger.exception('Datos inválidos en crear_venta_multiple')
+            return JsonResponse({'success': False, 'error': 'Los datos de la venta no son válidos. Recarga la página e inténtalo de nuevo.'})
+        except Exception:
+            logger.exception('Error inesperado en crear_venta_multiple')
+            return JsonResponse({'success': False, 'error': 'No se pudo registrar la venta. Inténtalo de nuevo; si persiste, contacta a soporte.'})
     
     return JsonResponse({'success': False, 'error': 'Método no permitido'})
 

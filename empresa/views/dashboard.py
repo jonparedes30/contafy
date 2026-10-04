@@ -125,12 +125,14 @@ def dashboard(request):
     margen_bruto = ((utilidad_bruta / total_ventas) * 100) if total_ventas > 0 else 0
     margen_neto = ((utilidad_neta / total_ventas) * 100) if total_ventas > 0 else 0
     # Recalcular saldos finales usando la lógica correcta
-    total_capital = sum(cuenta.valor for cuenta in CuentaContable.objects.filter(empresa=empresa, tipo='capital'))
-    total_activos = sum(cuenta.valor for cuenta in CuentaContable.objects.filter(empresa=empresa, tipo='activo'))
-    total_pasivos = sum(cuenta.valor for cuenta in CuentaContable.objects.filter(empresa=empresa, tipo='pasivo'))
-    roe = (utilidad_neta / total_capital * 100) if total_capital else 0
-    liquidez = (total_activos / total_pasivos) if total_pasivos else 0
-    endeudamiento = (total_pasivos / total_activos) if total_activos else 0
+    from empresa.services.saldos import resumen_balance
+    balance = resumen_balance(empresa)
+    total_capital = float(balance['capital'])
+    total_activos = float(balance['activo_total'])
+    total_pasivos = float(balance['pasivo_total'])
+    roe = (utilidad_neta / total_capital * 100) if total_capital > 0 else 0
+    liquidez = (float(balance['activo_corriente']) / total_pasivos) if total_pasivos > 0 else 0
+    endeudamiento = (total_pasivos / total_activos) if total_activos > 0 else 0
     rentabilidad = margen_neto
 
     # NO rellenar - usar exactamente los datos del período seleccionado

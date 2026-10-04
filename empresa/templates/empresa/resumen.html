@@ -38,19 +38,19 @@
                     <div class="row g-3">
                         <div class="col-6">
                             <div class="text-center p-3 rounded bg-light">
-                                <div class="fs-4 fw-bold text-success">{{ margen_neto|floatformat:2 }}%</div>
-                                <span class="badge bg-success mt-1">Margen Neto</span>
+                                <div class="fs-4 fw-bold {% if margen_neto < 0 %}text-danger{% else %}text-success{% endif %}">{{ margen_neto|floatformat:2 }}%</div>
+                                <span class="badge {% if margen_neto < 0 %}bg-danger{% else %}bg-success{% endif %} mt-1">Margen Neto{% if margen_neto < 0 %} · pérdida{% endif %}</span>
                             </div>
                         </div>
                         <div class="col-6">
                             <div class="text-center p-3 rounded bg-light">
-                                <div class="fs-4 fw-bold text-primary">{{ margen_bruto|floatformat:2 }}%</div>
+                                <div class="fs-4 fw-bold {% if margen_bruto < 0 %}text-danger{% else %}text-primary{% endif %}">{{ margen_bruto|floatformat:2 }}%</div>
                                 <span class="badge bg-primary mt-1">Margen Bruto</span>
                             </div>
                         </div>
                         <div class="col-6">
                             <div class="text-center p-3 rounded bg-light">
-                                <div class="fs-4 fw-bold text-info">{{ roe|floatformat:2 }}%</div>
+                                <div class="fs-4 fw-bold {% if roe is None %}text-muted{% elif roe < 0 %}text-danger{% else %}text-info{% endif %}" {% if roe is None %}title="Sin patrimonio registrado: registra el capital inicial para calcular el ROE"{% endif %}>{% if roe is None %}—{% else %}{{ roe|floatformat:2 }}%{% endif %}</div>
                                 <span class="badge bg-info text-dark mt-1">ROE</span>
                             </div>
                         </div>
@@ -76,7 +76,7 @@
                     <div class="row g-3">
                         <div class="col-6">
                             <div class="text-center p-3 rounded bg-light">
-                                <div class="fs-4 fw-bold text-primary">{{ liquidez|floatformat:2 }}</div>
+                                <div class="fs-4 fw-bold {% if liquidez is None %}text-muted{% elif liquidez < 1 %}text-danger{% else %}text-primary{% endif %}" {% if liquidez is None %}title="Sin deudas registradas"{% endif %}>{% if liquidez is None %}—{% else %}{{ liquidez|floatformat:2 }}{% endif %}</div>
                                 <span class="badge bg-primary mt-1">Ratio de Liquidez</span>
                             </div>
                         </div>

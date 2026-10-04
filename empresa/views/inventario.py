@@ -16,7 +16,8 @@ from django.contrib.auth.decorators import login_required
 from empresa.forms import SaldosInicialesForm
 from empresa.views.contabilidad import registrar_movimiento_contable
 from django.utils import timezone
-from datetime import datetime
+from datetime import date, datetime, timedelta
+from openpyxl.comments import Comment
 
 @login_required
 def inventario(request):
@@ -100,7 +101,7 @@ def descargar_plantilla_inventario(request):
         'stock': 100,
         'stock_minimo': 10,
         'stock_maximo': 500,
-        'fecha_vencimiento': '2025-12-31',
+        'fecha_vencimiento': (date.today() + timedelta(days=365)).isoformat(),
         'lote': 'L001'
     }
     df = pd.DataFrame([ejemplo])
@@ -111,17 +112,17 @@ def descargar_plantilla_inventario(request):
         
         # Agregar comentarios en las celdas
         worksheet = writer.sheets['Inventario']
-        worksheet['A1'].comment = 'Código único del producto (obligatorio)'
-        worksheet['B1'].comment = 'Código de barras (opcional)'
-        worksheet['C1'].comment = 'Nombre del producto (obligatorio)'
-        worksheet['D1'].comment = 'Descripción detallada (opcional)'
-        worksheet['E1'].comment = 'Precio de costo/compra'
-        worksheet['F1'].comment = 'Precio de venta al público'
-        worksheet['G1'].comment = 'Cantidad en stock'
-        worksheet['H1'].comment = 'Stock mínimo para alertas'
-        worksheet['I1'].comment = 'Stock máximo recomendado'
-        worksheet['J1'].comment = 'Fecha de vencimiento (YYYY-MM-DD)'
-        worksheet['K1'].comment = 'Número de lote'
+        worksheet['A1'].comment = Comment('Código único del producto (obligatorio)', 'Contafy')
+        worksheet['B1'].comment = Comment('Código de barras (opcional)', 'Contafy')
+        worksheet['C1'].comment = Comment('Nombre del producto (obligatorio)', 'Contafy')
+        worksheet['D1'].comment = Comment('Descripción detallada (opcional)', 'Contafy')
+        worksheet['E1'].comment = Comment('Precio de costo/compra', 'Contafy')
+        worksheet['F1'].comment = Comment('Precio de venta al público', 'Contafy')
+        worksheet['G1'].comment = Comment('Cantidad en stock', 'Contafy')
+        worksheet['H1'].comment = Comment('Stock mínimo para alertas', 'Contafy')
+        worksheet['I1'].comment = Comment('Stock máximo recomendado', 'Contafy')
+        worksheet['J1'].comment = Comment('Fecha de vencimiento (YYYY-MM-DD)', 'Contafy')
+        worksheet['K1'].comment = Comment('Número de lote', 'Contafy')
     
     output.seek(0)
     response = HttpResponse(

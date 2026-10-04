@@ -108,21 +108,21 @@ class OpenAIProvider(BaseAIProvider):
 
 
 class GeminiProvider(BaseAIProvider):
-    """Proveedor usando Google Gemini."""
+    """Proveedor usando Google Gemini (SDK google-genai)."""
 
     def __init__(self):
-        self._model = None
+        self._client = None
         self._available = False
+        self.model = getattr(settings, 'GEMINI_MODEL', '') or 'gemini-2.5-flash'
         try:
-            import google.generativeai as genai
+            from google import genai
             api_key = getattr(settings, 'GEMINI_API_KEY', '')
             if api_key:
-                genai.configure(api_key=api_key)
-                self._model = genai.GenerativeModel('gemini-1.5-flash')
+                self._client = genai.Client(api_key=api_key)
                 self._available = True
-                logger.info("Gemini provider inicializado correctamente")
+                logger.info("Gemini provider inicializado (modelo %s)", self.model)
         except ImportError:
-            logger.warning("google-generativeai no instalado")
+            logger.warning("google-genai no instalado. pip install google-genai")
         except Exception as e:
             logger.error(f"Error inicializando Gemini: {e}")
 
@@ -130,12 +130,10 @@ class GeminiProvider(BaseAIProvider):
         if not self._available:
             raise RuntimeError("Gemini no está disponible")
 
-        full_prompt = prompt
-        if system:
-            full_prompt = f"{system}\n\n{prompt}"
-
-        response = self._model.generate_content(full_prompt)
-        text = response.text.strip()
+        from google.genai import types
+        config = types.GenerateContentConfig(system_instruction=system) if system else None
+        response = self._client.models.generate_content(model=self.model, contents=prompt, config=config)
+        text = (response.text or '').strip()
 
         # Limpiar markdown si viene envuelto en ```json
         if text.startswith('```json'):
@@ -151,12 +149,11 @@ class GeminiProvider(BaseAIProvider):
         if not self._available:
             raise RuntimeError("Gemini no está disponible")
 
-        import google.generativeai as genai
-        result = genai.embed_content(
-            model="models/text-embedding-004",
-            content=text,
+        result = self._client.models.embed_content(
+            model=getattr(settings, 'GEMINI_EMBEDDING_MODEL', '') or 'gemini-embedding-001',
+            contents=text,
         )
-        return result['embedding']
+        return list(result.embeddings[0].values)
 
     def is_available(self):
         return self._available
@@ -167,6 +164,9 @@ class MockProvider(BaseAIProvider):
     Proveedor simulado para tests. Devuelve respuestas predecibles
     sin necesitar API keys ni conexión a internet.
     """
+
+    # Lo consultan las vistas para avisar al usuario que no hay IA real conectada.
+    es_simulado = True
 
     def __init__(self):
         logger.info("MockProvider inicializado (modo test)")

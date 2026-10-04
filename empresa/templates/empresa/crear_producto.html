@@ -656,7 +656,7 @@ function crearCategoria() {
         return;
     }
     
-    fetch('/app-beta-2024/api/comercio/categorias/', {
+    fetch('{% url "empresa:categorias_api" %}', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',

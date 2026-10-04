@@ -13,51 +13,26 @@ logger = logging.getLogger(__name__)
 
 
 def obtener_totales_contables(empresa):
-    """Obtiene los totales contables estándar para toda la empresa"""
-    try:
-        cuenta_ventas = CuentaContable.objects.get(empresa=empresa, nombre__iexact='Ventas')
-        ventas = MovimientoContable.objects.filter(
-            empresa=empresa,
-            cuenta_fk=cuenta_ventas,
-            tipo='credito'
-        ).aggregate(total=Sum('monto'))['total'] or 0
-    except CuentaContable.DoesNotExist:
-        ventas = 0
-    # Costos: Inventario (comercio) + Costo de Ventas (manufactura)
-    compras = 0
-    try:
-        cuenta_inventario = CuentaContable.objects.get(empresa=empresa, nombre__iexact='Inventario')
-        compras += MovimientoContable.objects.filter(
-            empresa=empresa,
-            cuenta_fk=cuenta_inventario,
-            tipo='debito'
-        ).aggregate(total=Sum('monto'))['total'] or 0
-    except CuentaContable.DoesNotExist:
-        pass
-    
-    try:
-        cuenta_costo_ventas = CuentaContable.objects.get(empresa=empresa, nombre__iexact='Costo de Ventas')
-        compras += MovimientoContable.objects.filter(
-            empresa=empresa,
-            cuenta_fk=cuenta_costo_ventas,
-            tipo='debito'
-        ).aggregate(total=Sum('monto'))['total'] or 0
-    except CuentaContable.DoesNotExist:
-        pass
-    try:
-        cuenta_gastos = CuentaContable.objects.get(empresa=empresa, nombre__iexact='Gastos')
-        gastos = MovimientoContable.objects.filter(
-            empresa=empresa,
-            cuenta_fk=cuenta_gastos,
-            tipo='debito'
-        ).aggregate(total=Sum('monto'))['total'] or 0
-    except CuentaContable.DoesNotExist:
-        gastos = 0
-    utilidad_bruta = ventas - compras
+    """Totales del estado de resultados de toda la empresa, desde el libro contable.
+
+    Utilidad bruta = Ventas - Costo de Ventas (costo de la mercadería vendida).
+    Las compras NO se restan: comprar mercadería aumenta el Inventario (un
+    activo) y solo se vuelve costo cuando esa mercadería se vende.
+
+    La clave 'compras' se conserva por compatibilidad y vale lo mismo que
+    'costo_ventas'.
+    """
+    from empresa.services.saldos import saldo_cuenta
+
+    ventas = saldo_cuenta(empresa, 'Ventas')
+    costo_ventas = saldo_cuenta(empresa, 'Costo de Ventas')
+    gastos = saldo_cuenta(empresa, 'Gastos')
+    utilidad_bruta = ventas - costo_ventas
     utilidad_neta = utilidad_bruta - gastos
     return {
         'ventas': float(ventas),
-        'compras': float(compras),
+        'costo_ventas': float(costo_ventas),
+        'compras': float(costo_ventas),
         'gastos': float(gastos),
         'utilidad_bruta': float(utilidad_bruta),
         'utilidad_neta': float(utilidad_neta)
@@ -296,45 +271,21 @@ def resumen_financiero(request):
         ratio_gastos_ventas = (totales['gastos'] / totales['ventas'] * 100) if totales['ventas'] > 0 else 0
         ratio_costos = (totales['compras'] / totales['ventas'] * 100) if totales['ventas'] > 0 else 0
         
-        # Calcular indicadores de solvencia
-        try:
-            # Obtener valores de cuentas contables, manejando None
-            activos_cuentas = CuentaContable.objects.filter(empresa=empresa, tipo='activo')
-            total_activos = sum(float(cuenta.valor) if cuenta.valor else 0 for cuenta in activos_cuentas) or 1
-            
-            pasivos_cuentas = CuentaContable.objects.filter(empresa=empresa, tipo='pasivo')
-            total_pasivos = sum(float(cuenta.valor) if cuenta.valor else 0 for cuenta in pasivos_cuentas) or 1
-            
-            capital_cuentas = CuentaContable.objects.filter(empresa=empresa, tipo='capital')
-            total_capital = sum(float(cuenta.valor) if cuenta.valor else 0 for cuenta in capital_cuentas) or 0
-            
-            logger.info(f"DEBUG - Total activos: {total_activos}, Total pasivos: {total_pasivos}")
-        except Exception as e:
-            logger.error(f"Error calculando cuentas contables: {e}")
-            total_activos = 1
-            total_pasivos = 1
-            total_capital = 0
-        
-        # Convertir a float para evitar mezcla de tipos
-        total_activos_f = float(total_activos)
-        total_pasivos_f = float(total_pasivos)
+        # Indicadores de solvencia con saldos reales del libro contable.
+        from empresa.services.saldos import resumen_balance
+        balance = resumen_balance(empresa)
+        activo_corriente = float(balance['activo_corriente'])
+        total_activos_f = float(balance['activo_total'])
+        total_pasivos_f = float(balance['pasivo_total'])
+        # Patrimonio = capital aportado + resultado del ejercicio (aún no cerrado a capital).
+        patrimonio = float(balance['capital']) + totales['utilidad_neta']
         ventas_f = float(totales['ventas'])
-        
-        # Calcular ratios solo si hay valores válidos
-        if total_activos_f > 0 and total_pasivos_f > 0:
-            liquidez = round(total_activos_f / total_pasivos_f, 2)
-        else:
-            liquidez = 0.0
-            
-        if total_activos_f > 0 and total_pasivos_f > 0:
-            endeudamiento = round(total_pasivos_f / total_activos_f, 2)
-        else:
-            endeudamiento = 0.0
-            
-        if total_activos_f > 0:
-            rotacion_activos = round(ventas_f / total_activos_f, 2)
-        else:
-            rotacion_activos = 0.0
+
+        # Liquidez corriente: activo corriente / pasivo (todo el pasivo actual es de corto plazo).
+        liquidez = round(activo_corriente / total_pasivos_f, 2) if total_pasivos_f > 0 else None
+        endeudamiento = round(total_pasivos_f / total_activos_f, 2) if total_activos_f > 0 else 0.0
+        rotacion_activos = round(ventas_f / total_activos_f, 2) if total_activos_f > 0 else 0.0
+        roe = round(totales['utilidad_neta'] / patrimonio * 100, 2) if patrimonio > 0 else None
         
         logger.info(f"Indicadores de solvencia OK: liquidez={liquidez}, endeudamiento={endeudamiento}, rotacion={rotacion_activos}")
         
@@ -427,9 +378,11 @@ def resumen_financiero(request):
             'liquidez': liquidez,
             'endeudamiento': endeudamiento,
             'rotacion_activos': rotacion_activos,
-            'total_activos': round(float(total_activos), 2),
-            'total_pasivos': round(float(total_pasivos), 2),
-            'total_capital': total_capital,
+            'roe': roe,
+            'costo_ventas': totales.get('costo_ventas', 0),
+            'total_activos': round(total_activos_f, 2),
+            'total_pasivos': round(total_pasivos_f, 2),
+            'total_capital': round(patrimonio, 2),
             'analisis_predictivo': analisis_predictivo
         }
         logger.info("Contexto OK")
@@ -460,12 +413,11 @@ def resumen_financiero(request):
         contexto['liquidez'] = liquidez
         contexto['endeudamiento'] = endeudamiento
         contexto['rotacion_activos'] = rotacion_activos
-        contexto['total_activos'] = round(float(total_activos), 2)
-        contexto['total_pasivos'] = round(float(total_pasivos), 2)
-        contexto['total_capital'] = total_capital
+        contexto['roe'] = roe
+        contexto['total_activos'] = round(total_activos_f, 2)
+        contexto['total_pasivos'] = round(total_pasivos_f, 2)
+        contexto['total_capital'] = round(patrimonio, 2)
         contexto['analisis_predictivo'] = analisis_predictivo
-        
-        logger.info(f"DEBUG - Contexto final con liquidez: {contexto.get('liquidez')}, endeudamiento: {contexto.get('endeudamiento')}")
 
         logger.info("Renderizando template...")
         # Selección de plantilla por categoría con fallback

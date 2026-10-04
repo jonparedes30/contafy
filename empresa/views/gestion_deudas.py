@@ -7,6 +7,7 @@ from django.db import transaction
 from decimal import Decimal
 from datetime import date, timedelta
 from empresa.models import CuentaPorCobrar, CuentaPorPagar, PagoCuentaPorCobrar, PagoCuentaPorPagar
+from empresa.utils.money import parse_monto, MontoInvalido
 import logging
 
 logger = logging.getLogger(__name__)
@@ -59,85 +60,58 @@ def gestion_deudas(request):
             "mensaje": "Error al cargar la gestión de deudas. El equipo técnico ha sido notificado."
         }, status=500)
 
+def _registrar_pago(request, modelo_cuenta, modelo_pago, campo_cuenta):
+    """Registra un pago parcial o total sobre una cuenta por cobrar/pagar."""
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'error': 'Método no permitido'}, status=405)
+
+    try:
+        monto_pagado = parse_monto(request.POST.get('monto_pagado'), 'Monto pagado')
+    except MontoInvalido as e:
+        return JsonResponse({'success': False, 'error': str(e)})
+
+    if monto_pagado <= 0:
+        return JsonResponse({'success': False, 'error': 'El monto pagado debe ser mayor a 0.'})
+
+    metodo_pago = request.POST.get('metodo_pago', 'efectivo')
+    cuenta = get_object_or_404(modelo_cuenta, id=request.POST.get('cuenta_id'), empresa=request.user.empresa)
+
+    if monto_pagado > cuenta.monto_pendiente:
+        return JsonResponse({
+            'success': False,
+            'error': f'El monto no puede ser mayor al pendiente (${cuenta.monto_pendiente:.2f}).'
+        })
+
+    try:
+        with transaction.atomic():
+            # El save() del pago actualiza el saldo de la cuenta.
+            modelo_pago.objects.create(
+                empresa=request.user.empresa,
+                monto_pagado=monto_pagado,
+                metodo_pago=metodo_pago,
+                **{campo_cuenta: cuenta},
+            )
+    except Exception:
+        logger.exception('Error registrando pago en %s %s', modelo_cuenta.__name__, cuenta.id)
+        return JsonResponse({'success': False, 'error': 'No se pudo registrar el pago. Inténtalo de nuevo.'})
+
+    return JsonResponse({
+        'success': True,
+        'mensaje': f'Pago de ${monto_pagado:.2f} registrado correctamente'
+    })
+
+
 @login_required
 def registrar_pago_cobrar(request):
     """Registrar pago recibido de cuenta por cobrar"""
-    if request.method == 'POST':
-        try:
-            cuenta_id = request.POST.get('cuenta_id')
-            monto_pagado = Decimal(request.POST.get('monto_pagado'))
-            metodo_pago = request.POST.get('metodo_pago', 'efectivo')
-            
-            cuenta = get_object_or_404(CuentaPorCobrar, 
-                id=cuenta_id, 
-                empresa=request.user.empresa
-            )
-            
-            if monto_pagado > cuenta.monto_pendiente:
-                return JsonResponse({
-                    'success': False, 
-                    'error': 'El monto no puede ser mayor al pendiente'
-                })
-            
-            with transaction.atomic():
-                # Crear registro de pago (el modelo se encarga de actualizar la cuenta)
-                pago = PagoCuentaPorCobrar.objects.create(
-                    empresa=request.user.empresa,
-                    cuenta_por_cobrar=cuenta,
-                    monto_pagado=monto_pagado,
-                    metodo_pago=metodo_pago
-                )
-                # La cuenta se actualiza automáticamente en el método save() del modelo PagoCuentaPorCobrar
-            
-            return JsonResponse({
-                'success': True,
-                'mensaje': f'Pago de ${monto_pagado} registrado correctamente'
-            })
-            
-        except Exception as e:
-            return JsonResponse({'success': False, 'error': str(e)})
-    
-    return JsonResponse({'success': False, 'error': 'Método no permitido'})
+    return _registrar_pago(request, CuentaPorCobrar, PagoCuentaPorCobrar, 'cuenta_por_cobrar')
+
 
 @login_required
 def registrar_pago_pagar(request):
     """Registrar pago realizado de cuenta por pagar"""
-    if request.method == 'POST':
-        try:
-            cuenta_id = request.POST.get('cuenta_id')
-            monto_pagado = Decimal(request.POST.get('monto_pagado'))
-            metodo_pago = request.POST.get('metodo_pago', 'efectivo')
-            
-            cuenta = get_object_or_404(CuentaPorPagar, 
-                id=cuenta_id, 
-                empresa=request.user.empresa
-            )
-            
-            if monto_pagado > cuenta.monto_pendiente:
-                return JsonResponse({
-                    'success': False, 
-                    'error': 'El monto no puede ser mayor al pendiente'
-                })
-            
-            with transaction.atomic():
-                # Crear registro de pago (el modelo se encarga de actualizar la cuenta)
-                pago = PagoCuentaPorPagar.objects.create(
-                    empresa=request.user.empresa,
-                    cuenta_por_pagar=cuenta,
-                    monto_pagado=monto_pagado,
-                    metodo_pago=metodo_pago
-                )
-                # La cuenta se actualiza automáticamente en el método save() del modelo PagoCuentaPorPagar
-            
-            return JsonResponse({
-                'success': True,
-                'mensaje': f'Pago de ${monto_pagado} registrado correctamente'
-            })
-            
-        except Exception as e:
-            return JsonResponse({'success': False, 'error': str(e)})
-    
-    return JsonResponse({'success': False, 'error': 'Método no permitido'})
+    return _registrar_pago(request, CuentaPorPagar, PagoCuentaPorPagar, 'cuenta_por_pagar')
+
 
 @login_required
 def api_cuentas_cobrar(request):

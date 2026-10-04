@@ -27,7 +27,14 @@ class Command(BaseCommand):
             
             # 3. DEMO SERVICIOS - Peluquería
             self.crear_demo_servicios()
-        
+
+            # Los productos se crean con stock pero sin asiento de inventario
+            # inicial: regularizar para que la cuenta Inventario no quede negativa.
+            from empresa.management.commands.regularizar_inventario import regularizar
+            for usuario in Usuario.objects.filter(username__in=['demo_comercio', 'demo_manufactura', 'demo_servicios']):
+                if usuario.empresa:
+                    regularizar(usuario.empresa)
+
         self.stdout.write(self.style.SUCCESS('\n✅ Cuentas demo creadas exitosamente!\n'))
         self.mostrar_credenciales()
 
@@ -410,19 +417,19 @@ class Command(BaseCommand):
         # Servicios como productos
         servicios = [
             Producto.objects.create(empresa=empresa, codigo='SRV001', nombre='Corte Dama', descripcion='Corte de cabello para dama', 
-                                   precio_unitario=Decimal('3.00'), pvp=Decimal('12.00'), stock=999, categoria=cat_cortes),
+                                   precio_unitario=Decimal('3.00'), pvp=Decimal('12.00'), stock=999, es_servicio=True, categoria=cat_cortes),
             Producto.objects.create(empresa=empresa, codigo='SRV002', nombre='Corte Caballero', descripcion='Corte de cabello para caballero', 
-                                   precio_unitario=Decimal('2.00'), pvp=Decimal('8.00'), stock=999, categoria=cat_cortes),
+                                   precio_unitario=Decimal('2.00'), pvp=Decimal('8.00'), stock=999, es_servicio=True, categoria=cat_cortes),
             Producto.objects.create(empresa=empresa, codigo='SRV003', nombre='Tinte Completo', descripcion='Tinte de cabello completo', 
-                                   precio_unitario=Decimal('8.00'), pvp=Decimal('35.00'), stock=999, categoria=cat_tratamientos),
+                                   precio_unitario=Decimal('8.00'), pvp=Decimal('35.00'), stock=999, es_servicio=True, categoria=cat_tratamientos),
             Producto.objects.create(empresa=empresa, codigo='SRV004', nombre='Mechas', descripcion='Aplicación de mechas', 
-                                   precio_unitario=Decimal('10.00'), pvp=Decimal('45.00'), stock=999, categoria=cat_tratamientos),
+                                   precio_unitario=Decimal('10.00'), pvp=Decimal('45.00'), stock=999, es_servicio=True, categoria=cat_tratamientos),
             Producto.objects.create(empresa=empresa, codigo='SRV005', nombre='Keratina', descripcion='Tratamiento de keratina', 
-                                   precio_unitario=Decimal('15.00'), pvp=Decimal('80.00'), stock=999, categoria=cat_tratamientos),
+                                   precio_unitario=Decimal('15.00'), pvp=Decimal('80.00'), stock=999, es_servicio=True, categoria=cat_tratamientos),
             Producto.objects.create(empresa=empresa, codigo='SRV006', nombre='Manicure', descripcion='Manicure completo', 
-                                   precio_unitario=Decimal('2.50'), pvp=Decimal('10.00'), stock=999, categoria=cat_tratamientos),
+                                   precio_unitario=Decimal('2.50'), pvp=Decimal('10.00'), stock=999, es_servicio=True, categoria=cat_tratamientos),
             Producto.objects.create(empresa=empresa, codigo='SRV007', nombre='Pedicure', descripcion='Pedicure completo', 
-                                   precio_unitario=Decimal('3.00'), pvp=Decimal('12.00'), stock=999, categoria=cat_tratamientos),
+                                   precio_unitario=Decimal('3.00'), pvp=Decimal('12.00'), stock=999, es_servicio=True, categoria=cat_tratamientos),
         ]
         
         # Productos de venta

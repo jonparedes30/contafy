@@ -1,7 +1,7 @@
 from django.shortcuts import render
 from django.contrib.auth.decorators import login_required
 from django.http import HttpResponse
-from django.db.models import Sum, Count, Avg
+from django.db.models import Sum, Count, Avg, F
 from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import letter, A4
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, PageBreak
@@ -89,14 +89,18 @@ def exportar_pdf_comercio_bancario(request):
     
     # Resumen ejecutivo
     elements.append(Paragraph("RESUMEN EJECUTIVO", styles['Heading2']))
-    ventas_total = Venta.objects.filter(empresa=empresa).aggregate(total=Sum('monto'))['total'] or 0
-    gastos_total = Gasto.objects.filter(empresa=empresa).aggregate(total=Sum('monto'))['total'] or 0
-    utilidad = ventas_total - gastos_total
+    from empresa.views.resumen import obtener_totales_contables
+    totales = obtener_totales_contables(empresa)
+    ventas_total = totales['ventas']          # sin IVA, desde el libro contable
+    costo_total = totales['costo_ventas']
+    gastos_total = totales['gastos']
+    utilidad = totales['utilidad_neta']       # ventas - costo de ventas - gastos
     
     resumen_data = [
         ['Concepto', 'Monto (USD)', 'Porcentaje'],
-        ['Ingresos Totales', f"${ventas_total:,.2f}", "100%"],
-        ['Gastos Totales', f"${gastos_total:,.2f}", f"{(gastos_total/ventas_total*100) if ventas_total > 0 else 0:.1f}%"],
+        ['Ingresos Totales (sin IVA)', f"${ventas_total:,.2f}", "100%"],
+        ['Costo de Ventas', f"${costo_total:,.2f}", f"{(costo_total/ventas_total*100) if ventas_total > 0 else 0:.1f}%"],
+        ['Gastos Operativos', f"${gastos_total:,.2f}", f"{(gastos_total/ventas_total*100) if ventas_total > 0 else 0:.1f}%"],
         ['Utilidad Neta', f"${utilidad:,.2f}", f"{(utilidad/ventas_total*100) if ventas_total > 0 else 0:.1f}%"],
         ['Margen de Utilidad', f"{(utilidad/ventas_total*100) if ventas_total > 0 else 0:.1f}%", ""],
     ]
@@ -162,47 +166,12 @@ def exportar_pdf_comercio_bancario(request):
 
 @login_required
 def exportar_pdf_comercio_interno(request):
+    from empresa.services.pdf_reportes import reporte_interno_pdf
     empresa = request.user.empresa
-    buffer = io.BytesIO()
-    doc = SimpleDocTemplate(buffer, pagesize=letter)
-    styles = getSampleStyleSheet()
-    elements = []
-    
-    # Título simple
-    elements.append(Paragraph(f"Reporte Interno - {empresa.nombre}", styles['Title']))
-    elements.append(Paragraph(f"Fecha: {datetime.now().strftime('%d/%m/%Y')}", styles['Normal']))
-    elements.append(Spacer(1, 20))
-    
-    # Métricas básicas
-    ventas_mes = Venta.objects.filter(empresa=empresa, fecha__month=datetime.now().month).aggregate(total=Sum('monto'))['total'] or 0
-    gastos_mes = Gasto.objects.filter(empresa=empresa, fecha__month=datetime.now().month).aggregate(total=Sum('monto'))['total'] or 0
-    
-    metricas_data = [
-        ['Métrica', 'Valor'],
-        ['Ventas del Mes', f"${ventas_mes:,.2f}"],
-        ['Gastos del Mes', f"${gastos_mes:,.2f}"],
-        ['Utilidad del Mes', f"${ventas_mes - gastos_mes:,.2f}"],
-        ['Productos Activos', f"{Producto.objects.filter(empresa=empresa).count()}"],
-    ]
-    
-    table = Table(metricas_data)
-    table.setStyle(TableStyle([
-        ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
-        ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
-        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-        ('FONTSIZE', (0, 0), (-1, 0), 14),
-        ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
-        ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
-        ('GRID', (0, 0), (-1, -1), 1, colors.black)
-    ]))
-    elements.append(table)
-    
-    doc.build(elements)
-    buffer.seek(0)
-    
-    response = HttpResponse(buffer.getvalue(), content_type='application/pdf')
-    response['Content-Disposition'] = f'attachment; filename="reporte_interno_{empresa.nombre}_{datetime.now().strftime("%Y%m%d")}.pdf"'
+    response = HttpResponse(reporte_interno_pdf(empresa), content_type='application/pdf')
+    response['Content-Disposition'] = (
+        f'attachment; filename="reporte_interno_{datetime.now().strftime("%Y%m%d")}.pdf"'
+    )
     return response
 
 @login_required
@@ -290,43 +259,10 @@ def exportar_pdf_manufactura_bancario(request):
 
 @login_required
 def exportar_pdf_manufactura_interno(request):
+    from empresa.services.pdf_reportes import reporte_interno_pdf
     empresa = request.user.empresa
-    buffer = io.BytesIO()
-    doc = SimpleDocTemplate(buffer, pagesize=letter)
-    styles = getSampleStyleSheet()
-    elements = []
-    
-    # Título simple
-    elements.append(Paragraph(f"Reporte Operativo - {empresa.nombre}", styles['Title']))
-    elements.append(Paragraph(f"Fecha: {datetime.now().strftime('%d/%m/%Y')}", styles['Normal']))
-    elements.append(Spacer(1, 20))
-    
-    # Métricas operativas
-    metricas_data = [
-        ['Métrica', 'Valor'],
-        ['Materias Primas', f"{MateriaPrima.objects.filter(empresa=empresa).count()}"],
-        ['Productos Activos', f"{ProductoManufacturado.objects.filter(empresa=empresa, activo=True).count()}"],
-        ['Órdenes Pendientes', f"{OrdenProduccion.objects.filter(empresa=empresa, estado='pendiente').count()}"],
-        ['Órdenes en Proceso', f"{OrdenProduccion.objects.filter(empresa=empresa, estado='en_proceso').count()}"],
-        ['Órdenes Completadas', f"{OrdenProduccion.objects.filter(empresa=empresa, estado='completada').count()}"],
-    ]
-    
-    table = Table(metricas_data)
-    table.setStyle(TableStyle([
-        ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
-        ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
-        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-        ('FONTSIZE', (0, 0), (-1, 0), 14),
-        ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
-        ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
-        ('GRID', (0, 0), (-1, -1), 1, colors.black)
-    ]))
-    elements.append(table)
-    
-    doc.build(elements)
-    buffer.seek(0)
-    
-    response = HttpResponse(buffer.getvalue(), content_type='application/pdf')
-    response['Content-Disposition'] = f'attachment; filename="reporte_operativo_{empresa.nombre}_{datetime.now().strftime("%Y%m%d")}.pdf"'
+    response = HttpResponse(reporte_interno_pdf(empresa), content_type='application/pdf')
+    response['Content-Disposition'] = (
+        f'attachment; filename="reporte_interno_{datetime.now().strftime("%Y%m%d")}.pdf"'
+    )
     return response

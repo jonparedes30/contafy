@@ -8,7 +8,8 @@ from decimal import Decimal
 from django.shortcuts import render
 from django.contrib.auth.decorators import login_required
 from django.http import HttpResponse
-from django.db.models import Sum, Avg, Count, Q
+from django.db.models import Sum, Avg, Count, Q, F, Value, CharField
+from django.db.models.functions import Coalesce, NullIf
 from django.utils import timezone
 HAS_REPORTLAB = True
 try:
@@ -37,6 +38,16 @@ except Exception:
 
 from empresa.models import Venta, Gasto, Producto, Compra, Empresa, MetaFinanciera, CuentaContable, MovimientoContable
 from empresa.views.resumen import obtener_totales_contables
+
+# Nombre visible del cliente/proveedor: el registrado (FK) o el texto libre de la venta/compra.
+NOMBRE_CLIENTE = Coalesce(
+    'cliente_fk__nombre', NullIf('cliente_nombre', Value('')), Value('Cliente General'),
+    output_field=CharField(),
+)
+NOMBRE_PROVEEDOR = Coalesce(
+    'proveedor_fk__nombre', NullIf('proveedor_nombre', Value('')), Value('Sin proveedor'),
+    output_field=CharField(),
+)
 
 # Helper decorator to ensure heavy optional libs are available when export endpoints are called
 def _requires_export_libs(func):
@@ -98,7 +109,7 @@ def exportar_excel_ventas(request):
                 min_monto = monto.replace('+', '')
                 ventas = ventas.filter(monto__gte=float(min_monto))
         # --- Exportar solo la hoja de ventas filtradas ---
-        ventas_data = list(ventas.values(
+        ventas_data = list(ventas.annotate(cliente=NOMBRE_CLIENTE, total=F('monto')).values(
             'fecha', 'producto__nombre', 'cliente', 'cantidad', 'precio_unitario', 'total'
         ))
         df_ventas = pd.DataFrame(ventas_data)
@@ -336,7 +347,7 @@ def exportar_excel_compras(request):
                 min_monto = monto.replace('+', '')
                 compras = compras.filter(monto__gte=float(min_monto))
         # --- Exportar solo la hoja de compras filtradas ---
-        compras_data = list(compras.values(
+        compras_data = list(compras.annotate(proveedor=NOMBRE_PROVEEDOR, total=F('monto')).values(
             'fecha', 'producto__nombre', 'proveedor', 'cantidad', 'total'
         ))
         df_compras = pd.DataFrame(compras_data)
@@ -958,7 +969,7 @@ def exportar_pdf_usuario(request):
     gastos_cat_data = [['Categoría', 'Total', '% del Total']]
     if gastos_por_categoria:
         for item in gastos_por_categoria:
-            porcentaje = (item['total'] / total_gastos * 100) if total_gastos > 0 else 0
+            porcentaje = (float(item['total']) / float(total_gastos) * 100) if total_gastos > 0 else 0
             gastos_cat_data.append([
                 item['categoria'],
                 f"${item['total']:,.2f}",
@@ -990,7 +1001,7 @@ def exportar_pdf_usuario(request):
     # Calcular indicadores financieros
     productos_count = productos.count()
     stock_total = productos.aggregate(total=Sum('stock'))['total'] or 0
-    valor_inventario = sum(p.precio_unitario * p.stock for p in productos)
+    valor_inventario = float(sum(p.precio_unitario * p.stock for p in productos.filter(es_servicio=False)))
     
     # Rotación de inventario (aproximada)
     rotacion_inventario = total_ventas / valor_inventario if valor_inventario > 0 else 0
@@ -1105,6 +1116,7 @@ def exportar_pdf_usuario(request):
 def exportar_pdf_profesional(request):
     """Exporta reporte PDF profesional para bancos con análisis financieros avanzados"""
     empresa = request.user.empresa
+    totales = obtener_totales_contables(empresa)
     
     # Crear buffer para el PDF
     buffer = BytesIO()
@@ -1179,15 +1191,17 @@ def exportar_pdf_profesional(request):
     
     total_ventas = totales['ventas'] or 0
     total_gastos = totales['gastos'] or 0
-    utilidad = total_ventas - total_gastos
+    costo_ventas = totales['costo_ventas'] or 0
+    utilidad = totales['utilidad_neta']
     margen_utilidad = (utilidad / total_ventas * 100) if total_ventas > 0 else 0
-    
+
     resumen_data = [
-        ['📊 Indicador Financiero', '💰 Valor', '📈 Estado', '📋 Análisis'],
-        ['Ingresos Totales', f'${total_ventas:,.2f}', '✅', 'Base de ingresos de la empresa'],
-        ['Gastos Totales', f'${total_gastos:,.2f}', '⚠️', 'Costos operativos'],
-        ['Utilidad Neta', f'${utilidad:,.2f}', '✅' if utilidad > 0 else '❌', 'Rentabilidad del negocio'],
-        ['Margen de Utilidad', f'{margen_utilidad:.1f}%', '✅' if margen_utilidad > 15 else '⚠️', 'Eficiencia operativa']
+        ['Indicador Financiero', 'Valor', 'Estado', 'Análisis'],
+        ['Ingresos Totales', f'${total_ventas:,.2f}', 'OK', 'Base de ingresos de la empresa'],
+        ['Costo de Ventas', f'${costo_ventas:,.2f}', '-', 'Costo de la mercadería vendida'],
+        ['Gastos Operativos', f'${total_gastos:,.2f}', '-', 'Gastos del período'],
+        ['Utilidad Neta', f'${utilidad:,.2f}', 'OK' if utilidad > 0 else 'Pérdida', 'Rentabilidad del negocio'],
+        ['Margen de Utilidad', f'{margen_utilidad:.1f}%', 'OK' if margen_utilidad > 15 else 'Revisar', 'Eficiencia operativa']
     ]
     
     resumen_table = Table(resumen_data, colWidths=[2*inch, 1.5*inch, 0.5*inch, 2.5*inch])
@@ -1210,7 +1224,7 @@ def exportar_pdf_profesional(request):
     story.append(Paragraph("ANÁLISIS DE RENTABILIDAD", section_style))
     
     # Calcular indicadores financieros avanzados
-    valor_inventario = sum(p.precio_unitario * p.stock for p in productos)
+    valor_inventario = float(sum(p.precio_unitario * p.stock for p in productos.filter(es_servicio=False)))
     rotacion_inventario = total_ventas / valor_inventario if valor_inventario > 0 else 0
     
     # ROA (Return on Assets) - Retorno sobre activos
@@ -1303,7 +1317,7 @@ def exportar_pdf_profesional(request):
     story.append(Paragraph("ANÁLISIS DE RIESGOS", section_style))
     
     # Calcular indicadores de riesgo
-    gastos_fijos = gastos.filter(categoria='Fijo').aggregate(total=Sum('monto'))['total'] or 0
+    gastos_fijos = float(gastos.filter(categoria='Fijo').aggregate(total=Sum('monto'))['total'] or 0)
     gastos_variables = gastos.filter(categoria='Variable').aggregate(total=Sum('monto'))['total'] or 0
     
     # Ratio de cobertura de gastos
@@ -1312,7 +1326,7 @@ def exportar_pdf_profesional(request):
     # Concentración de productos
     productos_vendidos = ventas.values('producto__nombre').annotate(total=Sum('monto')).order_by('-total')
     if productos_vendidos:
-        producto_principal = productos_vendidos[0]['total']
+        producto_principal = float(productos_vendidos[0]['total'])
         concentracion = (producto_principal / total_ventas * 100) if total_ventas > 0 else 0
     else:
         concentracion = 0
@@ -1324,9 +1338,9 @@ def exportar_pdf_profesional(request):
         ['Concentración Productos', f'{concentracion:.1f}%', 'Bajo' if concentracion < 30 else 'Alto',
          'Diversificar productos'],
         ['Gastos Fijos', f'{gastos_fijos/total_gastos*100:.1f}%' if total_gastos > 0 else '0%', 
-         'Bajo' if gastos_fijos/total_gastos < 0.7 else 'Alto', 'Controlar gastos fijos'],
+         'Bajo' if total_gastos == 0 or gastos_fijos/total_gastos < 0.7 else 'Alto', 'Controlar gastos fijos'],
         ['Liquidez Operativa', f'{utilidad/total_gastos*100:.1f}%' if total_gastos > 0 else '0%',
-         'Bajo' if utilidad/total_gastos > 0.2 else 'Alto', 'Mejorar eficiencia']
+         'Bajo' if total_gastos == 0 or utilidad/total_gastos > 0.2 else 'Alto', 'Mejorar eficiencia']
     ]
     
     riesgos_table = Table(riesgos_data, colWidths=[2*inch, 1*inch, 1*inch, 2.5*inch])
@@ -1348,13 +1362,12 @@ def exportar_pdf_profesional(request):
     story.append(Paragraph("PROYECCIONES FINANCIERAS", section_style))
     
     # Proyección simple basada en tendencias
-    ventas_promedio = sum(ventas_mensuales) / len(ventas_mensuales) if ventas_mensuales else 0
-    gastos_promedio = total_gastos / 12  # Simplificado
-    
+    ventas_promedio = float(sum(ventas_mensuales)) / len(ventas_mensuales) if ventas_mensuales else 0.0
+    gastos_promedio = float(total_gastos) / 12  # Simplificado
+
     # Proyección conservadora y optimista
-    ventas_promedio = Decimal(ventas_promedio)
-    proyeccion_conservadora = ventas_promedio * Decimal('0.9')  # -10%
-    proyeccion_optimista = ventas_promedio * Decimal('1.2')     # +20%
+    proyeccion_conservadora = ventas_promedio * 0.9  # -10%
+    proyeccion_optimista = ventas_promedio * 1.2     # +20%
     
     proyecciones_data = [
         ['Escenario', 'Ventas Mensuales', 'Utilidad Mensual', 'Margen'],
@@ -2296,7 +2309,7 @@ def exportar_excel_completo(request):
             
             # 5. HOJA: VENTAS
             if ventas.exists():
-                ventas_data = list(ventas.values(
+                ventas_data = list(ventas.annotate(cliente=NOMBRE_CLIENTE, total=F('monto')).values(
                     'fecha', 'producto__nombre', 'cliente', 'cantidad', 'precio_unitario', 'total'
                 ))
                 df_ventas = pd.DataFrame(ventas_data)
@@ -2324,7 +2337,7 @@ def exportar_excel_completo(request):
             
             # 6. HOJA: COMPRAS
             if compras.exists():
-                compras_data = list(compras.values(
+                compras_data = list(compras.annotate(proveedor=NOMBRE_PROVEEDOR, total=F('monto')).values(
                     'fecha', 'producto__nombre', 'proveedor', 'cantidad', 'total'
                 ))
                 df_compras = pd.DataFrame(compras_data)
@@ -2418,7 +2431,7 @@ def exportar_excel_completo(request):
                         'Mes': venta.fecha.strftime('%B %Y'),
                         'Año': venta.fecha.year,
                         'Mes_Num': venta.fecha.month,
-                        'Total': venta.total
+                        'Total': venta.monto
                     })
                 
                 if ventas_mensuales:
@@ -2443,7 +2456,7 @@ def exportar_excel_completo(request):
             
             # 10. HOJA: TOP PRODUCTOS
             if ventas.exists():
-                ventas_data = list(ventas.values('producto__nombre', 'cantidad', 'total'))
+                ventas_data = list(ventas.annotate(total=F('monto')).values('producto__nombre', 'cantidad', 'total'))
                 if ventas_data:
                     df_top_productos = pd.DataFrame(ventas_data)
                     df_top_productos = df_top_productos.groupby('producto__nombre').agg({
@@ -2499,14 +2512,14 @@ def exportar_excel_iva(request):
             empresa=empresa,
             fecha__month=mes,
             fecha__year=anio
-        ).values('fecha', 'producto__nombre', 'cliente_display', 'monto_neto', 'iva', 'monto')
+        ).annotate(cliente_display=NOMBRE_CLIENTE).values('fecha', 'producto__nombre', 'cliente_display', 'monto_neto', 'iva', 'monto')
         
         # IVA crédito fiscal (compras)
         compras_iva = Compra.objects.filter(
             empresa=empresa,
             fecha__month=mes,
             fecha__year=anio
-        ).values('fecha', 'producto__nombre', 'proveedor_display', 'monto_neto', 'iva', 'monto')
+        ).annotate(proveedor_display=NOMBRE_PROVEEDOR).values('fecha', 'producto__nombre', 'proveedor_display', 'monto_neto', 'iva', 'monto')
         
         output = BytesIO()
         with pd.ExcelWriter(output, engine='xlsxwriter') as writer:

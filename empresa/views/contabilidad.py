@@ -1,5 +1,6 @@
 from django.shortcuts import render
 from datetime import datetime
+from decimal import Decimal
 from django.contrib.auth.decorators import login_required
 from django.db.models import Sum, Q
 from empresa.models import Venta, Compra, Gasto, CuentaContable, MovimientoContable
@@ -398,9 +399,13 @@ def registrar_movimiento_contable(
             tipo='debito'
         ).aggregate(total=Sum('monto'))['total'] or 0
     
-    # Validar que el movimiento no genere saldo negativo en activos o capital
-    if cuenta_debito.tipo in ['activo', 'capital'] and (saldo_debito + monto) < 0:
-        raise ValueError(f"El movimiento generaría un saldo negativo en la cuenta '{cuenta_debito.nombre}' ({cuenta_debito.tipo})")
+    # Un débito AUMENTA activos (comprar mercadería nunca debe bloquearse) y
+    # DISMINUYE el capital: solo ahí puede dejar la cuenta en negativo.
+    if cuenta_debito.tipo == 'capital' and (Decimal(saldo_debito) - Decimal(monto)) < 0:
+        raise ValueError(
+            f"El movimiento dejaría la cuenta '{cuenta_debito.nombre}' en negativo "
+            f"(saldo disponible: ${Decimal(saldo_debito):,.2f})"
+        )
     
     # Registrar movimientos débito + crédito agrupados en una sola transacción
     # (garantiza que compartan el mismo transaccion_id - partida doble correcta)
