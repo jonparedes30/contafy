@@ -92,11 +92,18 @@ def eliminar_datos_visitantes(empresa):
         gasto.delete()
         total += 1
 
+    from empresa.services.capital_service import descripcion_asiento
+    asientos_capital_original = [
+        descripcion_asiento(c) for c in _modelo('Capital').objects.filter(
+            empresa=empresa, creado_en__lte=PROTECTION_DATE)
+    ]
     for nombre in MODELOS_VISITANTE:
         qs = _modelo(nombre).objects.filter(**nuevos)
         if nombre == 'MovimientoContable':
-            # Los asientos de regularización son del sistema, no de visitantes.
-            qs = qs.exclude(descripcion__startswith='Regularización')
+            # Son del sistema, no de visitantes: regularizaciones y el asiento del
+            # capital original (creado después por la migración 0032).
+            qs = qs.exclude(descripcion__startswith='Regularización').exclude(
+                descripcion__in=asientos_capital_original)
         borrados, _ = qs.delete()
         total += borrados
     return total
@@ -158,6 +165,21 @@ def vincular_asientos_huerfanos(empresa):
     return enlazados
 
 
+def asentar_capital_original(empresa):
+    """Registra el asiento del capital sembrado que no lo tenga. Devuelve cuántos registró."""
+    from empresa.services.capital_service import descripcion_asiento, registrar_asiento_capital
+    MovimientoContable = _modelo('MovimientoContable')
+    registrados = 0
+    for capital in _modelo('Capital').objects.filter(empresa=empresa, creado_en__lte=PROTECTION_DATE):
+        if not MovimientoContable.objects.filter(
+                empresa=empresa, descripcion=descripcion_asiento(capital), monto=capital.monto).exists():
+            registrar_asiento_capital(capital)
+            MovimientoContable.objects.filter(
+                empresa=empresa, descripcion=descripcion_asiento(capital)).update(fecha=capital.fecha)
+            registrados += 1
+    return registrados
+
+
 def rejuvenecer(empresa):
     """Desplaza las fechas para que la última operación sea de ayer. Devuelve los días desplazados."""
     # Anclar en la última operación de cualquier tipo: si se anclara solo en
@@ -211,6 +233,7 @@ class Command(BaseCommand):
             with transaction.atomic():
                 borrados = eliminar_datos_visitantes(empresa)
                 enlazados = vincular_asientos_huerfanos(empresa)
+                asentar_capital_original(empresa)
                 dias = rejuvenecer(empresa)
                 _, _, ajuste = regularizar(empresa)
 
