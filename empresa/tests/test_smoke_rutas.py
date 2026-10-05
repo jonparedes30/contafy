@@ -19,8 +19,9 @@ from empresa.models import Compra, Empresa, Gasto, Producto, Venta
 User = get_user_model()
 
 # Rutas que no se prueban porque modifican datos o dependen de servicios externos.
+# Las rutas de IA sí se prueban: sin clave en tests usan el análisis local (sin red).
 EXCLUIR = ('logout', 'webhook', 'reset', 'eliminar', 'delete', 'borrar', 'limpiar',
-           'pago/', 'chat', 'agente', 'ia/', 'ai/', 'reporte-ia', 'ejecutar', 'actualizar')
+           'pago/', 'ejecutar', 'actualizar')
 
 RUTAS_CON_DEUDA = set()
 

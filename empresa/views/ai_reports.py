@@ -106,7 +106,7 @@ def generar_reporte_ia_pdf(request):
     story.append(Spacer(1, 30))
     
     # Logo y encabezado
-    story.append(Paragraph("🤖 ANÁLISIS FINANCIERO INTELIGENTE", title_style))
+    story.append(Paragraph("ANÁLISIS FINANCIERO INTELIGENTE", title_style))
     story.append(Spacer(1, 20))
     
     # Información de la empresa
@@ -125,27 +125,27 @@ def generar_reporte_ia_pdf(request):
     story.append(Spacer(1, 20))
     
     # ===== RESUMEN EJECUTIVO IA =====
-    story.append(Paragraph("📊 RESUMEN EJECUTIVO", subtitle_style))
+    story.append(Paragraph("RESUMEN EJECUTIVO", subtitle_style))
     story.append(Paragraph(analisis_ia.get('resumen', 'Análisis no disponible'), highlight_style))
     story.append(Spacer(1, 20))
     
     # Métricas clave en tabla elegante
     metricas_data = [
-        ['💰 Métrica Financiera', '📈 Valor Actual', '🎯 Estado', '📋 Análisis IA'],
+        ['Métrica Financiera', 'Valor Actual', 'Estado', 'Análisis IA'],
         ['Ventas Mensuales', f"${datos_empresa['ventas_mes']:,.2f}", 
-         '✅ Positivo' if datos_empresa['ventas_mes'] > 0 else '⚠️ Atención',
+         'Positivo' if datos_empresa['ventas_mes'] > 0 else 'Atención',
          'Ingresos del último mes'],
         ['Utilidad Neta', f"${datos_empresa['utilidad_mes']:,.2f}",
-         '✅ Rentable' if datos_empresa['utilidad_mes'] > 0 else '❌ Pérdidas',
+         'Rentable' if datos_empresa['utilidad_mes'] > 0 else 'Pérdidas',
          'Beneficio después de gastos'],
         ['Margen de Utilidad', f"{datos_empresa['margen_mes']:.1f}%",
-         '✅ Excelente' if datos_empresa['margen_mes'] > 20 else '⚠️ Mejorable' if datos_empresa['margen_mes'] > 10 else '❌ Crítico',
+         'Excelente' if datos_empresa['margen_mes'] > 20 else 'Mejorable' if datos_empresa['margen_mes'] > 10 else 'Crítico',
          'Eficiencia operativa'],
         ['Liquidez', f"{datos_empresa['liquidez']:.2f}",
-         '✅ Saludable' if datos_empresa['liquidez'] > 1.5 else '⚠️ Riesgo',
+         'Saludable' if datos_empresa['liquidez'] > 1.5 else 'Riesgo',
          'Capacidad de pago'],
         ['ROE', f"{datos_empresa['roe']:.1f}%",
-         '✅ Bueno' if datos_empresa['roe'] > 15 else '⚠️ Regular',
+         'Bueno' if datos_empresa['roe'] > 15 else 'Regular',
          'Retorno sobre capital']
     ]
     
@@ -167,31 +167,31 @@ def generar_reporte_ia_pdf(request):
     story.append(Spacer(1, 25))
     
     # ===== FORTALEZAS IDENTIFICADAS POR IA =====
-    story.append(Paragraph("💪 FORTALEZAS IDENTIFICADAS", section_style))
+    story.append(Paragraph("FORTALEZAS IDENTIFICADAS", section_style))
     fortalezas = analisis_ia.get('fortalezas', ['No se identificaron fortalezas específicas'])
     for i, fortaleza in enumerate(fortalezas, 1):
         story.append(Paragraph(f"<b>{i}.</b> {fortaleza}", normal_style))
     story.append(Spacer(1, 20))
     
     # ===== DEBILIDADES Y ÁREAS DE MEJORA =====
-    story.append(Paragraph("⚠️ ÁREAS DE MEJORA", section_style))
+    story.append(Paragraph("ÁREAS DE MEJORA", section_style))
     debilidades = analisis_ia.get('debilidades', ['No se identificaron debilidades específicas'])
     for i, debilidad in enumerate(debilidades, 1):
         story.append(Paragraph(f"<b>{i}.</b> {debilidad}", normal_style))
     story.append(Spacer(1, 20))
     
     # ===== OPORTUNIDADES DE CRECIMIENTO =====
-    story.append(Paragraph("🚀 OPORTUNIDADES DE CRECIMIENTO", section_style))
+    story.append(Paragraph("OPORTUNIDADES DE CRECIMIENTO", section_style))
     oportunidades = analisis_ia.get('oportunidades', ['No se identificaron oportunidades específicas'])
     for i, oportunidad in enumerate(oportunidades, 1):
         story.append(Paragraph(f"<b>{i}.</b> {oportunidad}", normal_style))
     story.append(Spacer(1, 20))
     
     # ===== PLAN DE ACCIÓN INMEDIATA =====
-    story.append(Paragraph("⚡ PLAN DE ACCIÓN INMEDIATA", subtitle_style))
+    story.append(Paragraph("PLAN DE ACCIÓN INMEDIATA", subtitle_style))
     acciones = analisis_ia.get('acciones_inmediatas', ['No se definieron acciones específicas'])
     
-    acciones_data = [['🎯 Acción Recomendada', '⏱️ Prioridad', '📅 Plazo']]
+    acciones_data = [['Acción Recomendada', 'Prioridad', 'Plazo']]
     for i, accion in enumerate(acciones):
         prioridad = 'Alta' if i < 2 else 'Media'
         plazo = '1-2 semanas' if i < 2 else '1 mes'
@@ -214,22 +214,22 @@ def generar_reporte_ia_pdf(request):
     story.append(Spacer(1, 25))
     
     # ===== PREDICCIÓN Y PROYECCIÓN =====
-    story.append(Paragraph("🔮 PREDICCIÓN PARA EL PRÓXIMO MES", section_style))
+    story.append(Paragraph("PREDICCIÓN PARA EL PRÓXIMO MES", section_style))
     prediccion = analisis_ia.get('prediccion_proximo_mes', 'No hay predicción disponible')
     story.append(Paragraph(prediccion, highlight_style))
     story.append(Spacer(1, 20))
     
     # ===== RECOMENDACIÓN PRINCIPAL =====
-    story.append(Paragraph("🎯 RECOMENDACIÓN PRINCIPAL", section_style))
+    story.append(Paragraph("RECOMENDACIÓN PRINCIPAL", section_style))
     recomendacion = analisis_ia.get('recomendacion_principal', 'No hay recomendación específica')
     story.append(Paragraph(recomendacion, highlight_style))
     story.append(Spacer(1, 25))
     
     # ===== ANÁLISIS DE PRODUCTOS TOP =====
     if datos_empresa['top_productos']:
-        story.append(Paragraph("🏆 ANÁLISIS DE PRODUCTOS ESTRELLA", section_style))
+        story.append(Paragraph("ANÁLISIS DE PRODUCTOS ESTRELLA", section_style))
         
-        productos_data = [['🛍️ Producto', '💰 Ventas', '📦 Cantidad', '📊 % del Total']]
+        productos_data = [['Producto', 'Ventas', 'Cantidad', '% del Total']]
         total_ventas_productos = sum(p['total_vendido'] for p in datos_empresa['top_productos'])
         
         for producto in datos_empresa['top_productos'][:5]:
@@ -259,9 +259,9 @@ def generar_reporte_ia_pdf(request):
     
     # ===== ANÁLISIS DE GASTOS PRINCIPALES =====
     if datos_empresa['top_gastos']:
-        story.append(Paragraph("💸 ANÁLISIS DE GASTOS PRINCIPALES", section_style))
+        story.append(Paragraph("ANÁLISIS DE GASTOS PRINCIPALES", section_style))
         
-        gastos_data = [['📋 Concepto', '💰 Monto', '📊 % del Total']]
+        gastos_data = [['Concepto', 'Monto', '% del Total']]
         total_gastos_top = sum(g['total'] for g in datos_empresa['top_gastos'])
         
         for gasto in datos_empresa['top_gastos'][:5]:
@@ -289,7 +289,7 @@ def generar_reporte_ia_pdf(request):
         story.append(Spacer(1, 20))
     
     # ===== CONCLUSIONES Y PRÓXIMOS PASOS =====
-    story.append(Paragraph("📋 CONCLUSIONES Y PRÓXIMOS PASOS", subtitle_style))
+    story.append(Paragraph("CONCLUSIONES Y PRÓXIMOS PASOS", subtitle_style))
     
     conclusiones_text = f"""
     <b>Estado Actual:</b> Tu empresa {empresa.nombre} presenta {'una situación financiera saludable' if datos_empresa['utilidad_mes'] > 0 else 'desafíos financieros que requieren atención inmediata'}.
@@ -315,7 +315,7 @@ def generar_reporte_ia_pdf(request):
     story.append(Spacer(1, 15))
     
     footer_text = f"""
-    <b>📊 REPORTE GENERADO POR CONTAFY AI</b><br/>
+    <b>REPORTE GENERADO POR CONTAFY AI</b><br/>
     Fecha: {timezone.localtime().strftime('%d de %B de %Y a las %H:%M')}<br/>
     Empresa: {empresa.nombre}<br/>
     Sistema: CONTAFY - Plataforma Inteligente para PYMES<br/>

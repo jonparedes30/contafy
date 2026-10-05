@@ -73,6 +73,12 @@ class ContafyAIAgent:
             cantidad_vendida=Sum('cantidad')
         ).order_by('-total_vendido')[:5])
 
+        # Todo en float, como el resto de las cifras del análisis (evita Decimal / float).
+        for g in top_gastos:
+            g['total'] = float(g['total'] or 0)
+        for p in top_productos:
+            p['total_vendido'] = float(p['total_vendido'] or 0)
+
         balance = resumen_balance(empresa)
         activos_corrientes = float(balance['activo_corriente'])
         total_activos = float(balance['activo_total'])

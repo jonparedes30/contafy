@@ -833,6 +833,7 @@ def exportar_pdf_usuario(request):
         'CustomTitle',
         parent=styles['Heading1'],
         fontSize=28,
+        leading=34,
         spaceAfter=30,
         alignment=TA_CENTER,
         textColor=colors.darkblue,
@@ -862,18 +863,10 @@ def exportar_pdf_usuario(request):
     normal_style.fontName = 'Helvetica'
     
     # ===== PORTADA INICIAL =====
-    story.append(Paragraph("📊 REPORTE FINANCIERO EMPRESARIAL", title_style))
+    story.append(Paragraph("REPORTE FINANCIERO EMPRESARIAL", title_style))
     story.append(Spacer(1, 40))
     
     # Logo placeholder
-    story.append(Paragraph("🏢 LOGO CONTAFY AQUÍ", ParagraphStyle(
-        'LogoPlaceholder',
-        parent=styles['Normal'],
-        fontSize=16,
-        alignment=TA_CENTER,
-        textColor=colors.grey,
-        spaceAfter=30
-    )))
     
     story.append(Paragraph(f"<b>Empresa:</b> {empresa.nombre}", normal_style))
     story.append(Paragraph(f"<b>Fecha de Generación:</b> {timezone.localtime().strftime('%d/%m/%Y %H:%M')}", normal_style))
@@ -884,11 +877,6 @@ def exportar_pdf_usuario(request):
     story.append(Paragraph("<hr width='100%' color='#1976d2'/>", normal_style))
     story.append(Spacer(1, 20))
     
-    # Encabezado
-    story.append(Paragraph(f"REPORTE FINANCIERO PROFESIONAL", title_style))
-    story.append(Paragraph(f"Empresa: {empresa.nombre}", subtitle_style))
-    story.append(Paragraph(f"Generado el: {timezone.localtime().strftime('%d/%m/%Y %H:%M')}", normal_style))
-    story.append(Spacer(1, 20))
     
     # Obtener datos
     ventas = Venta.objects.filter(empresa=empresa)
@@ -902,17 +890,15 @@ def exportar_pdf_usuario(request):
     total_ventas_count = ventas.count()
     promedio_venta = total_ventas / total_ventas_count if total_ventas_count > 0 else 0
     
-    # Ventas por mes (últimos 6 meses)
+    # Ventas netas por mes calendario (últimos 6 meses, incluido el actual)
     meses_atras = 6
-    ventas_mensuales = []
-    for i in range(meses_atras):
-        fecha_inicio = timezone.now() - timedelta(days=30*(i+1))
-        fecha_fin = timezone.now() - timedelta(days=30*i)
-        venta_mes = ventas.filter(fecha__range=[fecha_inicio, fecha_fin]).aggregate(total=Sum('monto'))['total'] or 0
-        # Convertir a float para el gráfico
+    ventas_mensuales, etiquetas_meses = [], []
+    hoy = timezone.localdate()
+    for i in range(meses_atras - 1, -1, -1):
+        anio, mes = divmod(hoy.year * 12 + hoy.month - 1 - i, 12)
+        venta_mes = ventas.filter(fecha__year=anio, fecha__month=mes + 1).aggregate(total=Sum('monto_neto'))['total'] or 0
         ventas_mensuales.append(float(venta_mes))
-    
-    ventas_mensuales.reverse()
+        etiquetas_meses.append(MESES_ES[mes][:3].capitalize())
     
     # Crear gráfico de ventas mensuales
     drawing = Drawing(400, 200)
@@ -922,12 +908,17 @@ def exportar_pdf_usuario(request):
     chart.height = 125
     chart.width = 300
     chart.data = [ventas_mensuales]
-    chart.categoryAxis.categoryNames = [f'M{i+1}' for i in range(meses_atras)]
+    chart.categoryAxis.categoryNames = etiquetas_meses
     chart.valueAxis.valueMin = 0
-    from decimal import Decimal
-    max_ventas = float(max(ventas_mensuales)) if ventas_mensuales else 1000.0
-    chart.valueAxis.valueMax = max_ventas * 1.2
-    chart.valueAxis.valueStep = max_ventas / 5
+    max_ventas = max(ventas_mensuales) if any(ventas_mensuales) else 100.0
+    # Paso "redondo" (1, 2 o 5 x 10^n) para que el eje muestre montos legibles
+    import math
+    bruto = max_ventas / 5
+    base = 10 ** math.floor(math.log10(bruto))
+    paso = next(m * base for m in (1, 2, 5, 10) if m * base >= bruto)
+    chart.valueAxis.valueStep = paso
+    chart.valueAxis.valueMax = paso * math.ceil(max_ventas * 1.1 / paso)
+    chart.valueAxis.labelTextFormat = '$%d'
     chart.lines[0].strokeWidth = 3
     chart.lines[0].strokeColor = colors.blue
     
@@ -937,11 +928,11 @@ def exportar_pdf_usuario(request):
     
     # Tabla de métricas de ventas mejorada
     ventas_data = [
-        ['📈 Métrica', '💰 Valor', '📊 Análisis'],
+        ['Métrica', 'Valor', 'Análisis'],
         ['Total Ventas', f'${total_ventas:,.2f}', 'Ingresos totales generados'],
         ['Número de Ventas', str(total_ventas_count), 'Cantidad de transacciones'],
         ['Promedio por Venta', f'${promedio_venta:,.2f}', 'Ticket promedio'],
-        ['Tendencia', '📈' if len(ventas_mensuales) >= 2 and ventas_mensuales[-1] > ventas_mensuales[-2] else '📉', 
+        ['Tendencia', ('Al alza' if ventas_mensuales[-1] > ventas_mensuales[-2] else 'A la baja') if len(ventas_mensuales) >= 2 else '-', 
          'Comparación mes anterior']
     ]
     
@@ -1151,6 +1142,7 @@ def exportar_pdf_profesional(request):
         'ProfessionalTitle',
         parent=styles['Heading1'],
         fontSize=28,
+        leading=34,
         spaceAfter=30,
         alignment=TA_CENTER,
         textColor=colors.darkblue,
@@ -1180,18 +1172,10 @@ def exportar_pdf_profesional(request):
     normal_style.fontName = 'Helvetica'
     
     # ===== PORTADA INICIAL PROFESIONAL =====
-    story.append(Paragraph("🏦 REPORTE FINANCIERO PROFESIONAL", title_style))
+    story.append(Paragraph("REPORTE FINANCIERO PROFESIONAL", title_style))
     story.append(Spacer(1, 40))
     
     # Logo placeholder
-    story.append(Paragraph("🏢 LOGO CONTAFY AQUÍ", ParagraphStyle(
-        'LogoPlaceholder',
-        parent=styles['Normal'],
-        fontSize=16,
-        alignment=TA_CENTER,
-        textColor=colors.grey,
-        spaceAfter=30
-    )))
     
     story.append(Paragraph(f"<b>Empresa:</b> {empresa.nombre}", normal_style))
     story.append(Paragraph(f"<b>Fecha de Análisis:</b> {timezone.localtime().strftime('%d/%m/%Y %H:%M')}", normal_style))
@@ -1258,9 +1242,9 @@ def exportar_pdf_profesional(request):
     
     rentabilidad_data = [
         ['Indicador', 'Valor', 'Benchmark', 'Estado'],
-        ['ROA (Retorno sobre Activos)', f'{roa:.2f}%', '>5%', '✓' if roa > 5 else '⚠'],
-        ['Rotación de Inventario', f'{rotacion_inventario:.2f}', '>4', '✓' if rotacion_inventario > 4 else '⚠'],
-        ['Margen Operativo', f'{margen_operativo:.1f}%', '>15%', '✓' if margen_operativo > 15 else '⚠'],
+        ['ROA (Retorno sobre Activos)', f'{roa:.2f}%', '>5%', '' if roa > 5 else ''],
+        ['Rotación de Inventario', f'{rotacion_inventario:.2f}', '>4', '' if rotacion_inventario > 4 else ''],
+        ['Margen Operativo', f'{margen_operativo:.1f}%', '>15%', '' if margen_operativo > 15 else ''],
         ['Valor del Inventario', f'${valor_inventario:,.2f}', 'N/A', 'Capital invertido']
     ]
     
@@ -1841,18 +1825,10 @@ def exportar_pdf_inventario(request):
         normal_style = styles['Normal']
         
         # ===== PORTADA INICIAL =====
-        story.append(Paragraph("📦 INVENTARIO - {empresa.nombre.upper()}", title_style))
+        story.append(Paragraph("INVENTARIO - {empresa.nombre.upper()}", title_style))
         story.append(Spacer(1, 30))
         
         # Logo placeholder
-        story.append(Paragraph("🏢 LOGO CONTAFY AQUÍ", ParagraphStyle(
-            'LogoPlaceholder',
-            parent=styles['Normal'],
-            fontSize=16,
-            alignment=TA_CENTER,
-            textColor=colors.grey,
-            spaceAfter=30
-        )))
         
         story.append(Paragraph(f"<b>Fecha de reporte:</b> {timezone.localtime().strftime('%d/%m/%Y %H:%M')}", normal_style))
         story.append(Paragraph(f"<b>Sistema:</b> CONTAFY - Plataforma de Gestión para PYMES", normal_style))
