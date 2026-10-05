@@ -208,7 +208,7 @@ class Usuario(AbstractUser):
 # Producto
 class Producto(AuditModel):
     empresa = models.ForeignKey(Empresa, on_delete=models.CASCADE)
-    codigo = models.CharField(max_length=20, unique=True, help_text="Código interno del producto")
+    codigo = models.CharField(max_length=20, help_text="Código interno del producto (único por empresa)")
     codigo_barras = models.CharField(
         max_length=50, 
         blank=True, 
@@ -255,6 +255,14 @@ class Producto(AuditModel):
     )
     
     class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=['empresa', 'codigo'], name='producto_codigo_unico_por_empresa'),
+            models.UniqueConstraint(
+                fields=['empresa', 'codigo_barras'],
+                condition=models.Q(codigo_barras__isnull=False) & ~models.Q(codigo_barras=''),
+                name='producto_codigo_barras_unico_por_empresa',
+            ),
+        ]
         indexes = [
             models.Index(fields=['empresa', 'codigo']),
             models.Index(fields=['empresa', 'codigo_barras']),

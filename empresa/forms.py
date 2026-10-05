@@ -519,7 +519,26 @@ class ProductoForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         self.empresa = kwargs.pop('empresa', None)
         super().__init__(*args, **kwargs)
-    
+
+    def _otros_productos(self):
+        qs = Producto.objects.filter(empresa=self.empresa or getattr(self.instance, 'empresa', None))
+        return qs.exclude(pk=self.instance.pk) if self.instance.pk else qs
+
+    def clean_codigo(self):
+        # Único por empresa (no global): dos negocios pueden usar el mismo código.
+        codigo = (self.cleaned_data.get('codigo') or '').strip()
+        if codigo and self._otros_productos().filter(codigo__iexact=codigo).exists():
+            raise forms.ValidationError('Ya tienes un producto con este código.')
+        return codigo
+
+    def clean_codigo_barras(self):
+        codigo_barras = (self.cleaned_data.get('codigo_barras') or '').strip() or None
+        if codigo_barras:
+            existente = self._otros_productos().filter(codigo_barras=codigo_barras).first()
+            if existente:
+                raise forms.ValidationError(f'Este código de barras ya está asignado a "{existente.nombre}".')
+        return codigo_barras
+
     def save(self, commit=True):
         producto = super().save(commit=False)
         if self.empresa:
