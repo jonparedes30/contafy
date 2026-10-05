@@ -8,7 +8,7 @@ from .views.api_comercio import (
 )
 
 # Importar vistas específicas
-from .views.autenticacion import login_usuario, logout_usuario, registrar_usuario
+from .views.autenticacion import login_usuario, logout_usuario, registrar_usuario, validar_registro_paso
 from .views.empresa import crear_empresa, listar_empresas, gestion_poderes_empleado, crear_empleado, home, eliminar_empleado, editar_empresa, editar_usuario
 from .views.entrada_beta import entrada_beta
 from .views.productos import crear_producto, listar_productos, editar_producto, eliminar_producto, producto_info_api, prefill_producto_from_scan
@@ -122,6 +122,7 @@ urlpatterns = [
     path('login/', login_usuario, name='login'),
     path('logout/', logout_usuario, name='logout'),
     path('registro/', registrar_usuario, name='registro'),
+    path('registro/validar/', validar_registro_paso, name='registro_validar'),
     
     # URLs de empresa
     path('crear/', crear_empresa, name='crear_empresa'),

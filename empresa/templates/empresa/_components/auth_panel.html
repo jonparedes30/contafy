@@ -1,0 +1,34 @@
+{% load static %}
+{# Panel izquierdo de las pantallas de acceso. Recibe: eyebrow, titulo, lead #}
+<aside class="auth-brand" aria-label="Contafy">
+    <a href="{% url 'empresa:landing' %}" class="auth-logo">
+        <img src="{% static 'empresa/img/contafy-logo.png' %}" alt="" width="40" height="40">
+        <span>CONTAFY</span>
+    </a>
+
+    <div class="auth-brand-body">
+        <span class="auth-eyebrow">{{ eyebrow }}</span>
+        <h1>{{ titulo }}</h1>
+        <p class="auth-lead">{{ lead }}</p>
+        <ul class="auth-benefits">
+            <li>
+                <span class="ico"><i class="bi bi-journal-check"></i></span>
+                <div><strong>Contabilidad automática</strong><small>Cada venta, compra y gasto genera su asiento de partida doble.</small></div>
+            </li>
+            <li>
+                <span class="ico"><i class="bi bi-file-earmark-bar-graph"></i></span>
+                <div><strong>Estados financieros al día</strong><small>Balance general, estado de resultados y flujo de caja en tiempo real.</small></div>
+            </li>
+            <li>
+                <span class="ico"><i class="bi bi-upc-scan"></i></span>
+                <div><strong>Punto de venta con escáner</strong><small>Lee códigos de barras con la cámara o un lector USB.</small></div>
+            </li>
+        </ul>
+    </div>
+
+    <div class="auth-trust">
+        <span><i class="bi bi-check2-circle"></i>IVA y RUC de Ecuador</span>
+        <span><i class="bi bi-check2-circle"></i>Base NIIF para PYMES</span>
+        <span><i class="bi bi-shield-lock"></i>Acceso protegido</span>
+    </div>
+</aside>

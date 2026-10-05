@@ -3,10 +3,12 @@
 from django.shortcuts import render, redirect
 from django.contrib import messages
 from django.contrib.auth import authenticate, login, logout
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
+from django.views.decorators.http import require_POST
 import logging
 
 from empresa.forms import RegistroForm
+from empresa.utils.errores import mensaje_error
 from empresa.utils.security import LoginAttemptTracker, get_client_ip, log_security_event
 
 logger = logging.getLogger(__name__)
@@ -92,6 +94,38 @@ from django.db import transaction
 from django.utils import timezone
 from datetime import timedelta
 
+def _error_codigo_invitacion(codigo):
+    """Mensaje de error del código de invitación, o '' si es válido."""
+    from empresa.models import CodigoInvitacion
+    if not codigo:
+        return 'Ingresa el código de invitación que recibiste.'
+    if not CodigoInvitacion.objects.filter(codigo=codigo, usado=False).exists():
+        return 'El código no es válido o ya fue utilizado.'
+    return ''
+
+
+@require_POST
+def validar_registro_paso(request):
+    """Valida solo los campos de una etapa del registro con las reglas reales del formulario.
+
+    Devuelve {"ok": bool, "errores": {campo: mensaje}}. Así el asistente avisa
+    en cada etapa (usuario ya tomado, RUC inválido, contraseña débil) y no al final.
+    """
+    campos = [c for c in request.POST.getlist('campos') if c in RegistroForm.base_fields or c == 'codigo_invitacion']
+    form = RegistroForm(request.POST)
+    form.is_valid()
+    errores = {c: form.errors[c][0] for c in campos if c in form.errors}
+    # Las contraseñas que no coinciden se reportan como error general del formulario.
+    if 'password2' in campos and 'password2' not in errores:
+        for e in form.non_field_errors():
+            errores['password2'] = e
+    if 'codigo_invitacion' in campos and request.POST.get('modo_demo') != '1':
+        error = _error_codigo_invitacion(request.POST.get('codigo_invitacion', '').strip())
+        if error:
+            errores['codigo_invitacion'] = error
+    return JsonResponse({'ok': not errores, 'errores': errores})
+
+
 def registrar_usuario(request):
     modo_demo = request.GET.get('modo') == 'demo' or request.POST.get('modo_demo') == '1'
 
@@ -101,16 +135,14 @@ def registrar_usuario(request):
 
         if not modo_demo:
             # Verificar código de invitación (flujo normal / beta)
-            if not codigo_invitacion:
-                messages.error(request, 'El código de invitación es obligatorio.')
-                return render(request, 'empresa/registro.html', {'form': RegistroForm(), 'modo_demo': False})
-
-            try:
-                from empresa.models import CodigoInvitacion
-                codigo = CodigoInvitacion.objects.get(codigo=codigo_invitacion, usado=False)
-            except CodigoInvitacion.DoesNotExist:
-                messages.error(request, 'Código de invitación inválido o ya utilizado. Verifique el código e intente nuevamente.')
-                return render(request, 'empresa/registro.html', {'form': RegistroForm(), 'modo_demo': False})
+            # Si el código falla se devuelve el formulario con lo que el usuario ya escribió.
+            error_codigo = _error_codigo_invitacion(codigo_invitacion)
+            if error_codigo:
+                return render(request, 'empresa/registro.html', {
+                    'form': RegistroForm(request.POST), 'modo_demo': False, 'error_codigo': error_codigo,
+                })
+            from empresa.models import CodigoInvitacion
+            codigo = CodigoInvitacion.objects.get(codigo=codigo_invitacion, usado=False)
 
         form = RegistroForm(request.POST)
         if form.is_valid():
@@ -145,23 +177,11 @@ def registrar_usuario(request):
                     return redirect('empresa:login')
             except Exception as e:
                 logger.error(f"Error crítico al crear usuario: {str(e)}")
-                messages.error(request, f'Error interno del sistema. Por favor contacte al soporte técnico. Detalle: {str(e)}')
+                messages.error(request, mensaje_error(e, 'No se pudo crear la cuenta. Inténtalo de nuevo o contacta a soporte.'))
         else:
-            logger.error(f"Errores de validación en formulario: {form.errors}")
-
-            # Mostrar errores específicos por campo
-            error_count = 0
-            for field_name, errors in form.errors.items():
-                field_label = form.fields.get(field_name, {}).label or field_name.replace('_', ' ').title()
-                for error in errors:
-                    error_count += 1
-                    if field_name == '__all__':
-                        messages.error(request, f'Error general: {error}')
-                    else:
-                        messages.error(request, f'{field_label}: {error}')
-
-            if error_count == 0:
-                messages.error(request, 'Hay errores en el formulario. Por favor revise todos los campos.')
+            logger.info("Registro con errores de validación: %s", list(form.errors))
+            # Cada error se muestra junto a su campo; el asistente abre la etapa que lo contiene.
+            messages.error(request, 'Revisa los campos marcados para completar el registro.')
     else:
         form = RegistroForm()
 

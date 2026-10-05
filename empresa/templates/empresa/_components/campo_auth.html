@@ -1,0 +1,8 @@
+{# Campo del registro: etiqueta, control y error. Recibe `campo` (BoundField) y opcional `opcional` #}
+<div class="mb-3" data-campo="{{ campo.html_name }}">
+    <label for="{{ campo.id_for_label }}" class="form-label">
+        {{ campo.label }}{% if opcional %} <span class="text-muted fw-normal">(opcional)</span>{% endif %}
+    </label>
+    {{ campo }}
+    <div class="invalid-msg" data-error-de="{{ campo.html_name }}">{% if campo.errors %}{{ campo.errors.0 }}{% endif %}</div>
+</div>

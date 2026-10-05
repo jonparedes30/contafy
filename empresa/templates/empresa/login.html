@@ -1,191 +1,82 @@
 {% extends 'empresa/base_auth.html' %}
-{% load static %}
-{% block title %}Iniciar Sesión — CONTAFY{% endblock %}
-
-{% block extra_css %}
-<style>
-  .login-wrapper {
-    min-height: 100vh;
-    background: var(--grad-hero-bg);
-    display: flex;
-    align-items: center;
-    padding: 2rem 1rem;
-    position: relative;
-    overflow: hidden;
-  }
-  .login-wrapper::before {
-    content: '';
-    position: absolute; inset: 0;
-    background:
-      radial-gradient(ellipse 60% 50% at 80% 30%, rgba(16,185,129,.15) 0%, transparent 65%),
-      radial-gradient(ellipse 50% 45% at 25% 75%, rgba(59,130,246,.18) 0%, transparent 65%);
-    pointer-events: none;
-  }
-  .login-wrapper > .container {
-    position: relative;
-    z-index: 1;
-  }
-  .login-card {
-    border-radius: var(--radius-2xl);
-    border: none;
-    box-shadow: var(--shadow-xl);
-    overflow: hidden;
-  }
-  .login-header {
-    background: var(--grad-brand);
-    color: #fff;
-    text-align: center;
-    padding: 2.25rem 1.5rem;
-    border: 0;
-  }
-  .login-header .logo-mark {
-    width: 56px;
-    height: 56px;
-    margin: 0 auto 0.75rem;
-    display: block;
-    filter: drop-shadow(0 4px 12px rgba(0,0,0,.2));
-  }
-  .login-header h2 {
-    font-family: 'Montserrat', sans-serif;
-    font-weight: 900;
-    font-size: 1.8rem;
-    letter-spacing: -0.5px;
-    text-transform: uppercase;
-    margin: 0;
-  }
-  .login-header p {
-    font-size: 0.85rem;
-    opacity: 0.9;
-    margin: 0.35rem 0 0;
-  }
-  .login-features i {
-    transition: transform 0.2s;
-  }
-  .login-features > div:hover i {
-    transform: translateY(-3px);
-  }
-  .login-divider {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    color: var(--c-slate-3);
-    font-size: 0.85rem;
-    margin: 1.5rem 0;
-  }
-  .login-divider::before,
-  .login-divider::after {
-    content: '';
-    flex: 1;
-    height: 1px;
-    background: var(--c-slate-2);
-  }
-</style>
-{% endblock %}
+{% block title %}Iniciar sesión — CONTAFY{% endblock %}
 
 {% block content %}
-<div class="login-wrapper">
-  <div class="container">
-    <div class="row justify-content-center">
-      <div class="col-lg-5 col-md-7">
-        <div class="card login-card">
-          <!-- Header con gradiente brand -->
-          <div class="login-header">
-            <img src="{% static 'empresa/img/contafy-logo.png' %}" alt="Contafy" class="logo-mark">
-            <h2>CONTAFY</h2>
-            <p>Gestión Contable para PYMEs</p>
-          </div>
+<div class="auth-split">
+    {% include 'empresa/_components/auth_panel.html' with eyebrow='Plataforma contable para PYMEs' titulo='La contabilidad de tu empresa, en orden y al día.' lead='Ingresa para revisar tus ventas, tu inventario y tus estados financieros desde cualquier lugar.' %}
 
-          <!-- Body -->
-          <div class="card-body p-4 p-md-5">
-            <div class="text-center mb-4">
-              <h4 class="fw-700 mb-1" style="color: var(--c-text);">Bienvenido de vuelta</h4>
-              <p class="text-muted small mb-0">Ingresa a tu cuenta para continuar</p>
-            </div>
+    <main class="auth-main">
+        <div class="auth-card">
+            <h2>Iniciar sesión</h2>
+            <p class="auth-sub">Accede con el usuario de tu empresa.</p>
 
-            <!-- Mensajes -->
-            {% if messages %}
-              {% for message in messages %}
-                <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                  <i class="bi bi-exclamation-triangle-fill me-2"></i>{{ message }}
-                  <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            {% include 'empresa/_components/messages.html' %}
+
+            <form method="post" novalidate id="form-login">
+                {% csrf_token %}
+                <div class="mb-3">
+                    <label for="username" class="form-label">Usuario</label>
+                    <div class="input-icon">
+                        <i class="bi bi-person"></i>
+                        <input type="text" name="username" id="username" class="form-control"
+                               placeholder="Tu nombre de usuario" required autocomplete="username" autofocus
+                               value="{{ request.POST.username|default:'' }}">
+                    </div>
                 </div>
-              {% endfor %}
-            {% endif %}
 
-            <form method="post" novalidate>
-              {% csrf_token %}
+                <div class="mb-4">
+                    <label for="password" class="form-label">Contraseña</label>
+                    <div class="input-icon">
+                        <i class="bi bi-lock"></i>
+                        <input type="password" name="password" id="password" class="form-control con-ver"
+                               placeholder="Tu contraseña" required autocomplete="current-password">
+                        <button type="button" class="btn-ver" data-ver="password" aria-label="Mostrar contraseña">
+                            <i class="bi bi-eye"></i>
+                        </button>
+                    </div>
+                </div>
 
-              <div class="mb-3">
-                <label for="username" class="form-label fw-600">
-                  <i class="bi bi-person me-1" style="color: var(--c-green);"></i> Usuario
-                </label>
-                <input
-                  type="text"
-                  name="username"
-                  id="username"
-                  class="form-control form-control-lg"
-                  placeholder="Ingresa tu usuario"
-                  required
-                  autocomplete="username"
-                  autofocus>
-              </div>
-
-              <div class="mb-4">
-                <label for="password" class="form-label fw-600">
-                  <i class="bi bi-lock me-1" style="color: var(--c-green);"></i> Contraseña
-                </label>
-                <input
-                  type="password"
-                  name="password"
-                  id="password"
-                  class="form-control form-control-lg"
-                  placeholder="Ingresa tu contraseña"
-                  required
-                  autocomplete="current-password">
-              </div>
-
-              <div class="d-grid mb-3">
-                <button type="submit" class="btn btn-primary btn-lg fw-700">
-                  <i class="bi bi-box-arrow-in-right me-2"></i>Iniciar Sesión
-                </button>
-              </div>
+                <div class="d-grid">
+                    <button type="submit" class="btn btn-auth" id="btn-login">
+                        Ingresar <i class="bi bi-arrow-right ms-1"></i>
+                    </button>
+                </div>
             </form>
 
-            <div class="login-divider">¿Nuevo en CONTAFY?</div>
+            <div class="auth-divider">¿Aún no tienes cuenta?</div>
 
-            <div class="d-grid">
-              <a href="{% url 'empresa:registro' %}" class="btn btn-outline-primary btn-lg">
-                <i class="bi bi-person-plus me-2"></i>Crear cuenta gratis
-              </a>
+            <div class="d-grid gap-2">
+                <a href="{% url 'empresa:registro' %}" class="btn btn-auth-outline">
+                    <i class="bi bi-building-add me-1"></i>Registrar mi empresa
+                </a>
+                <a href="{% url 'empresa:selector_demo' %}" class="btn btn-link text-decoration-none" style="color:#047857;">
+                    Explorar una demo sin registrarme
+                </a>
             </div>
-          </div>
 
-          <!-- Footer -->
-          <div class="card-footer text-center py-3" style="background: var(--c-slate-1); border-top: 1px solid var(--c-slate-2);">
-            <small class="text-muted">
-              <i class="bi bi-shield-check me-1" style="color: var(--c-green);"></i>
-              Tus datos están seguros y protegidos
-            </small>
-          </div>
+            <p class="auth-foot">© {% now "Y" %} Contafy · <a href="{% url 'empresa:landing' %}">Volver al inicio</a></p>
         </div>
-
-        <!-- Features mini -->
-        <div class="row mt-4 text-center login-features">
-          <div class="col-4">
-            <div class="mb-2"><i class="bi bi-graph-up-arrow fs-3" style="color: #34d399;"></i></div>
-            <small class="text-white-50">Reportes<br>automáticos</small>
-          </div>
-          <div class="col-4">
-            <div class="mb-2"><i class="bi bi-phone fs-3" style="color: #60a5fa;"></i></div>
-            <small class="text-white-50">Acceso<br>móvil</small>
-          </div>
-          <div class="col-4">
-            <div class="mb-2"><i class="bi bi-cloud-check fs-3" style="color: #5eead4;"></i></div>
-            <small class="text-white-50">En la<br>nube</small>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
+    </main>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  // Mostrar/ocultar contraseña
+  document.querySelectorAll('[data-ver]').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      const input = document.getElementById(btn.dataset.ver);
+      const visible = input.type === 'text';
+      input.type = visible ? 'password' : 'text';
+      btn.querySelector('i').className = visible ? 'bi bi-eye' : 'bi bi-eye-slash';
+      btn.setAttribute('aria-label', visible ? 'Mostrar contraseña' : 'Ocultar contraseña');
+    });
+  });
+  // Evitar envíos dobles
+  document.getElementById('form-login').addEventListener('submit', function () {
+    const b = document.getElementById('btn-login');
+    b.disabled = true;
+    b.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Ingresando…';
+  });
+</script>
 {% endblock %}
