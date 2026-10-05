@@ -78,6 +78,15 @@
             </div>
         </div>
     </div>
+    {% if cuadra is not None %}
+    <div class="small mt-2 mb-3 {% if cuadra %}text-success{% else %}alert alert-danger{% endif %}" role="status">
+        {% if cuadra %}
+            <i class="bi bi-check-circle me-1"></i>Activos = Pasivos + Patrimonio: el balance cuadra.
+        {% else %}
+            <i class="bi bi-exclamation-triangle me-1"></i>El balance no cuadra (diferencia ${{ diferencia_cuadre|floatformat:2 }}). Revisa los asientos con <code>python manage.py verificar_cuadre</code>.
+        {% endif %}
+    </div>
+    {% endif %}
 
     <!-- Tabla con desglose y totales al final -->
     <div class="card shadow-sm border-0" style="border-radius:1rem;">

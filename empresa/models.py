@@ -1,4 +1,7 @@
+from decimal import Decimal
+
 from django.db import models
+from django.utils import timezone
 from django.contrib.auth.models import AbstractUser
 from django.conf import settings
 from django.utils.functional import cached_property
@@ -270,7 +273,7 @@ class Producto(AuditModel):
         if not self.fecha_vencimiento:
             return None
         from datetime import date
-        return (self.fecha_vencimiento - date.today()).days
+        return (self.fecha_vencimiento - timezone.localdate()).days
     
     @property
     def esta_vencido(self):
@@ -447,7 +450,7 @@ class Venta(AuditModel):
                     venta=self,
                     monto_original=self.monto,
                     monto_pendiente=self.monto,
-                    fecha_vencimiento=date.today() + timedelta(days=30),
+                    fecha_vencimiento=timezone.localdate() + timedelta(days=30),
                     estado='pendiente'
                 )
             except Exception as e:
@@ -480,7 +483,7 @@ class Venta(AuditModel):
                     empresa=self.empresa,
                     cliente=self.cliente_fk or self._crear_cliente_temporal(),
                     numero_contrato=f'AUTO-{self.id}',
-                    fecha_inicio=date.today(),
+                    fecha_inicio=timezone.localdate(),
                     precio_total=self.monto,
                     estado='activo'
                 )
@@ -668,7 +671,7 @@ class Compra(AuditModel):
                     compra=self,
                     monto_original=self.monto,
                     monto_pendiente=self.monto,
-                    fecha_vencimiento=date.today() + timedelta(days=self.proveedor_fk.dias_credito or 30),
+                    fecha_vencimiento=timezone.localdate() + timedelta(days=self.proveedor_fk.dias_credito or 30),
                     estado='pendiente'
                 )
                 
@@ -927,7 +930,7 @@ class CuentaContable(models.Model):
                     compra=None,  # No está asociada a una compra específica
                     monto_original=self.monto_inicial,
                     monto_pendiente=self.monto_inicial,
-                    fecha_vencimiento=date.today() + timedelta(days=365),  # 1 año por defecto
+                    fecha_vencimiento=timezone.localdate() + timedelta(days=365),  # 1 año por defecto
                     estado='pendiente'
                 )
                 
@@ -1586,8 +1589,8 @@ class CuentaPorCobrar(models.Model):
     def dias_vencido(self):
         """Calcula días de vencimiento"""
         from datetime import date
-        if self.fecha_vencimiento < date.today():
-            return (date.today() - self.fecha_vencimiento).days
+        if self.fecha_vencimiento < timezone.localdate():
+            return (timezone.localdate() - self.fecha_vencimiento).days
         return 0
     
     def calcular_deterioro_niif9(self):
@@ -1595,15 +1598,15 @@ class CuentaPorCobrar(models.Model):
         dias = self.dias_vencido
         
         if dias > 90:
-            tasa = 0.10  # 10% para > 90 días
+            tasa = Decimal('0.10')  # 10% para > 90 días
         elif dias > 60:
-            tasa = 0.05  # 5% para > 60 días
+            tasa = Decimal('0.05')  # 5% para > 60 días
         elif dias > 30:
-            tasa = 0.02  # 2% para > 30 días
+            tasa = Decimal('0.02')  # 2% para > 30 días
         else:
-            tasa = 0.01  # 1% general
-            
-        return self.monto_pendiente * tasa
+            tasa = Decimal('0.01')  # 1% general
+
+        return (self.monto_pendiente * tasa).quantize(Decimal('0.01'))
     
     def actualizar_deterioro(self):
         """Actualiza el deterioro y crea asientos contables"""
@@ -2009,7 +2012,7 @@ class InstrumentoFinanciero(AuditModel):
         """Calcula deterioro según modelo de pérdidas esperadas"""
         if self.tipo == 'activo_financiero':
             from datetime import date
-            dias_vencimiento = (self.fecha_vencimiento - date.today()).days if self.fecha_vencimiento else 0
+            dias_vencimiento = (self.fecha_vencimiento - timezone.localdate()).days if self.fecha_vencimiento else 0
             
             if dias_vencimiento < 0:
                 return self.valor_nominal * 0.15

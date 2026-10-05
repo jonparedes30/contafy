@@ -8,6 +8,7 @@ from empresa.models import (
 from decimal import Decimal
 from datetime import date, timedelta
 import random
+from django.utils import timezone
 
 class Command(BaseCommand):
     help = 'Crea empresa de manufactura con datos demo ecuatorianos'
@@ -249,7 +250,7 @@ class Command(BaseCommand):
         self.stdout.write("Generando ventas de productos manufacturados...")
         
         for i in range(30):  # 30 días de ventas
-            fecha = date.today() - timedelta(days=i)
+            fecha = timezone.localdate() - timedelta(days=i)
             # 3-8 ventas por día (panadería tiene mucho movimiento)
             num_ventas = random.randint(3, 8)
             
@@ -304,7 +305,7 @@ class Command(BaseCommand):
         ]
         
         for i in range(25):  # 25 gastos en el último mes
-            fecha = date.today() - timedelta(days=i*1.2)
+            fecha = timezone.localdate() - timedelta(days=i*1.2)
             desc, monto_base = random.choice(gastos_manufactura)
             monto = monto_base * random.uniform(0.8, 1.2)
             
@@ -319,8 +320,8 @@ class Command(BaseCommand):
         self.stdout.write("[OK] Gastos de manufactura generados")
 
         # 12. Crear metas financieras para manufactura
-        mes_actual = date.today().month
-        anio_actual = date.today().year
+        mes_actual = timezone.localdate().month
+        anio_actual = timezone.localdate().year
         
         metas_manufactura = [
             ('ventas', 25000),

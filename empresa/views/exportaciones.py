@@ -311,7 +311,7 @@ def exportar_excel_ventas(request):
             output.read(),
             content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
         )
-        response['Content-Disposition'] = f'attachment; filename="ventas_filtradas_{empresa.nombre}_{datetime.now().strftime("%Y%m%d")}.xlsx"'
+        response['Content-Disposition'] = f'attachment; filename="ventas_filtradas_{empresa.nombre}_{timezone.localtime().strftime("%Y%m%d")}.xlsx"'
         return response
     except Exception as e:
         print(f"Error general en exportar_excel: {e}")
@@ -553,7 +553,7 @@ def exportar_excel_compras(request):
             output.read(),
             content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
         )
-        response['Content-Disposition'] = f'attachment; filename="compras_filtradas_{empresa.nombre}_{datetime.now().strftime("%Y%m%d")}.xlsx"'
+        response['Content-Disposition'] = f'attachment; filename="compras_filtradas_{empresa.nombre}_{timezone.localtime().strftime("%Y%m%d")}.xlsx"'
         return response
     except Exception as e:
         print(f"Error general en exportar_excel_compras: {e}")
@@ -786,7 +786,7 @@ def exportar_excel_gastos(request):
             output.read(),
             content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
         )
-        response['Content-Disposition'] = f'attachment; filename="gastos_filtrados_{empresa.nombre}_{datetime.now().strftime("%Y%m%d")}.xlsx"'
+        response['Content-Disposition'] = f'attachment; filename="gastos_filtrados_{empresa.nombre}_{timezone.localtime().strftime("%Y%m%d")}.xlsx"'
         return response
     except Exception as e:
         print(f"Error general en exportar_excel_gastos: {e}")
@@ -854,7 +854,7 @@ def exportar_pdf_usuario(request):
     )))
     
     story.append(Paragraph(f"<b>Empresa:</b> {empresa.nombre}", normal_style))
-    story.append(Paragraph(f"<b>Fecha de Generación:</b> {datetime.now().strftime('%d/%m/%Y %H:%M')}", normal_style))
+    story.append(Paragraph(f"<b>Fecha de Generación:</b> {timezone.localtime().strftime('%d/%m/%Y %H:%M')}", normal_style))
     story.append(Paragraph(f"<b>Sistema:</b> CONTAFY - Plataforma de Gestión para PYMES", normal_style))
     story.append(Spacer(1, 30))
     
@@ -865,7 +865,7 @@ def exportar_pdf_usuario(request):
     # Encabezado
     story.append(Paragraph(f"REPORTE FINANCIERO PROFESIONAL", title_style))
     story.append(Paragraph(f"Empresa: {empresa.nombre}", subtitle_style))
-    story.append(Paragraph(f"Generado el: {datetime.now().strftime('%d/%m/%Y %H:%M')}", normal_style))
+    story.append(Paragraph(f"Generado el: {timezone.localtime().strftime('%d/%m/%Y %H:%M')}", normal_style))
     story.append(Spacer(1, 20))
     
     # Obtener datos
@@ -1107,7 +1107,7 @@ def exportar_pdf_usuario(request):
     buffer.seek(0)
     
     response = HttpResponse(buffer, content_type='application/pdf')
-    response['Content-Disposition'] = f'attachment; filename="reporte_usuario_{empresa.nombre}_{datetime.now().strftime("%Y%m%d")}.pdf"'
+    response['Content-Disposition'] = f'attachment; filename="reporte_usuario_{empresa.nombre}_{timezone.localtime().strftime("%Y%m%d")}.pdf"'
     
     return response
 
@@ -1172,7 +1172,7 @@ def exportar_pdf_profesional(request):
     )))
     
     story.append(Paragraph(f"<b>Empresa:</b> {empresa.nombre}", normal_style))
-    story.append(Paragraph(f"<b>Fecha de Análisis:</b> {datetime.now().strftime('%d/%m/%Y %H:%M')}", normal_style))
+    story.append(Paragraph(f"<b>Fecha de Análisis:</b> {timezone.localtime().strftime('%d/%m/%Y %H:%M')}", normal_style))
     story.append(Paragraph(f"<b>Período:</b> Últimos 12 meses", normal_style))
     story.append(Paragraph(f"<b>Sistema:</b> CONTAFY - Plataforma de Contabilidad para PYMES", normal_style))
     story.append(Spacer(1, 30))
@@ -1404,7 +1404,7 @@ def exportar_pdf_profesional(request):
     Este reporte financiero ha sido generado automáticamente por el sistema CONTAFY 
     utilizando datos reales de la empresa {empresa.nombre}.
     
-    Fecha de certificación: {datetime.now().strftime('%d/%m/%Y')}
+    Fecha de certificación: {timezone.localtime().strftime('%d/%m/%Y')}
     Sistema: CONTAFY - Plataforma de Contabilidad para PYMES
     Versión: 1.0
     
@@ -1442,7 +1442,7 @@ def exportar_pdf_profesional(request):
     buffer.seek(0)
     
     response = HttpResponse(buffer, content_type='application/pdf')
-    response['Content-Disposition'] = f'attachment; filename="reporte_profesional_{empresa.nombre}_{datetime.now().strftime("%Y%m%d")}.pdf"'
+    response['Content-Disposition'] = f'attachment; filename="reporte_profesional_{empresa.nombre}_{timezone.localtime().strftime("%Y%m%d")}.pdf"'
     
     return response
 
@@ -1748,7 +1748,7 @@ def exportar_excel_inventario(request):
             output.read(),
             content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
         )
-        response['Content-Disposition'] = f'attachment; filename="inventario_{empresa.nombre}_{datetime.now().strftime("%Y%m%d")}.xlsx"'
+        response['Content-Disposition'] = f'attachment; filename="inventario_{empresa.nombre}_{timezone.localtime().strftime("%Y%m%d")}.xlsx"'
         return response
         
     except Exception as e:
@@ -1832,7 +1832,7 @@ def exportar_pdf_inventario(request):
             spaceAfter=30
         )))
         
-        story.append(Paragraph(f"<b>Fecha de reporte:</b> {datetime.now().strftime('%d/%m/%Y %H:%M')}", normal_style))
+        story.append(Paragraph(f"<b>Fecha de reporte:</b> {timezone.localtime().strftime('%d/%m/%Y %H:%M')}", normal_style))
         story.append(Paragraph(f"<b>Sistema:</b> CONTAFY - Plataforma de Gestión para PYMES", normal_style))
         story.append(Spacer(1, 20))
         
@@ -1957,7 +1957,7 @@ def exportar_pdf_inventario(request):
         buffer.seek(0)
         
         response = HttpResponse(buffer, content_type='application/pdf')
-        response['Content-Disposition'] = f'attachment; filename="inventario_{empresa.nombre}_{datetime.now().strftime("%Y%m%d")}.pdf"'
+        response['Content-Disposition'] = f'attachment; filename="inventario_{empresa.nombre}_{timezone.localtime().strftime("%Y%m%d")}.pdf"'
         
         return response
         
@@ -2065,12 +2065,12 @@ def exportar_excel_completo(request):
             for idx, mes_nombre in enumerate(meses, start=1):
                 entradas = MovimientoContable.objects.filter(
                     empresa=empresa, cuenta_fk=cuenta_caja, tipo='debito',
-                    fecha__year=datetime.now().year, fecha__month=idx
+                    fecha__year=timezone.localdate().year, fecha__month=idx
                 ).aggregate(total=Sum('monto'))['total'] or 0
                 
                 salidas = MovimientoContable.objects.filter(
                     empresa=empresa, cuenta_fk=cuenta_caja, tipo='credito',
-                    fecha__year=datetime.now().year, fecha__month=idx
+                    fecha__year=timezone.localdate().year, fecha__month=idx
                 ).aggregate(total=Sum('monto'))['total'] or 0
                 
                 neto = entradas - salidas
@@ -2161,7 +2161,7 @@ def exportar_excel_completo(request):
             resumen_data = [
                 ['REPORTE FINANCIERO COMPLETO', ''],
                 ['Empresa', empresa.nombre],
-                ['Fecha del Reporte', datetime.now().strftime('%d/%m/%Y %H:%M')],
+                ['Fecha del Reporte', timezone.localtime().strftime('%d/%m/%Y %H:%M')],
                 ['', ''],
                 ['ESTADO DE RESULTADOS', ''],
                 ['Ventas Totales', total_ventas_contable],
@@ -2208,7 +2208,7 @@ def exportar_excel_completo(request):
             estado_resultados_data = [
                 ['ESTADO DE RESULTADOS', ''],
                 ['Empresa', empresa.nombre],
-                ['Período', f'{datetime.now().year}'],
+                ['Período', f'{timezone.localdate().year}'],
                 ['', ''],
                 ['INGRESOS', ''],
                 ['Ventas', total_ventas_contable],
@@ -2247,7 +2247,7 @@ def exportar_excel_completo(request):
             balance_data = [
                 ['BALANCE GENERAL', ''],
                 ['Empresa', empresa.nombre],
-                ['Fecha', datetime.now().strftime('%d/%m/%Y')],
+                ['Fecha', timezone.localtime().strftime('%d/%m/%Y')],
                 ['', ''],
                 ['ACTIVOS', ''],
             ]
@@ -2487,7 +2487,7 @@ def exportar_excel_completo(request):
             output.getvalue(),
             content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
         )
-        fecha_str = datetime.now().strftime("%Y%m%d")
+        fecha_str = timezone.localtime().strftime("%Y%m%d")
         response['Content-Disposition'] = f'attachment; filename="reporte_completo_{empresa.nombre}_{fecha_str}.xlsx"'
         return response
         
@@ -2504,8 +2504,8 @@ def exportar_excel_iva(request):
     """Exporta reporte de IVA a Excel"""
     try:
         empresa = request.user.empresa
-        mes = int(request.GET.get('mes', datetime.now().month))
-        anio = int(request.GET.get('anio', datetime.now().year))
+        mes = int(request.GET.get('mes', timezone.localdate().month))
+        anio = int(request.GET.get('anio', timezone.localdate().year))
         
         # IVA por pagar (ventas)
         ventas_iva = Venta.objects.filter(
@@ -2622,8 +2622,8 @@ def exportar_pdf_iva(request):
     """Exporta reporte de IVA a PDF"""
     try:
         empresa = request.user.empresa
-        mes = int(request.GET.get('mes', datetime.now().month))
-        anio = int(request.GET.get('anio', datetime.now().year))
+        mes = int(request.GET.get('mes', timezone.localdate().month))
+        anio = int(request.GET.get('anio', timezone.localdate().year))
         
         # Calcular totales de IVA
         total_iva_ventas = Venta.objects.filter(
@@ -2677,7 +2677,7 @@ def exportar_pdf_iva(request):
         
         # Información adicional
         story.append(Paragraph("INFORMACIÓN ADICIONAL", styles['Heading2']))
-        story.append(Paragraph(f"• Fecha de generación: {datetime.now().strftime('%d/%m/%Y %H:%M')}", styles['Normal']))
+        story.append(Paragraph(f"• Fecha de generación: {timezone.localtime().strftime('%d/%m/%Y %H:%M')}", styles['Normal']))
         story.append(Paragraph(f"• Sistema: CONTAFY - Plataforma de Gestión para PYMES", styles['Normal']))
         
         if iva_a_pagar > 0:

@@ -25,6 +25,7 @@ from django.db.models import Sum
 from django.shortcuts import render
 
 from empresa.models import Compra, Gasto, Venta
+from django.utils import timezone
 
 # Tasas impositivas Ecuador (NIIF + LRTI). Pueden externalizarse a settings.
 TASA_PARTICIPACION_TRABAJADORES = Decimal('0.15')  # 15% Participación Trabajadores
@@ -47,15 +48,15 @@ def estado_resultados_simple(request):
     try:
         fecha_inicio = (
             datetime.strptime(fecha_inicio_str, '%Y-%m-%d').date()
-            if fecha_inicio_str else datetime.now().replace(day=1).date()
+            if fecha_inicio_str else timezone.localdate().replace(day=1)
         )
         fecha_fin = (
             datetime.strptime(fecha_fin_str, '%Y-%m-%d').date()
-            if fecha_fin_str else datetime.now().date()
+            if fecha_fin_str else timezone.localdate()
         )
     except ValueError:
-        fecha_inicio = datetime.now().replace(day=1).date()
-        fecha_fin = datetime.now().date()
+        fecha_inicio = timezone.localdate().replace(day=1)
+        fecha_fin = timezone.localdate()
 
     rango = {
         'fecha__date__gte': fecha_inicio,

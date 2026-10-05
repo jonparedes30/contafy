@@ -9,6 +9,7 @@ from reportlab.lib.styles import getSampleStyleSheet
 from empresa.models import MateriaPrima, ProductoManufacturado, OrdenProduccion, ConsumoMateriaPrima
 from datetime import datetime
 import io
+from django.utils import timezone
 
 @login_required
 def exportar_excel_materias_primas(request):
@@ -33,7 +34,7 @@ def exportar_excel_materias_primas(request):
         ])
     
     response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
-    response['Content-Disposition'] = f'attachment; filename="materias_primas_{empresa.nombre}_{datetime.now().strftime("%Y%m%d")}.xlsx"'
+    response['Content-Disposition'] = f'attachment; filename="materias_primas_{empresa.nombre}_{timezone.localtime().strftime("%Y%m%d")}.xlsx"'
     wb.save(response)
     return response
 
@@ -60,7 +61,7 @@ def exportar_excel_productos_manufacturados(request):
         ])
     
     response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
-    response['Content-Disposition'] = f'attachment; filename="productos_manufacturados_{empresa.nombre}_{datetime.now().strftime("%Y%m%d")}.xlsx"'
+    response['Content-Disposition'] = f'attachment; filename="productos_manufacturados_{empresa.nombre}_{timezone.localtime().strftime("%Y%m%d")}.xlsx"'
     wb.save(response)
     return response
 
@@ -87,7 +88,7 @@ def exportar_excel_ordenes_produccion(request):
         ])
     
     response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
-    response['Content-Disposition'] = f'attachment; filename="ordenes_produccion_{empresa.nombre}_{datetime.now().strftime("%Y%m%d")}.xlsx"'
+    response['Content-Disposition'] = f'attachment; filename="ordenes_produccion_{empresa.nombre}_{timezone.localtime().strftime("%Y%m%d")}.xlsx"'
     wb.save(response)
     return response
 
@@ -147,5 +148,5 @@ def exportar_pdf_manufactura_completo(request):
     buffer.seek(0)
     
     response = HttpResponse(buffer.getvalue(), content_type='application/pdf')
-    response['Content-Disposition'] = f'attachment; filename="reporte_manufactura_{empresa.nombre}_{datetime.now().strftime("%Y%m%d")}.pdf"'
+    response['Content-Disposition'] = f'attachment; filename="reporte_manufactura_{empresa.nombre}_{timezone.localtime().strftime("%Y%m%d")}.pdf"'
     return response

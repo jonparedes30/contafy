@@ -6,6 +6,7 @@ from django.views.decorators.http import require_http_methods
 import json
 from datetime import date
 from ..models import CategoriaProducto, Cliente, Proveedor, CuentaPorCobrar, CuentaPorPagar
+from django.utils import timezone
 
 
 @csrf_exempt
@@ -176,7 +177,7 @@ def cuentas_cobrar_api(request):
         
         data = []
         for cuenta in cuentas:
-            dias_vencido = max(0, (date.today() - cuenta.fecha_vencimiento).days)
+            dias_vencido = max(0, (timezone.localdate() - cuenta.fecha_vencimiento).days)
             data.append({
                 'cliente_nombre': cuenta.cliente.nombre,
                 'monto_pendiente': float(cuenta.monto_pendiente),
@@ -201,7 +202,7 @@ def cuentas_pagar_api(request):
         
         data = []
         for cuenta in cuentas:
-            dias_vencido = max(0, (date.today() - cuenta.fecha_vencimiento).days)
+            dias_vencido = max(0, (timezone.localdate() - cuenta.fecha_vencimiento).days)
             data.append({
                 'proveedor_nombre': cuenta.proveedor.nombre,
                 'monto_pendiente': float(cuenta.monto_pendiente),

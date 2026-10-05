@@ -21,7 +21,7 @@ class ReportesNIIFService:
         from ..models import CuentaContable, MovimientoContable, CuentaPorCobrar, InstrumentoFinanciero
         
         if not fecha_corte:
-            fecha_corte = date.today()
+            fecha_corte = timezone.localdate()
         
         # Obtener saldos de cuentas contables
         cuentas = CuentaContable.objects.filter(empresa=empresa)
@@ -54,9 +54,20 @@ class ReportesNIIFService:
                     or 'impuestos por pagar' in n
                     or 'corto plazo' in n)
 
+        resultado_ejercicio = 0.0
         for cuenta in cuentas:
             saldo = cuenta.valor
             if abs(saldo) < 0.01:  # Ignorar saldos insignificantes
+                continue
+
+            # Ingresos y gastos aún no cerrados forman el resultado del ejercicio,
+            # que va al patrimonio. 'Ventas' es ingreso aunque datos antiguos la
+            # hayan creado con tipo 'capital'.
+            if cuenta.tipo == 'ingreso' or cuenta.nombre.strip().lower() == 'ventas':
+                resultado_ejercicio += float(saldo)
+                continue
+            if cuenta.tipo == 'gasto':
+                resultado_ejercicio -= float(saldo)
                 continue
 
             if cuenta.tipo == 'activo':
@@ -74,6 +85,9 @@ class ReportesNIIFService:
             elif cuenta.tipo == 'capital':
                 reporte['patrimonio'][cuenta.nombre] = float(saldo)
         
+        if abs(resultado_ejercicio) >= 0.01:
+            reporte['patrimonio']['Resultado del ejercicio'] = resultado_ejercicio
+
         # Ajustar por deterioro de cuentas por cobrar
         deterioro_total = CuentaPorCobrar.objects.filter(
             empresa=empresa
@@ -252,7 +266,7 @@ class ReportesNIIFService:
         cuentas_vencidas = CuentaPorCobrar.objects.filter(
             empresa=empresa,
             estado='pendiente',
-            fecha_vencimiento__lt=date.today()
+            fecha_vencimiento__lt=timezone.localdate()
         )
         
         notas['cuentas_por_cobrar'] = {

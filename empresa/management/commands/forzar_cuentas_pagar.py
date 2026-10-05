@@ -1,6 +1,7 @@
 from django.core.management.base import BaseCommand
 from empresa.models import Compra, CuentaPorPagar, Proveedor
 from datetime import date, timedelta
+from django.utils import timezone
 
 class Command(BaseCommand):
     help = 'Fuerza la creación de cuentas por pagar para compras a crédito'
@@ -37,7 +38,7 @@ class Command(BaseCommand):
                         compra=compra,
                         monto_original=compra.monto,
                         monto_pendiente=compra.monto,
-                        fecha_vencimiento=date.today() + timedelta(days=30),
+                        fecha_vencimiento=timezone.localdate() + timedelta(days=30),
                         estado='pendiente'
                     )
                     creadas += 1

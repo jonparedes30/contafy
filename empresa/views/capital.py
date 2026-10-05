@@ -8,7 +8,7 @@ from empresa.decorators import require_power
 from django.contrib import messages
 from django.db import transaction
 from django.db.models import Sum
-from empresa.views.contabilidad import registrar_movimiento_contable
+from empresa.services.capital_service import registrar_asiento_capital
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 
 @login_required
@@ -26,18 +26,9 @@ def crear_capital(request):
 
             # El asiento se registra aquí (y no en Capital.save) para que el
             # aporte/retiro aparezca en el Balance sin recursión de señales.
-            es_aporte = capital.tipo == 'aporte'
             with transaction.atomic():
                 capital.save()
-                registrar_movimiento_contable(
-                    empresa=capital.empresa,
-                    cuenta_debito_nombre='Caja' if es_aporte else 'Capital',
-                    cuenta_credito_nombre='Capital' if es_aporte else 'Caja',
-                    monto=capital.monto,
-                    descripcion=f"{'Aporte' if es_aporte else 'Retiro'} de capital: {capital.descripcion}",
-                    tipo_cuenta_debito='activo' if es_aporte else 'capital',
-                    tipo_cuenta_credito='capital' if es_aporte else 'activo',
-                )
+                registrar_asiento_capital(capital)
 
             tipo_texto = "aporte" if capital.tipo == 'aporte' else "retiro"
             messages.success(request, f'{tipo_texto.title()} de capital registrado: ${capital.monto}')

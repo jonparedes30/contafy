@@ -15,6 +15,7 @@ from empresa.models import Venta, Gasto, Producto, Empresa
 import pickle
 import os
 from django.conf import settings
+from django.utils import timezone
 
 try:
     from sklearn.linear_model import LinearRegression
@@ -308,7 +309,7 @@ class MLService:
     def _obtener_features_actuales(self):
         """Obtiene features actuales para predicción"""
         # Ventas del mes actual y anterior
-        hoy = date.today()
+        hoy = timezone.localdate()
         
         # Mes anterior
         if hoy.month == 1:

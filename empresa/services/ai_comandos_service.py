@@ -3,6 +3,7 @@ from decimal import Decimal
 from datetime import datetime, date, timedelta
 from django.db.models import Sum, F
 from django.db import models
+from django.utils import timezone
 from empresa.models import (
     Empresa, Producto, CategoriaProducto, Cliente, Proveedor, 
     Venta, Compra, Gasto, MetaFinanciera, CuentaContable,
@@ -398,7 +399,7 @@ class AIComandosService:
     def generar_reporte_desde_texto(self, texto):
         """Genera reportes desde texto"""
         try:
-            hoy = date.today()
+            hoy = timezone.localdate()
             mes_actual = hoy.month
             anio_actual = hoy.year
             
@@ -490,8 +491,8 @@ class AIComandosService:
             objetivo = Decimal(objetivo_match.group(1))
             
             # Extraer mes (default: actual)
-            mes = date.today().month
-            anio = date.today().year
+            mes = timezone.localdate().month
+            anio = timezone.localdate().year
             
             meta, created = MetaFinanciera.objects.get_or_create(
                 empresa=self.empresa,
@@ -545,7 +546,7 @@ class AIComandosService:
             elif ('venta' in texto or 'vendi' in texto) and ('hoy' in texto or 'dia' in texto):
                 ventas_hoy = Venta.objects.filter(
                     empresa=self.empresa,
-                    fecha__date=date.today()
+                    fecha__date=timezone.localdate()
                 )
                 total = ventas_hoy.aggregate(total=Sum('monto'))['total'] or 0
                 
@@ -749,7 +750,7 @@ class AIComandosService:
         acciones_autonomas = []
         gastos_mes = Gasto.objects.filter(
             empresa=self.empresa,
-            fecha__month=date.today().month
+            fecha__month=timezone.localdate().month
         ).aggregate(total=Sum('monto'))['total'] or 0
         
         if gastos_mes > 5000:  # Umbral de alerta

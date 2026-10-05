@@ -1,0 +1,52 @@
+{% extends 'empresa/base.html' %}
+
+{% block title %}Reporte NIIF Completo - Contafy{% endblock %}
+
+{% block content %}
+{% with esf=reporte.estado_situacion_financiera %}
+<div class="container-fluid">
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3 mb-1 fw-bold"><i class="bi bi-file-earmark-bar-graph me-2"></i>Reporte NIIF completo</h1>
+            <p class="text-muted mb-0">{{ empresa.nombre }} · corte al {{ esf.fecha_corte|date:"d/m/Y" }}</p>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="{% url 'empresa:niif_estado_situacion_financiera' %}" class="btn btn-outline-primary btn-sm">Estado de situación</a>
+            <a href="{% url 'empresa:niif_notas_explicativas' %}" class="btn btn-outline-primary btn-sm">Notas explicativas</a>
+        </div>
+    </div>
+
+    {% include 'empresa/niif/_cumplimiento.html' with c=reporte.cumplimiento_basico %}
+
+    <div class="card">
+        <div class="card-header bg-white d-flex justify-content-between align-items-center">
+            <span class="fw-bold">Estado de situación financiera (resumen)</span>
+            {% if esf.totales.cuadra %}
+            <span class="badge bg-success">Cuadra</span>
+            {% else %}
+            <span class="badge bg-danger">No cuadra · diferencia ${{ esf.totales.diferencia_cuadre|floatformat:2 }}</span>
+            {% endif %}
+        </div>
+        <div class="card-body">
+            <div class="row g-4">
+                <div class="col-md-6">
+                    <table class="table table-sm mb-0">
+                        <tr><td>Activos corrientes</td><td class="text-end">${{ esf.totales.activos_corrientes|floatformat:2 }}</td></tr>
+                        <tr><td>Activos no corrientes</td><td class="text-end">${{ esf.totales.activos_no_corrientes|floatformat:2 }}</td></tr>
+                        <tr class="fw-bold table-light"><td>Total activos</td><td class="text-end">${{ esf.totales.total_activos|floatformat:2 }}</td></tr>
+                    </table>
+                </div>
+                <div class="col-md-6">
+                    <table class="table table-sm mb-0">
+                        <tr><td>Pasivos corrientes</td><td class="text-end">${{ esf.totales.pasivos_corrientes|floatformat:2 }}</td></tr>
+                        <tr><td>Pasivos no corrientes</td><td class="text-end">${{ esf.totales.pasivos_no_corrientes|floatformat:2 }}</td></tr>
+                        <tr><td>Patrimonio</td><td class="text-end">${{ esf.totales.total_patrimonio|floatformat:2 }}</td></tr>
+                        <tr class="fw-bold table-light"><td>Total pasivos y patrimonio</td><td class="text-end">${{ esf.totales.total_pasivos_y_patrimonio|floatformat:2 }}</td></tr>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endwith %}
+{% endblock %}

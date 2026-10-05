@@ -1,6 +1,7 @@
 from django.core.management.base import BaseCommand
 from empresa.models import Venta, CuentaPorCobrar, Cliente
 from datetime import date, timedelta
+from django.utils import timezone
 
 class Command(BaseCommand):
     help = 'Crea cuentas por cobrar faltantes para ventas a crédito'
@@ -56,7 +57,7 @@ class Command(BaseCommand):
                     venta=venta,
                     monto_original=venta.monto,
                     monto_pendiente=venta.monto,
-                    fecha_vencimiento=date.today() + timedelta(days=30),
+                    fecha_vencimiento=timezone.localdate() + timedelta(days=30),
                     estado='pendiente'
                 )
                 

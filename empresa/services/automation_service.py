@@ -9,6 +9,7 @@ from empresa.models import (
 )
 from empresa.services.notificaciones_service import NotificacionesService
 from decimal import Decimal
+from django.utils import timezone
 
 class AutomatizacionCompleta:
     """Servicio de automatización end-to-end de procesos empresariales"""
@@ -99,7 +100,7 @@ class AutomatizacionCompleta:
     def proceso_cobranza_automatica(self):
         """Gestión automática de cobranzas"""
         try:
-            hoy = date.today()
+            hoy = timezone.localdate()
             acciones_realizadas = []
             
             # 1. Identificar cuentas vencidas
@@ -216,7 +217,7 @@ class AutomatizacionCompleta:
     def proceso_analisis_financiero_automatico(self):
         """Análisis financiero automático diario"""
         try:
-            hoy = date.today()
+            hoy = timezone.localdate()
             
             # 1. Calcular métricas del día
             metricas_dia = self._calcular_metricas_diarias()
@@ -379,7 +380,7 @@ class AutomatizacionCompleta:
     def _actualizar_metas_automaticas(self, tipo_meta, valor):
         """Actualiza progreso de metas automáticamente"""
         try:
-            hoy = date.today()
+            hoy = timezone.localdate()
             meta = MetaFinanciera.objects.filter(
                 empresa=self.empresa,
                 tipo=tipo_meta,
@@ -444,7 +445,7 @@ class AutomatizacionCompleta:
     
     def _calcular_metricas_diarias(self):
         """Calcula métricas financieras del día"""
-        hoy = date.today()
+        hoy = timezone.localdate()
         
         # Ventas del día
         ventas_dia = Venta.objects.filter(

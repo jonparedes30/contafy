@@ -1,14 +1,19 @@
 from django.shortcuts import render
 from datetime import datetime
 from decimal import Decimal
+import logging
 from django.contrib.auth.decorators import login_required
 from django.db.models import Sum, Q
 from empresa.models import Venta, Compra, Gasto, CuentaContable, MovimientoContable
 from empresa.views.resumen import obtener_totales_contables
+from django.utils import timezone
 
 # ======================
 # ESTADO DE RESULTADOS
 # ======================
+
+logger = logging.getLogger(__name__)
+
 @login_required
 def estado_resultados(request):
     return render(request, 'empresa/estado_resultado.html', {
@@ -18,8 +23,8 @@ def estado_resultados(request):
         'utilidad_bruta': 700.00,
         'utilidad_operativa': 300.00,
         'utilidad_neta': 300.00,
-        'fecha_inicio': datetime.now().replace(day=1).date(),
-        'fecha_fin': datetime.now().date(),
+        'fecha_inicio': timezone.localdate().replace(day=1),
+        'fecha_fin': timezone.localdate(),
         'formato_niif': False,
     })
 
@@ -140,11 +145,11 @@ def balance_general(request):
                 fecha_inicio = datetime.strptime(fecha_inicio_str, '%Y-%m-%d').date()
                 fecha_fin = datetime.strptime(fecha_fin_str, '%Y-%m-%d').date()
             except ValueError:
-                fecha_inicio = datetime.now().replace(day=1).date()
-                fecha_fin = datetime.now().date()
+                fecha_inicio = timezone.localdate().replace(day=1)
+                fecha_fin = timezone.localdate()
         else:
-            fecha_inicio = datetime.now().replace(day=1).date()
-            fecha_fin = datetime.now().date()
+            fecha_inicio = timezone.localdate().replace(day=1)
+            fecha_fin = timezone.localdate()
         
         # Obtener cuentas contables
         cuentas = CuentaContable.objects.filter(empresa=empresa)
@@ -155,27 +160,10 @@ def balance_general(request):
         total_activos = 0
         total_pasivos = 0
         total_capital = 0
+        resultado_ejercicio = 0
         
-        # Agregar capital del modelo Capital directamente
-        from empresa.models import Capital
-        capital_aportes = Capital.objects.filter(empresa=empresa, tipo='aporte').aggregate(total=Sum('monto'))['total'] or 0
-        capital_retiros = Capital.objects.filter(empresa=empresa, tipo='retiro').aggregate(total=Sum('monto'))['total'] or 0
-        capital_neto = capital_aportes - capital_retiros
-        
-        if capital_neto > 0:
-            # Agregar a activos (caja)
-            activos.append({
-                'cuenta_fk__nombre': 'Caja (Capital)',
-                'valor': capital_neto
-            })
-            total_activos += capital_neto
-            
-            # Agregar a capital
-            capital.append({
-                'cuenta_fk__nombre': 'Capital Social',
-                'valor': capital_neto
-            })
-            total_capital += capital_neto
+        # El capital aportado ya está en el libro (asiento Caja/Capital, migración 0032):
+        # no se suma el modelo Capital por fuera para no contarlo dos veces.
 
         for cuenta in cuentas:
             try:
@@ -203,7 +191,16 @@ def balance_general(request):
                     'cuenta_fk__nombre': cuenta.nombre,
                     'valor': saldo
                 }
-                
+
+                # Ingresos y gastos no cerrados = resultado del ejercicio (parte del patrimonio).
+                # 'Ventas' es ingreso aunque datos antiguos la marcaran como capital.
+                if cuenta.tipo == 'ingreso' or cuenta.nombre.strip().lower() == 'ventas':
+                    resultado_ejercicio += saldo
+                    continue
+                if cuenta.tipo == 'gasto':
+                    resultado_ejercicio -= saldo
+                    continue
+
                 if abs(saldo) > 0.01:
                     if cuenta.tipo == 'activo':
                         activos.append(cuenta_dict)
@@ -215,11 +212,20 @@ def balance_general(request):
                         capital.append(cuenta_dict)
                         total_capital += saldo
             except Exception:
+                logger.exception('Balance general: no se pudo calcular la cuenta %s', cuenta.nombre)
                 continue
 
         total_activos_float = float(total_activos or 0.0)
         total_pasivos_float = float(total_pasivos or 0.0)
-        total_patrimonio = total_activos_float - total_pasivos_float
+        resultado_ejercicio = float(resultado_ejercicio or 0.0)
+        if abs(resultado_ejercicio) > 0.01:
+            capital.append({'cuenta_fk__nombre': 'Resultado del ejercicio', 'valor': resultado_ejercicio})
+        # Patrimonio real (no "activos - pasivos", que cuadraría siempre por construcción).
+        total_patrimonio = float(total_capital or 0.0) + resultado_ejercicio
+        diferencia_cuadre = round(total_activos_float - total_pasivos_float - total_patrimonio, 2)
+        cuadra = abs(diferencia_cuadre) < 0.01
+        if not cuadra:
+            logger.warning('Balance de %s no cuadra: diferencia %s', empresa.nombre, diferencia_cuadre)
         
         # Verificar si se solicita formato NIIF
         formato_niif = request.GET.get('niif', 'false') == 'true'
@@ -269,6 +275,9 @@ def balance_general(request):
                     'pasivos_no_corrientes': 0.0,
                     'total_pasivos': total_pasivos_float,
                     'total_patrimonio': total_patrimonio,
+                    'resultado_ejercicio': resultado_ejercicio,
+                    'cuadra': cuadra,
+                    'diferencia_cuadre': diferencia_cuadre,
                     # Suma pre-calculada en backend (evita perdida de precisión con |add: en template)
                     'total_pasivos_y_patrimonio': total_pasivos_float + total_patrimonio,
                     # Diferencia para detectar descuadres (>1 centavo)
@@ -311,6 +320,9 @@ def balance_general(request):
                 'total_activos': total_activos_float,
                 'total_pasivos': total_pasivos_float,
                 'total_patrimonio': total_patrimonio,
+                'resultado_ejercicio': resultado_ejercicio,
+                'cuadra': cuadra,
+                'diferencia_cuadre': diferencia_cuadre,
             }
         else:
             contexto = {
@@ -321,6 +333,9 @@ def balance_general(request):
                 'total_pasivos': total_pasivos_float,
                 'total_capital': float(total_capital or 0.0),
                 'total_patrimonio': total_patrimonio,
+                'resultado_ejercicio': resultado_ejercicio,
+                'cuadra': cuadra,
+                'diferencia_cuadre': diferencia_cuadre,
                 'fecha_inicio': fecha_inicio,
                 'fecha_fin': fecha_fin,
                 'formato_niif': False,
@@ -338,8 +353,8 @@ def balance_general(request):
             'total_pasivos': 0,
             'total_capital': 0,
             'total_patrimonio': 0,
-            'fecha_inicio': datetime.now().replace(day=1).date(),
-            'fecha_fin': datetime.now().date(),
+            'fecha_inicio': timezone.localdate().replace(day=1),
+            'fecha_fin': timezone.localdate(),
             'formato_niif': False,
         })
 

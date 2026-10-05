@@ -11,6 +11,7 @@ from reportlab.lib.units import inch
 from empresa.models import *
 from datetime import datetime, timedelta
 import io
+from django.utils import timezone
 
 @login_required
 def exportaciones_comercio(request):
@@ -37,8 +38,8 @@ def exportaciones_manufactura(request):
         'total_productos': ProductoManufacturado.objects.filter(empresa=empresa).count(),
         'ordenes_pendientes': OrdenProduccion.objects.filter(empresa=empresa, estado='pendiente').count(),
         'ordenes_proceso': OrdenProduccion.objects.filter(empresa=empresa, estado='en_proceso').count(),
-        'ventas_mes': Venta.objects.filter(empresa=empresa, fecha__month=datetime.now().month).aggregate(total=Sum('monto'))['total'] or 0,
-        'costos_mes': ConsumoMateriaPrima.objects.filter(empresa=empresa, fecha_consumo__month=datetime.now().month).aggregate(total=Sum('costo_total'))['total'] or 0,
+        'ventas_mes': Venta.objects.filter(empresa=empresa, fecha__month=timezone.localdate().month).aggregate(total=Sum('monto'))['total'] or 0,
+        'costos_mes': ConsumoMateriaPrima.objects.filter(empresa=empresa, fecha_consumo__month=timezone.localdate().month).aggregate(total=Sum('costo_total'))['total'] or 0,
     }
     
     return render(request, 'empresa/exportaciones_manufactura.html', {'stats': stats})
@@ -68,7 +69,7 @@ def exportar_excel_ventas_manufactura(request):
         ])
     
     response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
-    response['Content-Disposition'] = f'attachment; filename="ventas_manufactura_{empresa.nombre}_{datetime.now().strftime("%Y%m%d")}.xlsx"'
+    response['Content-Disposition'] = f'attachment; filename="ventas_manufactura_{empresa.nombre}_{timezone.localtime().strftime("%Y%m%d")}.xlsx"'
     wb.save(response)
     return response
 
@@ -84,7 +85,7 @@ def exportar_pdf_comercio_bancario(request):
     title_style = ParagraphStyle('CustomTitle', parent=styles['Title'], fontSize=18, spaceAfter=30, textColor=colors.darkblue)
     elements.append(Paragraph(f"REPORTE FINANCIERO BANCARIO", title_style))
     elements.append(Paragraph(f"{empresa.nombre.upper()}", styles['Heading1']))
-    elements.append(Paragraph(f"RUC: {empresa.ruc} | Fecha: {datetime.now().strftime('%d/%m/%Y')}", styles['Normal']))
+    elements.append(Paragraph(f"RUC: {empresa.ruc} | Fecha: {timezone.localtime().strftime('%d/%m/%Y')}", styles['Normal']))
     elements.append(Spacer(1, 20))
     
     # Resumen ejecutivo
@@ -161,7 +162,7 @@ def exportar_pdf_comercio_bancario(request):
     buffer.seek(0)
     
     response = HttpResponse(buffer.getvalue(), content_type='application/pdf')
-    response['Content-Disposition'] = f'attachment; filename="reporte_bancario_{empresa.nombre}_{datetime.now().strftime("%Y%m%d")}.pdf"'
+    response['Content-Disposition'] = f'attachment; filename="reporte_bancario_{empresa.nombre}_{timezone.localtime().strftime("%Y%m%d")}.pdf"'
     return response
 
 @login_required
@@ -170,7 +171,7 @@ def exportar_pdf_comercio_interno(request):
     empresa = request.user.empresa
     response = HttpResponse(reporte_interno_pdf(empresa), content_type='application/pdf')
     response['Content-Disposition'] = (
-        f'attachment; filename="reporte_interno_{datetime.now().strftime("%Y%m%d")}.pdf"'
+        f'attachment; filename="reporte_interno_{timezone.localtime().strftime("%Y%m%d")}.pdf"'
     )
     return response
 
@@ -186,7 +187,7 @@ def exportar_pdf_manufactura_bancario(request):
     title_style = ParagraphStyle('CustomTitle', parent=styles['Title'], fontSize=18, spaceAfter=30, textColor=colors.darkgreen)
     elements.append(Paragraph(f"REPORTE FINANCIERO MANUFACTURERO", title_style))
     elements.append(Paragraph(f"{empresa.nombre.upper()}", styles['Heading1']))
-    elements.append(Paragraph(f"RUC: {empresa.ruc} | Fecha: {datetime.now().strftime('%d/%m/%Y')}", styles['Normal']))
+    elements.append(Paragraph(f"RUC: {empresa.ruc} | Fecha: {timezone.localtime().strftime('%d/%m/%Y')}", styles['Normal']))
     elements.append(Spacer(1, 20))
     
     # Análisis de costos de producción
@@ -254,7 +255,7 @@ def exportar_pdf_manufactura_bancario(request):
     buffer.seek(0)
     
     response = HttpResponse(buffer.getvalue(), content_type='application/pdf')
-    response['Content-Disposition'] = f'attachment; filename="reporte_manufactura_bancario_{empresa.nombre}_{datetime.now().strftime("%Y%m%d")}.pdf"'
+    response['Content-Disposition'] = f'attachment; filename="reporte_manufactura_bancario_{empresa.nombre}_{timezone.localtime().strftime("%Y%m%d")}.pdf"'
     return response
 
 @login_required
@@ -263,6 +264,6 @@ def exportar_pdf_manufactura_interno(request):
     empresa = request.user.empresa
     response = HttpResponse(reporte_interno_pdf(empresa), content_type='application/pdf')
     response['Content-Disposition'] = (
-        f'attachment; filename="reporte_interno_{datetime.now().strftime("%Y%m%d")}.pdf"'
+        f'attachment; filename="reporte_interno_{timezone.localtime().strftime("%Y%m%d")}.pdf"'
     )
     return response

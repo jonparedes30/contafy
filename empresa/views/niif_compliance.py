@@ -1,9 +1,11 @@
+from django.db.models import Count, Q
 from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.http import JsonResponse
 from empresa.services.contabilidad_service import ContabilidadService
 from empresa.models import CuentaPorCobrar, MovimientoInventario
+from django.utils import timezone
 
 @login_required
 def dashboard_niif(request):
@@ -70,7 +72,8 @@ def reporte_cumplimiento_niif(request):
     cuentas_data = []
     for cuenta in cuentas:
         cuentas_data.append({
-            'cliente': cuenta.cliente.nombre,
+            'cliente': (cuenta.cliente.nombre if cuenta.cliente
+                        else getattr(cuenta.venta, 'cliente_nombre', '') or 'Cliente general'),
             'monto': cuenta.monto_pendiente,
             'dias_vencido': cuenta.dias_vencido,
             'deterioro_actual': cuenta.deterioro_esperado,
@@ -114,7 +117,9 @@ def gestionar_contratos_niif15(request):
     from empresa.models import ContratoVenta, ObligacionDesempeno
     
     empresa = request.user.empresa
-    contratos = ContratoVenta.objects.filter(empresa=empresa).order_by('-fecha_inicio')
+    contratos = ContratoVenta.objects.filter(empresa=empresa).annotate(
+        obligaciones_satisfechas=Count('obligaciones', filter=Q(obligaciones__satisfecha=True))
+    ).order_by('-fecha_inicio')
     
     context = {
         'contratos': contratos,
@@ -158,7 +163,7 @@ def estado_resultados_niif(request):
     empresa = request.user.empresa
     
     # Fechas por defecto: mes actual
-    fecha_fin = date.today()
+    fecha_fin = timezone.localdate()
     fecha_inicio = fecha_fin.replace(day=1)
     
     if request.GET.get('fecha_inicio'):

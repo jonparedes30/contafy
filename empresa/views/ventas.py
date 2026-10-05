@@ -73,7 +73,7 @@ def crear_venta(request):
                             venta=venta,
                             monto_original=venta.monto,
                             monto_pendiente=venta.monto,
-                            fecha_vencimiento=date.today() + timedelta(days=30)
+                            fecha_vencimiento=timezone.localdate() + timedelta(days=30)
                         )
                     
                     # Actualizar stock del producto (lock row to avoid over-selling)

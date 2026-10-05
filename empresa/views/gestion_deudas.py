@@ -9,6 +9,7 @@ from datetime import date, timedelta
 from empresa.models import CuentaPorCobrar, CuentaPorPagar, PagoCuentaPorCobrar, PagoCuentaPorPagar
 from empresa.utils.money import parse_monto, MontoInvalido
 import logging
+from django.utils import timezone
 
 logger = logging.getLogger(__name__)
 
@@ -37,7 +38,7 @@ def gestion_deudas(request):
         total_por_pagar = cuentas_pagar.aggregate(total=Sum('monto_pendiente'))['total'] or 0
         
         # Vencidas
-        hoy = date.today()
+        hoy = timezone.localdate()
         cobrar_vencidas = cuentas_cobrar.filter(fecha_vencimiento__lt=hoy).count()
         pagar_vencidas = cuentas_pagar.filter(fecha_vencimiento__lt=hoy).count()
         
@@ -124,7 +125,7 @@ def api_cuentas_cobrar(request):
     ).select_related('cliente', 'venta')
     
     data = []
-    hoy = date.today()
+    hoy = timezone.localdate()
     
     for cuenta in cuentas:
         dias_vencido = (hoy - cuenta.fecha_vencimiento).days if hoy > cuenta.fecha_vencimiento else 0
@@ -152,7 +153,7 @@ def api_cuentas_pagar(request):
     ).select_related('proveedor', 'compra')
     
     data = []
-    hoy = date.today()
+    hoy = timezone.localdate()
     
     for cuenta in cuentas:
         dias_vencido = (hoy - cuenta.fecha_vencimiento).days if hoy > cuenta.fecha_vencimiento else 0

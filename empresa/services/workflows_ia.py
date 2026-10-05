@@ -2,6 +2,7 @@ from datetime import date, timedelta
 from django.db.models import Sum, Avg, F
 from django.db import models
 from django.conf import settings
+from django.utils import timezone
 from empresa.models import (
     Producto, CuentaPorCobrar, Venta, Gasto, Compra, 
     CuentaContable, MovimientoContable
@@ -55,8 +56,8 @@ class WorkflowIA:
     
     def cierre_mensual_automatico(self):
         """Genera reportes automáticos al cierre del mes"""
-        mes_actual = date.today().month
-        anio_actual = date.today().year
+        mes_actual = timezone.localdate().month
+        anio_actual = timezone.localdate().year
         
         # Calcular métricas del mes
         ventas_mes = Venta.objects.filter(
@@ -93,13 +94,13 @@ class RecordatoriosIA:
         """Detecta cuentas por cobrar vencidas"""
         cuentas_vencidas = CuentaPorCobrar.objects.filter(
             empresa=self.empresa,
-            fecha_vencimiento__lt=date.today(),
+            fecha_vencimiento__lt=timezone.localdate(),
             estado='pendiente'
         )
         
         recordatorios = []
         for cuenta in cuentas_vencidas:
-            dias_vencido = (date.today() - cuenta.fecha_vencimiento).days
+            dias_vencido = (timezone.localdate() - cuenta.fecha_vencimiento).days
             
             recordatorios.append({
                 'cliente': cuenta.cliente.nombre,
@@ -115,8 +116,8 @@ class RecordatoriosIA:
         """Verifica progreso de metas mensuales"""
         from empresa.models import MetaFinanciera
         
-        mes_actual = date.today().month
-        anio_actual = date.today().year
+        mes_actual = timezone.localdate().month
+        anio_actual = timezone.localdate().year
         
         metas = MetaFinanciera.objects.filter(
             empresa=self.empresa,
@@ -128,7 +129,7 @@ class RecordatoriosIA:
         for meta in metas:
             progreso = meta.progreso_actual
             
-            if progreso < 50 and date.today().day > 15:  # Menos del 50% a mitad de mes
+            if progreso < 50 and timezone.localdate().day > 15:  # Menos del 50% a mitad de mes
                 alertas_metas.append({
                     'tipo': meta.tipo,
                     'objetivo': float(meta.objetivo_mensual),
@@ -174,15 +175,15 @@ class AlertasIA:
         # Ventas de hoy
         ventas_hoy = Venta.objects.filter(
             empresa=self.empresa,
-            fecha__date=date.today()
+            fecha__date=timezone.localdate()
         ).aggregate(total=Sum('monto'))['total'] or 0
         
         # Promedio últimos 7 días
-        hace_7_dias = date.today() - timedelta(days=7)
+        hace_7_dias = timezone.localdate() - timedelta(days=7)
         ventas_7_dias = Venta.objects.filter(
             empresa=self.empresa,
             fecha__date__gte=hace_7_dias,
-            fecha__date__lt=date.today()
+            fecha__date__lt=timezone.localdate()
         )
         
         if ventas_7_dias.exists():
@@ -230,7 +231,7 @@ def ejecutar_workflows_automaticos(empresa):
     """Ejecuta todos los workflows automáticos para una empresa"""
     resultados = {
         'empresa': empresa.nombre,
-        'fecha_ejecucion': date.today().isoformat(),
+        'fecha_ejecucion': timezone.localdate().isoformat(),
         'workflows': {}
     }
     

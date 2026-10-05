@@ -4,12 +4,13 @@ import os
 import subprocess
 import datetime
 from pathlib import Path
+from django.utils import timezone
 
 class Command(BaseCommand):
     help = 'Crear respaldo de la base de datos'
 
     def handle(self, *args, **options):
-        timestamp = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
+        timestamp = timezone.localtime().strftime('%Y%m%d_%H%M%S')
         backup_dir = Path('backups')
         backup_dir.mkdir(exist_ok=True)
         

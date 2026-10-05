@@ -1,0 +1,50 @@
+{% extends 'empresa/base.html' %}
+
+{% block title %}Cumplimiento NIIF - Contafy{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3 mb-1 fw-bold"><i class="bi bi-clipboard-check me-2"></i>Cumplimiento NIIF</h1>
+            <p class="text-muted mb-0">Qué normas aplica hoy tu contabilidad y qué falta.</p>
+        </div>
+        <a href="{% url 'empresa:niif_reporte_completo' %}" class="btn btn-outline-primary btn-sm">Ver reporte completo</a>
+    </div>
+
+    {% include 'empresa/niif/_cumplimiento.html' with c=cumplimiento %}
+
+    <div class="card">
+        <div class="card-header bg-white d-flex justify-content-between">
+            <span class="fw-bold">Deterioro de cuentas por cobrar (NIIF 9)</span>
+            <span class="text-muted small">Deterioro registrado: ${{ total_deterioro|floatformat:2 }}</span>
+        </div>
+        <div class="card-body p-0">
+            {% if cuentas_data %}
+            <div class="table-responsive">
+                <table class="table table-sm table-hover mb-0">
+                    <thead class="table-light">
+                        <tr><th>Cliente</th><th class="text-end">Pendiente</th><th class="text-end">Días vencido</th>
+                            <th class="text-end">Deterioro registrado</th><th class="text-end">Deterioro según NIIF 9</th><th class="text-end">Estado</th></tr>
+                    </thead>
+                    <tbody>
+                        {% for c in cuentas_data %}
+                        <tr>
+                            <td>{{ c.cliente }}</td>
+                            <td class="text-end">${{ c.monto|floatformat:2 }}</td>
+                            <td class="text-end">{{ c.dias_vencido }}</td>
+                            <td class="text-end">${{ c.deterioro_actual|floatformat:2 }}</td>
+                            <td class="text-end">${{ c.deterioro_calculado|floatformat:2 }}</td>
+                            <td class="text-end">{% if c.cumple_niif9 %}<span class="badge bg-success">Al día</span>{% else %}<span class="badge bg-warning text-dark">Por actualizar</span>{% endif %}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <p class="text-muted p-3 mb-0">No hay cuentas por cobrar pendientes.</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

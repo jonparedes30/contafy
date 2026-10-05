@@ -7,6 +7,7 @@ from empresa.models import (
 from decimal import Decimal
 from datetime import date, timedelta
 import random
+from django.utils import timezone
 
 class Command(BaseCommand):
     help = 'Crea empresa de servicios con datos demo ecuatorianos'
@@ -157,7 +158,7 @@ class Command(BaseCommand):
         self.stdout.write("Generando ventas de servicios...")
         
         for i in range(25):  # 25 días de ventas
-            fecha = date.today() - timedelta(days=i)
+            fecha = timezone.localdate() - timedelta(days=i)
             # 1-3 servicios por día
             num_ventas = random.randint(1, 3)
             
@@ -196,7 +197,7 @@ class Command(BaseCommand):
         ]
         
         for i in range(20):  # 20 gastos en el último mes
-            fecha = date.today() - timedelta(days=i*2)
+            fecha = timezone.localdate() - timedelta(days=i*2)
             desc, monto_base = random.choice(gastos_servicios)
             monto = monto_base * random.uniform(0.8, 1.2)
             
@@ -211,8 +212,8 @@ class Command(BaseCommand):
         self.stdout.write("[OK] Gastos de servicios generados")
 
         # 9. Crear metas financieras para servicios
-        mes_actual = date.today().month
-        anio_actual = date.today().year
+        mes_actual = timezone.localdate().month
+        anio_actual = timezone.localdate().year
         
         metas_servicios = [
             ('ventas', 8000),

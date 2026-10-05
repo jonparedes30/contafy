@@ -22,6 +22,7 @@ from reportlab.graphics import renderPDF
 
 from empresa.models import Venta, Gasto, Producto, Compra, CuentaContable, MovimientoContable
 from empresa.services.ai_agent_service import ContafyAIAgent
+from django.utils import timezone
 
 @login_required
 def generar_reporte_ia_pdf(request):
@@ -113,7 +114,7 @@ def generar_reporte_ia_pdf(request):
     <b>Empresa:</b> {empresa.nombre}<br/>
     <b>Sector:</b> {datos_empresa['categoria'].title()}<br/>
     <b>Ubicación:</b> {datos_empresa['ubicacion']}<br/>
-    <b>Fecha de Análisis:</b> {datetime.now().strftime('%d de %B de %Y')}<br/>
+    <b>Fecha de Análisis:</b> {timezone.localtime().strftime('%d de %B de %Y')}<br/>
     <b>Generado por:</b> CONTAFY AI Agent
     """
     story.append(Paragraph(empresa_info, normal_style))
@@ -315,7 +316,7 @@ def generar_reporte_ia_pdf(request):
     
     footer_text = f"""
     <b>📊 REPORTE GENERADO POR CONTAFY AI</b><br/>
-    Fecha: {datetime.now().strftime('%d de %B de %Y a las %H:%M')}<br/>
+    Fecha: {timezone.localtime().strftime('%d de %B de %Y a las %H:%M')}<br/>
     Empresa: {empresa.nombre}<br/>
     Sistema: CONTAFY - Plataforma Inteligente para PYMES<br/>
     <i>Este análisis ha sido generado automáticamente usando inteligencia artificial avanzada</i>
@@ -337,7 +338,7 @@ def generar_reporte_ia_pdf(request):
     buffer.seek(0)
     
     response = HttpResponse(buffer, content_type='application/pdf')
-    response['Content-Disposition'] = f'attachment; filename="analisis_ia_{empresa.nombre}_{datetime.now().strftime("%Y%m%d")}.pdf"'
+    response['Content-Disposition'] = f'attachment; filename="analisis_ia_{empresa.nombre}_{timezone.localtime().strftime("%Y%m%d")}.pdf"'
     
     return response
 

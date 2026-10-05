@@ -7,13 +7,14 @@ from empresa.services.ai_agent_service import ContafyAIAgent
 from empresa.services.ai_comandos_service import procesar_comando_ia
 from datetime import datetime, date
 import json
+from django.utils import timezone
 
 @login_required
 @csrf_exempt
 def dashboard_movil(request):
     """Dashboard optimizado para móviles"""
     empresa = request.user.empresa
-    hoy = date.today()
+    hoy = timezone.localdate()
     
     # Datos del día
     ventas_hoy = Venta.objects.filter(

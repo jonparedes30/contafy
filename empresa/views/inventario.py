@@ -101,7 +101,7 @@ def descargar_plantilla_inventario(request):
         'stock': 100,
         'stock_minimo': 10,
         'stock_maximo': 500,
-        'fecha_vencimiento': (date.today() + timedelta(days=365)).isoformat(),
+        'fecha_vencimiento': (timezone.localdate() + timedelta(days=365)).isoformat(),
         'lote': 'L001'
     }
     df = pd.DataFrame([ejemplo])

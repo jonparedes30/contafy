@@ -11,6 +11,7 @@ import re
 
 # Usar la capa de abstracción de proveedores de IA
 from empresa.services.ai_provider import get_ai_provider
+from django.utils import timezone
 
 logger = logging.getLogger(__name__)
 
@@ -40,7 +41,7 @@ class ContafyAIAgent:
         from empresa.models import CuentaContable, MovimientoContable
         from empresa.services.saldos import resumen_balance, TIPOS_DEUDORES
 
-        hoy = datetime.now().date()
+        hoy = timezone.localdate()
         hace_30_dias = hoy - timedelta(days=30)
         hace_90_dias = hoy - timedelta(days=90)
 
@@ -632,7 +633,7 @@ Ejemplo: "Tu liquidez de 1.5 significa que por cada dólar que debes, tienes $1.
         
         # Respuestas básicas mejoradas
         elif 'ventas del mes' in pregunta_lower:
-            transacciones = Venta.objects.filter(empresa=empresa, fecha__month=datetime.now().month).count()
+            transacciones = Venta.objects.filter(empresa=empresa, fecha__month=timezone.localdate().month).count()
             return f"Ventas: ${datos['ventas_mes']:,.2f} en {transacciones} transacciones. Margen operacional: {datos['margen_mes']:.1f}% (ganancia después de todos los gastos)."
         
         elif 'utilidad' in pregunta_lower:

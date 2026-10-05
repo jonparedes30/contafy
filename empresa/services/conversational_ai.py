@@ -9,6 +9,7 @@ from empresa.models import Venta, Gasto, Producto, Cliente, MetaFinanciera
 from empresa.services.ml_service import MLService
 from empresa.services.predicciones_service import PrediccionesAvanzadas
 from empresa.services.automation_service import AutomatizacionCompleta
+from django.utils import timezone
 
 class ConversationalAI:
     """IA Conversacional con contexto y memoria de conversaciones"""
@@ -230,7 +231,7 @@ class ConversationalAI:
         """Analiza factores que afectan las ventas"""
         try:
             # Obtener datos de ventas
-            hoy = date.today()
+            hoy = timezone.localdate()
             mes_actual = hoy.month
             mes_anterior = mes_actual - 1 if mes_actual > 1 else 12
             año_anterior = hoy.year if mes_actual > 1 else hoy.year - 1
@@ -357,7 +358,7 @@ class ConversationalAI:
     
     def _obtener_datos_empresa_completos(self):
         """Obtiene datos completos de la empresa para análisis"""
-        hoy = date.today()
+        hoy = timezone.localdate()
         inicio_mes = hoy.replace(day=1)
         
         # Ventas del mes
@@ -394,7 +395,7 @@ class ConversationalAI:
         
         productos_top = Venta.objects.filter(
             empresa=self.empresa,
-            fecha__gte=date.today() - timedelta(days=30)
+            fecha__gte=timezone.localdate() - timedelta(days=30)
         ).values('producto__nombre').annotate(
             ventas=Sum('monto'),
             cantidad=Sum('cantidad')

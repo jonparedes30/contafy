@@ -4,6 +4,7 @@ from decimal import Decimal
 from django.db import transaction
 from django.db.models import Sum, Q
 from datetime import date, timedelta
+from django.utils import timezone
 
 logger = logging.getLogger(__name__)
 
@@ -89,7 +90,7 @@ class NIIFService:
         # Simulación de revaluación automática
         revaluaciones = RevaluacionActivo.objects.filter(
             empresa=empresa,
-            fecha_revaluacion__gte=date.today() - timedelta(days=365)
+            fecha_revaluacion__gte=timezone.localdate() - timedelta(days=365)
         )
         
         total_superavit = sum(r.superavit_revaluacion for r in revaluaciones)
@@ -155,7 +156,7 @@ class NIIFService:
     def ejecutar_cierre_niif(empresa, fecha_cierre=None):
         """Ejecuta proceso de cierre según NIIF"""
         if not fecha_cierre:
-            fecha_cierre = date.today()
+            fecha_cierre = timezone.localdate()
         
         resultados = {
             'deterioro_actualizado': 0,

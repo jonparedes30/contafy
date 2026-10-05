@@ -22,21 +22,7 @@ User = get_user_model()
 EXCLUIR = ('logout', 'webhook', 'reset', 'eliminar', 'delete', 'borrar', 'limpiar',
            'pago/', 'chat', 'agente', 'ia/', 'ai/', 'reporte-ia', 'ejecutar', 'actualizar')
 
-RUTAS_CON_DEUDA = {
-    '/app-beta-2024/ai-comandos/',
-    '/app-beta-2024/crear/',
-    '/app-beta-2024/dashboard/gastos/',
-    '/app-beta-2024/dashboard/metas/',
-    '/app-beta-2024/dashboard/productos/',
-    '/app-beta-2024/manufactura/ordenes/crear/',
-    '/app-beta-2024/manufactura/productos/crear/',
-    '/app-beta-2024/manufactura/proveedores/',
-    '/app-beta-2024/niif/contratos-niif15/',
-    '/app-beta-2024/niif/estado-resultados-niif/',
-    '/app-beta-2024/niif/notas-explicativas/',
-    '/app-beta-2024/niif/reporte-completo/',
-    '/app-beta-2024/niif/reporte-cumplimiento/',
-}
+RUTAS_CON_DEUDA = set()
 
 
 def _rutas_sin_parametros():

@@ -9,6 +9,7 @@ from django.views.decorators.http import require_http_methods
 from django.views.decorators.csrf import csrf_exempt
 from empresa.decorators import require_owner
 import json
+from django.utils import timezone
 
 
 @login_required
@@ -30,7 +31,7 @@ def crear_empresa(request):
     # Verificar si el usuario ya tiene una empresa
     if request.user.empresa:
         messages.warning(request, 'Ya tienes una empresa asociada.')
-        return redirect('dashboard')
+        return redirect('empresa:dashboard')
     
     if request.method == 'POST':
         form = EmpresaForm(request.POST)
@@ -68,12 +69,12 @@ def listar_empresas(request):
         'total_empleados': empleados.count(),
         'total_productos': empresa.producto_set.count(),
         'ventas_mes': empresa.venta_set.filter(
-            fecha__month=datetime.now().month,
-            fecha__year=datetime.now().year
+            fecha__month=timezone.localdate().month,
+            fecha__year=timezone.localdate().year
         ).aggregate(total=Sum('monto'))['total'] or 0,
         'gastos_mes': empresa.gasto_set.filter(
-            fecha__month=datetime.now().month,
-            fecha__year=datetime.now().year
+            fecha__month=timezone.localdate().month,
+            fecha__year=timezone.localdate().year
         ).aggregate(total=Sum('monto'))['total'] or 0,
     }
     

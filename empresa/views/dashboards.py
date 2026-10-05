@@ -100,11 +100,15 @@ def dashboard_gastos(request):
     """
     empresa = request.user.empresa
     
-    # Verificar permisos
-    poderes = PoderEmpleado.objects.get(empleado=request.user, empresa=empresa)
-    if not (poderes.puede_registrar_gastos or poderes.puede_gestionar_cuentas):
-        messages.error(request, 'No tienes permisos para acceder a esta función.')
-        return redirect('empresa:home')
+    # El dueño siempre entra; un empleado necesita registrar gastos o gestionar cuentas.
+    from empresa.decorators import _obtener_propietario
+    propietario = _obtener_propietario(empresa)
+    es_dueno = bool(propietario and propietario.id == request.user.id)
+    poderes = None if es_dueno else PoderEmpleado.objects.filter(empleado=request.user, empresa=empresa).first()
+    if not es_dueno:
+        if not poderes or not (poderes.puede_registrar_gastos or poderes.puede_gestionar_cuentas):
+            messages.error(request, 'No tienes permisos para acceder a esta función.')
+            return redirect('empresa:home')
     
     # Gastos del mes actual
     mes_actual = timezone.now().replace(day=1)
@@ -125,7 +129,7 @@ def dashboard_gastos(request):
     gastos_por_categoria = Gasto.objects.filter(
         empresa=empresa,
         fecha__gte=mes_actual
-    ).values('categoria__nombre').annotate(
+    ).values('categoria').annotate(
         total=Sum('monto'),
         cantidad=Count('id')
     ).order_by('-total')[:5]
@@ -134,8 +138,8 @@ def dashboard_gastos(request):
         'gastos_mes': gastos_mes,
         'ultimos_gastos': ultimos_gastos,
         'gastos_por_categoria': gastos_por_categoria,
-        'puede_registrar_gastos': poderes.puede_registrar_gastos,
-        'puede_gestionar_cuentas': poderes.puede_gestionar_cuentas,
+        'puede_registrar_gastos': es_dueno or poderes.puede_registrar_gastos,
+        'puede_gestionar_cuentas': es_dueno or poderes.puede_gestionar_cuentas,
     }
     
     return render(request, 'empresa/dashboards/dashboard_gastos.html', context)
@@ -144,74 +148,15 @@ def dashboard_gastos(request):
 @login_required
 @require_power('puede_editar_productos')
 def dashboard_productos(request):
-    """
-    Dashboard específico para gestores de productos.
-    Muestra estadísticas de productos y botón rápido para crear/editar.
-    """
-    empresa = request.user.empresa
-    
-    # Estadísticas de productos
-    total_productos = Producto.objects.filter(empresa=empresa).count()
-    productos_activos = Producto.objects.filter(empresa=empresa, activo=True).count()
-    productos_sin_stock = Producto.objects.filter(empresa=empresa, stock=0).count()
-    
-    # Productos más vendidos
-    productos_mas_vendidos = Producto.objects.filter(
-        empresa=empresa,
-        venta__isnull=False
-    ).annotate(
-        total_ventas=Count('venta')
-    ).order_by('-total_ventas')[:5]
-    
-    # Productos recientes
-    productos_recientes = Producto.objects.filter(
-        empresa=empresa
-    ).order_by('-fecha_creacion')[:5]
-    
-    context = {
-        'total_productos': total_productos,
-        'productos_activos': productos_activos,
-        'productos_sin_stock': productos_sin_stock,
-        'productos_mas_vendidos': productos_mas_vendidos,
-        'productos_recientes': productos_recientes,
-    }
-    
-    return render(request, 'empresa/dashboards/dashboard_productos.html', context)
+    """Panel del gestor de productos: el listado de productos ya cubre sus métricas y filtros."""
+    return redirect('empresa:listar_productos')
 
 
 @login_required
 @require_power('puede_gestionar_metas')
 def dashboard_metas(request):
-    """
-    Dashboard específico para gestores de metas.
-    Muestra progreso de metas y alertas.
-    """
-    empresa = request.user.empresa
-    
-    # Obtener metas del mes/año actual (las más recientes primero)
-    from empresa.models import MetaFinanciera
-    from django.utils import timezone as tz
-    ahora = tz.now()
-    metas_activas = MetaFinanciera.objects.filter(
-        empresa=empresa,
-        mes=ahora.month,
-        anio=ahora.year
-    ).order_by('-actualizado_en')[:5]
-    
-    # Notificaciones no leídas
-    from empresa.models import NotificacionMeta
-    notificaciones = NotificacionMeta.objects.filter(
-        empresa=empresa,
-        leida=False
-    ).order_by('-fecha_creacion')[:5]
-    
-    context = {
-        'metas_activas': metas_activas,
-        'notificaciones': notificaciones,
-    }
-    
-    return render(request, 'empresa/dashboards/dashboard_metas.html', context)
-
+    """Panel del gestor de metas: la página de Metas muestra el progreso y las alertas."""
+    return redirect('empresa:gestionar_metas')
 
 @login_required
 def dashboard_basico(request):

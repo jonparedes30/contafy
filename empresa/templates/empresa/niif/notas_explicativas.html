@@ -1,0 +1,85 @@
+{% extends 'empresa/base.html' %}
+
+{% block title %}Notas Explicativas NIIF - Contafy{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3 mb-1 fw-bold"><i class="bi bi-journal-text me-2"></i>Notas Explicativas</h1>
+            <p class="text-muted mb-0">{{ empresa.nombre }} · Políticas contables y detalle de saldos (NIIF para PYMES)</p>
+        </div>
+        <a href="{% url 'empresa:niif_reporte_completo' %}" class="btn btn-outline-primary btn-sm">
+            <i class="bi bi-clipboard-check me-1"></i>Reporte completo
+        </a>
+    </div>
+
+    <div class="card mb-4">
+        <div class="card-header bg-white fw-bold">Nota 1 · Políticas contables</div>
+        <div class="card-body">
+            <dl class="row mb-0">
+                <dt class="col-md-3">Reconocimiento de ingresos</dt>
+                <dd class="col-md-9">{{ notas.politicas_contables.reconocimiento_ingresos }}</dd>
+                <dt class="col-md-3">Instrumentos financieros</dt>
+                <dd class="col-md-9">{{ notas.politicas_contables.instrumentos_financieros }}</dd>
+                <dt class="col-md-3">Inventarios</dt>
+                <dd class="col-md-9">{{ notas.politicas_contables.inventarios }}</dd>
+                <dt class="col-md-3">Deterioro</dt>
+                <dd class="col-md-9 mb-0">{{ notas.politicas_contables.deterioro }}</dd>
+            </dl>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-lg-6">
+            <div class="card h-100">
+                <div class="card-header bg-white fw-bold">Nota 2 · Cuentas por cobrar (NIIF 9)</div>
+                <div class="card-body">
+                    <table class="table table-sm mb-3">
+                        <tr><td>Cuentas por cobrar</td><td class="text-end">{{ notas.cuentas_por_cobrar.total_cuentas }}</td></tr>
+                        <tr><td>Cuentas vencidas</td><td class="text-end">{{ notas.cuentas_por_cobrar.cuentas_vencidas }}</td></tr>
+                        <tr class="fw-bold"><td>Deterioro esperado</td><td class="text-end">${{ notas.cuentas_por_cobrar.deterioro_total|floatformat:2 }}</td></tr>
+                    </table>
+                    <p class="small text-muted mb-0">{{ notas.cuentas_por_cobrar.politica_deterioro }}</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-6">
+            <div class="card h-100">
+                <div class="card-header bg-white fw-bold">Nota 3 · Instrumentos financieros</div>
+                <div class="card-body">
+                    <table class="table table-sm mb-0">
+                        <tr><td>Total de instrumentos</td><td class="text-end">{{ notas.instrumentos_financieros.total_instrumentos }}</td></tr>
+                        <tr><td>Costo amortizado</td><td class="text-end">{{ notas.instrumentos_financieros.por_categoria.costo_amortizado }}</td></tr>
+                        <tr><td>Valor razonable con cambios en ORI</td><td class="text-end">{{ notas.instrumentos_financieros.por_categoria.valor_razonable_ori }}</td></tr>
+                        <tr><td>Valor razonable con cambios en resultados</td><td class="text-end">{{ notas.instrumentos_financieros.por_categoria.valor_razonable_resultado }}</td></tr>
+                    </table>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-6">
+            <div class="card h-100">
+                <div class="card-header bg-white fw-bold">Nota 4 · Contratos con clientes (NIIF 15)</div>
+                <div class="card-body">
+                    <table class="table table-sm mb-0">
+                        <tr><td>Contratos registrados</td><td class="text-end">{{ notas.contratos_niif15.total_contratos }}</td></tr>
+                        <tr><td>Contratos activos</td><td class="text-end">{{ notas.contratos_niif15.contratos_activos }}</td></tr>
+                        <tr class="fw-bold"><td>Ingresos diferidos</td><td class="text-end">${{ notas.contratos_niif15.ingresos_diferidos|floatformat:2 }}</td></tr>
+                    </table>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-6">
+            <div class="card h-100">
+                <div class="card-header bg-white fw-bold">Nota 5 · Revaluación de activos</div>
+                <div class="card-body">
+                    <table class="table table-sm mb-0">
+                        <tr><td>Revaluaciones registradas</td><td class="text-end">{{ notas.revaluaciones.total_revaluaciones }}</td></tr>
+                        <tr class="fw-bold"><td>Superávit por revaluación</td><td class="text-end">${{ notas.revaluaciones.superavit_total|floatformat:2 }}</td></tr>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -8,12 +8,20 @@ from django.http import JsonResponse
 from django.forms import formset_factory
 from empresa.decorators import require_power
 from empresa.models import (
-    MateriaPrima, 
-    ProductoManufacturado, 
+    ConsumoMateriaPrima,
+    MateriaPrima,
+    OrdenProduccion,
+    ProductoManufacturado,
+    Proveedor,
     RecetaProduccion,
-    OrdenProduccion
 )
-from empresa.forms import MateriaPrimaForm, ProductoManufacturadoForm
+from empresa.forms import (
+    MateriaPrimaForm,
+    OrdenProduccionForm,
+    ProductoManufacturadoForm,
+    ProveedorForm,
+    RecetaProduccionForm,
+)
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 
 

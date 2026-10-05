@@ -137,7 +137,7 @@
                             {% for categoria in gastos_por_categoria %}
                             <div class="list-group-item d-flex justify-content-between align-items-center">
                                 <div>
-                                    <strong>{{ categoria.categoria__nombre|default:"Sin categoría" }}</strong>
+                                    <strong>{{ categoria.categoria|default:"Sin categoría" }}</strong>
                                     <br>
                                     <small class="text-muted">{{ categoria.cantidad }} gastos</small>
                                 </div>

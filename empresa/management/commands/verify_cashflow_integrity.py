@@ -2,6 +2,7 @@ from django.core.management.base import BaseCommand
 from django.db.models import Sum
 from empresa.models import Empresa, Venta, Gasto, Compra, MovimientoContable, CuentaContable
 from datetime import datetime
+from django.utils import timezone
 
 class Command(BaseCommand):
     help = 'Verifica integridad del flujo de caja y detecta duplicidad'
@@ -10,7 +11,7 @@ class Command(BaseCommand):
         self.stdout.write("=== VERIFICACIÓN DE INTEGRIDAD FLUJO DE CAJA ===\n")
         
         empresas = Empresa.objects.all()
-        año_actual = datetime.now().year
+        año_actual = timezone.localdate().year
         
         for empresa in empresas:
             self.stdout.write(f"--- Empresa: {empresa.nombre} ---")

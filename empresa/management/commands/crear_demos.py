@@ -7,6 +7,7 @@ from empresa.models import (
 from datetime import date, timedelta
 from decimal import Decimal
 import random
+from django.utils import timezone
 
 class Command(BaseCommand):
     help = 'Crea 3 cuentas demo con datos reales: Comercio, Manufactura y Servicios'
@@ -30,9 +31,13 @@ class Command(BaseCommand):
 
             # Los productos se crean con stock pero sin asiento de inventario
             # inicial: regularizar para que la cuenta Inventario no quede negativa.
+            # El capital sembrado tampoco tiene asiento: registrarlo para que el Balance cuadre.
             from empresa.management.commands.regularizar_inventario import regularizar
+            from empresa.services.capital_service import registrar_asiento_capital
             for usuario in Usuario.objects.filter(username__in=['demo_comercio', 'demo_manufactura', 'demo_servicios']):
                 if usuario.empresa:
+                    for capital in Capital.objects.filter(empresa=usuario.empresa):
+                        registrar_asiento_capital(capital)
                     regularizar(usuario.empresa)
 
         self.stdout.write(self.style.SUCCESS('\n✅ Cuentas demo creadas exitosamente!\n'))
@@ -71,7 +76,7 @@ class Command(BaseCommand):
             empresa=empresa,
             monto=5000,
             descripcion='Capital inicial Minimarket',
-            fecha=date.today() - timedelta(days=90)
+            fecha=timezone.localdate() - timedelta(days=90)
         )
         
         # Categorías
@@ -124,7 +129,7 @@ class Command(BaseCommand):
             producto = random.choice(productos)
             proveedor = random.choice([prov1, prov2])
             cantidad = random.randint(15, 30)  # REDUCIDO de 20-50
-            fecha_compra = date.today() - timedelta(days=random.randint(1, 90))
+            fecha_compra = timezone.localdate() - timedelta(days=random.randint(1, 90))
             
             compra = Compra.objects.create(
                 empresa=empresa,
@@ -145,7 +150,7 @@ class Command(BaseCommand):
             producto = random.choice(productos)
             cliente = random.choice(clientes) if random.random() > 0.3 else None
             cantidad = random.randint(2, 8)
-            fecha_venta = date.today() - timedelta(days=random.randint(0, 30))
+            fecha_venta = timezone.localdate() - timedelta(days=random.randint(0, 30))
             
             if producto.stock >= cantidad:
                 venta = Venta.objects.create(
@@ -177,7 +182,7 @@ class Command(BaseCommand):
         
         # Crear gastos solo para 1 mes (datos recientes)
         for nombre, monto_val, desc in gastos_data:
-            fecha_gasto = date.today() - timedelta(days=5)
+            fecha_gasto = timezone.localdate() - timedelta(days=5)
             gasto = Gasto.objects.create(
                 empresa=empresa,
                 descripcion=f'{nombre} - {desc}',
@@ -221,7 +226,7 @@ class Command(BaseCommand):
             empresa=empresa,
             monto=8000,
             descripcion='Capital inicial Panadería',
-            fecha=date.today() - timedelta(days=90)
+            fecha=timezone.localdate() - timedelta(days=90)
         )
         
         # Categorías
@@ -280,7 +285,7 @@ class Command(BaseCommand):
         
         for nombre, precio, desc in materias_primas:
             for i in range(2):  # REDUCIDO de 3 a 2
-                fecha_compra = date.today() - timedelta(days=random.randint(1, 90))
+                fecha_compra = timezone.localdate() - timedelta(days=random.randint(1, 90))
                 cantidad = random.randint(3, 8)  # REDUCIDO de 5-15 a 3-8
                 
                 # Crear producto temporal para materia prima
@@ -312,7 +317,7 @@ class Command(BaseCommand):
             producto = random.choice(productos)
             cliente = random.choice(clientes) if random.random() > 0.4 else None
             cantidad = random.randint(2, 8)
-            fecha_venta = date.today() - timedelta(days=random.randint(0, 30))
+            fecha_venta = timezone.localdate() - timedelta(days=random.randint(0, 30))
             
             if producto.stock >= cantidad:
                 venta = Venta.objects.create(
@@ -344,7 +349,7 @@ class Command(BaseCommand):
         
         for mes_offset in range(1):  # REDUCIDO a 1 mes solamente
             for nombre, monto_val, desc in gastos_data:
-                fecha_gasto = date.today() - timedelta(days=5)
+                fecha_gasto = timezone.localdate() - timedelta(days=5)
                 gasto = Gasto.objects.create(
                     empresa=empresa,
                     descripcion=f'{nombre} - {desc}',
@@ -388,7 +393,7 @@ class Command(BaseCommand):
             empresa=empresa,
             monto=3000,
             descripcion='Capital inicial Peluquería',
-            fecha=date.today() - timedelta(days=90)
+            fecha=timezone.localdate() - timedelta(days=90)
         )
         
         # Categorías
@@ -454,7 +459,7 @@ class Command(BaseCommand):
         
         for nombre, precio in insumos:
             for i in range(2):
-                fecha_compra = date.today() - timedelta(days=random.randint(1, 90))
+                fecha_compra = timezone.localdate() - timedelta(days=random.randint(1, 90))
                 cantidad = random.randint(3, 10)
                 
                 prod = Producto.objects.create(
@@ -484,7 +489,7 @@ class Command(BaseCommand):
         for i in range(250):
             servicio = random.choice(servicios)
             cliente = random.choice(clientes)
-            fecha_venta = date.today() - timedelta(days=random.randint(0, 30))
+            fecha_venta = timezone.localdate() - timedelta(days=random.randint(0, 30))
             
             venta = Venta.objects.create(
                 empresa=empresa,
@@ -505,7 +510,7 @@ class Command(BaseCommand):
         for i in range(20):
             producto = random.choice(productos_venta)
             cliente = random.choice(clientes) if random.random() > 0.5 else None
-            fecha_venta = date.today() - timedelta(days=random.randint(0, 90))
+            fecha_venta = timezone.localdate() - timedelta(days=random.randint(0, 90))
             
             if producto.stock > 0:
                 venta = Venta.objects.create(
@@ -537,7 +542,7 @@ class Command(BaseCommand):
         
         for mes_offset in range(1):  # REDUCIDO a 1 mes
             for nombre, monto_val, desc in gastos_data:
-                fecha_gasto = date.today() - timedelta(days=5)
+                fecha_gasto = timezone.localdate() - timedelta(days=5)
                 gasto = Gasto.objects.create(
                     empresa=empresa,
                     descripcion=f'{nombre} - {desc}',

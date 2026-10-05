@@ -7,6 +7,7 @@ from datetime import datetime, timedelta
 from empresa.models import MetaFinanciera, Venta, Gasto, HistorialMeta, NotificacionMeta
 from empresa.services.metas_service import ServicioMetas
 import json
+from django.utils import timezone
 
 @login_required
 def gestionar_metas(request):
@@ -47,7 +48,7 @@ def gestionar_metas(request):
 
         try:
             anio_i = int(anio or 0)
-            anio_actual = datetime.now().year
+            anio_actual = timezone.localdate().year
             if not (anio_actual - 5 <= anio_i <= anio_actual + 5):
                 errores.append(f'Año fuera de rango (entre {anio_actual - 5} y {anio_actual + 5}).')
         except (ValueError, TypeError):
@@ -158,7 +159,7 @@ def gestionar_metas(request):
         'notificaciones': notificaciones,
         'tipos_meta': MetaFinanciera._meta.get_field('tipo').choices,
         'meses': meses_es,
-        'anios': range(2020, datetime.now().year + 2),
+        'anios': range(2020, timezone.localdate().year + 2),
         'historico_labels': historico_labels,
         'historico_ventas': historico_ventas,
         'historico_gastos': historico_gastos,

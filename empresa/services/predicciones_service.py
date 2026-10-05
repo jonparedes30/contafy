@@ -7,6 +7,7 @@ from django.db.models import Sum, Avg, Count, Q
 from empresa.models import Venta, Gasto, Compra, Producto, CuentaContable, MovimientoContable
 from decimal import Decimal
 import math
+from django.utils import timezone
 
 class PrediccionesAvanzadas:
     """Servicio de predicciones financieras avanzadas"""
@@ -33,7 +34,7 @@ class PrediccionesAvanzadas:
             
             # Generar predicciones
             predicciones = []
-            fecha_actual = date.today()
+            fecha_actual = timezone.localdate()
             
             for i in range(meses):
                 # Calcular fecha del mes a predecir
@@ -275,7 +276,7 @@ class PrediccionesAvanzadas:
     def _obtener_datos_flujo_historico(self, meses):
         """Obtiene datos históricos de flujo de caja"""
         datos = []
-        fecha_fin = date.today()
+        fecha_fin = timezone.localdate()
         
         for i in range(meses):
             # Calcular fecha del mes
@@ -375,7 +376,7 @@ class PrediccionesAvanzadas:
     def _prediccion_flujo_simple(self, meses):
         """Predicción simple cuando hay pocos datos"""
         # Obtener promedios de los últimos 3 meses
-        fecha_inicio = date.today() - timedelta(days=90)
+        fecha_inicio = timezone.localdate() - timedelta(days=90)
         
         ingresos_promedio = Venta.objects.filter(
             empresa=self.empresa,
@@ -418,7 +419,7 @@ class PrediccionesAvanzadas:
     def _obtener_datos_financieros_actuales(self):
         """Obtiene datos financieros actuales para análisis de riesgo"""
         # Implementación simplificada
-        hoy = date.today()
+        hoy = timezone.localdate()
         inicio_mes = hoy.replace(day=1)
         
         ingresos_mes = Venta.objects.filter(

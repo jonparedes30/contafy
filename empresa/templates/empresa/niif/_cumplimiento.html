@@ -1,0 +1,43 @@
+{# Resumen de cumplimiento NIIF. Recibe `c` con la forma de NIIFService.generar_reporte_cumplimiento_niif #}
+<div class="card mb-4">
+    <div class="card-header bg-white d-flex justify-content-between align-items-center">
+        <span class="fw-bold">Nivel de cumplimiento</span>
+        <span class="badge {% if c.puntuacion_general >= 75 %}bg-success{% elif c.puntuacion_general >= 50 %}bg-warning text-dark{% else %}bg-danger{% endif %}">
+            {{ c.puntuacion_general }}% · {{ c.nivel_cumplimiento }}
+        </span>
+    </div>
+    <div class="card-body">
+        <div class="progress mb-4" style="height: 10px;" role="progressbar" aria-label="Cumplimiento NIIF"
+             aria-valuenow="{{ c.puntuacion_general }}" aria-valuemin="0" aria-valuemax="100">
+            <div class="progress-bar {% if c.puntuacion_general >= 75 %}bg-success{% elif c.puntuacion_general >= 50 %}bg-warning{% else %}bg-danger{% endif %}"
+                 style="width: {{ c.puntuacion_general }}%"></div>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-sm align-middle mb-0">
+                <thead><tr><th>Norma</th><th>Detalle</th><th class="text-end">Estado</th></tr></thead>
+                <tbody>
+                    <tr>
+                        <td>NIIF 9 · Deterioro de cartera</td>
+                        <td>{{ c.niif_9.cuentas_con_deterioro }} de {{ c.niif_9.total_cuentas }} cuentas con deterioro calculado</td>
+                        <td class="text-end">{% if c.niif_9.porcentaje >= 100 %}<span class="badge bg-success">Completo</span>{% else %}<span class="badge bg-warning text-dark">{{ c.niif_9.porcentaje|floatformat:0 }}%</span>{% endif %}</td>
+                    </tr>
+                    <tr>
+                        <td>NIC 2 · Inventarios (PEPS)</td>
+                        <td>{{ c.nic_2.movimientos_peps }} movimientos de inventario registrados</td>
+                        <td class="text-end">{% if c.nic_2.implementado %}<span class="badge bg-success">Implementado</span>{% else %}<span class="badge bg-secondary">Pendiente</span>{% endif %}</td>
+                    </tr>
+                    <tr>
+                        <td>NIIF 15 · Contratos con clientes</td>
+                        <td>{{ c.niif_15.contratos_registrados }} contratos registrados</td>
+                        <td class="text-end">{% if c.niif_15.implementado %}<span class="badge bg-success">Implementado</span>{% else %}<span class="badge bg-secondary">Sin contratos</span>{% endif %}</td>
+                    </tr>
+                    <tr>
+                        <td>Instrumentos financieros</td>
+                        <td>{{ c.instrumentos_financieros.total_instrumentos }} instrumentos registrados</td>
+                        <td class="text-end">{% if c.instrumentos_financieros.implementado %}<span class="badge bg-success">Implementado</span>{% else %}<span class="badge bg-secondary">Sin registros</span>{% endif %}</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

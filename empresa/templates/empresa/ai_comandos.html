@@ -1,4 +1,4 @@
-{% extends 'base.html' %}
+{% extends 'empresa/base.html' %}
 {% load static %}
 
 {% block title %}Asistente IA - CONTAFY{% endblock %}
@@ -264,7 +264,7 @@ document.addEventListener('DOMContentLoaded', function() {
         mostrarTyping();
 
         // Enviar comando al servidor
-        fetch('{% url "ai_comandos" %}', {
+        fetch('{% url "empresa:ai_comandos" %}', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -349,7 +349,7 @@ document.addEventListener('DOMContentLoaded', function() {
         
         if (ejemplosSection.style.display === 'none') {
             // Cargar ejemplos
-            fetch('{% url "ejemplos_comandos" %}')
+            fetch('{% url "empresa:ejemplos_comandos" %}')
             .then(response => response.json())
             .then(data => {
                 ejemplosGrid.innerHTML = '';
@@ -374,7 +374,7 @@ document.addEventListener('DOMContentLoaded', function() {
     };
 
     window.mostrarAyuda = function() {
-        fetch('{% url "ayuda_comandos" %}')
+        fetch('{% url "empresa:ayuda_comandos" %}')
         .then(response => response.json())
         .then(data => {
             let ayudaHtml = '<strong>📚 Comandos disponibles:</strong><br><br>';

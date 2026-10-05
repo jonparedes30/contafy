@@ -7,6 +7,7 @@ from empresa.models import Venta, Gasto, Producto, MetaFinanciera
 from django.db.models import Sum
 from datetime import datetime, date
 import json
+from django.utils import timezone
 
 @login_required
 @csrf_exempt
@@ -54,7 +55,7 @@ def dashboard_movil(request):
     """Dashboard optimizado para móviles"""
     try:
         empresa = request.user.empresa
-        hoy = date.today()
+        hoy = timezone.localdate()
         
         # Datos esenciales para móvil
         ventas_hoy = Venta.objects.filter(
@@ -184,7 +185,7 @@ def generar_alertas_movil(empresa):
         })
     
     # Metas del mes
-    hoy = date.today()
+    hoy = timezone.localdate()
     meta = MetaFinanciera.objects.filter(
         empresa=empresa,
         mes=hoy.month,

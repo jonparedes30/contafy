@@ -142,7 +142,7 @@ def dashboard(request):
     print(f"DEBUG - Gastos mensuales finales: {gastos_mensuales}")
 
     ratio_gastos_ventas = round((total_gastos / total_ventas * 100), 2) if total_ventas else 0
-    fecha_ultima_actualizacion = datetime.now().strftime('%d/%m/%Y %H:%M')
+    fecha_ultima_actualizacion = timezone.localtime().strftime('%d/%m/%Y %H:%M')
     if utilidad_neta > 0:
         estado_actual = 'Saludable'
     elif utilidad_neta == 0:
