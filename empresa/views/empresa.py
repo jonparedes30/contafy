@@ -1,3 +1,4 @@
+from empresa.utils.errores import mensaje_error
 from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
@@ -187,7 +188,7 @@ def eliminar_empleado(request, empleado_id):
     except Usuario.DoesNotExist:
         return JsonResponse({'error': 'Empleado no encontrado.'}, status=404)
     except Exception as e:
-        return JsonResponse({'error': str(e)}, status=500)
+        return JsonResponse({'error': mensaje_error(e)}, status=500)
 
 
 @login_required
@@ -222,7 +223,7 @@ def editar_empresa(request):
         empresa.save()
         return JsonResponse({'success': True})
     except Exception as e:
-        return JsonResponse({'error': str(e)}, status=500)
+        return JsonResponse({'error': mensaje_error(e)}, status=500)
 
 
 @login_required
@@ -248,6 +249,6 @@ def editar_usuario(request):
         usuario.save()
         return JsonResponse({'success': True})
     except Exception as e:
-        return JsonResponse({'error': str(e)}, status=500)
+        return JsonResponse({'error': mensaje_error(e)}, status=500)
 
 

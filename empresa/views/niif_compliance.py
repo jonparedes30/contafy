@@ -1,3 +1,4 @@
+from empresa.utils.errores import mensaje_error
 from django.db.models import Count, Q
 from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
@@ -51,7 +52,7 @@ def actualizar_deterioro_ajax(request):
         except Exception as e:
             return JsonResponse({
                 'success': False,
-                'message': f'Error: {str(e)}'
+                'message': f'Error: {mensaje_error(e)}'
             })
     
     return JsonResponse({'success': False, 'message': 'Método no permitido'})
@@ -106,7 +107,7 @@ def ejecutar_cierre_niif(request):
         except Exception as e:
             return JsonResponse({
                 'success': False,
-                'message': f'Error en cierre NIIF: {str(e)}'
+                'message': f'Error en cierre NIIF: {mensaje_error(e)}'
             })
     
     return JsonResponse({'success': False, 'message': 'Método no permitido'})

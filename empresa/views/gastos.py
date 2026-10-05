@@ -1,3 +1,4 @@
+from empresa.utils.errores import mensaje_error
 from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
@@ -128,6 +129,6 @@ def eliminar_gasto(request, gasto_id):
             messages.success(request, 'Gasto eliminado correctamente.')
             return JsonResponse({'success': True})
         except Exception as e:
-            return JsonResponse({'error': str(e)}, status=500)
+            return JsonResponse({'error': mensaje_error(e)}, status=500)
     
     return JsonResponse({'error': 'Método no permitido'}, status=405)

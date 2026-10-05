@@ -1,3 +1,4 @@
+from empresa.utils.errores import mensaje_error
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
@@ -79,7 +80,7 @@ Responde desde el panel de administración de CONTAFY
         except Exception as e:
             return JsonResponse({
                 'success': False,
-                'error': f'Error al enviar mensaje: {str(e)}'
+                'error': f'Error al enviar mensaje: {mensaje_error(e)}'
             })
     
     return render(request, 'empresa/conversacion.html', {

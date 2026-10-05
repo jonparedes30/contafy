@@ -1,5 +1,6 @@
 # empresa/views/resumen.py
 
+from empresa.utils.errores import mensaje_error
 from django.shortcuts import render
 from django.contrib.auth.decorators import login_required
 from empresa.models import Venta, Compra, Gasto, CuentaContable, MovimientoContable, Producto
@@ -427,7 +428,7 @@ def resumen_financiero(request):
     
     except Exception as exc:
         logger.exception(f"ERROR CRÍTICO en resumen: {exc}")
-        return HttpResponse(f'Error 500: {str(exc)}', status=500)
+        return HttpResponse(f'Error 500: {mensaje_error(exc)}', status=500)
 
 @login_required
 def estado_resultados(request):
@@ -484,12 +485,12 @@ def estado_resultados(request):
     utilidad_neta = utilidad_operativa - total_gastos
 
     # Debug: Imprimir valores calculados
-    print(f"DEBUG - Estado de Resultados:")
-    print(f"DEBUG - Ventas: {total_ventas}")
-    print(f"DEBUG - Costos: {total_costos}")
-    print(f"DEBUG - Gastos: {total_gastos}")
-    print(f"DEBUG - Utilidad Operativa: {utilidad_operativa}")
-    print(f"DEBUG - Utilidad Neta: {utilidad_neta}")
+    logger.debug(f"DEBUG - Estado de Resultados:")
+    logger.debug(f"DEBUG - Ventas: {total_ventas}")
+    logger.debug(f"DEBUG - Costos: {total_costos}")
+    logger.debug(f"DEBUG - Gastos: {total_gastos}")
+    logger.debug(f"DEBUG - Utilidad Operativa: {utilidad_operativa}")
+    logger.debug(f"DEBUG - Utilidad Neta: {utilidad_neta}")
 
     contexto = {
         'ventas': float(total_ventas or 0.0),

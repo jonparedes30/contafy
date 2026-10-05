@@ -1,3 +1,4 @@
+from empresa.utils.errores import mensaje_error
 from django.http import JsonResponse
 from django.db import connection
 
@@ -16,5 +17,5 @@ def health_check(request):
         return JsonResponse({
             'status': 'unhealthy',
             'database': 'disconnected',
-            'error': str(e)
+            'error': mensaje_error(e)
         }, status=503)

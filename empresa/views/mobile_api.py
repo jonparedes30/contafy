@@ -1,3 +1,4 @@
+from empresa.utils.errores import mensaje_error
 from django.http import JsonResponse
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.csrf import csrf_exempt
@@ -45,7 +46,7 @@ def chat_movil(request):
         except Exception as e:
             return JsonResponse({
                 'success': False,
-                'error': f'Error en chat móvil: {str(e)}'
+                'error': f'Error en chat móvil: {mensaje_error(e)}'
             })
     
     return JsonResponse({'success': False, 'error': 'Método no permitido'})
@@ -106,7 +107,7 @@ def dashboard_movil(request):
     except Exception as e:
         return JsonResponse({
             'success': False,
-            'error': f'Error en dashboard móvil: {str(e)}'
+            'error': f'Error en dashboard móvil: {mensaje_error(e)}'
         })
 
 @login_required
@@ -133,7 +134,7 @@ def comando_rapido_movil(request):
         except Exception as e:
             return JsonResponse({
                 'success': False,
-                'error': f'Error en comando móvil: {str(e)}'
+                'error': f'Error en comando móvil: {mensaje_error(e)}'
             })
     
     return JsonResponse({'success': False, 'error': 'Método no permitido'})

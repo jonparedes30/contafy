@@ -312,13 +312,13 @@ class ContafyAIAgent:
         """Chat interactivo con el usuario"""
         datos = self.obtener_datos_empresa(empresa)
         
-        print(f"DEBUG: Provider actual: {self.provider}")
-        print(f"DEBUG: Datos empresa - Ventas: ${datos['ventas_mes']}, Gastos: ${datos['gastos_mes']}")
+        logger.debug(f"DEBUG: Provider actual: {self.provider}")
+        logger.debug(f"DEBUG: Datos empresa - Ventas: ${datos['ventas_mes']}, Gastos: ${datos['gastos_mes']}")
         
         if self.provider == 'gemini':
             return self._chat_gemini(empresa, datos, pregunta)
         else:
-            print("DEBUG: Usando chat local inteligente")
+            logger.debug("DEBUG: Usando chat local inteligente")
             return self._chat_local(empresa, datos, pregunta)
     
     def _chat_openai(self, empresa, datos, pregunta):
@@ -504,9 +504,9 @@ INSTRUCCIONES:
 Ejemplo: "Tu liquidez de 1.5 significa que por cada dólar que debes, tienes $1.50 para pagarlo. Eso está bien."
                 """
             
-            print(f"DEBUG AI: Enviando prompt con datos reales para '{pregunta}'...")
+            logger.debug(f"DEBUG AI: Enviando prompt con datos reales para '{pregunta}'...")
             respuesta_texto = self._ai_provider.complete(prompt)
-            print(f"DEBUG AI: Respuesta recibida exitosamente")
+            logger.debug(f"DEBUG AI: Respuesta recibida exitosamente")
             
             # Si Gemini detectó un comando, ejecutarlo
             if respuesta_texto.startswith('EJECUTAR_COMANDO:'):
@@ -556,8 +556,8 @@ Ejemplo: "Tu liquidez de 1.5 significa que por cada dólar que debes, tienes $1.
             return respuesta_limpia
             
         except Exception as e:
-            print(f"DEBUG Gemini Error completo: {e}")
-            print(f"DEBUG: Fallback a chat local")
+            logger.debug(f"DEBUG Gemini Error completo: {e}")
+            logger.debug(f"DEBUG: Fallback a chat local")
             return self._chat_local(empresa, datos, pregunta)
     
     def _chat_local(self, empresa, datos, pregunta):

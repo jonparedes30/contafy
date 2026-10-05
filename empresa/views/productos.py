@@ -1,3 +1,4 @@
+from empresa.utils.errores import mensaje_error
 from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
@@ -83,7 +84,7 @@ def crear_producto(request):
                     'codigo_barras': producto.codigo_barras
                 }})
             except Exception as e:
-                return JsonResponse({'success': False, 'error': str(e)}, status=500)
+                return JsonResponse({'success': False, 'error': mensaje_error(e)}, status=500)
 
         else:
             form = ProductoForm(request.POST, empresa=empresa)
@@ -326,7 +327,7 @@ def producto_info_api(request):
             })
     except Exception as e:
         tb = traceback.format_exc()
-        return JsonResponse({'error': str(e), 'traceback': tb}, status=500)
+        return JsonResponse({'error': mensaje_error(e), 'traceback': tb}, status=500)
 
 
 @login_required

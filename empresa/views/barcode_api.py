@@ -1,4 +1,5 @@
 """API para manejo de códigos de barras"""
+from empresa.utils.errores import mensaje_error
 from django.http import JsonResponse
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.http import require_http_methods
@@ -163,7 +164,7 @@ def crear_categoria_api(request):
         return JsonResponse({'success': False, 'error': 'JSON inválido'})
     except Exception as e:
         logger.error(f"Error creando categoría: {str(e)}")
-        return JsonResponse({'success': False, 'error': f'Error: {str(e)}'})
+        return JsonResponse({'success': False, 'error': f'Error: {mensaje_error(e)}'})
 
 @login_required
 def materias_primas_api(request):

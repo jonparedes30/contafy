@@ -1,3 +1,4 @@
+from empresa.utils.errores import mensaje_error
 from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
@@ -90,7 +91,7 @@ Revisa tu email para detalles completos.
             })
             
         except Exception as e:
-            return JsonResponse({'success': False, 'error': f'Error al enviar solicitud: {str(e)}'})
+            return JsonResponse({'success': False, 'error': f'Error al enviar solicitud: {mensaje_error(e)}'})
     
     # Obtener solicitudes previas del usuario
     solicitudes_recientes = SolicitudAyuda.objects.filter(

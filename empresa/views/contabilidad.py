@@ -1,3 +1,4 @@
+from empresa.utils.errores import mensaje_error
 from django.shortcuts import render
 from datetime import datetime
 from decimal import Decimal
@@ -115,7 +116,7 @@ def flujo_caja(request):
         
     except Exception as e:
         return render(request, 'empresa/flujo_caja.html', {
-            'error': f'Error generando flujo de caja: {str(e)}',
+            'error': f'Error generando flujo de caja: {mensaje_error(e)}',
             'flujo': [],
             'labels': ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'],
             'total_entradas': 0,
@@ -345,7 +346,7 @@ def balance_general(request):
         
     except Exception as e:
         return render(request, 'empresa/balance_general.html', {
-            'error': f'Error generando balance: {str(e)}',
+            'error': f'Error generando balance: {mensaje_error(e)}',
             'activos': [],
             'pasivos': [],
             'capital': [],

@@ -1,3 +1,5 @@
+import logging
+from empresa.utils.errores import mensaje_error
 from django.shortcuts import render
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
@@ -6,6 +8,8 @@ from empresa.services.ai_agent_service import ContafyAIAgent
 from empresa.services.notificaciones_service import NotificacionesService
 from empresa.services.ai_comandos_service import procesar_comando_ia
 import json
+
+logger = logging.getLogger(__name__)
 
 @login_required
 def agente_ia(request):
@@ -41,7 +45,7 @@ def chat_ia(request):
             data = json.loads(request.body)
             pregunta = data.get('pregunta', '').strip()
             
-            print(f"DEBUG CHAT: Pregunta recibida: {pregunta}")
+            logger.debug(f"DEBUG CHAT: Pregunta recibida: {pregunta}")
             
             if not pregunta:
                 return JsonResponse({
@@ -76,12 +80,12 @@ def chat_ia(request):
             # Si no es comando o falló, usar chat normal
             agente = ContafyAIAgent()
             
-            print(f"DEBUG CHAT: Empresa: {empresa.nombre}")
-            print(f"DEBUG CHAT: Provider del agente: {agente.provider}")
+            logger.debug(f"DEBUG CHAT: Empresa: {empresa.nombre}")
+            logger.debug(f"DEBUG CHAT: Provider del agente: {agente.provider}")
             
             respuesta = agente.chat_con_usuario(empresa, pregunta)
             
-            print(f"DEBUG CHAT: Respuesta generada: {respuesta[:100]}...")
+            logger.debug(f"DEBUG CHAT: Respuesta generada: {respuesta[:100]}...")
             
             return JsonResponse({
                 'success': True,
@@ -90,10 +94,10 @@ def chat_ia(request):
             })
             
         except Exception as e:
-            print(f"DEBUG CHAT: Error: {str(e)}")
+            logger.debug(f"DEBUG CHAT: Error: {str(e)}")
             return JsonResponse({
                 'success': False,
-                'error': f'Error procesando pregunta: {str(e)}'
+                'error': f'Error procesando pregunta: {mensaje_error(e)}'
             })
     
     return JsonResponse({'success': False, 'error': 'Método no permitido'})
@@ -191,5 +195,5 @@ def actualizar_analisis(request):
     except Exception as e:
         return JsonResponse({
             'success': False,
-            'error': f'Error actualizando análisis: {str(e)}'
+            'error': f'Error actualizando análisis: {mensaje_error(e)}'
         })

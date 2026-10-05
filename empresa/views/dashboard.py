@@ -1,3 +1,4 @@
+import logging
 from django.shortcuts import render
 from django.contrib.auth.decorators import login_required
 from django.db.models import Sum, Count
@@ -9,6 +10,8 @@ from decimal import Decimal
 import json
 from empresa.views.resumen import obtener_totales_contables
 from empresa.services.filtros_service import FiltrosFechaService
+
+logger = logging.getLogger(__name__)
 
 # Nombres de meses en español (no depender del locale del sistema)
 MESES_ES = {
@@ -100,7 +103,7 @@ def dashboard(request):
         roe_mes = ((utilidad_neta_mes / capital_mes) * 100) if capital_mes else 0
         liquidez_mes = (activos_mes / pasivos_mes) if pasivos_mes else 0
         endeudamiento_mes = (pasivos_mes / activos_mes) if activos_mes else 0
-        print(f"DEBUG - Mes {mes}/{anio}: Ventas={ventas_mes}, Gastos={gastos_mes}, Costos={costos_mes}")
+        logger.debug(f"DEBUG - Mes {mes}/{anio}: Ventas={ventas_mes}, Gastos={gastos_mes}, Costos={costos_mes}")
         ventas_mensuales.append(round(float(ventas_mes), 2))
         gastos_mensuales.append(round(float(gastos_mes), 2))
         margen_neto_historico.append(round(float(margen_neto_mes), 2))
@@ -136,10 +139,10 @@ def dashboard(request):
     rentabilidad = margen_neto
 
     # NO rellenar - usar exactamente los datos del período seleccionado
-    print(f"DEBUG - Labels: {len(labels_meses)}, Ventas: {len(ventas_mensuales)}, Gastos: {len(gastos_mensuales)}")
-    print(f"DEBUG - Labels meses: {labels_meses}")
-    print(f"DEBUG - Ventas mensuales finales: {ventas_mensuales}")
-    print(f"DEBUG - Gastos mensuales finales: {gastos_mensuales}")
+    logger.debug(f"DEBUG - Labels: {len(labels_meses)}, Ventas: {len(ventas_mensuales)}, Gastos: {len(gastos_mensuales)}")
+    logger.debug(f"DEBUG - Labels meses: {labels_meses}")
+    logger.debug(f"DEBUG - Ventas mensuales finales: {ventas_mensuales}")
+    logger.debug(f"DEBUG - Gastos mensuales finales: {gastos_mensuales}")
 
     ratio_gastos_ventas = round((total_gastos / total_ventas * 100), 2) if total_ventas else 0
     fecha_ultima_actualizacion = timezone.localtime().strftime('%d/%m/%Y %H:%M')
@@ -165,12 +168,12 @@ def dashboard(request):
     ).order_by('-total')[:10]  # Top 10 gastos más altos
     
     # Debug: Imprimir información básica
-    print(f"DEBUG - Fecha inicio: {fecha_inicio}, Fecha fin: {fecha_fin}")
-    print(f"DEBUG - Total ventas: ${total_ventas}, Total gastos: ${total_gastos}, Total costos: ${total_costos}")
-    print(f"DEBUG - Utilidad bruta: ${utilidad_bruta}, Margen bruto: {margen_bruto}%")
-    print(f"DEBUG - Ventas mensuales: {ventas_mensuales}")
-    print(f"DEBUG - Gastos mensuales: {gastos_mensuales}")
-    print(f"DEBUG - Gastos por descripción encontrados: {len(gastos_por_descripcion)}")
+    logger.debug(f"DEBUG - Fecha inicio: {fecha_inicio}, Fecha fin: {fecha_fin}")
+    logger.debug(f"DEBUG - Total ventas: ${total_ventas}, Total gastos: ${total_gastos}, Total costos: ${total_costos}")
+    logger.debug(f"DEBUG - Utilidad bruta: ${utilidad_bruta}, Margen bruto: {margen_bruto}%")
+    logger.debug(f"DEBUG - Ventas mensuales: {ventas_mensuales}")
+    logger.debug(f"DEBUG - Gastos mensuales: {gastos_mensuales}")
+    logger.debug(f"DEBUG - Gastos por descripción encontrados: {len(gastos_por_descripcion)}")
     
     # Preparar datos para el gráfico de distribución
     descripciones_gastos = []
@@ -233,9 +236,9 @@ def dashboard(request):
         ).order_by('-total_ventas')[:5]
     
     # Debug: Imprimir información de productos más vendidos
-    print(f"DEBUG - Productos más vendidos encontrados: {len(productos_mas_vendidos)}")
+    logger.debug(f"DEBUG - Productos más vendidos encontrados: {len(productos_mas_vendidos)}")
     for producto in productos_mas_vendidos:
-        print(f"DEBUG - Producto: {producto['producto__nombre']}, Ventas: ${producto['total_ventas']}, Cantidad: {producto['cantidad_vendida']}")
+        logger.debug(f"DEBUG - Producto: {producto['producto__nombre']}, Ventas: ${producto['total_ventas']}, Cantidad: {producto['cantidad_vendida']}")
     
     # Preparar datos para el gráfico de productos más vendidos
     nombres_productos = []
@@ -415,14 +418,14 @@ def dashboard(request):
         productos_con_categoria = Producto.objects.filter(empresa=empresa, categoria__isnull=False).count()
         productos_sin_categoria = Producto.objects.filter(empresa=empresa, categoria__isnull=True).count()
     
-    print(f"DEBUG - Categorías encontradas: {categorias.count()}")
-    print(f"DEBUG - Total productos: {productos_total}")
-    print(f"DEBUG - Productos CON categoría: {productos_con_categoria}")
-    print(f"DEBUG - Productos SIN categoría: {productos_sin_categoria}")
+    logger.debug(f"DEBUG - Categorías encontradas: {categorias.count()}")
+    logger.debug(f"DEBUG - Total productos: {productos_total}")
+    logger.debug(f"DEBUG - Productos CON categoría: {productos_con_categoria}")
+    logger.debug(f"DEBUG - Productos SIN categoría: {productos_sin_categoria}")
     
     if categorias.exists():
         for cat in categorias:
-            print(f"DEBUG - Categoría: {cat.nombre}")
+            logger.debug(f"DEBUG - Categoría: {cat.nombre}")
     
     if categorias.exists():
         for categoria in categorias:
@@ -478,7 +481,7 @@ def dashboard(request):
                 fecha__date__lte=fecha_fin
             ).aggregate(total_ventas=Sum('monto'))
             
-            print(f"DEBUG - Ventas sin categoría (manufactura): {ventas_sin_categoria['total_ventas']}")
+            logger.debug(f"DEBUG - Ventas sin categoría (manufactura): {ventas_sin_categoria['total_ventas']}")
             
             if ventas_sin_categoria['total_ventas']:
                 margenes_categoria.append(40.0)
@@ -493,7 +496,7 @@ def dashboard(request):
                 fecha__date__lte=fecha_fin
             ).aggregate(total_ventas=Sum('monto'))
             
-            print(f"DEBUG - Ventas sin categoría (comercio): {ventas_sin_categoria['total_ventas']}")
+            logger.debug(f"DEBUG - Ventas sin categoría (comercio): {ventas_sin_categoria['total_ventas']}")
             
             if ventas_sin_categoria['total_ventas']:
                 margenes_categoria.append(40.0)
@@ -503,8 +506,8 @@ def dashboard(request):
         margenes_categoria = [40.0]
         nombres_categorias = ['General']
     
-    print(f"DEBUG - Márgenes por categoría: {margenes_categoria}")
-    print(f"DEBUG - Nombres categorías: {nombres_categorias}")
+    logger.debug(f"DEBUG - Márgenes por categoría: {margenes_categoria}")
+    logger.debug(f"DEBUG - Nombres categorías: {nombres_categorias}")
     
     # 2. ROTACIÓN DE INVENTARIO CORREGIDA
     rotacion_categoria = []
@@ -571,7 +574,7 @@ def dashboard(request):
     if not rotacion_categoria:
         rotacion_categoria = [1.0]
     
-    print(f"DEBUG - Rotación por categoría: {rotacion_categoria}")
+    logger.debug(f"DEBUG - Rotación por categoría: {rotacion_categoria}")
     
     # 3. Productos sin movimiento (últimos 30 días)
     fecha_limite = fecha_fin - timedelta(days=30)
@@ -616,12 +619,12 @@ def dashboard(request):
     productos_criticos_count = len(productos_sin_movimiento_data)
     categoria_mas_rentable = nombres_categorias[margenes_categoria.index(max(margenes_categoria))] if margenes_categoria and max(margenes_categoria) > 0 else "N/A"
     
-    print(f"DEBUG - KPIs finales:")
-    print(f"DEBUG - Rotación promedio: {rotacion_promedio}")
-    print(f"DEBUG - Productos críticos: {productos_criticos_count}")
-    print(f"DEBUG - Categoría más rentable: {categoria_mas_rentable}")
-    print(f"DEBUG - Márgenes brutos mensuales: {margenes_brutos_mensuales}")
-    print(f"DEBUG - Márgenes netos mensuales: {margenes_netos_mensuales}")
+    logger.debug(f"DEBUG - KPIs finales:")
+    logger.debug(f"DEBUG - Rotación promedio: {rotacion_promedio}")
+    logger.debug(f"DEBUG - Productos críticos: {productos_criticos_count}")
+    logger.debug(f"DEBUG - Categoría más rentable: {categoria_mas_rentable}")
+    logger.debug(f"DEBUG - Márgenes brutos mensuales: {margenes_brutos_mensuales}")
+    logger.debug(f"DEBUG - Márgenes netos mensuales: {margenes_netos_mensuales}")
     
     contexto.update({
         # Para el gráfico de histórico de utilidades

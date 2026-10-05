@@ -1,3 +1,4 @@
+from empresa.utils.errores import mensaje_error
 from django.http import JsonResponse
 from django.views.decorators.http import require_http_methods
 from django.contrib.auth.decorators import login_required
@@ -32,7 +33,7 @@ class AIComandosView(View):
         except json.JSONDecodeError:
             return JsonResponse({'error': 'JSON inválido'})
         except Exception as e:
-            return JsonResponse({'error': f'Error procesando comando: {str(e)}'})
+            return JsonResponse({'error': f'Error procesando comando: {mensaje_error(e)}'})
 
 @require_http_methods(["POST"])
 @login_required
@@ -53,7 +54,7 @@ def procesar_comando_rapido(request):
         return JsonResponse(resultado)
         
     except Exception as e:
-        return JsonResponse({'error': str(e)})
+        return JsonResponse({'error': mensaje_error(e)})
 
 @login_required
 def ayuda_comandos(request):

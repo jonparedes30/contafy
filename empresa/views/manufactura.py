@@ -1,5 +1,6 @@
 # empresa/views/manufactura.py
 
+from empresa.utils.errores import mensaje_error
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
@@ -503,7 +504,7 @@ def cambiar_estado_producto(request, producto_id):
         except ProductoManufacturado.DoesNotExist:
             return JsonResponse({'success': False, 'error': 'Producto no encontrado o no pertenece a tu empresa'})
         except Exception as e:
-            return JsonResponse({'success': False, 'error': str(e)})
+            return JsonResponse({'success': False, 'error': mensaje_error(e)})
         
         return JsonResponse({
             'success': True, 

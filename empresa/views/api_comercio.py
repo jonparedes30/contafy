@@ -1,4 +1,5 @@
 """APIs para funcionalidades de comercio"""
+from empresa.utils.errores import mensaje_error
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.contrib.auth.decorators import login_required
@@ -68,9 +69,9 @@ def categorias_api(request):
             except json.JSONDecodeError:
                 return JsonResponse({'success': False, 'error': 'Datos JSON inválidos'})
             except Exception as e:
-                return JsonResponse({'success': False, 'error': f'Error interno: {str(e)}'})
+                return JsonResponse({'success': False, 'error': f'Error interno: {mensaje_error(e)}'})
     except Exception as e:
-        return JsonResponse({'success': False, 'error': f'Error de autenticación: {str(e)}'})
+        return JsonResponse({'success': False, 'error': f'Error de autenticación: {mensaje_error(e)}'})
 
 
 @login_required
@@ -96,7 +97,7 @@ def categoria_delete_api(request, categoria_id):
     except CategoriaProducto.DoesNotExist:
         return JsonResponse({'success': False, 'error': 'Categoría no encontrada'})
     except Exception as e:
-        return JsonResponse({'success': False, 'error': f'Error eliminando categoría: {str(e)}'})
+        return JsonResponse({'success': False, 'error': f'Error eliminando categoría: {mensaje_error(e)}'})
 
 
 @login_required
@@ -129,7 +130,7 @@ def clientes_api(request):
     except ValueError as e:
         return JsonResponse({'success': False, 'error': 'Valor numérico inválido'})
     except Exception as e:
-        return JsonResponse({'success': False, 'error': f'Error creando cliente: {str(e)}'})
+        return JsonResponse({'success': False, 'error': f'Error creando cliente: {mensaje_error(e)}'})
 
 
 @login_required
@@ -162,7 +163,7 @@ def proveedores_api(request):
     except ValueError as e:
         return JsonResponse({'success': False, 'error': 'Valor numérico inválido'})
     except Exception as e:
-        return JsonResponse({'success': False, 'error': f'Error creando proveedor: {str(e)}'})
+        return JsonResponse({'success': False, 'error': f'Error creando proveedor: {mensaje_error(e)}'})
 
 
 @login_required
@@ -187,7 +188,7 @@ def cuentas_cobrar_api(request):
         
         return JsonResponse(data, safe=False)
     except Exception as e:
-        return JsonResponse({'error': f'Error obteniendo cuentas por cobrar: {str(e)}'}, status=500)
+        return JsonResponse({'error': f'Error obteniendo cuentas por cobrar: {mensaje_error(e)}'}, status=500)
 
 
 @login_required
@@ -212,4 +213,4 @@ def cuentas_pagar_api(request):
         
         return JsonResponse(data, safe=False)
     except Exception as e:
-        return JsonResponse({'error': f'Error obteniendo cuentas por pagar: {str(e)}'}, status=500)
+        return JsonResponse({'error': f'Error obteniendo cuentas por pagar: {mensaje_error(e)}'}, status=500)

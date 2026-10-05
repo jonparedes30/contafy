@@ -1,4 +1,5 @@
 # empresa/views/compras.py
+from empresa.utils.errores import mensaje_error
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 import json
 from django.shortcuts import render, redirect
@@ -105,7 +106,7 @@ def crear_compra(request):
                         )
                     return JsonResponse({'success': True, 'compra_id': compra.id, 'product': {'id': producto.id, 'stock': producto.stock, 'nombre': producto.nombre}})
                 except Exception as e:
-                    return JsonResponse({'success': False, 'error': str(e)}, status=500)
+                    return JsonResponse({'success': False, 'error': mensaje_error(e)}, status=500)
 
             return JsonResponse({'success': False, 'error': 'Payload JSON no reconocido'}, status=400)
 
@@ -293,7 +294,7 @@ def eliminar_compra(request, compra_id):
             messages.success(request, 'Compra eliminada correctamente.')
             return JsonResponse({'success': True})
         except Exception as e:
-            return JsonResponse({'error': str(e)}, status=500)
+            return JsonResponse({'error': mensaje_error(e)}, status=500)
     
     return JsonResponse({'error': 'Método no permitido'}, status=405)
 

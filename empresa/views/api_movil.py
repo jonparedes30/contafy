@@ -1,3 +1,4 @@
+from empresa.utils.errores import mensaje_error
 from django.http import JsonResponse
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.csrf import csrf_exempt
@@ -113,7 +114,7 @@ def chat_movil(request):
         except Exception as e:
             return JsonResponse({
                 'success': False,
-                'error': f'Error: {str(e)}'
+                'error': f'Error: {mensaje_error(e)}'
             })
     
     return JsonResponse({'success': False, 'error': 'Método no permitido'})
@@ -179,7 +180,7 @@ def venta_rapida_movil(request):
         except Exception as e:
             return JsonResponse({
                 'success': False,
-                'error': f'Error registrando venta: {str(e)}'
+                'error': f'Error registrando venta: {mensaje_error(e)}'
             })
     
     return JsonResponse({'success': False, 'error': 'Método no permitido'})

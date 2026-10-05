@@ -1,3 +1,4 @@
+from empresa.utils.errores import mensaje_error
 from django.shortcuts import render
 from django.contrib.auth.decorators import login_required
 from django.http import HttpResponse
@@ -39,4 +40,4 @@ def resumen_financiero_simple(request):
         return render(request, 'empresa/resumen_simple.html', context)
         
     except Exception as e:
-        return HttpResponse(f'Error temporal en resumen: {str(e)}. Usa el dashboard principal.', status=200)
+        return HttpResponse(f'Error temporal en resumen: {mensaje_error(e)}. Usa el dashboard principal.', status=200)

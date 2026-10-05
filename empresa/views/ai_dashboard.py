@@ -1,3 +1,4 @@
+from empresa.utils.errores import mensaje_error
 from django.shortcuts import render
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
@@ -77,5 +78,5 @@ def api_estado_ia(request):
     except Exception as e:
         return JsonResponse({
             'success': False,
-            'error': f'Error obteniendo estado de IA: {str(e)}'
+            'error': f'Error obteniendo estado de IA: {mensaje_error(e)}'
         })

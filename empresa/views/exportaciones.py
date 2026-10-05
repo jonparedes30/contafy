@@ -1,3 +1,4 @@
+from empresa.utils.errores import mensaje_error
 import json
 try:
     import pandas as pd
@@ -336,7 +337,7 @@ def exportar_excel_ventas(request):
         return response
     except Exception as e:
         print(f"Error general en exportar_excel: {e}")
-        return HttpResponse(f"Error al exportar Excel: {str(e)}", status=500)
+        return HttpResponse(f"Error al exportar Excel: {mensaje_error(e)}", status=500)
 
 @login_required
 @_requires_export_libs
@@ -578,7 +579,7 @@ def exportar_excel_compras(request):
         return response
     except Exception as e:
         print(f"Error general en exportar_excel_compras: {e}")
-        return HttpResponse(f"Error al exportar Excel: {str(e)}", status=500)
+        return HttpResponse(f"Error al exportar Excel: {mensaje_error(e)}", status=500)
 
 @login_required
 @_requires_export_libs
@@ -811,7 +812,7 @@ def exportar_excel_gastos(request):
         return response
     except Exception as e:
         print(f"Error general en exportar_excel_gastos: {e}")
-        return HttpResponse(f"Error al exportar Excel: {str(e)}", status=500)
+        return HttpResponse(f"Error al exportar Excel: {mensaje_error(e)}", status=500)
 
 @login_required
 @_requires_export_libs
@@ -1774,7 +1775,7 @@ def exportar_excel_inventario(request):
         
     except Exception as e:
         print(f"Error en exportar_excel_inventario: {e}")
-        return HttpResponse(f"Error al exportar Excel: {str(e)}", status=500)
+        return HttpResponse(f"Error al exportar Excel: {mensaje_error(e)}", status=500)
 
 @login_required
 @_requires_export_libs
@@ -1984,7 +1985,7 @@ def exportar_pdf_inventario(request):
         
     except Exception as e:
         print(f"Error en exportar_pdf_inventario: {e}")
-        return HttpResponse(f"Error al exportar PDF: {str(e)}", status=500)
+        return HttpResponse(f"Error al exportar PDF: {mensaje_error(e)}", status=500)
 
 @login_required
 @_requires_export_libs
@@ -2514,10 +2515,10 @@ def exportar_excel_completo(request):
         
     except IndexError as e:
         print(f"Error de índice en exportar_excel_completo: {e}")
-        return HttpResponse(f"Error al exportar Excel completo: Error de índice - {str(e)}", status=500)
+        return HttpResponse(f"Error al exportar Excel completo: Error de índice - {mensaje_error(e)}", status=500)
     except Exception as e:
         print(f"Error general en exportar_excel_completo: {e}")
-        return HttpResponse(f"Error al exportar Excel completo: {str(e)}", status=500)
+        return HttpResponse(f"Error al exportar Excel completo: {mensaje_error(e)}", status=500)
 
 @login_required
 @_requires_export_libs
@@ -2635,7 +2636,7 @@ def exportar_excel_iva(request):
         return response
         
     except Exception as e:
-        return HttpResponse(f"Error al exportar IVA: {str(e)}", status=500)
+        return HttpResponse(f"Error al exportar IVA: {mensaje_error(e)}", status=500)
 
 @login_required
 @_requires_export_libs
@@ -2716,4 +2717,4 @@ def exportar_pdf_iva(request):
         return response
         
     except Exception as e:
-        return HttpResponse(f"Error al exportar PDF IVA: {str(e)}", status=500)
+        return HttpResponse(f"Error al exportar PDF IVA: {mensaje_error(e)}", status=500)

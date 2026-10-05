@@ -134,8 +134,9 @@ if DATABASE_URL:
     DATABASES = {
         'default': dj_database_url.config(
             default=DATABASE_URL,  # type: ignore[arg-type]
-            # CONN_MAX_AGE=600: mantiene conexiones vivas 10 min (pool de conexiones)
-            conn_max_age=env.int('CONN_MAX_AGE', default=600),  # type: ignore[arg-type]
+            # CONN_MAX_AGE=600: mantiene conexiones vivas 10 min (pool de conexiones).
+            # SQLite no soporta conexiones persistentes ("database is locked"): 0.
+            conn_max_age=0 if DATABASE_URL.startswith('sqlite') else env.int('CONN_MAX_AGE', default=600),  # type: ignore[arg-type]
             conn_health_checks=True,
         )
     }

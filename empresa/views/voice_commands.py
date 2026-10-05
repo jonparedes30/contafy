@@ -1,3 +1,4 @@
+from empresa.utils.errores import mensaje_error
 from django.http import JsonResponse
 from django.contrib.auth.decorators import login_required
 from empresa.services.ai_comandos_service import procesar_comando_ia
@@ -34,7 +35,7 @@ def procesar_comando_voz(request):
         except Exception as e:
             return JsonResponse({
                 'success': False,
-                'error': f'Error procesando comando de voz: {str(e)}'
+                'error': f'Error procesando comando de voz: {mensaje_error(e)}'
             })
     
     return JsonResponse({'success': False, 'error': 'Método no permitido'})

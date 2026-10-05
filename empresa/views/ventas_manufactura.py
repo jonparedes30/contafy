@@ -1,5 +1,6 @@
 # empresa/views/ventas_manufactura.py
 
+import logging
 from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
 from empresa.models import Venta, ProductoManufacturado
@@ -11,6 +12,8 @@ from django.contrib import messages
 from django.db.models import Sum, Avg, Count, Q
 from django import forms
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
+
+logger = logging.getLogger(__name__)
 
 class VentaManufacturaForm(forms.Form):
     cliente_fk = forms.ModelChoiceField(
@@ -103,18 +106,18 @@ def crear_venta_manufactura(request):
 
     if request.method == 'POST':
         form = VentaManufacturaForm(request.POST, empresa=empresa)
-        print(f"DEBUG - Form data: {request.POST}")
-        print(f"DEBUG - Form is valid: {form.is_valid()}")
+        logger.debug(f"DEBUG - Form data: {request.POST}")
+        logger.debug(f"DEBUG - Form is valid: {form.is_valid()}")
         if not form.is_valid():
-            print(f"DEBUG - Form errors: {form.errors}")
+            logger.debug(f"DEBUG - Form errors: {form.errors}")
         if form.is_valid():
-            print(f"DEBUG - Iniciando proceso de venta")
+            logger.debug(f"DEBUG - Iniciando proceso de venta")
             try:
                 with transaction.atomic():
                     # Obtener el ProductoManufacturado antes de guardar
                     producto_manuf_id = form.cleaned_data['producto'].id
                     producto_manuf = ProductoManufacturado.objects.get(id=producto_manuf_id)
-                    print(f"DEBUG - Producto manufacturado obtenido: {producto_manuf.nombre}")
+                    logger.debug(f"DEBUG - Producto manufacturado obtenido: {producto_manuf.nombre}")
                     
                     # Crear un Producto temporal basado en el ProductoManufacturado
                     from empresa.models import Producto
@@ -152,11 +155,11 @@ def crear_venta_manufactura(request):
                         creado_por=request.user
                     )
                     
-                    print(f"DEBUG - Venta creada: ID={venta.id}, Producto={venta.producto.nombre}, Monto=${venta.monto}")
+                    logger.debug(f"DEBUG - Venta creada: ID={venta.id}, Producto={venta.producto.nombre}, Monto=${venta.monto}")
                     
                     # Verificar disponibilidad de materias primas
                     receta = producto_manuf.receta.all()
-                    print(f"DEBUG - Receta obtenida: {receta.count()} ingredientes")
+                    logger.debug(f"DEBUG - Receta obtenida: {receta.count()} ingredientes")
                     materias_faltantes = []
                     
                     for ingrediente in receta:
@@ -238,7 +241,7 @@ def crear_venta_manufactura(request):
                         )
                     
                     # DESPUÉS el costo de ventas
-                    print(f"DEBUG - Venta: ${venta.monto}, Costo producción: ${costo_total_produccion}, Margen: ${venta.monto - costo_total_produccion}")
+                    logger.debug(f"DEBUG - Venta: ${venta.monto}, Costo producción: ${costo_total_produccion}, Margen: ${venta.monto - costo_total_produccion}")
                     registrar_movimiento_contable(
                         empresa=empresa,
                         cuenta_debito_nombre='Costo de Ventas',
@@ -248,10 +251,10 @@ def crear_venta_manufactura(request):
                     )
                     
                     messages.success(request, f'Venta registrada: {venta.cantidad} unidades de {producto_manuf.nombre} por ${venta.monto}')
-                    print(f"DEBUG - Redirigiendo a resumen financiero")
+                    logger.debug(f"DEBUG - Redirigiendo a resumen financiero")
                     return redirect('empresa:resumen_financiero')
             except Exception as e:
-                print(f"DEBUG - Error en transacción: {e}")
+                logger.debug(f"DEBUG - Error en transacción: {e}")
                 messages.error(request, f'Error al registrar venta: {e}')
     else:
         form = VentaManufacturaForm(empresa=empresa)
