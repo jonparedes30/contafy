@@ -5,6 +5,7 @@ except Exception:
     pd = None
 from datetime import datetime, timedelta
 from decimal import Decimal
+from django.conf import settings
 from django.shortcuts import render
 from django.contrib.auth.decorators import login_required
 from django.http import HttpResponse
@@ -48,6 +49,26 @@ NOMBRE_PROVEEDOR = Coalesce(
     'proveedor_fk__nombre', NullIf('proveedor_nombre', Value('')), Value('Sin proveedor'),
     output_field=CharField(),
 )
+
+
+def _monto(serie):
+    """Montos como número (no texto "$1.80"): Excel puede sumarlos y les aplica formato de moneda."""
+    return serie.map(lambda x: round(float(x), 2) if pd.notnull(x) else None)
+
+
+def _fecha_local(serie):
+    """Fechas guardadas en UTC -> hora de Ecuador (TIME_ZONE), como texto dd/mm/aaaa hh:mm."""
+    fechas = pd.to_datetime(serie, utc=True).dt.tz_convert(settings.TIME_ZONE)
+    return fechas.dt.strftime('%d/%m/%Y %H:%M')
+
+MESES_ES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto',
+            'septiembre', 'octubre', 'noviembre', 'diciembre']
+
+
+def _etiqueta_mes(fecha):
+    """"2026-09 septiembre": en español y se ordena cronológicamente al agrupar."""
+    return f"{fecha.year}-{fecha.month:02d} {MESES_ES[fecha.month - 1]}"
+
 
 # Helper decorator to ensure heavy optional libs are available when export endpoints are called
 def _requires_export_libs(func):
@@ -124,11 +145,11 @@ def exportar_excel_ventas(request):
         }, inplace=True)
         # Formatear fecha y montos
         if 'Fecha' in df_ventas.columns:
-            df_ventas['Fecha'] = pd.to_datetime(df_ventas['Fecha']).dt.strftime('%d/%m/%Y %H:%M')
+            df_ventas['Fecha'] = _fecha_local(df_ventas['Fecha'])
         if 'Precio Unitario' in df_ventas.columns:
-            df_ventas['Precio Unitario'] = df_ventas['Precio Unitario'].map(lambda x: f"${x:,.2f}" if pd.notnull(x) else "")
+            df_ventas['Precio Unitario'] = _monto(df_ventas['Precio Unitario'])
         if 'Total (USD)' in df_ventas.columns:
-            df_ventas['Total (USD)'] = df_ventas['Total (USD)'].map(lambda x: f"${x:,.2f}" if pd.notnull(x) else "")
+            df_ventas['Total (USD)'] = _monto(df_ventas['Total (USD)'])
         # Escribir a Excel
         with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
             df_ventas.to_excel(writer, sheet_name='Ventas', index=False)
@@ -234,7 +255,7 @@ def exportar_excel_ventas(request):
             if len(df_ventas) > 0:
                 # Agrupar ventas por mes
                 df_ventas['Fecha_Date'] = pd.to_datetime(df_ventas['Fecha'], format='%d/%m/%Y %H:%M')
-                df_ventas['Mes'] = df_ventas['Fecha_Date'].dt.strftime('%B %Y')
+                df_ventas['Mes'] = df_ventas['Fecha_Date'].map(_etiqueta_mes)
                 ventas_mensuales = df_ventas.groupby('Mes')['Total (USD)'].sum().reset_index()
                 
                 # Crear hoja de análisis mensual
@@ -366,11 +387,11 @@ def exportar_excel_compras(request):
         }, inplace=True)
         # Formatear fecha y montos
         if 'Fecha' in df_compras.columns:
-            df_compras['Fecha'] = pd.to_datetime(df_compras['Fecha']).dt.strftime('%d/%m/%Y %H:%M')
+            df_compras['Fecha'] = _fecha_local(df_compras['Fecha'])
         if 'Precio Unitario' in df_compras.columns:
-            df_compras['Precio Unitario'] = df_compras['Precio Unitario'].map(lambda x: f"${x:,.2f}" if pd.notnull(x) and x > 0 else "")
+            df_compras['Precio Unitario'] = _monto(df_compras['Precio Unitario'])
         if 'Total (USD)' in df_compras.columns:
-            df_compras['Total (USD)'] = df_compras['Total (USD)'].map(lambda x: f"${x:,.2f}" if pd.notnull(x) else "")
+            df_compras['Total (USD)'] = _monto(df_compras['Total (USD)'])
         # Escribir a Excel
         with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
             df_compras.to_excel(writer, sheet_name='Compras', index=False)
@@ -476,7 +497,7 @@ def exportar_excel_compras(request):
             if len(df_compras) > 0:
                 # Agrupar compras por mes
                 df_compras['Fecha_Date'] = pd.to_datetime(df_compras['Fecha'], format='%d/%m/%Y %H:%M')
-                df_compras['Mes'] = df_compras['Fecha_Date'].dt.strftime('%B %Y')
+                df_compras['Mes'] = df_compras['Fecha_Date'].map(_etiqueta_mes)
                 compras_mensuales = df_compras.groupby('Mes')['Total (USD)'].sum().reset_index()
                 
                 # Crear hoja de análisis mensual
@@ -609,9 +630,9 @@ def exportar_excel_gastos(request):
         
         # Formatear fecha y montos
         if 'Fecha' in df_gastos.columns:
-            df_gastos['Fecha'] = pd.to_datetime(df_gastos['Fecha']).dt.strftime('%d/%m/%Y %H:%M')
+            df_gastos['Fecha'] = _fecha_local(df_gastos['Fecha'])
         if 'Monto (USD)' in df_gastos.columns:
-            df_gastos['Monto (USD)'] = df_gastos['Monto (USD)'].map(lambda x: f"${x:,.2f}" if pd.notnull(x) else "")
+            df_gastos['Monto (USD)'] = _monto(df_gastos['Monto (USD)'])
         
         # Escribir a Excel
         with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
@@ -712,7 +733,7 @@ def exportar_excel_gastos(request):
             if len(df_gastos) > 0:
                 # Agrupar gastos por mes
                 df_gastos['Fecha_Date'] = pd.to_datetime(df_gastos['Fecha'], format='%d/%m/%Y %H:%M')
-                df_gastos['Mes'] = df_gastos['Fecha_Date'].dt.strftime('%B %Y')
+                df_gastos['Mes'] = df_gastos['Fecha_Date'].map(_etiqueta_mes)
                 gastos_mensuales = df_gastos.groupby('Mes')['Monto (USD)'].sum().reset_index()
                 
                 # Crear hoja de análisis mensual
@@ -2428,10 +2449,10 @@ def exportar_excel_completo(request):
                 ventas_mensuales = []
                 for venta in ventas:
                     ventas_mensuales.append({
-                        'Mes': venta.fecha.strftime('%B %Y'),
+                        'Mes': _etiqueta_mes(timezone.localtime(venta.fecha)),
                         'Año': venta.fecha.year,
                         'Mes_Num': venta.fecha.month,
-                        'Total': venta.monto
+                        'Total': float(venta.monto)
                     })
                 
                 if ventas_mensuales:
