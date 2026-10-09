@@ -123,3 +123,32 @@
     .lp-actions .btn-link { display: none; }
     .lp-trust .row > div { padding: 18px 16px; }
 }
+
+/* ---------- Acento del logo (propuesta B) ----------
+   Secciones alternadas blanco / gris azulado y tarjetas con la línea del logo
+   para que cada bloque se distinga. */
+.lp-hero { border-bottom-color: var(--cf-logo-teal, #20a090); }
+.lp-section.alt { background: var(--cf-canvas, #e9eef3); border-color: var(--cf-line-card, #d3dbe4); }
+
+.lp-feature {
+    background: #fff;
+    border: 1px solid var(--cf-line-card, #d3dbe4);
+    border-top: 3px solid var(--cf-logo-teal, #20a090);
+    border-radius: 0 0 var(--cf-radius-lg) var(--cf-radius-lg);
+    box-shadow: 0 1px 3px rgba(11, 31, 54, .08);
+    padding: 26px;
+}
+.lp-feature i { color: var(--cf-logo-blue, #1070a0); }
+
+.lp-biz { border-color: var(--cf-line-card, #d3dbe4); border-top: 3px solid var(--cf-logo-teal, #20a090); border-radius: 0 0 var(--cf-radius-lg) var(--cf-radius-lg); box-shadow: 0 1px 3px rgba(11, 31, 54, .08); }
+
+.lp-plan { position: relative; border-color: var(--cf-line-card, #d3dbe4); border-top: 3px solid var(--cf-logo-blue, #1070a0); border-radius: 0 0 var(--cf-radius-lg) var(--cf-radius-lg); box-shadow: 0 1px 3px rgba(11, 31, 54, .08); }
+.lp-plan.destacado { border: 1px solid var(--cf-logo-blue, #1070a0); border-top: 0; padding-top: 36px; box-shadow: 0 12px 32px rgba(11, 31, 54, .14); }
+.lp-plan.destacado::before { content: ''; position: absolute; left: -1px; right: -1px; top: 0; height: 4px; background: linear-gradient(90deg, var(--cf-logo-teal, #20a090), var(--cf-logo-blue, #1070a0)); }
+.lp-plan-tag { color: var(--cf-green-700); background: var(--cf-green-100); }
+
+.lp-demo { border-color: var(--cf-line-card, #d3dbe4); border-left: 3px solid var(--cf-logo-teal, #20a090); border-radius: 0 var(--cf-radius-lg) var(--cf-radius-lg) 0; box-shadow: 0 1px 3px rgba(11, 31, 54, .08); }
+.lp-demo:hover { border-color: var(--cf-navy-800); border-left-color: var(--cf-logo-teal, #20a090); }
+.lp-demo-ico { background: var(--cf-green-100); color: var(--cf-green-700); }
+
+.lp-cta { border-top: 4px solid var(--cf-logo-teal, #20a090); }

@@ -489,3 +489,78 @@ table, .kpi-value, .num, .fs-4, .fs-3, .display-6 { font-variant-numeric: tabula
 .btn-ai { background: var(--cf-navy-800); border: 1px solid var(--cf-navy-800); color: #fff; border-radius: var(--cf-radius); padding: .6rem 1.5rem; font-weight: 600; }
 .btn-ai:hover, .btn-ai:focus { background: var(--cf-navy-700); border-color: var(--cf-navy-700); color: #fff; }
 .status-badge { display: inline-block; margin-bottom: .75rem; background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.2); color: #fff; padding: .25rem .75rem; border-radius: var(--cf-radius); font-size: .8rem; }
+
+/* ════════════════════════════════════════════════════════════════════════
+   Acento del logo (propuesta B, elegida por el usuario el 2026-10-09)
+   El cuerpo pasa a un lienzo gris azulado para que las tarjetas blancas se
+   distingan, y los dos colores del logo marcan dónde empieza cada bloque:
+   verde-teal en cabeceras e ingresos, azul en el resto.
+   ════════════════════════════════════════════════════════════════════════ */
+:root {
+    --cf-logo-teal: #20a090;
+    --cf-logo-blue: #1070a0;
+    --cf-canvas:    #e9eef3;
+    --cf-line-card: #d3dbe4;
+    --cf-head-bg:   #ecf5f2;
+    --cf-shadow-card: 0 1px 3px rgba(11, 31, 54, .08);
+    --bg-body: var(--cf-canvas);
+}
+body { background-color: var(--cf-canvas); }
+
+/* Barra superior: línea con los colores del logo, visible aunque el menú esté oculto */
+.navbar.bg-white, .topbar, header.navbar {
+    background: linear-gradient(90deg, var(--cf-logo-teal), var(--cf-logo-blue)) bottom / 100% 2px no-repeat, var(--cf-surface) !important;
+    border-bottom: 0 !important;
+}
+
+/* Tarjetas: borde visible y sombra leve sobre el lienzo */
+.card { border-color: var(--cf-line-card) !important; box-shadow: var(--cf-shadow-card) !important; }
+.card:hover { box-shadow: var(--cf-shadow-card) !important; }
+
+/* Tarjeta sin cabecera: línea superior con el color del logo (o el de su significado) */
+.card:not(:has(> .card-header)):not(:has(> .form-page-card-header)):not(.empresa-card):not(.kpi-card) {
+    border-top: 3px solid var(--cf-acento, var(--cf-logo-blue)) !important;
+}
+.card .card:not(:has(> .card-header)):not(:has(> .form-page-card-header)):not(.empresa-card):not(.kpi-card) {
+    border-top: 1px solid var(--cf-line-card) !important;
+}
+.card.bg-success, .card.text-bg-success, .card.border-success { --cf-acento: var(--cf-logo-teal); }
+.card.bg-danger, .card.text-bg-danger, .card.border-danger    { --cf-acento: var(--cf-neg); }
+.card.bg-warning, .card.text-bg-warning, .card.border-warning { --cf-acento: var(--cf-warn); }
+.card.bg-primary, .card.bg-info, .card.text-bg-primary, .card.text-bg-info { --cf-acento: var(--cf-logo-blue); }
+
+/* Cabeceras de tarjeta y de formulario: verde suave con línea del logo a la izquierda */
+.card-header, .card-header.text-white, .card-header[class*="bg-"],
+.form-page-card-header, .form-page-card-header.form-page-card-header-success,
+.form-page-card-header.form-page-card-header-danger, .form-page-card-header.form-page-card-header-warning {
+    background: var(--cf-head-bg) !important;
+    box-shadow: inset 3px 0 0 var(--cf-logo-teal);
+    border-bottom: 1px solid #cfe3dc !important;
+    color: var(--cf-green-700) !important;
+}
+.card-header h1, .card-header h2, .card-header h3, .card-header h4, .card-header h5, .card-header h6,
+.card-header .card-title, .card-header .text-white, .card-header h5.text-white, .card-header h6.text-white,
+.form-page-card-header h1, .form-page-card-header h2, .form-page-card-header h3,
+.form-page-card-header h4, .form-page-card-header h5, .form-page-card-header h6 { color: var(--cf-green-700) !important; }
+.card-header i, .form-page-card-header i { color: var(--cf-logo-teal) !important; }
+
+/* Indicadores: azul del logo por defecto, verde-teal si es positivo */
+.kpi-card, .kpi-card.primary, .kpi-card.info { border-top-color: var(--cf-logo-blue) !important; }
+.kpi-card.success { border-top-color: var(--cf-logo-teal) !important; }
+.kpi-card, .cf-cifra, .cf-filtro-periodo { border-color: var(--cf-line-card) !important; box-shadow: var(--cf-shadow-card); }
+.kpi-card { border-top-width: 3px !important; }
+.cf-cifra { border-top: 3px solid var(--cf-logo-blue) !important; }
+.cf-cifra.is-pos     { border-top-color: var(--cf-logo-teal) !important; }
+.cf-cifra.is-pasivo  { border-top-color: var(--cf-warn) !important; }
+.cf-cifra.is-neg     { border-top-color: var(--cf-neg) !important; }
+
+/* Pestañas: la activa en blanco para unirse con la tarjeta de abajo */
+.nav-tabs { --bs-nav-tabs-border-color: var(--cf-line-card); }
+.nav-tabs .nav-link.active { background: var(--cf-surface); border-color: var(--cf-line-card) var(--cf-line-card) var(--cf-surface); border-top: 2px solid var(--cf-logo-teal); }
+
+/* Ventanas emergentes y avisos con la misma línea del logo */
+.modal-content { border-top: 3px solid var(--cf-logo-teal); }
+.swal2-popup { border-top: 3px solid var(--cf-logo-teal) !important; }
+
+/* Fila de sección de los estados financieros, a tono con las cabeceras */
+.cf-estado tr.cf-seccion td { background: var(--cf-head-bg) !important; color: var(--cf-green-700); }

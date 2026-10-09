@@ -254,3 +254,22 @@
     .resumen dl { grid-template-columns: 1fr; }
     .resumen dt { border-bottom: 0; padding-bottom: 0; }
 }
+
+/* ---------- Acento del logo (propuesta B) ----------
+   El formulario deja de flotar sobre el fondo: tarjeta blanca con borde y la
+   línea verde-teal del logo arriba, sobre el lienzo gris azulado. */
+.auth-main { background: var(--cf-canvas, #e9eef3); }
+.auth-card {
+    background: #fff;
+    border: 1px solid var(--cf-line-card, #d3dbe4);
+    border-top: 3px solid var(--cf-logo-teal, #20a090);
+    border-radius: 0 0 var(--cf-radius-lg) var(--cf-radius-lg);
+    box-shadow: 0 1px 3px rgba(11, 31, 54, .08), 0 12px 32px rgba(11, 31, 54, .06);
+    padding: 36px 36px 28px;
+}
+.auth-card .auth-foot { margin-bottom: 0; }
+.auth-brand { border-right-color: var(--cf-logo-teal, #20a090); }
+@media (max-width: 575.98px) {
+    .auth-main { padding: 24px 12px; }
+    .auth-card { padding: 26px 20px 20px; }
+}
