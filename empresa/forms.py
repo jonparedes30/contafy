@@ -383,6 +383,12 @@ class RegistroForm(UserCreationForm):
             'password1': 'Contraseña',
             'password2': 'Confirmar Contraseña',
         }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # password1/password2 los declara UserCreationForm: Meta.widgets no les aplica.
+        for nombre in ('password1', 'password2'):
+            self.fields[nombre].widget.attrs.update({'class': 'form-control', 'autocomplete': 'new-password'})
         error_messages = {
             'username': {
                 'required': 'El nombre de usuario es obligatorio.',

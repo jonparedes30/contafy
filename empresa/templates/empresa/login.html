@@ -1,14 +1,14 @@
 {% extends 'empresa/base_auth.html' %}
-{% block title %}Iniciar sesión — CONTAFY{% endblock %}
+{% block title %}Iniciar sesión — Contafy{% endblock %}
 
 {% block content %}
 <div class="auth-split">
-    {% include 'empresa/_components/auth_panel.html' with eyebrow='Plataforma contable para PYMEs' titulo='La contabilidad de tu empresa, en orden y al día.' lead='Ingresa para revisar tus ventas, tu inventario y tus estados financieros desde cualquier lugar.' %}
+    {% include 'empresa/_components/auth_panel.html' with eyebrow='Plataforma contable para PYMEs' titulo='La contabilidad de su empresa, en orden y al día.' lead='Ingrese para revisar ventas, inventario y estados financieros desde cualquier lugar.' %}
 
     <main class="auth-main">
         <div class="auth-card">
             <h2>Iniciar sesión</h2>
-            <p class="auth-sub">Accede con el usuario de tu empresa.</p>
+            <p class="auth-sub">Ingrese con el usuario de su empresa.</p>
 
             {% include 'empresa/_components/messages.html' %}
 
@@ -19,7 +19,7 @@
                     <div class="input-icon">
                         <i class="bi bi-person"></i>
                         <input type="text" name="username" id="username" class="form-control"
-                               placeholder="Tu nombre de usuario" required autocomplete="username" autofocus
+                               placeholder="Nombre de usuario" required autocomplete="username" autofocus
                                value="{{ request.POST.username|default:'' }}">
                     </div>
                 </div>
@@ -29,7 +29,7 @@
                     <div class="input-icon">
                         <i class="bi bi-lock"></i>
                         <input type="password" name="password" id="password" class="form-control con-ver"
-                               placeholder="Tu contraseña" required autocomplete="current-password">
+                               placeholder="Contraseña" required autocomplete="current-password">
                         <button type="button" class="btn-ver" data-ver="password" aria-label="Mostrar contraseña">
                             <i class="bi bi-eye"></i>
                         </button>
@@ -43,14 +43,14 @@
                 </div>
             </form>
 
-            <div class="auth-divider">¿Aún no tienes cuenta?</div>
+            <div class="auth-divider">¿Aún no tiene cuenta?</div>
 
             <div class="d-grid gap-2">
                 <a href="{% url 'empresa:registro' %}" class="btn btn-auth-outline">
                     <i class="bi bi-building-add me-1"></i>Registrar mi empresa
                 </a>
-                <a href="{% url 'empresa:selector_demo' %}" class="btn btn-link text-decoration-none" style="color:#047857;">
-                    Explorar una demo sin registrarme
+                <a href="{% url 'empresa:selector_demo' %}" class="btn btn-link text-decoration-none" style="color: var(--cf-green-700);">
+                    Explorar una demo sin registrarse
                 </a>
             </div>
 

@@ -1,0 +1,125 @@
+/* Contafy — página principal. Usa los tokens de contafy-ds.css (banca privada). */
+
+.lp { background: var(--cf-surface); color: var(--cf-text); font-family: var(--cf-sans); }
+.lp .container { max-width: 1160px; }
+.lp h1, .lp h2, .lp h3 { font-family: var(--cf-serif); color: var(--cf-ink); }
+.lp-eyebrow { font-size: .78rem; font-weight: 600; letter-spacing: .14em; text-transform: uppercase; color: var(--cf-green-600); margin-bottom: 12px; display: block; }
+
+/* Navegación */
+.lp-nav { position: sticky; top: 0; z-index: 50; background: #fff; border-bottom: 1px solid var(--cf-line); }
+.lp-nav .container { display: flex; align-items: center; justify-content: space-between; min-height: 68px; }
+.lp-brand { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+.lp-brand img { width: 32px; height: 32px; }
+.lp-brand span { font-family: var(--cf-serif); font-weight: 600; font-size: 1.3rem; color: var(--cf-navy-800); letter-spacing: .01em; }
+.lp-links { display: flex; gap: 28px; }
+.lp-links a { color: var(--cf-text); text-decoration: none; font-size: .92rem; font-weight: 500; }
+.lp-links a:hover { color: var(--cf-navy-800); }
+.lp-actions { display: flex; align-items: center; gap: 8px; }
+.lp-actions .btn { padding: .5rem 1rem; font-size: .9rem; }
+
+/* Portada */
+.lp-hero { background: var(--cf-navy-900); color: #d5dde7; padding: 88px 0 96px; border-bottom: 4px solid var(--cf-green-600); }
+.lp-hero h1 { color: #fff; font-size: clamp(2.2rem, 4.2vw, 3.3rem); line-height: 1.12; font-weight: 600; margin-bottom: 20px; }
+.lp-hero .lead { color: #b9c5d3; font-size: 1.1rem; line-height: 1.65; max-width: 540px; margin-bottom: 32px; }
+.lp-hero .lp-eyebrow { color: #7fcab9; }
+.lp-hero .btn-light { --bs-btn-color: var(--cf-navy-800); --bs-btn-bg: #fff; --bs-btn-border-color: #fff;
+                      --bs-btn-hover-bg: #e9eef3; --bs-btn-hover-border-color: #e9eef3; --bs-btn-hover-color: var(--cf-navy-800); }
+.lp-hero .btn-outline-light { --bs-btn-color: #fff; --bs-btn-border-color: rgba(255,255,255,.4);
+                              --bs-btn-hover-bg: rgba(255,255,255,.08); --bs-btn-hover-border-color: #fff; --bs-btn-hover-color: #fff; }
+.lp-hero .btn { padding: .75rem 1.4rem; }
+.lp-hero-nota { margin-top: 22px; font-size: .85rem; color: #8fa0b3; }
+
+/* Documento de muestra (estado de resultados) */
+.lp-doc { background: #fff; color: var(--cf-text); border-radius: var(--cf-radius-lg); box-shadow: 0 24px 48px rgba(0,0,0,.28); overflow: hidden; }
+.lp-doc-head { padding: 18px 22px 14px; border-bottom: 1px solid var(--cf-line); }
+.lp-doc-head small { color: var(--cf-muted); font-size: .75rem; letter-spacing: .08em; text-transform: uppercase; }
+.lp-doc-head h3 { font-size: 1.2rem; margin: 4px 0 0; }
+.lp-doc table { width: 100%; font-size: .92rem; }
+.lp-doc td { padding: 10px 22px; border-bottom: 1px solid var(--cf-line-2); }
+.lp-doc td:last-child { text-align: right; font-variant-numeric: tabular-nums; }
+.lp-doc tr.sub td { font-weight: 600; background: var(--cf-navy-50); }
+.lp-doc tr.total td { font-weight: 700; color: var(--cf-navy-800); border-bottom: 0; border-top: 2px solid var(--cf-navy-800); }
+.lp-doc .neg { color: var(--cf-muted); }
+.lp-doc-foot { padding: 12px 22px; font-size: .78rem; color: var(--cf-muted); background: var(--cf-paper); display: flex; gap: 8px; align-items: center; }
+.lp-doc-foot i { color: var(--cf-green-600); }
+
+/* Franja de garantías */
+.lp-trust { border-bottom: 1px solid var(--cf-line); background: #fff; }
+.lp-trust .row > div { padding: 26px 18px; display: flex; gap: 12px; align-items: flex-start; }
+.lp-trust i { color: var(--cf-green-600); font-size: 1.25rem; margin-top: 2px; }
+.lp-trust strong { display: block; color: var(--cf-ink); font-size: .95rem; }
+.lp-trust small { color: var(--cf-muted); font-size: .84rem; }
+
+/* Secciones */
+.lp-section { padding: 88px 0; }
+.lp-section.alt { background: var(--cf-paper); border-top: 1px solid var(--cf-line); border-bottom: 1px solid var(--cf-line); }
+.lp-section-head { max-width: 640px; margin-bottom: 48px; }
+.lp-section-head h2 { font-size: clamp(1.8rem, 3vw, 2.4rem); font-weight: 600; margin-bottom: 12px; }
+.lp-section-head p { color: var(--cf-muted); font-size: 1.05rem; line-height: 1.6; margin: 0; }
+
+/* Funcionalidades */
+.lp-feature { padding: 28px 28px 28px 0; border-top: 1px solid var(--cf-line); height: 100%; }
+.lp-feature i { color: var(--cf-navy-800); font-size: 1.35rem; }
+.lp-feature h3 { font-family: var(--cf-sans); font-size: 1.02rem; font-weight: 600; margin: 14px 0 8px; }
+.lp-feature p { color: var(--cf-muted); font-size: .93rem; line-height: 1.6; margin: 0; }
+
+/* Tipos de negocio */
+.lp-biz { background: #fff; border: 1px solid var(--cf-line); border-radius: var(--cf-radius-lg); overflow: hidden; height: 100%; }
+.lp-biz img { width: 100%; height: 190px; object-fit: cover; filter: saturate(.85); }
+.lp-biz-body { padding: 24px; }
+.lp-biz-body small { color: var(--cf-green-600); font-weight: 600; font-size: .75rem; letter-spacing: .1em; text-transform: uppercase; }
+.lp-biz-body h3 { font-size: 1.3rem; margin: 6px 0 10px; }
+.lp-biz-body p { color: var(--cf-muted); font-size: .93rem; }
+.lp-biz-body ul { list-style: none; padding: 0; margin: 0; font-size: .9rem; }
+.lp-biz-body li { padding: 6px 0; border-top: 1px solid var(--cf-line-2); display: flex; gap: 8px; }
+.lp-biz-body li i { color: var(--cf-green-600); }
+
+/* Precios */
+.lp-plan { background: #fff; border: 1px solid var(--cf-line); border-radius: var(--cf-radius-lg); padding: 32px 28px; height: 100%; display: flex; flex-direction: column; }
+.lp-plan.destacado { border: 2px solid var(--cf-navy-800); }
+.lp-plan-tag { align-self: flex-start; font-size: .72rem; font-weight: 600; letter-spacing: .08em; text-transform: uppercase;
+               color: var(--cf-navy-800); background: var(--cf-navy-50); padding: 4px 10px; border-radius: 4px; margin-bottom: 14px; }
+.lp-plan h3 { font-size: 1.35rem; margin: 0 0 6px; }
+.lp-plan-precio { font-size: 2.4rem; font-weight: 600; color: var(--cf-ink); font-variant-numeric: tabular-nums; margin: 8px 0 4px; }
+.lp-plan-precio span { font-size: .95rem; color: var(--cf-muted); font-weight: 400; }
+.lp-plan > p { color: var(--cf-muted); font-size: .92rem; min-height: 44px; }
+.lp-plan ul { list-style: none; padding: 0; margin: 12px 0 28px; flex: 1; font-size: .92rem; }
+.lp-plan li { padding: 7px 0; display: flex; gap: 10px; border-top: 1px solid var(--cf-line-2); }
+.lp-plan li i { color: var(--cf-green-600); }
+.lp-plan li.no { color: var(--cf-subtle); }
+.lp-plan li.no i { color: var(--cf-subtle); }
+.lp-plan .btn { padding: .7rem; }
+
+/* Demos */
+.lp-demo { display: flex; align-items: center; gap: 18px; padding: 22px 24px; background: #fff; border: 1px solid var(--cf-line);
+           border-radius: var(--cf-radius-lg); text-decoration: none; color: inherit; height: 100%; transition: border-color .15s; }
+.lp-demo:hover { border-color: var(--cf-navy-800); color: inherit; }
+.lp-demo-ico { flex: 0 0 48px; height: 48px; border-radius: var(--cf-radius); background: var(--cf-navy-50); color: var(--cf-navy-800);
+               display: grid; place-items: center; font-size: 1.3rem; }
+.lp-demo h3 { font-family: var(--cf-sans); font-size: 1rem; font-weight: 600; margin: 0 0 2px; }
+.lp-demo p { margin: 0; color: var(--cf-muted); font-size: .88rem; }
+.lp-demo .bi-arrow-right { margin-left: auto; color: var(--cf-navy-800); }
+
+/* Llamado final */
+.lp-cta { background: var(--cf-navy-900); color: #c9d3de; padding: 72px 0; }
+.lp-cta h2 { color: #fff; font-size: clamp(1.7rem, 3vw, 2.2rem); margin-bottom: 10px; }
+.lp-cta .btn-light { --bs-btn-color: var(--cf-navy-800); }
+
+/* Pie */
+.lp-foot { background: var(--cf-navy-950); color: #8fa0b3; padding: 48px 0 28px; font-size: .9rem; }
+.lp-foot h4 { color: #fff; font-family: var(--cf-sans); font-size: .8rem; letter-spacing: .1em; text-transform: uppercase; margin-bottom: 14px; }
+.lp-foot a { color: #b9c5d3; text-decoration: none; display: block; padding: 4px 0; }
+.lp-foot a:hover { color: #fff; }
+.lp-foot .lp-brand span { color: #fff; }
+.lp-foot-legal { border-top: 1px solid rgba(255,255,255,.08); margin-top: 32px; padding-top: 20px; font-size: .82rem; }
+
+@media (max-width: 991.98px) {
+    .lp-links { display: none; }
+    .lp-hero { padding: 56px 0 64px; }
+    .lp-hero .lp-doc { margin-top: 40px; }
+    .lp-section { padding: 64px 0; }
+}
+@media (max-width: 575.98px) {
+    .lp-actions .btn-link { display: none; }
+    .lp-trust .row > div { padding: 18px 16px; }
+}

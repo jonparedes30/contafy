@@ -6,7 +6,7 @@
 <div class="container-fluid mt-4">
     <div class="row justify-content-center">
         <div class="col-12 col-xl-10">
-            <h2 class="page-header-module text-success mb-4"><i class="bi bi-cart-plus me-2"></i>Registrar nueva venta</h2>
+            <h2 class="page-header-module mb-4"><i class="bi bi-cart-plus me-2"></i>Registrar venta</h2>
 
             <form method="post" id="form-venta">
                 {% csrf_token %}
@@ -111,15 +111,15 @@
                                 <div id="pos-change">$0.00</div>
                             </div>
 
-                            <button type="button" id="pos-btn-cobrar" class="btn btn-success btn-cobrar mt-3 w-100 py-3">💰 Cobrar</button>
+                            <button type="button" id="pos-btn-cobrar" class="btn btn-success btn-cobrar mt-3 w-100 py-3"><i class="bi bi-cash-coin me-2"></i>Cobrar</button>
                             </div>
                         </div>
                     </div>
                 </div>
 
                 <style>
-                    .pos-total { font-size: 2.2rem; font-weight: 700; color: var(--c-green-d); }
-                    .total-principal { font-size: 2.5rem; font-weight: 700; color: var(--c-green); }
+                    .pos-total { font-size: 2.1rem; font-weight: 600; color: var(--cf-navy-800); font-variant-numeric: tabular-nums; }
+                    .total-principal { font-size: 2.3rem; font-weight: 600; color: var(--cf-navy-800); font-variant-numeric: tabular-nums; }
                     .btn-cobrar { width: 100%; font-size: 1.1rem; padding: 10px; }
 
                     /* POS mode - hide legacy blocks to avoid duplication
@@ -146,7 +146,7 @@
                             <input type="text" id="codigo_barras" class="form-control"
                                 placeholder="Escanea o escribe el código">
                             <button type="button" id="btn-scanner" class="btn btn-outline-primary">
-                                📷 Escanear
+                                <i class="bi bi-camera me-1"></i>Escanear
                             </button>
                         </div>
                         <div id="scanner-status" class="form-text"></div>
@@ -173,9 +173,9 @@
                 <div id="scanner-container" class="mb-4" style="display: none;">
                     <div class="card">
                         <div class="card-header d-flex justify-content-between align-items-center">
-                            <span>📷 Escáner Activo</span>
+                            <span><i class="bi bi-camera-video me-1"></i>Escáner activo</span>
                             <button type="button" id="btn-stop-scanner" class="btn btn-sm btn-danger">
-                                ❌ Detener
+                                <i class="bi bi-x-lg me-1"></i>Detener
                             </button>
                         </div>
                         <div class="card-body p-2">
@@ -266,7 +266,7 @@
                         <div class="col-12">
                             <div class="card">
                                 <div class="card-header">
-                                    <h6 class="mb-0">🛍️ Agregar Productos</h6>
+                                    <h6 class="mb-0"><i class="bi bi-bag-plus me-2"></i>Agregar productos</h6>
                                 </div>
                                 <div class="card-body">
                                     <div class="row">
@@ -314,7 +314,7 @@
                                         <div class="col-md-3">
                                             <button type="button" class="btn btn-success w-100"
                                                 id="agregar-producto-multiple">
-                                                ➕ Agregar
+                                                <i class="bi bi-plus-lg me-1"></i>Agregar
                                             </button>
                                         </div>
                                     </div>
@@ -328,7 +328,7 @@
                         <div class="col-12">
                             <div class="card">
                                 <div class="card-header">
-                                    <h6 class="mb-0">📋 Productos en la Venta</h6>
+                                    <h6 class="mb-0"><i class="bi bi-list-ul me-2"></i>Productos en la venta</h6>
                                 </div>
                                 <div class="card-body">
                                     <div class="table-responsive">
@@ -362,14 +362,14 @@
                         <div class="form-check mb-3">
                             <input class="form-check-input" type="checkbox" id="incluirIva">
                             <label class="form-check-label" for="incluirIva">
-                                📊 <strong>Incluir IVA</strong> (desmarcar para productos exentos)
+                                <strong>Incluir IVA</strong> (desmarcar para productos exentos)
                             </label>
                         </div>
 
                         <!-- Campos de IVA -->
                         <div id="ivaDetails">
                             <div class="card card-body">
-                                <h6 class="text-info mb-3">💰 Detalles del IVA</h6>
+                                <h6 class="mb-3">Detalles del IVA</h6>
                                 <div class="row mb-2">
                                     <div class="col-6">
                                         <label for="id_monto_neto" class="form-label">Monto Neto:</label>
@@ -416,7 +416,7 @@
                 <div id="calculadora-cambio-simple" style="display: none;" class="mb-4">
                     <div class="card bg-light">
                         <div class="card-body">
-                            <h6 class="text-primary mb-3">💵 Calculadora de Cambio</h6>
+                            <h6 class="mb-3">Calculadora de cambio</h6>
                             <div class="row">
                                 <div class="col-md-4">
                                     <label class="form-label">Total a cobrar:</label>
@@ -442,7 +442,7 @@
                 <!-- Legacy footer save button (hidden in POS) -->
                 <div class="row" id="legacy-save-row">
                     <div class="col-12">
-                        <button type="submit" class="btn btn-success btn-lg w-100" id="legacy-save-button">💾 Guardar Venta</button>
+                        <button type="submit" class="btn btn-success btn-lg w-100" id="legacy-save-button"><i class="bi bi-check2 me-1"></i>Guardar venta</button>
                     </div>
                 </div>
             </form>
@@ -478,7 +478,7 @@
                     if (option.value == prod.id) {
                         selectProducto.value = prod.id;
                         actualizarVenta();
-                        stockInfo.textContent = `✅ Producto encontrado en inventario: ${prod.nombre}`;
+                        stockInfo.textContent = `Producto encontrado en inventario: ${prod.nombre}`;
                         stockInfo.className = 'fw-bold mb-3 text-center text-success';
                         actions.style.display = 'none';
                         return;
@@ -578,7 +578,7 @@
                 stockInfo.classList.remove('text-danger');
             } else {
                 inputPrecio.value = '';
-                stockInfo.textContent = '⚠️ Selecciona un servicio.';
+                stockInfo.textContent = 'Selecciona un servicio.';
                 stockInfo.classList.remove('text-success', 'text-danger');
             }
         } else if (selectProducto) {
@@ -604,7 +604,7 @@
                     stockInfo.classList.toggle('text-danger', prodData.stock === 0);
                 }
             } else {
-                stockInfo.textContent = '⚠️ Selecciona un producto válido para ver el stock.';
+                stockInfo.textContent = 'Selecciona un producto válido para ver el stock.';
                 stockInfo.classList.remove('text-success', 'text-danger');
             }
         }
@@ -865,7 +865,7 @@
                         // Mostrar descripción
                         const descripcionDiv = document.getElementById('producto-multiple-descripcion');
                         if (descripcionDiv && descripcion) {
-                            descripcionDiv.textContent = `📝 ${descripcion}`;
+                            descripcionDiv.textContent = `${descripcion}`;
                             descripcionDiv.style.display = 'block';
                         } else if (descripcionDiv) {
                             descripcionDiv.style.display = 'none';
@@ -876,10 +876,10 @@
                         if (stockInfoMultiple) {
                             const stock = parseInt(this.dataset.stock) || 0;
                             if (id.startsWith('serv_')) {
-                                stockInfoMultiple.textContent = `🛠️ Servicio disponible`;
+                                stockInfoMultiple.textContent = `Servicio disponible`;
                                 stockInfoMultiple.className = 'fw-bold text-center mt-2 text-success';
                             } else {
-                                stockInfoMultiple.textContent = `🔍 Stock disponible: ${stock}`;
+                                stockInfoMultiple.textContent = `Stock disponible: ${stock}`;
                                 if (stock > 20) {
                                     stockInfoMultiple.className = 'fw-bold text-center mt-2 text-success';
                                 } else if (stock > 0) {
@@ -984,8 +984,8 @@
                 <td>$${producto.precio.toFixed(2)}</td>
                 <td>$${producto.subtotal.toFixed(2)}</td>
                 <td>
-                    <button class="btn btn-sm btn-danger" onclick="eliminarProductoMultiple(${index})">
-                        🗑️
+                    <button class="btn btn-sm btn-outline-danger" onclick="eliminarProductoMultiple(${index})" aria-label="Quitar producto">
+                        <i class="bi bi-trash"></i>
                     </button>
                 </td>
             `;
@@ -1130,7 +1130,7 @@
         if (btnCobrar) { btnCobrar.disabled = true; btnCobrar.dataset.texto = btnCobrar.innerHTML; btnCobrar.innerHTML = 'Procesando…'; }
         const liberar = () => {
             ventaEnCurso = false;
-            if (btnCobrar) { btnCobrar.disabled = false; btnCobrar.innerHTML = btnCobrar.dataset.texto || '💰 Cobrar'; }
+            if (btnCobrar) { btnCobrar.disabled = false; btnCobrar.innerHTML = btnCobrar.dataset.texto || 'Cobrar'; }
         };
         const ventaData = {
             productos: productosMultiple,
@@ -1216,7 +1216,7 @@
                 <td><input type="number" class="form-control form-control-sm" value="${p.cantidad}" min="1" onchange="cambiarCantidadMultiple(${idx}, this.value)"></td>
                 <td>$${p.precio.toFixed(2)}</td>
                 <td>$${p.subtotal.toFixed(2)}</td>
-                <td><button class="btn btn-sm btn-outline-danger" onclick="eliminarProductoMultiple(${idx})">✖</button></td>
+                <td><button class="btn btn-sm btn-outline-danger" onclick="eliminarProductoMultiple(${idx})" aria-label="Quitar producto"><i class="bi bi-x-lg"></i></button></td>
             `;
             body.appendChild(tr);
             // flash newly added row briefly
@@ -1309,7 +1309,7 @@
                         // Mostrar descripción
                         const descripcionDiv = document.getElementById('producto-descripcion');
                         if (descripcionDiv && descripcion) {
-                            descripcionDiv.textContent = `📝 ${descripcion}`;
+                            descripcionDiv.textContent = `${descripcion}`;
                             descripcionDiv.style.display = 'block';
                         }
 
@@ -1365,7 +1365,7 @@
             const prodData = productos[prodId] || {};
 
             if (productoDescripcion && prodData.descripcion) {
-                productoDescripcion.textContent = `📝 ${prodData.descripcion}`;
+                productoDescripcion.textContent = `${prodData.descripcion}`;
                 productoDescripcion.style.display = 'block';
             } else if (productoDescripcion) {
                 productoDescripcion.style.display = 'none';
@@ -1491,13 +1491,13 @@
                     if (option.value == data.id) {
                         selectProducto.value = data.id;
                         actualizarVenta();
-                        stockInfo.textContent = `✅ Producto encontrado: ${data.nombre}`;
+                        stockInfo.textContent = `Producto encontrado: ${data.nombre}`;
                         stockInfo.className = 'fw-bold mb-3 text-center text-success';
                         return;
                     }
                 }
             } else {
-                stockInfo.textContent = `⚠️ ${data.mensaje || 'Producto no encontrado'}`;
+                stockInfo.textContent = `${data.mensaje || 'Producto no encontrado'}`;
                 stockInfo.className = 'fw-bold mb-3 text-center text-warning';
                 inputPrecio.value = '';
                 inputTotal.value = '';
@@ -1505,7 +1505,7 @@
             }
         } catch (error) {
             console.error('Error buscando producto:', error);
-            stockInfo.textContent = '❌ Error buscando producto';
+            stockInfo.textContent = 'Error buscando producto';
             stockInfo.className = 'fw-bold mb-3 text-center text-danger';
         }
     }
@@ -1594,7 +1594,7 @@
             const name = p.nombre || p.nombre_comercial || p.descripcion || ('Producto ' + (p.id || ''));
             const stockVal = p.stock !== undefined && p.stock !== null ? parseInt(p.stock) : null;
             const stockHtml = stockVal !== null
-                ? `<span style="font-size:0.7rem;color:${stockVal > 5 ? '#64748b' : stockVal > 0 ? '#d97706' : '#ef4444'};">📦 ${stockVal}</span>`
+                ? `<span style="font-size:0.7rem;color:${stockVal > 5 ? 'var(--cf-muted)' : stockVal > 0 ? 'var(--cf-warn)' : 'var(--cf-neg)'};">Stock ${stockVal}</span>`
                 : '';
             html += `
                 <a href="#" class="pos-suggestion-item" data-id="${p.id}" data-idx="${idx}"
@@ -1767,7 +1767,7 @@
                         // if multiple list contains the product, highlight the row
                         const rows = document.querySelectorAll('#productos-tbody-multiple tr');
                         rows.forEach(r=>{ if (r.innerText.indexOf(opt.text) !== -1) flashEl(r); });
-                        toast(`✅ Producto agregado: ${opt.text}`,'success');
+                        toast(`Producto agregado: ${opt.text}`,'success');
                         try{ window.playBeep && window.playBeep(100,1000,0.06); }catch(e){}
                         return;
                     }
@@ -1775,7 +1775,7 @@
                 // fallback: highlight producto-search input and toast with name
                 const searchInput = document.getElementById('producto-search');
                 if (searchInput) flashEl(searchInput);
-                toast(prodName ? `✅ Producto agregado: ${prodName}` : '✅ Producto agregado', 'success');
+                toast(prodName ? `Producto agregado: ${prodName}` : 'Producto agregado', 'success');
                 try{ window.playBeep && window.playBeep(100,1000,0.06); }catch(e){}
             }catch(e){console.warn('auto_agregar handler', e)}
         });

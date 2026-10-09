@@ -1,6 +1,10 @@
-﻿<nav class="sidebar" id="sidebar">
+{% load static %}
+<nav class="sidebar" id="sidebar">
     <div class="sidebar-header p-3 mb-2">
-        <h4 class="m-0 fw-bold"><i class="bi bi-calculator-fill me-2 text-success"></i>CONTAFY</h4>
+        <a href="{% url 'empresa:resumen_financiero' %}" class="d-flex align-items-center text-decoration-none">
+            <img src="{% static 'empresa/img/contafy-logo-mark.png' %}" alt="" class="cf-logo" width="26" height="26">
+            <h4 class="m-0">Contafy</h4>
+        </a>
     </div>
 
     <div class="nav-container flex-grow-1 overflow-auto">

@@ -1,5 +1,6 @@
 from empresa.utils.errores import mensaje_error
 from django.shortcuts import render, redirect
+from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from empresa.models import Gasto
@@ -18,6 +19,7 @@ def crear_gasto(request):
             gasto.empresa = request.user.empresa
             gasto.creado_por = request.user
             gasto.save()
+            messages.success(request, f'Gasto registrado: {gasto.descripcion} (${gasto.monto:,.2f}).')
             return redirect('empresa:home')
     else:
         form = GastoForm()

@@ -1,1701 +1,296 @@
 {% extends 'empresa/base_auth.html' %}
 {% load static %}
-
-{% block title %}Contafy — Contabilidad simple para tu negocio{% endblock %}
+{% block title %}Contafy — Contabilidad para empresas ecuatorianas{% endblock %}
 
 {% block extra_css %}
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600;700;800;900&family=Montserrat:wght@700;800;900&display=swap" rel="stylesheet">
-<style>
-/* ════════════════════════════════════════════════
-   CONTAFY BRAND SYSTEM
-   ════════════════════════════════════════════════ */
-:root {
-  /* Brand colors */
-  --c-green:     #10b981;
-  --c-green-d:   #059669;
-  --c-teal:      #14b8a6;
-  --c-blue:      #3b82f6;
-  --c-blue-d:    #2563eb;
-  --c-navy:      #0f172a;
-  --c-navy-2:    #1e293b;
-  --c-slate-1:   #f8fafc;
-  --c-slate-2:   #e2e8f0;
-  --c-slate-3:   #94a3b8;
-  --c-text:      #0f172a;
-  --c-muted:     #64748b;
-
-  /* Signature gradient */
-  --grad-brand:    linear-gradient(135deg, #10b981 0%, #14b8a6 35%, #3b82f6 100%);
-  --grad-brand-r:  linear-gradient(135deg, #3b82f6 0%, #14b8a6 65%, #10b981 100%);
-  --grad-text:     linear-gradient(135deg, #34d399 0%, #60a5fa 100%);
-  --grad-hero-bg:  linear-gradient(135deg, #0a1628 0%, #0f3a3a 35%, #0c2540 70%, #0a1628 100%);
-
-  /* Shadows */
-  --shadow-sm:  0 1px 2px rgba(15,23,42,.05);
-  --shadow-md:  0 4px 12px rgba(15,23,42,.08);
-  --shadow-lg:  0 12px 40px rgba(15,23,42,.12);
-  --shadow-xl:  0 24px 60px rgba(15,23,42,.18);
-  --shadow-brand: 0 12px 40px rgba(16,185,129,.25);
-  --shadow-blue:  0 12px 40px rgba(59,130,246,.3);
-
-  /* Typography */
-  --font-display: 'Space Grotesk', 'Inter', system-ui, sans-serif;
-  --font-body:    'Inter', system-ui, sans-serif;
-}
-
-* { box-sizing: border-box; }
-body {
-  font-family: var(--font-body);
-  margin: 0;
-  color: var(--c-text);
-  background: #fff;
-  -webkit-font-smoothing: antialiased;
-}
-h1, h2, h3, h4, h5, h6 { font-family: var(--font-display); letter-spacing: -0.02em; }
-
-/* ════════════════════════════════════════════════
-   NAVBAR (Glass + Brand)
-   ════════════════════════════════════════════════ */
-.lnav {
-  background: rgba(10,22,40,.78);
-  backdrop-filter: blur(20px) saturate(180%);
-  -webkit-backdrop-filter: blur(20px) saturate(180%);
-  padding: .9rem 0;
-  position: sticky; top: 0; z-index: 1000;
-  border-bottom: 1px solid rgba(255,255,255,.08);
-}
-.lnav-brand {
-  font-family: 'Montserrat', sans-serif;
-  font-size: 1.6rem;
-  font-weight: 900;
-  color: #fff;
-  text-decoration: none;
-  letter-spacing: -0.5px;
-  display: inline-flex; align-items: center; gap: .6rem;
-  text-transform: uppercase;
-}
-.lnav-brand .logo-mark {
-  width: 42px; height: 42px;
-  display: inline-flex; align-items: center; justify-content: center;
-  flex-shrink: 0;
-}
-.lnav-brand .logo-mark img {
-  width: 100%; height: 100%;
-  object-fit: contain;
-}
-.lnav-brand span {
-  background: var(--grad-text);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-.lnav-link {
-  color: rgba(255,255,255,.7);
-  font-size: .88rem; font-weight: 500;
-  text-decoration: none;
-  transition: color .2s;
-  position: relative;
-}
-.lnav-link:hover { color: #fff; }
-.lnav-link::after {
-  content: ''; position: absolute;
-  bottom: -4px; left: 50%; transform: translateX(-50%);
-  width: 0; height: 2px;
-  background: var(--grad-brand);
-  transition: width .25s;
-  border-radius: 2px;
-}
-.lnav-link:hover::after { width: 100%; }
-
-.btn-nav-login {
-  border: 1px solid rgba(255,255,255,.25);
-  color: #fff; background: transparent;
-  padding: .45rem 1.1rem; border-radius: 8px;
-  font-size: .85rem; font-weight: 600;
-  text-decoration: none;
-  transition: all .2s;
-}
-.btn-nav-login:hover { border-color: rgba(255,255,255,.5); color: #fff; background: rgba(255,255,255,.05); }
-.btn-nav-cta {
-  background: var(--grad-brand);
-  color: #fff;
-  padding: .5rem 1.2rem;
-  border-radius: 8px;
-  font-size: .85rem; font-weight: 700;
-  text-decoration: none;
-  transition: all .2s;
-  box-shadow: 0 4px 14px rgba(16,185,129,.3);
-}
-.btn-nav-cta:hover { transform: translateY(-1px); box-shadow: var(--shadow-brand); color: #fff; }
-
-/* ════════════════════════════════════════════════
-   HERO — Aurora gradient + glass mockup
-   ════════════════════════════════════════════════ */
-.hero {
-  min-height: 100vh;
-  background: var(--grad-hero-bg);
-  position: relative; overflow: hidden;
-  display: flex; align-items: center;
-  padding: 4rem 0 2rem;
-}
-/* Aurora effect */
-.hero::before {
-  content: '';
-  position: absolute; inset: 0;
-  background:
-    radial-gradient(ellipse 70% 50% at 80% 30%, rgba(16,185,129,.18) 0%, transparent 65%),
-    radial-gradient(ellipse 60% 45% at 25% 75%, rgba(59,130,246,.22) 0%, transparent 65%),
-    radial-gradient(ellipse 50% 40% at 60% 95%, rgba(20,184,166,.15) 0%, transparent 60%);
-  animation: auroraFloat 18s ease-in-out infinite;
-}
-@keyframes auroraFloat {
-  0%, 100% { transform: translate(0, 0) scale(1); }
-  50% { transform: translate(2%, -1%) scale(1.05); }
-}
-/* Grid overlay */
-.hero::after {
-  content: '';
-  position: absolute; inset: 0;
-  background-image:
-    linear-gradient(rgba(255,255,255,.025) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255,255,255,.025) 1px, transparent 1px);
-  background-size: 60px 60px;
-  mask-image: radial-gradient(ellipse 80% 60% at center, #000 30%, transparent 80%);
-  -webkit-mask-image: radial-gradient(ellipse 80% 60% at center, #000 30%, transparent 80%);
-}
-.hero > .container { position: relative; z-index: 2; }
-
-.hero-badge {
-  display: inline-flex; align-items: center; gap: .55rem;
-  background: rgba(255,255,255,.06);
-  border: 1px solid rgba(255,255,255,.12);
-  backdrop-filter: blur(10px);
-  color: #a7f3d0;
-  padding: .4rem 1rem;
-  border-radius: 50px;
-  font-size: .78rem; font-weight: 600;
-  letter-spacing: .3px;
-  margin-bottom: 1.75rem;
-}
-.hero-badge .dot {
-  width: 7px; height: 7px; border-radius: 50%;
-  background: var(--c-green);
-  box-shadow: 0 0 12px var(--c-green);
-  animation: pulse 2s ease-in-out infinite;
-}
-@keyframes pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: .4; }
-}
-
-.hero h1 {
-  font-size: clamp(2.4rem, 5.5vw, 4.2rem);
-  font-weight: 700;
-  line-height: 1.05;
-  color: #fff;
-  letter-spacing: -0.035em;
-  margin-bottom: 1.25rem;
-}
-.hero h1 .grad-text {
-  background: var(--grad-text);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  display: inline-block;
-}
-.hero-sub {
-  font-size: 1.15rem;
-  color: rgba(255,255,255,.7);
-  line-height: 1.7;
-  max-width: 530px;
-  margin-bottom: 2.25rem;
-  font-weight: 400;
-}
-
-.hero-cta { display: flex; gap: .85rem; flex-wrap: wrap; }
-.btn-primary-hero {
-  background: var(--grad-brand);
-  color: #fff;
-  padding: .95rem 2.2rem;
-  border-radius: 12px;
-  font-weight: 700; font-size: 1rem;
-  text-decoration: none;
-  transition: all .25s;
-  display: inline-flex; align-items: center; gap: .6rem;
-  box-shadow: 0 8px 24px rgba(16,185,129,.35);
-  border: none;
-  position: relative;
-  overflow: hidden;
-}
-.btn-primary-hero::before {
-  content: ''; position: absolute;
-  inset: 0;
-  background: var(--grad-brand-r);
-  opacity: 0; transition: opacity .3s;
-}
-.btn-primary-hero > * { position: relative; z-index: 1; }
-.btn-primary-hero:hover { transform: translateY(-2px); box-shadow: 0 14px 36px rgba(16,185,129,.5); color: #fff; }
-.btn-primary-hero:hover::before { opacity: 1; }
-
-.btn-ghost-hero {
-  background: rgba(255,255,255,.05);
-  border: 1px solid rgba(255,255,255,.15);
-  color: #fff;
-  padding: .95rem 2rem;
-  border-radius: 12px;
-  font-weight: 600; font-size: 1rem;
-  text-decoration: none;
-  transition: all .2s;
-  display: inline-flex; align-items: center; gap: .6rem;
-  backdrop-filter: blur(10px);
-}
-.btn-ghost-hero:hover { background: rgba(255,255,255,.1); border-color: rgba(255,255,255,.3); color: #fff; }
-
-/* Hero stats */
-.hero-stats {
-  display: flex; gap: 2.5rem; margin-top: 3rem;
-  padding-top: 2rem;
-  border-top: 1px solid rgba(255,255,255,.08);
-}
-.hero-stat .num {
-  font-family: var(--font-display);
-  font-size: 1.9rem; font-weight: 700;
-  background: var(--grad-text);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  letter-spacing: -.02em;
-}
-.hero-stat .lbl {
-  font-size: .76rem;
-  color: rgba(255,255,255,.5);
-  text-transform: uppercase;
-  letter-spacing: .8px;
-  margin-top: .15rem;
-}
-
-/* Hero mockup (glass dashboard) */
-.hero-mockup-wrap {
-  position: relative;
-  transform: perspective(1200px) rotateY(-6deg) rotateX(4deg);
-}
-.hero-mockup {
-  background: rgba(255,255,255,.04);
-  border: 1px solid rgba(255,255,255,.1);
-  border-radius: 18px;
-  padding: 1.25rem;
-  backdrop-filter: blur(14px);
-  box-shadow: 0 30px 80px rgba(0,0,0,.4);
-}
-.mockup-glow {
-  position: absolute; inset: -40px;
-  background: var(--grad-brand);
-  opacity: .15; filter: blur(60px);
-  z-index: -1; border-radius: 30px;
-}
-.mockup-toolbar {
-  display: flex; align-items: center; gap: .35rem;
-  padding-bottom: .85rem;
-  border-bottom: 1px solid rgba(255,255,255,.06);
-  margin-bottom: 1rem;
-}
-.mockup-toolbar .dot {
-  width: 11px; height: 11px; border-radius: 50%;
-}
-.dot-r { background: #ef4444; }
-.dot-y { background: #f59e0b; }
-.dot-g { background: #10b981; }
-.mockup-url {
-  margin-left: auto; padding: .15rem .8rem;
-  background: rgba(255,255,255,.06);
-  border-radius: 5px;
-  font-size: .7rem;
-  color: rgba(255,255,255,.5);
-  font-family: 'SF Mono', Menlo, monospace;
-}
-
-.mock-header {
-  background: var(--grad-brand);
-  padding: .85rem 1.1rem;
-  border-radius: 10px;
-  display: flex; justify-content: space-between; align-items: center;
-  margin-bottom: 1rem;
-}
-.mock-header h6 { color: #fff; margin: 0; font-weight: 700; font-size: .85rem; }
-.mock-header span { color: rgba(255,255,255,.85); font-size: .68rem; }
-
-.mock-kpi {
-  background: rgba(255,255,255,.05);
-  border: 1px solid rgba(255,255,255,.08);
-  border-radius: 10px;
-  padding: .85rem .95rem;
-  position: relative;
-  overflow: hidden;
-}
-.mock-kpi::before {
-  content: ''; position: absolute;
-  left: 0; top: 0; bottom: 0;
-  width: 3px;
-  background: var(--c-blue);
-  border-radius: 3px 0 0 3px;
-}
-.mock-kpi.green::before { background: var(--c-green); }
-.mock-kpi.amber::before { background: #f59e0b; }
-.mock-kpi.purple::before { background: #a78bfa; }
-.mock-kpi .v {
-  font-family: var(--font-display);
-  font-size: 1.35rem; font-weight: 700;
-  color: #fff; line-height: 1;
-}
-.mock-kpi .l {
-  font-size: .68rem;
-  color: rgba(255,255,255,.5);
-  margin-top: .25rem;
-  text-transform: uppercase;
-  letter-spacing: .5px;
-}
-.mock-kpi .trend {
-  position: absolute; top: .65rem; right: .65rem;
-  font-size: .65rem;
-  color: var(--c-green); font-weight: 700;
-}
-
-.mock-chart {
-  background: rgba(255,255,255,.03);
-  border: 1px solid rgba(255,255,255,.06);
-  border-radius: 10px;
-  padding: 1rem;
-  margin-top: .85rem;
-}
-.mock-chart-title { display: flex; justify-content: space-between; align-items: center; margin-bottom: .85rem; }
-.mock-chart-title small { color: rgba(255,255,255,.5); font-size: .7rem; }
-.mock-chart-title .legend {
-  display: flex; gap: .75rem;
-  font-size: .65rem; color: rgba(255,255,255,.55);
-}
-.mock-chart-title .legend i { font-size: .55rem; margin-right: .3rem; }
-.bars { display: flex; align-items: flex-end; gap: 6px; height: 90px; }
-.bar-group { display: flex; flex-direction: column; gap: 3px; flex: 1; height: 100%; justify-content: flex-end; }
-.bar {
-  border-radius: 3px 3px 0 0;
-  transition: height .6s cubic-bezier(.4,0,.2,1);
-}
-.bar.bg { background: linear-gradient(180deg, #10b981, #059669); }
-.bar.bb { background: linear-gradient(180deg, #3b82f6, #2563eb); }
-
-/* ════════════════════════════════════════════════
-   SECTION COMMONS
-   ════════════════════════════════════════════════ */
-.section-tag {
-  display: inline-flex; align-items: center; gap: .4rem;
-  padding: .35rem 1rem;
-  background: linear-gradient(135deg, rgba(16,185,129,.1), rgba(59,130,246,.1));
-  border: 1px solid rgba(16,185,129,.2);
-  color: var(--c-green-d);
-  border-radius: 50px;
-  font-size: .72rem; font-weight: 700;
-  letter-spacing: 1.2px;
-  text-transform: uppercase;
-  margin-bottom: 1rem;
-}
-.section-h2 {
-  font-size: clamp(2rem, 3.5vw, 2.75rem);
-  font-weight: 700;
-  color: var(--c-text);
-  line-height: 1.1;
-  letter-spacing: -.03em;
-  margin-bottom: .75rem;
-}
-.section-h2 .grad-text {
-  background: var(--grad-brand);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-.section-sub {
-  color: var(--c-muted);
-  font-size: 1.05rem;
-  max-width: 600px;
-  margin: 0 auto;
-  line-height: 1.7;
-}
-
-/* ════════════════════════════════════════════════
-   FEATURES — Carousel premium
-   ════════════════════════════════════════════════ */
-.features-section {
-  background: var(--c-slate-1);
-  padding: 6.5rem 0;
-  position: relative;
-  overflow: hidden;
-}
-.features-section::before {
-  content: ''; position: absolute;
-  top: -30%; right: -10%;
-  width: 600px; height: 600px;
-  background: radial-gradient(circle, rgba(16,185,129,.06), transparent 70%);
-  border-radius: 50%;
-}
-.features-section::after {
-  content: ''; position: absolute;
-  bottom: -20%; left: -10%;
-  width: 500px; height: 500px;
-  background: radial-gradient(circle, rgba(59,130,246,.05), transparent 70%);
-  border-radius: 50%;
-}
-.features-section .container { position: relative; z-index: 1; }
-
-.feat-tabs {
-  display: flex; gap: .5rem;
-  flex-wrap: wrap;
-  justify-content: center;
-  margin: 2.5rem 0 3rem;
-}
-.feat-tab {
-  padding: .65rem 1.5rem;
-  border-radius: 50px;
-  border: 1.5px solid var(--c-slate-2);
-  background: #fff;
-  font-size: .88rem; font-weight: 600;
-  color: var(--c-muted);
-  cursor: pointer;
-  transition: all .25s;
-  display: inline-flex; align-items: center; gap: .5rem;
-}
-.feat-tab i { font-size: 1rem; }
-.feat-tab:hover { border-color: var(--c-green); color: var(--c-green-d); }
-.feat-tab.active {
-  background: var(--grad-brand);
-  border-color: transparent;
-  color: #fff;
-  box-shadow: var(--shadow-brand);
-}
-
-.feat-carousel { position: relative; overflow: hidden; }
-.feat-track {
-  display: flex;
-  transition: transform .5s cubic-bezier(.4,0,.2,1);
-}
-.feat-slide {
-  min-width: 100%;
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 1.5rem;
-  padding: .5rem;
-}
-@media (max-width: 768px) { .feat-slide { grid-template-columns: 1fr 1fr; } }
-@media (max-width: 480px) { .feat-slide { grid-template-columns: 1fr; } }
-
-.feat-card {
-  background: #fff;
-  border: 1px solid var(--c-slate-2);
-  border-radius: 16px;
-  padding: 1.75rem 1.5rem;
-  transition: all .3s;
-  position: relative;
-  overflow: hidden;
-}
-.feat-card::before {
-  content: ''; position: absolute;
-  top: 0; left: 0; right: 0; height: 3px;
-  background: var(--grad-brand);
-  transform: scaleX(0);
-  transform-origin: left;
-  transition: transform .35s;
-}
-.feat-card:hover {
-  border-color: transparent;
-  box-shadow: var(--shadow-lg);
-  transform: translateY(-6px);
-}
-.feat-card:hover::before { transform: scaleX(1); }
-
-.feat-ico {
-  width: 52px; height: 52px;
-  border-radius: 14px;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 1.4rem;
-  margin-bottom: 1.1rem;
-  position: relative;
-}
-.feat-ico::before {
-  content: ''; position: absolute; inset: 0;
-  border-radius: 14px;
-  opacity: .12;
-}
-.feat-ico.brand   { color: var(--c-green-d); }
-.feat-ico.brand::before { background: var(--grad-brand); }
-.feat-ico.blue    { background: linear-gradient(135deg, #dbeafe, #eff6ff); color: var(--c-blue-d); }
-.feat-ico.green   { background: linear-gradient(135deg, #d1fae5, #ecfdf5); color: var(--c-green-d); }
-.feat-ico.purple  { background: linear-gradient(135deg, #ede9fe, #f5f3ff); color: #7c3aed; }
-.feat-ico.orange  { background: linear-gradient(135deg, #fed7aa, #fff7ed); color: #ea580c; }
-.feat-ico.cyan    { background: linear-gradient(135deg, #cffafe, #ecfeff); color: #0891b2; }
-.feat-ico.rose    { background: linear-gradient(135deg, #ffe4e6, #fff1f2); color: #e11d48; }
-
-.feat-card h6 {
-  font-family: var(--font-display);
-  font-weight: 700;
-  color: var(--c-text);
-  font-size: 1rem;
-  margin-bottom: .5rem;
-  letter-spacing: -.01em;
-}
-.feat-card p {
-  font-size: .88rem;
-  color: var(--c-muted);
-  line-height: 1.65;
-  margin: 0;
-}
-
-.carousel-nav {
-  display: flex; align-items: center; justify-content: center;
-  gap: 1.25rem;
-  margin-top: 2.5rem;
-}
-.c-dots { display: flex; gap: .5rem; align-items: center; }
-.c-dot {
-  width: 8px; height: 8px;
-  border-radius: 50%;
-  background: var(--c-slate-2);
-  cursor: pointer;
-  transition: all .3s;
-  border: none;
-}
-.c-dot.active {
-  width: 32px;
-  border-radius: 4px;
-  background: var(--grad-brand);
-}
-.c-arrow {
-  width: 44px; height: 44px;
-  border-radius: 50%;
-  border: 1.5px solid var(--c-slate-2);
-  background: #fff;
-  display: flex; align-items: center; justify-content: center;
-  cursor: pointer;
-  transition: all .25s;
-  color: var(--c-muted);
-  font-size: 1rem;
-}
-.c-arrow:hover {
-  border-color: var(--c-green);
-  color: var(--c-green-d);
-  box-shadow: 0 4px 14px rgba(16,185,129,.2);
-}
-
-/* ════════════════════════════════════════════════
-   BUSINESS TYPES — Cinematic cards
-   ════════════════════════════════════════════════ */
-.biz-section { padding: 6.5rem 0; background: #fff; }
-
-.biz-card {
-  position: relative;
-  border-radius: 22px;
-  overflow: hidden;
-  height: 520px;
-  cursor: pointer;
-  transition: transform .4s cubic-bezier(.4,0,.2,1);
-  box-shadow: var(--shadow-md);
-}
-.biz-card:hover { transform: translateY(-8px); box-shadow: var(--shadow-xl); }
-.biz-card img {
-  width: 100%; height: 100%;
-  object-fit: cover;
-  transition: transform .8s cubic-bezier(.4,0,.2,1);
-}
-.biz-card:hover img { transform: scale(1.08); }
-.biz-card::after {
-  content: ''; position: absolute;
-  inset: 0;
-  background: linear-gradient(
-    to top,
-    rgba(10,22,40,.96) 0%,
-    rgba(10,22,40,.75) 35%,
-    rgba(10,22,40,.2) 65%,
-    transparent 100%
-  );
-}
-.biz-overlay {
-  position: absolute; inset: 0;
-  display: flex; flex-direction: column;
-  justify-content: flex-end;
-  padding: 2.25rem 2rem;
-  z-index: 2;
-}
-.biz-tag {
-  display: inline-flex; align-items: center; gap: .35rem;
-  padding: .3rem .85rem;
-  border-radius: 50px;
-  font-size: .7rem; font-weight: 700;
-  letter-spacing: 1px;
-  text-transform: uppercase;
-  margin-bottom: 1rem;
-  width: fit-content;
-  backdrop-filter: blur(8px);
-}
-.biz-tag.brand {
-  background: linear-gradient(135deg, rgba(16,185,129,.3), rgba(59,130,246,.3));
-  border: 1px solid rgba(16,185,129,.4);
-  color: #6ee7b7;
-}
-.biz-tag.warm {
-  background: rgba(245,158,11,.3);
-  border: 1px solid rgba(245,158,11,.5);
-  color: #fcd34d;
-}
-.biz-tag.cool {
-  background: rgba(59,130,246,.3);
-  border: 1px solid rgba(59,130,246,.5);
-  color: #93c5fd;
-}
-.biz-overlay h4 {
-  font-family: var(--font-display);
-  color: #fff;
-  font-weight: 700;
-  font-size: 1.5rem;
-  margin-bottom: .55rem;
-  letter-spacing: -.02em;
-}
-.biz-overlay p {
-  color: rgba(255,255,255,.78);
-  font-size: .9rem;
-  margin-bottom: 1.25rem;
-  line-height: 1.65;
-}
-.biz-features-list {
-  list-style: none; padding: 0; margin: 0;
-  display: flex; flex-direction: column; gap: .45rem;
-}
-.biz-features-list li {
-  color: rgba(255,255,255,.88);
-  font-size: .85rem;
-  display: flex; align-items: center; gap: .55rem;
-}
-.biz-features-list li i {
-  color: var(--c-green);
-  font-size: .8rem;
-  flex-shrink: 0;
-}
-
-/* ════════════════════════════════════════════════
-   PRICING — Premium plans
-   ════════════════════════════════════════════════ */
-.pricing-section {
-  background: var(--c-slate-1);
-  padding: 6.5rem 0;
-  position: relative;
-  overflow: hidden;
-}
-.pricing-section::before {
-  content: ''; position: absolute;
-  top: 50%; left: 50%;
-  transform: translate(-50%, -50%);
-  width: 800px; height: 800px;
-  background: radial-gradient(circle, rgba(16,185,129,.04), transparent 60%);
-  pointer-events: none;
-}
-.pricing-section .container { position: relative; z-index: 1; }
-
-.price-card {
-  background: #fff;
-  border: 1.5px solid var(--c-slate-2);
-  border-radius: 22px;
-  padding: 2.5rem 2.25rem;
-  height: 100%;
-  position: relative;
-  transition: all .35s;
-}
-.price-card:hover {
-  box-shadow: var(--shadow-xl);
-  transform: translateY(-6px);
-}
-.price-card.featured {
-  border: 1.5px solid transparent;
-  background:
-    linear-gradient(#fff, #fff) padding-box,
-    var(--grad-brand) border-box;
-  box-shadow: 0 12px 50px rgba(16,185,129,.18);
-  position: relative;
-}
-.price-card.featured::before {
-  content: '';
-  position: absolute;
-  inset: -1px;
-  background: var(--grad-brand);
-  border-radius: 22px;
-  z-index: -1;
-  opacity: .15;
-  filter: blur(20px);
-}
-.price-popular {
-  position: absolute;
-  top: -14px; left: 50%;
-  transform: translateX(-50%);
-  background: var(--grad-brand);
-  color: #fff;
-  font-size: .7rem; font-weight: 800;
-  padding: .3rem 1.1rem;
-  border-radius: 50px;
-  letter-spacing: 1px;
-  text-transform: uppercase;
-  white-space: nowrap;
-  box-shadow: var(--shadow-brand);
-}
-.price-name {
-  font-family: var(--font-display);
-  font-weight: 700;
-  color: var(--c-text);
-  font-size: 1.15rem;
-  letter-spacing: -.01em;
-}
-.price-amount {
-  font-family: var(--font-display);
-  font-size: 3.25rem;
-  font-weight: 700;
-  color: var(--c-text);
-  line-height: 1;
-  margin: 1rem 0;
-  letter-spacing: -.04em;
-}
-.price-card.featured .price-amount {
-  background: var(--grad-brand);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-.price-amount sup {
-  font-size: 1.3rem;
-  vertical-align: super;
-  font-weight: 600;
-}
-.price-amount span {
-  font-size: 1rem; font-weight: 500;
-  color: var(--c-slate-3);
-}
-.price-card.featured .price-amount span {
-  -webkit-text-fill-color: var(--c-slate-3);
-}
-.price-desc {
-  color: var(--c-muted);
-  font-size: .9rem;
-  margin-bottom: 1.5rem;
-  line-height: 1.55;
-}
-.price-list {
-  list-style: none;
-  padding: 0; margin: 0 0 1.75rem;
-  display: flex; flex-direction: column; gap: .7rem;
-}
-.price-list li {
-  font-size: .88rem;
-  color: var(--c-text);
-  display: flex; align-items: flex-start; gap: .65rem;
-  line-height: 1.45;
-}
-.price-list li i.check {
-  color: var(--c-green);
-  font-size: 1rem; flex-shrink: 0;
-  margin-top: 1px;
-}
-.price-list li.muted {
-  color: var(--c-slate-3);
-  opacity: .8;
-}
-.price-list li.muted i.check { color: var(--c-slate-2); }
-
-.btn-price {
-  width: 100%;
-  padding: .85rem;
-  border-radius: 10px;
-  font-weight: 700;
-  font-size: .92rem;
-  border: 1.5px solid;
-  transition: all .25s;
-  text-decoration: none;
-  text-align: center;
-  display: block;
-  cursor: pointer;
-}
-.btn-price.outline {
-  background: transparent;
-  border-color: var(--c-slate-2);
-  color: var(--c-text);
-}
-.btn-price.outline:hover {
-  border-color: var(--c-green);
-  color: var(--c-green-d);
-  background: rgba(16,185,129,.04);
-}
-.btn-price.solid {
-  background: var(--grad-brand);
-  border-color: transparent;
-  color: #fff;
-  box-shadow: var(--shadow-brand);
-}
-.btn-price.solid:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 14px 36px rgba(16,185,129,.4);
-  color: #fff;
-}
-.btn-price.disabled {
-  background: var(--c-slate-2);
-  border-color: transparent;
-  color: var(--c-slate-3);
-  cursor: not-allowed;
-}
-
-/* ════════════════════════════════════════════════
-   DEMOS — Immersive entry cards
-   ════════════════════════════════════════════════ */
-.demo-section {
-  padding: 6.5rem 0;
-  background: var(--grad-hero-bg);
-  position: relative;
-  overflow: hidden;
-}
-.demo-section::before {
-  content: ''; position: absolute; inset: 0;
-  background:
-    radial-gradient(ellipse 60% 50% at 30% 30%, rgba(16,185,129,.15), transparent 70%),
-    radial-gradient(ellipse 50% 50% at 75% 70%, rgba(59,130,246,.15), transparent 70%);
-  pointer-events: none;
-}
-.demo-section .container { position: relative; z-index: 1; }
-.demo-section .section-tag {
-  background: rgba(16,185,129,.15);
-  border-color: rgba(16,185,129,.3);
-  color: #6ee7b7;
-}
-.demo-section .section-h2 { color: #fff; }
-.demo-section .section-h2 .grad-text {
-  background: var(--grad-text);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-}
-.demo-section .section-sub { color: rgba(255,255,255,.65); }
-
-.demo-card {
-  position: relative;
-  border-radius: 20px;
-  overflow: hidden;
-  height: 440px;
-  cursor: pointer;
-  text-decoration: none;
-  display: block;
-  transition: transform .4s cubic-bezier(.4,0,.2,1);
-  box-shadow: 0 12px 40px rgba(0,0,0,.3);
-}
-.demo-card:hover { transform: translateY(-8px); }
-.demo-card img {
-  width: 100%; height: 100%;
-  object-fit: cover;
-  transition: transform .7s;
-}
-.demo-card:hover img { transform: scale(1.07); }
-.demo-card::after {
-  content: ''; position: absolute; inset: 0;
-  background: linear-gradient(
-    to top,
-    rgba(10,22,40,.97) 0%,
-    rgba(10,22,40,.6) 50%,
-    transparent 100%
-  );
-}
-.demo-overlay {
-  position: absolute; inset: 0;
-  z-index: 2;
-  padding: 1.75rem;
-  display: flex; flex-direction: column;
-  justify-content: flex-end;
-}
-.demo-live {
-  position: absolute;
-  top: 1.25rem; right: 1.25rem;
-  display: inline-flex; align-items: center; gap: .4rem;
-  background: rgba(16,185,129,.18);
-  border: 1px solid rgba(16,185,129,.4);
-  color: #6ee7b7;
-  padding: .3rem .85rem;
-  border-radius: 50px;
-  font-size: .72rem; font-weight: 700;
-  backdrop-filter: blur(10px);
-  letter-spacing: .3px;
-}
-.demo-live .live-dot {
-  width: 7px; height: 7px;
-  border-radius: 50%;
-  background: var(--c-green);
-  box-shadow: 0 0 10px var(--c-green);
-  animation: pulse 1.5s infinite;
-}
-
-.demo-tag {
-  display: inline-flex; align-items: center;
-  padding: .25rem .8rem;
-  border-radius: 50px;
-  font-size: .7rem; font-weight: 700;
-  letter-spacing: 1px;
-  text-transform: uppercase;
-  margin-bottom: .8rem;
-  width: fit-content;
-  backdrop-filter: blur(8px);
-}
-.demo-tag.blue   { background: rgba(59,130,246,.25); color: #93c5fd; border: 1px solid rgba(59,130,246,.4); }
-.demo-tag.amber  { background: rgba(245,158,11,.25); color: #fcd34d; border: 1px solid rgba(245,158,11,.4); }
-.demo-tag.green  { background: rgba(16,185,129,.25); color: #6ee7b7; border: 1px solid rgba(16,185,129,.4); }
-
-.demo-overlay h5 {
-  font-family: var(--font-display);
-  color: #fff;
-  font-weight: 700;
-  font-size: 1.25rem;
-  margin-bottom: .35rem;
-  letter-spacing: -.02em;
-}
-.demo-overlay p {
-  color: rgba(255,255,255,.7);
-  font-size: .85rem;
-  margin-bottom: 1.25rem;
-  line-height: 1.5;
-}
-.demo-kpis {
-  display: flex; gap: .6rem;
-  margin-bottom: 1.4rem;
-}
-.demo-kpi {
-  background: rgba(255,255,255,.08);
-  border: 1px solid rgba(255,255,255,.12);
-  backdrop-filter: blur(10px);
-  border-radius: 9px;
-  padding: .55rem .7rem;
-  text-align: center; flex: 1;
-}
-.demo-kpi .k-val {
-  font-family: var(--font-display);
-  color: #fff; font-weight: 700;
-  font-size: 1.05rem;
-  line-height: 1;
-}
-.demo-kpi .k-lbl {
-  color: rgba(255,255,255,.5);
-  font-size: .62rem;
-  text-transform: uppercase;
-  letter-spacing: .5px;
-  margin-top: .25rem;
-}
-.btn-demo {
-  display: inline-flex; align-items: center; gap: .6rem;
-  background: #fff;
-  color: var(--c-text);
-  padding: .7rem 1.5rem;
-  border-radius: 10px;
-  font-weight: 700;
-  font-size: .88rem;
-  transition: all .25s;
-  text-decoration: none;
-}
-.demo-card:hover .btn-demo {
-  background: var(--grad-brand);
-  color: #fff;
-  gap: .85rem;
-}
-
-/* Demo own card */
-.demo-own {
-  margin-top: 3rem;
-  background: linear-gradient(135deg, rgba(16,185,129,.12), rgba(59,130,246,.12));
-  border: 1px solid rgba(255,255,255,.1);
-  border-radius: 22px;
-  padding: 3rem 2rem;
-  text-align: center;
-  backdrop-filter: blur(20px);
-  position: relative;
-  overflow: hidden;
-}
-.demo-own::before {
-  content: ''; position: absolute;
-  top: -50%; left: -10%;
-  width: 300px; height: 300px;
-  background: radial-gradient(circle, rgba(16,185,129,.2), transparent 70%);
-  pointer-events: none;
-}
-.demo-own::after {
-  content: ''; position: absolute;
-  bottom: -50%; right: -10%;
-  width: 300px; height: 300px;
-  background: radial-gradient(circle, rgba(59,130,246,.2), transparent 70%);
-  pointer-events: none;
-}
-.demo-own > * { position: relative; z-index: 1; }
-.demo-own h4 {
-  font-family: var(--font-display);
-  color: #fff; font-weight: 700;
-  font-size: 1.5rem;
-  margin-bottom: .6rem;
-  letter-spacing: -.02em;
-}
-.demo-own p {
-  color: rgba(255,255,255,.7);
-  font-size: .95rem;
-  max-width: 540px;
-  margin: 0 auto 1.75rem;
-  line-height: 1.6;
-}
-
-/* ════════════════════════════════════════════════
-   FOOTER
-   ════════════════════════════════════════════════ */
-.lfoot {
-  background: #060d1a;
-  color: rgba(255,255,255,.5);
-  padding: 4rem 0 2rem;
-}
-.lfoot-brand {
-  font-family: 'Montserrat', sans-serif;
-  font-size: 1.55rem; font-weight: 900;
-  color: #fff;
-  letter-spacing: -.5px;
-  display: inline-flex; align-items: center; gap: .6rem;
-  text-transform: uppercase;
-}
-.lfoot-brand .logo-mark {
-  width: 40px; height: 40px;
-  display: inline-flex; align-items: center; justify-content: center;
-  flex-shrink: 0;
-}
-.lfoot-brand .logo-mark img { width: 100%; height: 100%; object-fit: contain; }
-.lfoot-brand span {
-  background: var(--grad-text);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-}
-.lfoot h6 {
-  color: rgba(255,255,255,.85);
-  font-weight: 700;
-  font-size: .82rem;
-  margin-bottom: 1.1rem;
-  letter-spacing: .5px;
-  text-transform: uppercase;
-}
-.lfoot a {
-  color: rgba(255,255,255,.5);
-  text-decoration: none;
-  font-size: .85rem;
-  transition: color .2s;
-  display: block;
-  padding: .25rem 0;
-}
-.lfoot a:hover { color: #fff; }
-.lfoot hr { border-color: rgba(255,255,255,.08); margin: 2.5rem 0 1.5rem; }
-
-@media (max-width: 768px) {
-  .hero { min-height: auto; padding: 3rem 0; }
-  .hero-stats { flex-direction: column; gap: 1.5rem; }
-  .hero-mockup-wrap { transform: none; }
-}
-</style>
+<link href="{% static 'empresa/css/landing.css' %}?v=2" rel="stylesheet">
 {% endblock %}
 
 {% block content %}
+<div class="lp">
 
-<!-- ════════════════════════════════════════════════
-     NAVBAR
-     ════════════════════════════════════════════════ -->
-<nav class="lnav">
-  <div class="container d-flex align-items-center justify-content-between">
-    <a href="{% url 'empresa:landing' %}" class="lnav-brand">
-      <span class="logo-mark">
-        <img src="{% static 'empresa/img/contafy-logo.png' %}" alt="Contafy">
-      </span>
-      CONTA<span>FY</span>
+<nav class="lp-nav" aria-label="Principal">
+  <div class="container">
+    <a href="{% url 'empresa:landing' %}" class="lp-brand">
+      <img src="{% static 'empresa/img/contafy-logo-mark.png' %}" alt="" width="32" height="32">
+      <span>Contafy</span>
     </a>
-    <div class="d-none d-md-flex gap-4">
-      <a href="#funcionalidades" class="lnav-link">Funcionalidades</a>
-      <a href="#negocios"        class="lnav-link">Negocios</a>
-      <a href="#precios"         class="lnav-link">Precios</a>
-      <a href="#demos"           class="lnav-link">Demos</a>
+    <div class="lp-links">
+      <a href="#funcionalidades">Funcionalidades</a>
+      <a href="#negocios">Negocios</a>
+      <a href="#precios">Planes</a>
+      <a href="#demos">Demos</a>
     </div>
-    <div class="d-flex gap-2">
-      <a href="{% url 'empresa:login' %}" class="btn-nav-login">Iniciar sesión</a>
-      <a href="#precios" class="btn-nav-cta">Comenzar</a>
+    <div class="lp-actions">
+      <a href="{% url 'empresa:login' %}" class="btn btn-link text-decoration-none" style="color: var(--cf-navy-800);">Iniciar sesión</a>
+      <a href="{% url 'empresa:registro' %}" class="btn btn-primary">Registrar empresa</a>
     </div>
   </div>
 </nav>
 
-<!-- ════════════════════════════════════════════════
-     HERO
-     ════════════════════════════════════════════════ -->
-<section class="hero">
-  <div class="container">
-    <div class="row align-items-center gy-5">
+{% if messages %}
+<div class="container pt-3">{% include 'empresa/_components/messages.html' %}</div>
+{% endif %}
 
+<!-- Portada -->
+<header class="lp-hero">
+  <div class="container">
+    <div class="row align-items-center g-5">
       <div class="col-lg-6">
-        <div class="hero-badge">
-          <span class="dot"></span>
-          Contabilidad inteligente para PYMEs
+        <span class="lp-eyebrow">Plataforma contable para PYMEs del Ecuador</span>
+        <h1>Contabilidad en orden para empresas que crecen.</h1>
+        <p class="lead">Registre ventas, compras y gastos y obtenga al instante sus estados financieros. Cada operación genera su asiento de partida doble, con IVA y RUC validados según la normativa ecuatoriana.</p>
+        <div class="d-flex flex-wrap gap-2">
+          <a href="#demos" class="btn btn-light">Explorar una demo</a>
+          <a href="#precios" class="btn btn-outline-light">Ver planes</a>
         </div>
-        <h1>La contabilidad de tu negocio,<br><span class="grad-text">simple y poderosa.</span></h1>
-        <p class="hero-sub">
-          Gestiona ventas, inventario, compras, gastos y reportes contables en una sola plataforma diseñada para negocios ecuatorianos.
-        </p>
-        <div class="hero-cta">
-          <a href="#demos" class="btn-primary-hero">
-            <i class="bi bi-play-circle-fill"></i>
-            <span>Probar demo gratis</span>
-          </a>
-          <a href="#precios" class="btn-ghost-hero">
-            Ver planes
-            <i class="bi bi-arrow-right"></i>
-          </a>
-        </div>
-        <div class="hero-stats">
-          <div class="hero-stat">
-            <div class="num">3</div>
-            <div class="lbl">Tipos de negocio</div>
+        <p class="lp-hero-nota">Funciona en el navegador, sin instalar nada. Comercio, manufactura y servicios.</p>
+      </div>
+      <div class="col-lg-6">
+        <div class="lp-doc" aria-label="Ejemplo de estado de resultados">
+          <div class="lp-doc-head">
+            <small>Minimarket Don Pepe · Octubre 2026</small>
+            <h3>Estado de resultados</h3>
           </div>
-          <div class="hero-stat">
-            <div class="num">15+</div>
-            <div class="lbl">Módulos incluidos</div>
-          </div>
-          <div class="hero-stat">
-            <div class="num">100%</div>
-            <div class="lbl">Web, sin instalar</div>
-          </div>
+          <table>
+            <tbody>
+              <tr><td>Ventas netas</td><td>$ 4.820,00</td></tr>
+              <tr><td class="neg">Costo de ventas</td><td class="neg">(2.910,40)</td></tr>
+              <tr class="sub"><td>Utilidad bruta</td><td>$ 1.909,60</td></tr>
+              <tr><td class="neg">Gastos operativos</td><td class="neg">(1.240,00)</td></tr>
+              <tr class="total"><td>Utilidad neta</td><td>$ 669,60</td></tr>
+            </tbody>
+          </table>
+          <div class="lp-doc-foot"><i class="bi bi-check2-circle"></i>Generado a partir de los asientos contables, sin hojas de cálculo.</div>
         </div>
       </div>
+    </div>
+  </div>
+</header>
 
-      <!-- Hero mockup -->
-      <div class="col-lg-6 d-none d-lg-block">
-        <div class="hero-mockup-wrap">
-          <div class="mockup-glow"></div>
-          <div class="hero-mockup">
-            <div class="mockup-toolbar">
-              <span class="dot dot-r"></span>
-              <span class="dot dot-y"></span>
-              <span class="dot dot-g"></span>
-              <span class="mockup-url">contafy.app/resumen</span>
-            </div>
-
-            <div class="mock-header">
-              <div>
-                <h6>📊 Resumen Financiero</h6>
-                <span>Septiembre 2025</span>
-              </div>
-              <i class="bi bi-graph-up text-white" style="font-size:1.2rem;opacity:.9"></i>
-            </div>
-
-            <div class="row g-2">
-              <div class="col-6">
-                <div class="mock-kpi">
-                  <span class="trend">↑ 12%</span>
-                  <div class="v">$4,820</div>
-                  <div class="l">Ventas mes</div>
-                </div>
-              </div>
-              <div class="col-6">
-                <div class="mock-kpi green">
-                  <span class="trend">↑ 8%</span>
-                  <div class="v">148</div>
-                  <div class="l">Productos</div>
-                </div>
-              </div>
-              <div class="col-6">
-                <div class="mock-kpi amber">
-                  <span class="trend" style="color:#fbbf24">↓ 3%</span>
-                  <div class="v">$1,240</div>
-                  <div class="l">Gastos mes</div>
-                </div>
-              </div>
-              <div class="col-6">
-                <div class="mock-kpi purple">
-                  <span class="trend">↑ 24%</span>
-                  <div class="v">$3,580</div>
-                  <div class="l">Utilidad neta</div>
-                </div>
-              </div>
-            </div>
-
-            <div class="mock-chart">
-              <div class="mock-chart-title">
-                <small>Ingresos vs Gastos · últimos 6 meses</small>
-                <div class="legend">
-                  <span><i class="bi bi-circle-fill" style="color:#10b981"></i>Ingresos</span>
-                  <span><i class="bi bi-circle-fill" style="color:#3b82f6"></i>Gastos</span>
-                </div>
-              </div>
-              <div class="bars">
-                <div class="bar-group">
-                  <div class="bar bg" style="height:55%"></div>
-                  <div class="bar bb" style="height:25%"></div>
-                </div>
-                <div class="bar-group">
-                  <div class="bar bg" style="height:70%"></div>
-                  <div class="bar bb" style="height:35%"></div>
-                </div>
-                <div class="bar-group">
-                  <div class="bar bg" style="height:62%"></div>
-                  <div class="bar bb" style="height:30%"></div>
-                </div>
-                <div class="bar-group">
-                  <div class="bar bg" style="height:85%"></div>
-                  <div class="bar bb" style="height:40%"></div>
-                </div>
-                <div class="bar-group">
-                  <div class="bar bg" style="height:75%"></div>
-                  <div class="bar bb" style="height:32%"></div>
-                </div>
-                <div class="bar-group">
-                  <div class="bar bg" style="height:95%"></div>
-                  <div class="bar bb" style="height:45%"></div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
+<!-- Garantías -->
+<section class="lp-trust" aria-label="Fundamentos">
+  <div class="container">
+    <div class="row">
+      <div class="col-6 col-lg-3"><i class="bi bi-journal-check"></i><div><strong>Partida doble</strong><small>Asientos automáticos que siempre cuadran</small></div></div>
+      <div class="col-6 col-lg-3"><i class="bi bi-receipt"></i><div><strong>IVA y RUC</strong><small>Cálculo del IVA y validación de RUC del SRI</small></div></div>
+      <div class="col-6 col-lg-3"><i class="bi bi-bank"></i><div><strong>Base NIIF para PYMES</strong><small>Balance, resultados y flujo de caja</small></div></div>
+      <div class="col-6 col-lg-3"><i class="bi bi-shield-lock"></i><div><strong>Acceso por roles</strong><small>Cada colaborador ve solo lo que le corresponde</small></div></div>
     </div>
   </div>
 </section>
 
-<!-- ════════════════════════════════════════════════
-     FEATURES CAROUSEL
-     ════════════════════════════════════════════════ -->
-<section id="funcionalidades" class="features-section">
+<!-- Funcionalidades -->
+<section id="funcionalidades" class="lp-section">
   <div class="container">
-    <div class="text-center">
-      <span class="section-tag"><i class="bi bi-stars"></i> Funcionalidades</span>
-      <h2 class="section-h2">Todo lo que tu negocio necesita,<br><span class="grad-text">en un solo lugar.</span></h2>
-      <p class="section-sub">Desde el registro diario hasta los reportes contables — una plataforma que crece contigo.</p>
+    <div class="lp-section-head">
+      <span class="lp-eyebrow">Funcionalidades</span>
+      <h2>De la operación diaria a los estados financieros.</h2>
+      <p>Un solo sistema para registrar lo que pasa en su negocio y entender cómo le va.</p>
     </div>
-
-    <div class="feat-tabs">
-      <button class="feat-tab active" data-slide="0"><i class="bi bi-box-seam"></i> Gestión diaria</button>
-      <button class="feat-tab"        data-slide="1"><i class="bi bi-bar-chart-line"></i> Reportes e IA</button>
-      <button class="feat-tab"        data-slide="2"><i class="bi bi-gear-wide-connected"></i> Operaciones</button>
-    </div>
-
-    <div class="feat-carousel">
-      <div class="feat-track" id="featTrack">
-
-        <!-- Slide 0 -->
-        <div class="feat-slide">
-          <div class="feat-card">
-            <div class="feat-ico green"><i class="bi bi-box-seam"></i></div>
-            <h6>Inventario y Productos</h6>
-            <p>Control de stock en tiempo real, alertas de mínimos, carga masiva por Excel y escáner con IA.</p>
-          </div>
-          <div class="feat-card">
-            <div class="feat-ico blue"><i class="bi bi-cart-check"></i></div>
-            <h6>Ventas y Compras</h6>
-            <p>Registro rápido, carrito de compras, historial completo y control de cuentas por cobrar/pagar.</p>
-          </div>
-          <div class="feat-card">
-            <div class="feat-ico purple"><i class="bi bi-people"></i></div>
-            <h6>Clientes y Proveedores</h6>
-            <p>Gestión de cartera, créditos, historial de compras y seguimiento de deudas con alertas automáticas.</p>
-          </div>
-        </div>
-
-        <!-- Slide 1 -->
-        <div class="feat-slide">
-          <div class="feat-card">
-            <div class="feat-ico blue"><i class="bi bi-bar-chart-line"></i></div>
-            <h6>Dashboards en tiempo real</h6>
-            <p>Estado de resultados, balance general, flujo de caja y KPIs por rol — sin necesidad de contador.</p>
-          </div>
-          <div class="feat-card">
-            <div class="feat-ico orange"><i class="bi bi-robot"></i></div>
-            <h6>Asistente IA</h6>
-            <p>Comandos de voz, análisis automático de tus datos y recomendaciones para mejorar tu negocio.</p>
-          </div>
-          <div class="feat-card">
-            <div class="feat-ico cyan"><i class="bi bi-camera"></i></div>
-            <h6>Escáner con IA</h6>
-            <p>Toma una foto del producto y Google Vision lo identifica — nombre, código de barras y descripción al instante.</p>
-          </div>
-        </div>
-
-        <!-- Slide 2 -->
-        <div class="feat-slide">
-          <div class="feat-card">
-            <div class="feat-ico orange"><i class="bi bi-gear-wide-connected"></i></div>
-            <h6>Manufactura y Producción</h6>
-            <p>Órdenes de producción, recetas con materias primas, costeo automático y trazabilidad completa.</p>
-          </div>
-          <div class="feat-card">
-            <div class="feat-ico rose"><i class="bi bi-file-earmark-pdf"></i></div>
-            <h6>Exportaciones PDF / Excel</h6>
-            <p>Reportes en formato bancario o interno listos para auditorías, declaraciones y socios.</p>
-          </div>
-          <div class="feat-card">
-            <div class="feat-ico green"><i class="bi bi-person-badge"></i></div>
-            <h6>Multi-usuario y Roles</h6>
-            <p>Cajeros, bodegueros y gerentes, cada uno ve solo lo que necesita. Control total de permisos.</p>
-          </div>
-        </div>
-
-      </div>
-    </div>
-
-    <div class="carousel-nav">
-      <button class="c-arrow" id="featPrev"><i class="bi bi-chevron-left"></i></button>
-      <div class="c-dots">
-        <button class="c-dot active" data-slide="0"></button>
-        <button class="c-dot"        data-slide="1"></button>
-        <button class="c-dot"        data-slide="2"></button>
-      </div>
-      <button class="c-arrow" id="featNext"><i class="bi bi-chevron-right"></i></button>
+    <div class="row g-0 column-gap-lg-0">
+      <div class="col-md-6 col-lg-4"><div class="lp-feature"><i class="bi bi-upc-scan"></i><h3>Punto de venta</h3><p>Cobro rápido con lector de códigos de barras o la cámara, cálculo de IVA y cambio.</p></div></div>
+      <div class="col-md-6 col-lg-4"><div class="lp-feature"><i class="bi bi-box-seam"></i><h3>Inventario</h3><p>Stock en tiempo real, alertas de mínimo, importación desde Excel y costo de lo vendido.</p></div></div>
+      <div class="col-md-6 col-lg-4"><div class="lp-feature"><i class="bi bi-people"></i><h3>Cuentas por cobrar y pagar</h3><p>Ventas y compras a crédito, abonos parciales y aviso de cobros vencidos.</p></div></div>
+      <div class="col-md-6 col-lg-4"><div class="lp-feature"><i class="bi bi-file-earmark-bar-graph"></i><h3>Estados financieros</h3><p>Balance general, estado de resultados y flujo de caja actualizados con cada operación.</p></div></div>
+      <div class="col-md-6 col-lg-4"><div class="lp-feature"><i class="bi bi-gear-wide-connected"></i><h3>Manufactura</h3><p>Recetas con materias primas, órdenes de producción y costeo de lo que fabrica.</p></div></div>
+      <div class="col-md-6 col-lg-4"><div class="lp-feature"><i class="bi bi-file-earmark-arrow-down"></i><h3>Reportes en PDF y Excel</h3><p>Reportes internos y para entidades financieras, listos para compartir.</p></div></div>
+      <div class="col-md-6 col-lg-4"><div class="lp-feature"><i class="bi bi-person-badge"></i><h3>Usuarios y roles</h3><p>Cajeros, bodegueros, contadores y gerentes, cada uno con sus permisos.</p></div></div>
+      <div class="col-md-6 col-lg-4"><div class="lp-feature"><i class="bi bi-graph-up"></i><h3>Análisis del negocio</h3><p>Indicadores de rentabilidad y liquidez, metas mensuales y recomendaciones.</p></div></div>
+      <div class="col-md-6 col-lg-4"><div class="lp-feature"><i class="bi bi-clock-history"></i><h3>Auditoría</h3><p>Registro de quién creó, editó o eliminó cada operación.</p></div></div>
     </div>
   </div>
 </section>
 
-<!-- ════════════════════════════════════════════════
-     BUSINESS TYPES
-     ════════════════════════════════════════════════ -->
-<section id="negocios" class="biz-section">
+<!-- Tipos de negocio -->
+<section id="negocios" class="lp-section alt">
   <div class="container">
-    <div class="text-center mb-5">
-      <span class="section-tag"><i class="bi bi-shop"></i> Tipos de negocio</span>
-      <h2 class="section-h2">Hecho para <span class="grad-text">tu industria.</span></h2>
-      <p class="section-sub">Contafy se adapta automáticamente al tipo de negocio que registres — comercio, manufactura o servicios.</p>
+    <div class="lp-section-head">
+      <span class="lp-eyebrow">Tipos de negocio</span>
+      <h2>Se adapta a la actividad de su empresa.</h2>
+      <p>Al registrarse elige su actividad y Contafy ajusta los módulos y reportes.</p>
     </div>
     <div class="row g-4">
-
-      <!-- Comercial -->
       <div class="col-md-4">
-        <div class="biz-card">
-          <img src="https://images.unsplash.com/photo-1604719312566-8912e9227c6a?w=700&q=80&auto=format&fit=crop"
-               alt="Persona atendiendo en minimarket" loading="lazy">
-          <div class="biz-overlay">
-            <span class="biz-tag cool">Comercial</span>
-            <h4>Tiendas y Comercios</h4>
-            <p>Minimarkets, farmacias, ferreterías y cualquier negocio que compra y vende productos.</p>
-            <ul class="biz-features-list">
-              <li><i class="bi bi-check-circle-fill"></i> Control de stock e inventario</li>
-              <li><i class="bi bi-check-circle-fill"></i> Ventas y cuentas por cobrar</li>
-              <li><i class="bi bi-check-circle-fill"></i> Gestión de proveedores</li>
-              <li><i class="bi bi-check-circle-fill"></i> Escáner de productos con IA</li>
-            </ul>
+        <article class="lp-biz">
+          <img src="https://images.unsplash.com/photo-1604719312566-8912e9227c6a?w=700&q=80&auto=format&fit=crop" alt="Atención en un minimarket" loading="lazy">
+          <div class="lp-biz-body">
+            <small>Comercio</small>
+            <h3>Tiendas y comercios</h3>
+            <p>Minimarkets, farmacias, ferreterías y negocios que compran y venden productos.</p>
+            <ul><li><i class="bi bi-check2"></i>Inventario y punto de venta</li><li><i class="bi bi-check2"></i>Proveedores y compras</li><li><i class="bi bi-check2"></i>Cuentas por cobrar</li></ul>
           </div>
-        </div>
+        </article>
       </div>
-
-      <!-- Manufactura -->
       <div class="col-md-4">
-        <div class="biz-card">
-          <img src="https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=700&q=80&auto=format&fit=crop"
-               alt="Panadero trabajando en producción" loading="lazy">
-          <div class="biz-overlay">
-            <span class="biz-tag warm">Manufactura</span>
-            <h4>Producción y Fábricas</h4>
-            <p>Panaderías, carpinterías, confecciones — empresas que transforman materias primas.</p>
-            <ul class="biz-features-list">
-              <li><i class="bi bi-check-circle-fill"></i> Órdenes de producción</li>
-              <li><i class="bi bi-check-circle-fill"></i> Recetas y materias primas</li>
-              <li><i class="bi bi-check-circle-fill"></i> Costeo automático</li>
-              <li><i class="bi bi-check-circle-fill"></i> Trazabilidad de procesos</li>
-            </ul>
+        <article class="lp-biz">
+          <img src="https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=700&q=80&auto=format&fit=crop" alt="Producción en una panadería" loading="lazy">
+          <div class="lp-biz-body">
+            <small>Manufactura</small>
+            <h3>Producción</h3>
+            <p>Panaderías, carpinterías y talleres que transforman materias primas.</p>
+            <ul><li><i class="bi bi-check2"></i>Recetas y materias primas</li><li><i class="bi bi-check2"></i>Órdenes de producción</li><li><i class="bi bi-check2"></i>Costeo de productos</li></ul>
           </div>
-        </div>
+        </article>
       </div>
-
-      <!-- Servicios -->
       <div class="col-md-4">
-        <div class="biz-card">
-          <img src="https://images.unsplash.com/photo-1573497019940-1c28c88b4f3e?w=700&q=80&auto=format&fit=crop"
-               alt="Profesional atendiendo cliente en consultora" loading="lazy">
-          <div class="biz-overlay">
-            <span class="biz-tag brand">Servicios</span>
-            <h4>Servicios Profesionales</h4>
-            <p>Peluquerías, consultorios, talleres mecánicos — negocios que venden tiempo o conocimiento.</p>
-            <ul class="biz-features-list">
-              <li><i class="bi bi-check-circle-fill"></i> Catálogo de servicios</li>
-              <li><i class="bi bi-check-circle-fill"></i> Facturación por servicio</li>
-              <li><i class="bi bi-check-circle-fill"></i> Control de ingresos</li>
-              <li><i class="bi bi-check-circle-fill"></i> Historial de clientes</li>
-            </ul>
+        <article class="lp-biz">
+          <img src="https://images.unsplash.com/photo-1573497019940-1c28c88b4f3e?w=700&q=80&auto=format&fit=crop" alt="Atención en una consultora" loading="lazy">
+          <div class="lp-biz-body">
+            <small>Servicios</small>
+            <h3>Servicios profesionales</h3>
+            <p>Consultorios, peluquerías y talleres que venden tiempo o conocimiento.</p>
+            <ul><li><i class="bi bi-check2"></i>Catálogo de servicios</li><li><i class="bi bi-check2"></i>Control de ingresos</li><li><i class="bi bi-check2"></i>Historial de clientes</li></ul>
           </div>
-        </div>
+        </article>
       </div>
-
     </div>
   </div>
 </section>
 
-<!-- ════════════════════════════════════════════════
-     PRICING
-     ════════════════════════════════════════════════ -->
-<section id="precios" class="pricing-section">
+<!-- Planes -->
+<section id="precios" class="lp-section">
   <div class="container">
-    <div class="text-center mb-5">
-      <span class="section-tag"><i class="bi bi-tag-fill"></i> Precios</span>
-      <h2 class="section-h2">Planes simples y <span class="grad-text">transparentes.</span></h2>
-      <p class="section-sub">Sin sorpresas ni letra pequeña. Cancela cuando quieras.</p>
+    <div class="lp-section-head">
+      <span class="lp-eyebrow">Planes</span>
+      <h2>Un plan para cada etapa de su empresa.</h2>
+      <p>Precio mensual en dólares. Puede cambiar de plan o cancelar cuando lo necesite.</p>
     </div>
 
     {% if planes %}
-    <div class="row g-4 justify-content-center">
+    <div class="row g-4">
       {% for plan in planes %}
       <div class="col-md-4">
-        <div class="price-card {% if plan.slug == 'pro' %}featured{% endif %}">
-          {% if plan.slug == 'pro' %}<span class="price-popular">⭐ Más popular</span>{% endif %}
-          <div class="price-name">{{ plan.nombre }}</div>
-          <div class="price-amount">
-            <sup>$</sup>{{ plan.precio_mensual|floatformat:0 }}<span>/mes</span>
-          </div>
-          <p class="price-desc">{{ plan.descripcion }}</p>
-          <ul class="price-list">
+        <div class="lp-plan {% if plan.slug == 'pro' %}destacado{% endif %}">
+          {% if plan.slug == 'pro' %}<span class="lp-plan-tag">Recomendado</span>{% endif %}
+          <h3>{{ plan.nombre }}</h3>
+          <div class="lp-plan-precio">${{ plan.precio_mensual|floatformat:0 }}<span> / mes</span></div>
+          <p>{{ plan.descripcion }}</p>
+          <ul>
             {% if plan.slug == 'basico' %}
-            <li><i class="bi bi-check-circle-fill check"></i> Hasta 100 productos</li>
-            <li><i class="bi bi-check-circle-fill check"></i> 1 usuario incluido</li>
-            <li><i class="bi bi-check-circle-fill check"></i> Ventas, compras y gastos</li>
-            <li><i class="bi bi-check-circle-fill check"></i> Reportes básicos</li>
-            <li><i class="bi bi-check-circle-fill check"></i> Exportación PDF y Excel</li>
-            <li class="muted"><i class="bi bi-dash-circle check"></i> Manufactura</li>
-            <li class="muted"><i class="bi bi-dash-circle check"></i> Asistente IA</li>
+            <li><i class="bi bi-check2"></i>Hasta 100 productos</li>
+            <li><i class="bi bi-check2"></i>1 usuario incluido</li>
+            <li><i class="bi bi-check2"></i>Ventas, compras y gastos</li>
+            <li><i class="bi bi-check2"></i>Reportes básicos</li>
+            <li><i class="bi bi-check2"></i>Exportación PDF y Excel</li>
+            <li class="no"><i class="bi bi-dash"></i>Manufactura</li>
+            <li class="no"><i class="bi bi-dash"></i>Asistente IA</li>
             {% elif plan.slug == 'pro' %}
-            <li><i class="bi bi-check-circle-fill check"></i> Productos ilimitados</li>
-            <li><i class="bi bi-check-circle-fill check"></i> Hasta 5 usuarios</li>
-            <li><i class="bi bi-check-circle-fill check"></i> Módulo manufactura completo</li>
-            <li><i class="bi bi-check-circle-fill check"></i> Asistente IA + escáner</li>
-            <li><i class="bi bi-check-circle-fill check"></i> Dashboards avanzados</li>
-            <li><i class="bi bi-check-circle-fill check"></i> Contabilidad NIIF</li>
-            <li><i class="bi bi-check-circle-fill check"></i> Multi-usuario con roles</li>
+            <li><i class="bi bi-check2"></i>Productos ilimitados</li>
+            <li><i class="bi bi-check2"></i>Hasta 5 usuarios</li>
+            <li><i class="bi bi-check2"></i>Módulo manufactura completo</li>
+            <li><i class="bi bi-check2"></i>Asistente IA y escáner</li>
+            <li><i class="bi bi-check2"></i>Dashboards avanzados</li>
+            <li><i class="bi bi-check2"></i>Contabilidad NIIF</li>
+            <li><i class="bi bi-check2"></i>Multiusuario con roles</li>
             {% elif plan.slug == 'enterprise' %}
-            <li><i class="bi bi-check-circle-fill check"></i> Todo lo de Pro</li>
-            <li><i class="bi bi-check-circle-fill check"></i> Usuarios ilimitados</li>
-            <li><i class="bi bi-check-circle-fill check"></i> Multi-empresa</li>
-            <li><i class="bi bi-check-circle-fill check"></i> Soporte prioritario 24/7</li>
-            <li><i class="bi bi-check-circle-fill check"></i> Onboarding personalizado</li>
-            <li><i class="bi bi-check-circle-fill check"></i> Acceso completo a la API</li>
-            <li><i class="bi bi-check-circle-fill check"></i> SLA garantizado</li>
+            <li><i class="bi bi-check2"></i>Todo lo de Pro</li>
+            <li><i class="bi bi-check2"></i>Usuarios ilimitados</li>
+            <li><i class="bi bi-check2"></i>Multiempresa</li>
+            <li><i class="bi bi-check2"></i>Soporte prioritario 24/7</li>
+            <li><i class="bi bi-check2"></i>Acompañamiento en la implementación</li>
+            <li><i class="bi bi-check2"></i>Acceso completo a la API</li>
+            <li><i class="bi bi-check2"></i>SLA garantizado</li>
             {% endif %}
           </ul>
           {% if stripe_public_key and plan.stripe_price_id %}
-            <a href="{% url 'empresa:crear_checkout_session' plan.slug %}"
-               class="btn-price {% if plan.slug == 'pro' %}solid{% else %}outline{% endif %}">
-              Elegir {{ plan.nombre }}
-            </a>
+            <a href="{% url 'empresa:crear_checkout_session' plan.slug %}" class="btn {% if plan.slug == 'pro' %}btn-primary{% else %}btn-outline-primary{% endif %}">Contratar {{ plan.nombre }}</a>
           {% else %}
-            <button class="btn-price disabled" disabled>Próximamente</button>
-            <p class="text-center text-muted mt-2 mb-0" style="font-size:.78rem">Contáctanos para activar</p>
+            <button class="btn btn-outline-secondary" disabled>Disponible próximamente</button>
+            <p class="text-center text-muted mt-2 mb-0" style="font-size:.8rem; min-height:0;">Escríbanos para activarlo</p>
           {% endif %}
         </div>
       </div>
       {% endfor %}
     </div>
     {% else %}
-    <div class="text-center py-5">
-      <i class="bi bi-hourglass-split fs-1 text-muted"></i>
-      <h5 class="mt-3 text-muted">Planes disponibles pronto</h5>
-      <a href="#demos" class="btn-price solid d-inline-block mt-2 px-4" style="width:auto">Explorar demos</a>
-    </div>
+    <p class="text-muted">Los planes estarán disponibles en breve. Mientras tanto, puede <a href="#demos">explorar una demo</a>.</p>
     {% endif %}
-
-    <p class="text-center text-muted mt-4 mb-0" style="font-size:.82rem">
-      <i class="bi bi-shield-check text-success me-1"></i>
-      Pago seguro con Stripe &nbsp;·&nbsp; Cancela en cualquier momento &nbsp;·&nbsp; Sin cargos ocultos
-    </p>
+    <p class="text-muted mt-4 mb-0" style="font-size:.85rem;"><i class="bi bi-lock me-1"></i>Pagos procesados por Stripe. Sin cargos ocultos.</p>
   </div>
 </section>
 
-<!-- ════════════════════════════════════════════════
-     DEMOS
-     ════════════════════════════════════════════════ -->
-<section id="demos" class="demo-section">
+<!-- Demos -->
+<section id="demos" class="lp-section alt">
   <div class="container">
-    <div class="text-center mb-5">
-      <span class="section-tag"><i class="bi bi-play-circle-fill"></i> Demos en vivo</span>
-      <h2 class="section-h2">Entra al sistema <span class="grad-text">ahora mismo.</span></h2>
-      <p class="section-sub">Sin registro, sin contraseña. Haz clic y explora el sistema con datos reales de negocios ecuatorianos.</p>
+    <div class="lp-section-head">
+      <span class="lp-eyebrow">Demos</span>
+      <h2>Conozca el sistema con datos reales de ejemplo.</h2>
+      <p>Entre sin registrarse. Las demos vuelven a su estado original cada 24 horas.</p>
     </div>
+    <div class="row g-3">
+      <div class="col-md-4">
+        <a href="{% url 'empresa:acceso_rapido_demo' 'demo_comercio' %}" class="lp-demo">
+          <span class="lp-demo-ico"><i class="bi bi-shop"></i></span>
+          <div><h3>Comercio</h3><p>Minimarket Don Pepe · Quito</p></div>
+          <i class="bi bi-arrow-right"></i>
+        </a>
+      </div>
+      <div class="col-md-4">
+        <a href="{% url 'empresa:acceso_rapido_demo' 'demo_manufactura' %}" class="lp-demo">
+          <span class="lp-demo-ico"><i class="bi bi-gear-wide-connected"></i></span>
+          <div><h3>Manufactura</h3><p>Panadería El Buen Pan · Cuenca</p></div>
+          <i class="bi bi-arrow-right"></i>
+        </a>
+      </div>
+      <div class="col-md-4">
+        <a href="{% url 'empresa:acceso_rapido_demo' 'demo_servicios' %}" class="lp-demo">
+          <span class="lp-demo-ico"><i class="bi bi-briefcase"></i></span>
+          <div><h3>Servicios</h3><p>Peluquería Estilo &amp; Belleza</p></div>
+          <i class="bi bi-arrow-right"></i>
+        </a>
+      </div>
+    </div>
+    <p class="mt-4 mb-0"><a href="{% url 'empresa:registro' %}?modo=demo">Prefiero probar con los datos de mi empresa durante 7 días</a></p>
+  </div>
+</section>
 
+<!-- Llamado final -->
+<section class="lp-cta">
+  <div class="container d-flex flex-wrap align-items-center justify-content-between gap-4">
+    <div>
+      <h2>Ponga en orden la contabilidad de su empresa.</h2>
+      <p class="mb-0">Regístrese con su código de invitación o explore una demo.</p>
+    </div>
+    <div class="d-flex gap-2">
+      <a href="{% url 'empresa:registro' %}" class="btn btn-light">Registrar empresa</a>
+      <a href="{% url 'empresa:selector_demo' %}" class="btn btn-outline-light" style="--bs-btn-color:#fff;--bs-btn-border-color:rgba(255,255,255,.4);--bs-btn-hover-bg:rgba(255,255,255,.08);--bs-btn-hover-color:#fff;">Ver demos</a>
+    </div>
+  </div>
+</section>
+
+<footer class="lp-foot">
+  <div class="container">
     <div class="row g-4">
-
-      <!-- Demo Comercial -->
-      <div class="col-md-4">
-        <a href="{% url 'empresa:acceso_rapido_demo' 'demo_comercio' %}" class="demo-card">
-          <img src="https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=700&q=80&auto=format&fit=crop"
-               alt="Minimarket Don Pepe" loading="lazy">
-          <span class="demo-live"><span class="live-dot"></span> En vivo</span>
-          <div class="demo-overlay">
-            <span class="demo-tag blue">Comercial</span>
-            <h5>Minimarket Don Pepe</h5>
-            <p>Inventario, ventas diarias y control de stock en tiempo real.</p>
-            <div class="demo-kpis">
-              <div class="demo-kpi"><div class="k-val">148</div><div class="k-lbl">Productos</div></div>
-              <div class="demo-kpi"><div class="k-val">$4.8K</div><div class="k-lbl">Ventas/mes</div></div>
-              <div class="demo-kpi"><div class="k-val">12</div><div class="k-lbl">Módulos</div></div>
-            </div>
-            <span class="btn-demo">
-              <i class="bi bi-play-circle-fill"></i> Entrar al demo
-              <i class="bi bi-arrow-right ms-auto"></i>
-            </span>
-          </div>
+      <div class="col-md-5">
+        <a href="{% url 'empresa:landing' %}" class="lp-brand mb-3" style="display:inline-flex;">
+          <img src="{% static 'empresa/img/contafy-logo-mark.png' %}" alt="" width="28" height="28"><span>Contafy</span>
         </a>
+        <p class="mt-2 mb-0" style="max-width:340px;">Sistema contable y de gestión para pequeñas y medianas empresas del Ecuador.</p>
       </div>
-
-      <!-- Demo Manufactura -->
-      <div class="col-md-4">
-        <a href="{% url 'empresa:acceso_rapido_demo' 'demo_manufactura' %}" class="demo-card">
-          <img src="https://images.unsplash.com/photo-1509440159596-0249088772ff?w=700&q=80&auto=format&fit=crop"
-               alt="Panadería El Buen Pan" loading="lazy">
-          <span class="demo-live"><span class="live-dot"></span> En vivo</span>
-          <div class="demo-overlay">
-            <span class="demo-tag amber">Manufactura</span>
-            <h5>Panadería El Buen Pan</h5>
-            <p>Órdenes de producción, recetas y control de materias primas.</p>
-            <div class="demo-kpis">
-              <div class="demo-kpi"><div class="k-val">24</div><div class="k-lbl">Recetas</div></div>
-              <div class="demo-kpi"><div class="k-val">$2.3K</div><div class="k-lbl">Producción</div></div>
-              <div class="demo-kpi"><div class="k-val">8</div><div class="k-lbl">Módulos</div></div>
-            </div>
-            <span class="btn-demo">
-              <i class="bi bi-play-circle-fill"></i> Entrar al demo
-              <i class="bi bi-arrow-right ms-auto"></i>
-            </span>
-          </div>
-        </a>
-      </div>
-
-      <!-- Demo Servicios -->
-      <div class="col-md-4">
-        <a href="{% url 'empresa:acceso_rapido_demo' 'demo_servicios' %}" class="demo-card">
-          <img src="https://images.unsplash.com/photo-1573497019940-1c28c88b4f3e?w=700&q=80&auto=format&fit=crop"
-               alt="Consultora Demo" loading="lazy">
-          <span class="demo-live"><span class="live-dot"></span> En vivo</span>
-          <div class="demo-overlay">
-            <span class="demo-tag green">Servicios</span>
-            <h5>Consultora Demo Ltda.</h5>
-            <p>Servicios profesionales, facturación y gestión de clientes.</p>
-            <div class="demo-kpis">
-              <div class="demo-kpi"><div class="k-val">18</div><div class="k-lbl">Servicios</div></div>
-              <div class="demo-kpi"><div class="k-val">$3.1K</div><div class="k-lbl">Ingresos</div></div>
-              <div class="demo-kpi"><div class="k-val">9</div><div class="k-lbl">Módulos</div></div>
-            </div>
-            <span class="btn-demo">
-              <i class="bi bi-play-circle-fill"></i> Entrar al demo
-              <i class="bi bi-arrow-right ms-auto"></i>
-            </span>
-          </div>
-        </a>
-      </div>
-
-    </div>
-
-    <!-- Own demo CTA -->
-    <div class="demo-own">
-      <h4>¿Quieres tu propio espacio de prueba?</h4>
-      <p>Crea una cuenta demo con tu empresa y datos personalizados — 7 días gratis, sin tarjeta de crédito. Los datos no se guardan al expirar el periodo.</p>
-      <a href="{% url 'empresa:registro' %}?modo=demo" class="btn-primary-hero">
-        <i class="bi bi-person-plus-fill"></i>
-        <span>Crear mi cuenta demo gratis</span>
-      </a>
-    </div>
-
-  </div>
-</section>
-
-<!-- ════════════════════════════════════════════════
-     FOOTER
-     ════════════════════════════════════════════════ -->
-<footer class="lfoot">
-  <div class="container">
-    <div class="row gy-4">
-      <div class="col-md-4">
-        <div class="lfoot-brand">
-          <span class="logo-mark">
-            <img src="{% static 'empresa/img/contafy-logo.png' %}" alt="Contafy">
-          </span>
-          CONTA<span>FY</span>
-        </div>
-        <p class="mt-3" style="font-size:.875rem; max-width:280px; line-height:1.7">
-          Plataforma contable para pequeñas y medianas empresas ecuatorianas. Simple, rápida y confiable.
-        </p>
-      </div>
-      <div class="col-md-4">
-        <h6>Plataforma</h6>
+      <div class="col-6 col-md-2">
+        <h4>Producto</h4>
         <a href="#funcionalidades">Funcionalidades</a>
-        <a href="#precios">Precios</a>
+        <a href="#precios">Planes</a>
         <a href="#demos">Demos</a>
+      </div>
+      <div class="col-6 col-md-2">
+        <h4>Cuenta</h4>
         <a href="{% url 'empresa:login' %}">Iniciar sesión</a>
-        <a href="{% url 'empresa:registro' %}">Registrarse</a>
+        <a href="{% url 'empresa:registro' %}">Registrar empresa</a>
+        <a href="{% url 'empresa:entrada_beta' %}">Código de invitación</a>
       </div>
-      <div class="col-md-4">
-        <h6>Accesos</h6>
-        <a href="{% url 'empresa:acceso_rapido_demo' 'demo_comercio' %}">Demo Comercial</a>
-        <a href="{% url 'empresa:acceso_rapido_demo' 'demo_manufactura' %}">Demo Manufactura</a>
-        <a href="{% url 'empresa:acceso_rapido_demo' 'demo_servicios' %}">Demo Servicios</a>
-        <a href="{% url 'empresa:registro' %}?modo=demo">Demo propia (7 días)</a>
-        <a href="{% url 'empresa:entrada_beta' %}"><i class="bi bi-key me-1"></i> Código de invitación</a>
+      <div class="col-md-3">
+        <h4>Demos</h4>
+        <a href="{% url 'empresa:acceso_rapido_demo' 'demo_comercio' %}">Comercio</a>
+        <a href="{% url 'empresa:acceso_rapido_demo' 'demo_manufactura' %}">Manufactura</a>
+        <a href="{% url 'empresa:acceso_rapido_demo' 'demo_servicios' %}">Servicios</a>
+        <a href="{% url 'empresa:registro' %}?modo=demo">Demo con mis datos (7 días)</a>
       </div>
     </div>
-    <hr>
-    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
-      <small>© 2025 Contafy. Todos los derechos reservados.</small>
-      <small>Hecho con 💚 para PYMEs ecuatorianas</small>
-    </div>
+    <div class="lp-foot-legal">© {% now "Y" %} Contafy. Todos los derechos reservados.</div>
   </div>
 </footer>
 
-<!-- ════════════════════════════════════════════════
-     SCRIPTS
-     ════════════════════════════════════════════════ -->
-<script>
-// Smooth scroll
-document.querySelectorAll('a[href^="#"]').forEach(a => {
-  a.addEventListener('click', e => {
-    const t = document.querySelector(a.getAttribute('href'));
-    if (t) { e.preventDefault(); t.scrollIntoView({ behavior: 'smooth' }); }
-  });
-});
-
-// Features carousel
-(function(){
-  const track = document.getElementById('featTrack');
-  const tabs  = document.querySelectorAll('.feat-tab');
-  const dots  = document.querySelectorAll('.c-dot');
-  const prev  = document.getElementById('featPrev');
-  const next  = document.getElementById('featNext');
-  let current = 0;
-  const total = 3;
-  let autoTimer;
-
-  function goTo(n) {
-    current = (n + total) % total;
-    track.style.transform = `translateX(-${current * 100}%)`;
-    tabs.forEach((t, i) => t.classList.toggle('active', i === current));
-    dots.forEach((d, i) => d.classList.toggle('active', i === current));
-  }
-  function resetAuto() {
-    clearInterval(autoTimer);
-    autoTimer = setInterval(() => goTo(current + 1), 6000);
-  }
-
-  tabs.forEach(t => t.addEventListener('click', () => { goTo(+t.dataset.slide); resetAuto(); }));
-  dots.forEach(d => d.addEventListener('click', () => { goTo(+d.dataset.slide); resetAuto(); }));
-  prev.addEventListener('click', () => { goTo(current - 1); resetAuto(); });
-  next.addEventListener('click', () => { goTo(current + 1); resetAuto(); });
-  resetAuto();
-})();
-
-// Mockup chart animation
-document.addEventListener('DOMContentLoaded', () => {
-  document.querySelectorAll('.bar').forEach((b, i) => {
-    const h = b.style.height;
-    b.style.height = '0';
-    setTimeout(() => { b.style.height = h; }, 400 + i * 50);
-  });
-});
-
-// Navbar shadow on scroll
-window.addEventListener('scroll', () => {
-  const nav = document.querySelector('.lnav');
-  if (window.scrollY > 20) nav.style.boxShadow = '0 8px 30px rgba(0,0,0,.2)';
-  else nav.style.boxShadow = 'none';
-});
-</script>
+</div>
 {% endblock %}
