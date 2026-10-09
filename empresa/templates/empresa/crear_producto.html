@@ -273,14 +273,14 @@ document.addEventListener('DOMContentLoaded', function () {
             margenDisplay.value = margen.toFixed(1);
             
             if (margen > 30) {
-                margenDisplay.style.backgroundColor = '#d4edda';
-                margenInfo.innerHTML = `🟢 Excelente margen. Utilidad: $${utilidad.toFixed(2)}`;
+                margenDisplay.style.backgroundColor = 'var(--cf-pos-bg)';
+                margenInfo.innerHTML = `<i class="bi bi-circle-fill text-pos me-1"></i>Excelente margen. Utilidad: $${utilidad.toFixed(2)}`;
             } else if (margen > 15) {
-                margenDisplay.style.backgroundColor = '#fff3cd';
-                margenInfo.innerHTML = `🟡 Buen margen. Utilidad: $${utilidad.toFixed(2)}`;
+                margenDisplay.style.backgroundColor = 'var(--cf-warn-bg)';
+                margenInfo.innerHTML = `<i class="bi bi-circle-fill text-warn me-1"></i>Buen margen. Utilidad: $${utilidad.toFixed(2)}`;
             } else {
-                margenDisplay.style.backgroundColor = '#f8d7da';
-                margenInfo.innerHTML = `🔴 Margen bajo. Utilidad: $${utilidad.toFixed(2)}`;
+                margenDisplay.style.backgroundColor = 'var(--cf-neg-bg)';
+                margenInfo.innerHTML = `<i class="bi bi-circle-fill text-neg me-1"></i>Margen bajo. Utilidad: $${utilidad.toFixed(2)}`;
             }
             
             margenContainer.style.display = 'block';
@@ -301,8 +301,8 @@ document.addEventListener('DOMContentLoaded', function () {
     function buscarInfoProducto(codigo, esCodBarras = false) {
         if (!codigo) return;
         
-        sugerenciaInfo.textContent = "🔄 Buscando información del código...";
-        sugerenciaInfo.style.color = 'gray';
+        sugerenciaInfo.textContent = "Buscando información del código...";
+        sugerenciaInfo.style.color = 'var(--cf-muted)';
 
         fetch('{% url "empresa:producto_info_api" %}?codigo=' + encodeURIComponent(codigo))
             .then(response => response.json())
@@ -313,23 +313,23 @@ document.addEventListener('DOMContentLoaded', function () {
                     if (inputPrecio && !inputPrecio.value && data.precio_unitario) inputPrecio.value = data.precio_unitario;
                     
                     const fuente = esCodBarras ? 'código de barras' : (data.fuente === 'api_global' ? 'API global' : 'local');
-                    sugerenciaInfo.textContent = `🔍 Sugerido: ${data.nombre} (${fuente})`;
-                    sugerenciaInfo.style.color = 'green';
+                    sugerenciaInfo.textContent = `Sugerido: ${data.nombre} (${fuente})`;
+                    sugerenciaInfo.style.color = 'var(--cf-pos)';
                     
                     if (data.mensaje_precio) {
-                        sugerenciaInfo.textContent += `\n💵 ${data.mensaje_precio}`;
-                        sugerenciaInfo.style.color = 'orange';
+                        sugerenciaInfo.textContent += `\n${data.mensaje_precio}`;
+                        sugerenciaInfo.style.color = 'var(--cf-warn)';
                     }
                 } else {
-                    sugerenciaInfo.textContent = '⚠️ No se encontró información. Puedes ingresar los datos manualmente.';
-                    sugerenciaInfo.style.color = 'gray';
+                    sugerenciaInfo.textContent = 'No se encontró información. Puede ingresar los datos manualmente.';
+                    sugerenciaInfo.style.color = 'var(--cf-muted)';
                     // Ofrecer crear desde escaneo si no existe
                     prefillFromScanProducto(codigo);
                 }
             })
             .catch(() => {
-                sugerenciaInfo.textContent = '⚠️ Código no encontrado. Puedes ingresar los datos manualmente.';
-                sugerenciaInfo.style.color = 'gray';
+                sugerenciaInfo.textContent = 'Código no encontrado. Puede ingresar los datos manualmente.';
+                sugerenciaInfo.style.color = 'var(--cf-muted)';
             });
     }
     
@@ -398,8 +398,8 @@ document.addEventListener('DOMContentLoaded', function () {
             // with the barcode and prompt the user to confirm/save. This preserves
             // existing backend logic and avoids automatic writes.
             if (inputCodigoBarras) inputCodigoBarras.value = codigo;
-            sugerenciaInfo.textContent = `🔍 Código aplicado: ${codigo}. Revise los campos y presione Guardar Producto.`;
-            sugerenciaInfo.style.color = 'green';
+            sugerenciaInfo.textContent = `Código aplicado: ${codigo}. Revise los campos y presione Guardar Producto.`;
+            sugerenciaInfo.style.color = 'var(--cf-pos)';
 
             // Solo botón "Aplicar y mostrar" — el usuario completa y guarda el formulario manualmente.
             // (Eliminado "Crear automáticamente": el endpoint inventario_create_from_scan ya no existe

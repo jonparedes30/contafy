@@ -14,7 +14,7 @@
 
     {% if form.errors %}
       <div class="alert alert-danger alert-dismissible fade show">
-        <h5>❌ Errores en el formulario:</h5>
+        <h5><i class="bi bi-x-circle me-1"></i>Errores en el formulario:</h5>
         <ul class="mb-0">
           {% for field in form %}
             {% for error in field.errors %}<li>{{ error }}</li>{% endfor %}
@@ -140,7 +140,7 @@
                 <div class="form-text small"><small id="lbl_iva">$0.00</small></div>
               </div>
               <div class="col-md-6">
-                <label for="id_monto_total_compra" class="form-label fw-bold text-danger">💰 TOTAL</label>
+                <label for="id_monto_total_compra" class="form-label fw-bold"><i class="bi bi-cash-coin me-1"></i>TOTAL</label>
                 {{ form.monto }}
                 <div class="form-text small"><small id="lbl_total" class="fw-bold">$0.00</small></div>
               </div>
@@ -420,7 +420,7 @@
   function procesarResultados(data) {
     const productos = data.productos || data.products || [];
 
-    console.log(`🎯 Productos encontrados: ${productos.length}`);
+    console.log(`Productos encontrados: ${productos.length}`);
 
     if (productos.length === 0) {
       Swal.fire({
@@ -431,7 +431,7 @@
             <p>Este producto no existe en tu inventario.</p>
             <p class="text-muted">Debes registrarlo primero en <strong>"Crear Producto"</strong></p>
             <hr>
-            <p class="small">💡 El sistema prellenará los datos detectados</p>
+            <p class="small"><i class="bi bi-lightbulb me-1"></i>El sistema prellenará los datos detectados</p>
           </div>
         `,
         showCancelButton: true,
@@ -455,18 +455,18 @@
   function seleccionarProductoConConfirmacion(producto) {
     Swal.fire({
       icon: 'success',
-      title: '✅ Producto encontrado',
+      title: 'Producto encontrado',
       html: `
-        <div style="text-align:left; padding:15px;">
+        <div class="text-start p-2">
           <h4>${producto.nombre}</h4>
-          <p><strong>📦 Código:</strong> ${producto.codigo_barras || producto.codigo || 'N/A'}</p>
-          <p><strong>📊 Stock actual:</strong> ${producto.stock} unidades</p>
-          <p><strong>💰 Último precio:</strong> $${producto.precio_unitario.toFixed(2)}</p>
-          <p><strong>🏷️ PVP:</strong> $${producto.pvp.toFixed(2)}</p>
+          <p><strong>Código:</strong> ${producto.codigo_barras || producto.codigo || 'N/A'}</p>
+          <p><strong>Stock actual:</strong> ${producto.stock} unidades</p>
+          <p><strong>Último precio:</strong> $${producto.precio_unitario.toFixed(2)}</p>
+          <p><strong>PVP:</strong> $${producto.pvp.toFixed(2)}</p>
         </div>
       `,
       showCancelButton: true,
-      confirmButtonText: '✔️ Usar este producto',
+      confirmButtonText: 'Usar este producto',
       cancelButtonText: 'Buscar otro'
     }).then((result) => {
       if (result.isConfirmed) {
@@ -508,7 +508,7 @@
       timer: 3000
     });
 
-    console.log('✅ Formulario rellenado:', producto.nombre);
+    console.log('Formulario rellenado:', producto.nombre);
   }
 
   function mostrarOpcionesProductos(productos) {
