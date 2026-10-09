@@ -529,20 +529,34 @@ body { background-color: var(--cf-canvas); }
 .card.bg-warning, .card.text-bg-warning, .card.border-warning { --cf-acento: var(--cf-warn); }
 .card.bg-primary, .card.bg-info, .card.text-bg-primary, .card.text-bg-info { --cf-acento: var(--cf-logo-blue); }
 
-/* Cabeceras de tarjeta y de formulario: verde suave con línea del logo a la izquierda */
+/* Cabeceras de tarjeta y de formulario: degradado del logo (verde-teal a azul)
+   con una línea azul marino en la base. Variante 2, elegida por el usuario. */
+:root { --cf-head-grad: linear-gradient(90deg, #1b8a7c, var(--cf-logo-blue)); }
 .card-header, .card-header.text-white, .card-header[class*="bg-"],
 .form-page-card-header, .form-page-card-header.form-page-card-header-success,
 .form-page-card-header.form-page-card-header-danger, .form-page-card-header.form-page-card-header-warning {
-    background: var(--cf-head-bg) !important;
-    box-shadow: inset 3px 0 0 var(--cf-logo-teal);
-    border-bottom: 1px solid #cfe3dc !important;
-    color: var(--cf-green-700) !important;
+    background: var(--cf-head-grad) !important;
+    box-shadow: none;
+    border-bottom: 3px solid var(--cf-navy-800) !important;
+    color: #fff !important;
 }
 .card-header h1, .card-header h2, .card-header h3, .card-header h4, .card-header h5, .card-header h6,
 .card-header .card-title, .card-header .text-white, .card-header h5.text-white, .card-header h6.text-white,
+.card-header .text-dark, .card-header .text-primary, .card-header .text-success,
 .form-page-card-header h1, .form-page-card-header h2, .form-page-card-header h3,
-.form-page-card-header h4, .form-page-card-header h5, .form-page-card-header h6 { color: var(--cf-green-700) !important; }
-.card-header i, .form-page-card-header i { color: var(--cf-logo-teal) !important; }
+.form-page-card-header h4, .form-page-card-header h5, .form-page-card-header h6 { color: #fff !important; }
+.card-header i, .form-page-card-header i { color: rgba(255, 255, 255, .92) !important; }
+.card-header .text-muted, .card-header small, .card-header .small,
+.form-page-card-header .text-muted, .form-page-card-header small { color: rgba(255, 255, 255, .8) !important; }
+.card-header a:not(.btn) { color: #fff; text-decoration: underline; text-underline-offset: 2px; }
+/* Botones dentro de la cabecera: blancos para que se lean sobre el degradado */
+.card-header .btn:not(.btn-danger), .form-page-card-header .btn:not(.btn-danger) {
+    --bs-btn-color: var(--cf-navy-800); --bs-btn-bg: #fff; --bs-btn-border-color: #fff;
+    --bs-btn-hover-color: var(--cf-navy-900); --bs-btn-hover-bg: #e7edf4; --bs-btn-hover-border-color: #e7edf4;
+    --bs-btn-active-color: var(--cf-navy-900); --bs-btn-active-bg: #dfe7ef; --bs-btn-active-border-color: #dfe7ef;
+}
+.card-header .btn:not(.btn-danger) i, .form-page-card-header .btn:not(.btn-danger) i { color: var(--cf-navy-800) !important; }
+.card-header .btn-close { filter: invert(1) grayscale(1) brightness(2); }
 
 /* Indicadores: azul del logo por defecto, verde-teal si es positivo */
 .kpi-card, .kpi-card.primary, .kpi-card.info { border-top-color: var(--cf-logo-blue) !important; }
@@ -554,9 +568,14 @@ body { background-color: var(--cf-canvas); }
 .cf-cifra.is-pasivo  { border-top-color: var(--cf-warn) !important; }
 .cf-cifra.is-neg     { border-top-color: var(--cf-neg) !important; }
 
-/* Pestañas: la activa en blanco para unirse con la tarjeta de abajo */
+/* Pestañas: la activa toma el color de las cabeceras para marcar dónde está el usuario */
 .nav-tabs { --bs-nav-tabs-border-color: var(--cf-line-card); }
-.nav-tabs .nav-link.active { background: var(--cf-surface); border-color: var(--cf-line-card) var(--cf-line-card) var(--cf-surface); border-top: 2px solid var(--cf-logo-teal); }
+.nav-tabs .nav-link { color: var(--cf-navy-700); }
+.nav-tabs .nav-link.active, .nav-tabs .nav-link.active:hover {
+    background: var(--cf-head-grad); color: #fff;
+    border-color: transparent; border-bottom: 3px solid var(--cf-navy-800);
+}
+.nav-tabs .nav-link.active i { color: #fff !important; }
 
 /* Ventanas emergentes y avisos con la misma línea del logo */
 .modal-content { border-top: 3px solid var(--cf-logo-teal); }
@@ -564,3 +583,11 @@ body { background-color: var(--cf-canvas); }
 
 /* Fila de sección de los estados financieros, a tono con las cabeceras */
 .cf-estado tr.cf-seccion td { background: var(--cf-head-bg) !important; color: var(--cf-green-700); }
+
+/* Encabezados de tabla: azul suave un poco más marcado, para separarlos de las filas */
+.table > thead > tr > th, .table thead th, thead.table-light th, thead.table-dark th {
+    background: #e4ebf2 !important;
+    color: #34465b !important;
+    border-bottom: 1px solid #cdd7e2 !important;
+}
+.nav-pills .nav-link.active, .nav-pills .show > .nav-link { background: var(--cf-head-grad); color: #fff; box-shadow: inset 0 -3px 0 var(--cf-navy-800); }
