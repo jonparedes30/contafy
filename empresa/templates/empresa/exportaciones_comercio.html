@@ -7,11 +7,9 @@
 <div class="container mt-4">
     <div class="row mb-4">
         <div class="col-12">
-            <div class="card border-0 shadow-lg" style="background: var(--grad-brand);">
-                <div class="card-body text-white p-4">
-                    <h2 class="mb-0 fw-bold"><i class="bi bi-download me-2"></i>Centro de Exportaciones</h2>
-                    <p class="mb-0 opacity-75">Descarga reportes y datos de tu negocio comercial</p>
-                </div>
+            <div class="page-header">
+                <h1 class="h2 mb-1"><i class="bi bi-download"></i> Centro de Exportaciones</h1>
+                <p class="mb-0 text-muted">Descargue reportes y datos de su negocio comercial</p>
             </div>
         </div>
     </div>
@@ -27,10 +25,10 @@
                     <div class="export-item mb-3 p-3 border rounded">
                         <div class="d-flex justify-content-between align-items-center">
                             <div>
-                                <h6 class="mb-1">📊 Reporte de Ventas</h6>
+                                <h6 class="mb-1"><i class="bi bi-bar-chart me-1"></i>Reporte de Ventas</h6>
                                 <small class="text-muted">Todas las ventas registradas con detalles de productos, clientes y montos</small>
                             </div>
-                            <a href="{% url 'empresa:exportar_excel_ventas' %}" class="btn btn-success btn-sm">
+                            <a href="{% url 'empresa:exportar_excel_ventas' %}" class="btn btn-outline-primary btn-sm">
                                 <i class="bi bi-download"></i> Descargar
                             </a>
                         </div>
@@ -39,10 +37,10 @@
                     <div class="export-item mb-3 p-3 border rounded">
                         <div class="d-flex justify-content-between align-items-center">
                             <div>
-                                <h6 class="mb-1">🛒 Reporte de Compras</h6>
+                                <h6 class="mb-1"><i class="bi bi-cart me-1"></i>Reporte de Compras</h6>
                                 <small class="text-muted">Historial de compras a proveedores con costos y fechas</small>
                             </div>
-                            <a href="{% url 'empresa:exportar_excel_compras' %}" class="btn btn-success btn-sm">
+                            <a href="{% url 'empresa:exportar_excel_compras' %}" class="btn btn-outline-primary btn-sm">
                                 <i class="bi bi-download"></i> Descargar
                             </a>
                         </div>
@@ -51,10 +49,10 @@
                     <div class="export-item mb-3 p-3 border rounded">
                         <div class="d-flex justify-content-between align-items-center">
                             <div>
-                                <h6 class="mb-1">💸 Reporte de Gastos</h6>
+                                <h6 class="mb-1"><i class="bi bi-receipt me-1"></i>Reporte de Gastos</h6>
                                 <small class="text-muted">Gastos operativos categorizados por tipo y fecha</small>
                             </div>
-                            <a href="{% url 'empresa:exportar_excel_gastos' %}" class="btn btn-success btn-sm">
+                            <a href="{% url 'empresa:exportar_excel_gastos' %}" class="btn btn-outline-primary btn-sm">
                                 <i class="bi bi-download"></i> Descargar
                             </a>
                         </div>
@@ -63,10 +61,10 @@
                     <div class="export-item mb-3 p-3 border rounded">
                         <div class="d-flex justify-content-between align-items-center">
                             <div>
-                                <h6 class="mb-1">📦 Inventario Actual</h6>
+                                <h6 class="mb-1"><i class="bi bi-box-seam me-1"></i>Inventario Actual</h6>
                                 <small class="text-muted">Stock actual de productos con precios y categorías</small>
                             </div>
-                            <a href="{% url 'empresa:exportar_excel_inventario' %}" class="btn btn-success btn-sm">
+                            <a href="{% url 'empresa:exportar_excel_inventario' %}" class="btn btn-outline-primary btn-sm">
                                 <i class="bi bi-download"></i> Descargar
                             </a>
                         </div>
@@ -75,10 +73,10 @@
                     <div class="export-item mb-3 p-3 border rounded">
                         <div class="d-flex justify-content-between align-items-center">
                             <div>
-                                <h6 class="mb-1">📊 Reporte Completo Excel</h6>
+                                <h6 class="mb-1"><i class="bi bi-bar-chart me-1"></i>Reporte Completo Excel</h6>
                                 <small class="text-muted">Todas las transacciones en un solo archivo Excel</small>
                             </div>
-                            <a href="{% url 'empresa:exportar_excel_completo' %}" class="btn btn-success btn-sm">
+                            <a href="{% url 'empresa:exportar_excel_completo' %}" class="btn btn-outline-primary btn-sm">
                                 <i class="bi bi-download"></i> Descargar
                             </a>
                         </div>
@@ -87,10 +85,10 @@
                     <div class="export-item p-3 border rounded bg-warning bg-opacity-10">
                         <div class="d-flex justify-content-between align-items-center">
                             <div>
-                                <h6 class="mb-1">🧾 Reporte de IVA</h6>
+                                <h6 class="mb-1"><i class="bi bi-percent me-1"></i>Reporte de IVA</h6>
                                 <small class="text-muted">Declaración mensual de IVA por pagar y crédito fiscal</small>
                                 <div class="mt-2">
-                                    <select id="mesIva" class="form-select form-select-sm d-inline-block" style="width: auto;">
+                                    <select id="mesIva" class="form-select form-select-sm d-inline-block" style="width:auto">
                                         <option value="1">Enero</option>
                                         <option value="2">Febrero</option>
                                         <option value="3">Marzo</option>
@@ -104,14 +102,14 @@
                                         <option value="11">Noviembre</option>
                                         <option value="12">Diciembre</option>
                                     </select>
-                                    <select id="anioIva" class="form-select form-select-sm d-inline-block ms-2" style="width: auto;">
+                                    <select id="anioIva" class="form-select form-select-sm d-inline-block ms-2" style="width:auto">
                                         <option value="2024">2024</option>
                                         <option value="2025" selected>2025</option>
                                     </select>
                                 </div>
                             </div>
                             <div class="btn-group-vertical">
-                                <button class="btn btn-warning btn-sm" onclick="exportarIvaExcel()">
+                                <button class="btn btn-outline-primary btn-sm" onclick="exportarIvaExcel()">
                                     <i class="bi bi-file-earmark-excel"></i> Excel
                                 </button>
                                 <button class="btn btn-outline-warning btn-sm" onclick="exportarIvaPdf()">
@@ -134,10 +132,10 @@
                     <div class="export-item mb-3 p-3 border rounded">
                         <div class="d-flex justify-content-between align-items-center">
                             <div>
-                                <h6 class="mb-1">🏦 Reporte Financiero Bancario</h6>
+                                <h6 class="mb-1"><i class="bi bi-bank me-1"></i>Reporte Financiero Bancario</h6>
                                 <small class="text-muted">Análisis completo con estados financieros, ratios y proyecciones para entidades financieras</small>
                             </div>
-                            <a href="{% url 'empresa:exportar_pdf_comercio_bancario' %}" class="btn btn-danger btn-sm">
+                            <a href="{% url 'empresa:exportar_pdf_comercio_bancario' %}" class="btn btn-outline-primary btn-sm">
                                 <i class="bi bi-download"></i> Descargar
                             </a>
                         </div>
@@ -146,10 +144,10 @@
                     <div class="export-item p-3 border rounded">
                         <div class="d-flex justify-content-between align-items-center">
                             <div>
-                                <h6 class="mb-1">📈 Reporte Interno Básico</h6>
+                                <h6 class="mb-1"><i class="bi bi-graph-up me-1"></i>Reporte Interno Básico</h6>
                                 <small class="text-muted">Resumen ejecutivo con métricas clave para análisis interno y toma de decisiones</small>
                             </div>
-                            <a href="{% url 'empresa:exportar_pdf_comercio_interno' %}" class="btn btn-danger btn-sm">
+                            <a href="{% url 'empresa:exportar_pdf_comercio_interno' %}" class="btn btn-outline-primary btn-sm">
                                 <i class="bi bi-download"></i> Descargar
                             </a>
                         </div>
@@ -199,21 +197,6 @@
     </div>
 </div>
 
-<style>
-.export-item {
-    transition: all 0.3s ease;
-}
-.export-item:hover {
-    background-color: #f8f9fa;
-    transform: translateY(-2px);
-}
-.stat-preview {
-    border-right: 1px solid #dee2e6;
-}
-.stat-preview:last-child {
-    border-right: none;
-}
-</style>
 
 <script>
 // Establecer mes actual por defecto

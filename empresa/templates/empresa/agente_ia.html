@@ -4,126 +4,6 @@
 {% block title %}Agente de IA - CONTAFY{% endblock %}
 
 {% block extra_css %}
-<style>
-.ai-header {
-    background: var(--grad-brand);
-    color: white;
-    border-radius: var(--radius-xl);
-    padding: 2rem;
-    margin-bottom: 2rem;
-    position: relative;
-    overflow: hidden;
-}
-
-.ai-header::before {
-    content: '';
-    position: absolute;
-    top: -50%;
-    right: -50%;
-    width: 200%;
-    height: 200%;
-    background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
-    animation: pulse 4s ease-in-out infinite;
-}
-
-@keyframes pulse {
-    0%, 100% { transform: scale(1); opacity: 0.5; }
-    50% { transform: scale(1.1); opacity: 0.8; }
-}
-
-.ai-card {
-    background: white;
-    border-radius: 15px;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-    border: none;
-    transition: transform 0.3s ease, box-shadow 0.3s ease;
-}
-
-.ai-card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 20px 40px rgba(0,0,0,0.15);
-}
-
-.chat-container {
-    height: 400px;
-    overflow-y: auto;
-    border: 2px solid #e9ecef;
-    border-radius: 10px;
-    padding: 1rem;
-    background: #f8f9fa;
-}
-
-.chat-message {
-    margin-bottom: 1rem;
-    padding: 0.75rem 1rem;
-    border-radius: 10px;
-    max-width: 80%;
-}
-
-.chat-user {
-    background: var(--c-blue);
-    color: white;
-    margin-left: auto;
-    text-align: right;
-}
-
-.chat-ai {
-    background: white;
-    border: 2px solid #e9ecef;
-    margin-right: auto;
-}
-
-.insight-item {
-    background: var(--c-slate-1);
-    border-left: 4px solid var(--c-green);
-    padding: 1rem;
-    margin-bottom: 0.5rem;
-    border-radius: 0 var(--radius-md) var(--radius-md) 0;
-    transition: all 0.3s ease;
-}
-
-.insight-item:hover {
-    background: linear-gradient(135deg, #e9ecef 0%, #dee2e6 100%);
-    transform: translateX(5px);
-}
-
-.ai-typing {
-    display: none;
-    color: #6c757d;
-    font-style: italic;
-}
-
-.ai-typing.show {
-    display: block;
-}
-
-.btn-ai {
-    background: var(--grad-brand);
-    border: none;
-    color: white;
-    border-radius: var(--radius-pill);
-    padding: 0.75rem 2rem;
-    font-weight: 600;
-    transition: all 0.3s ease;
-}
-
-.btn-ai:hover {
-    transform: translateY(-2px);
-    box-shadow: var(--shadow-brand);
-    color: white;
-}
-
-.status-badge {
-    position: absolute;
-    top: 1rem;
-    right: 1rem;
-    background: rgba(255,255,255,0.2);
-    color: white;
-    padding: 0.25rem 0.75rem;
-    border-radius: 15px;
-    font-size: 0.8rem;
-}
-</style>
 {% endblock %}
 
 {% block content %}
@@ -136,15 +16,15 @@
         <div class="row align-items-center">
             <div class="col-md-8">
                 <h1 class="h2 mb-2">
-                    <i class="bi bi-robot me-3"></i>
-                    CONTAFY AI Assistant
+                    <i class="bi bi-robot me-2"></i>
+                    Asistente financiero Contafy
                 </h1>
                 <p class="mb-0 opacity-90">
-                    Tu consultor financiero inteligente para {{ empresa.nombre }}
+                    Análisis y consultas sobre los datos de {{ empresa.nombre }}
                 </p>
             </div>
             <div class="col-md-4 text-end">
-                <button class="btn btn-light btn-lg" onclick="actualizarAnalisis()">
+                <button class="btn btn-light" onclick="actualizarAnalisis()">
                     <i class="bi bi-arrow-clockwise me-2"></i>
                     Actualizar Análisis
                 </button>
@@ -165,7 +45,7 @@
                 <div class="card-body">
                     <div id="analisis-content">
                         <!-- Resumen -->
-                        <div class="alert alert-info border-0" style="background: linear-gradient(135deg, #d1ecf1 0%, #bee5eb 100%);">
+                        <div class="alert alert-info">
                             <h6><i class="bi bi-lightbulb me-2"></i>Resumen Ejecutivo</h6>
                             <p class="mb-0">{{ analisis.resumen }}</p>
                         </div>
@@ -176,7 +56,7 @@
                                 <i class="bi bi-shield-check me-2"></i>Fortalezas Identificadas
                             </h6>
                             {% for fortaleza in analisis.fortalezas %}
-                            <div class="insight-item" style="border-left-color: var(--c-green);">
+                            <div class="insight-item">
                                 <i class="bi bi-check-circle text-success me-2"></i>{{ fortaleza }}
                             </div>
                             {% endfor %}
@@ -188,7 +68,7 @@
                                 <i class="bi bi-exclamation-triangle me-2"></i>Áreas de Mejora
                             </h6>
                             {% for debilidad in analisis.debilidades %}
-                            <div class="insight-item" style="border-left-color: #ffc107;">
+                            <div class="insight-item is-warn">
                                 <i class="bi bi-arrow-up-right text-warning me-2"></i>{{ debilidad }}
                             </div>
                             {% endfor %}
@@ -200,7 +80,7 @@
                                 <i class="bi bi-bullseye me-2"></i>Oportunidades
                             </h6>
                             {% for oportunidad in analisis.oportunidades %}
-                            <div class="insight-item" style="border-left-color: #17a2b8;">
+                            <div class="insight-item is-info">
                                 <i class="bi bi-arrow-up text-info me-2"></i>{{ oportunidad }}
                             </div>
                             {% endfor %}
@@ -212,20 +92,20 @@
                                 <i class="bi bi-lightning me-2"></i>Acciones Inmediatas
                             </h6>
                             {% for accion in analisis.acciones_inmediatas %}
-                            <div class="insight-item" style="border-left-color: #dc3545;">
+                            <div class="insight-item is-neg">
                                 <i class="bi bi-play-fill text-danger me-2"></i>{{ accion }}
                             </div>
                             {% endfor %}
                         </div>
 
                         <!-- Predicción -->
-                        <div class="alert alert-primary border-0" style="background: linear-gradient(135deg, #cce7ff 0%, #b3d9ff 100%);">
+                        <div class="alert alert-info">
                             <h6><i class="bi bi-crystal-ball me-2"></i>Predicción Próximo Mes</h6>
                             <p class="mb-0">{{ analisis.prediccion_proximo_mes }}</p>
                         </div>
 
                         <!-- Recomendación Principal -->
-                        <div class="alert alert-success border-0" style="background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);">
+                        <div class="alert alert-success">
                             <h6><i class="bi bi-star me-2"></i>Recomendación Principal</h6>
                             <p class="mb-0"><strong>{{ analisis.recomendacion_principal }}</strong></p>
                         </div>
@@ -445,7 +325,7 @@ class VoiceCommandsIA {
             this.recognition.onstart = () => {
                 this.isListening = true;
                 this.updateVoiceButton(true);
-                this.showVoiceIndicator('🎤 Escuchando... Habla ahora');
+                this.showVoiceIndicator('Escuchando... hable ahora');
                 console.log('Reconocimiento iniciado');
             };
 
@@ -467,7 +347,7 @@ class VoiceCommandsIA {
 
             this.recognition.onerror = (event) => {
                 console.error('Error de reconocimiento:', event.error);
-                this.showVoiceIndicator('❌ Error: ' + event.error, 'error');
+                this.showVoiceIndicator('Error: ' + event.error, 'error');
                 this.stopListening();
             };
 
@@ -478,7 +358,7 @@ class VoiceCommandsIA {
         } else {
             console.warn('Reconocimiento de voz no soportado');
             setTimeout(() => {
-                this.showVoiceIndicator('❌ Usa Chrome o Edge para comandos de voz', 'error');
+                this.showVoiceIndicator('Use Chrome o Edge para comandos de voz', 'error');
             }, 1000);
         }
     }
@@ -490,7 +370,7 @@ class VoiceCommandsIA {
                 this.recognition.start();
             } catch (error) {
                 console.error('Error iniciando:', error);
-                this.showVoiceIndicator('❌ Permisos de micrófono requeridos', 'error');
+                this.showVoiceIndicator('Se requieren permisos de micrófono', 'error');
                 
                 navigator.mediaDevices.getUserMedia({ audio: true })
                     .then(() => {
@@ -499,7 +379,7 @@ class VoiceCommandsIA {
                     })
                     .catch(err => {
                         console.error('Permisos denegados:', err);
-                        this.showVoiceIndicator('❌ Permite el micrófono en tu navegador', 'error');
+                        this.showVoiceIndicator('Permita el micrófono en su navegador', 'error');
                     });
             }
         }
@@ -512,7 +392,7 @@ class VoiceCommandsIA {
     }
 
     processVoiceCommand(comando) {
-        this.showVoiceIndicator(`🔄 Procesando: "${comando}"`, 'processing');
+        this.showVoiceIndicator(`Procesando: "${comando}"`, 'processing');
         
         // Usar el sistema de chat existente pero esperar respuesta
         const chatInput = document.getElementById('chat-input');
@@ -525,7 +405,7 @@ class VoiceCommandsIA {
             // Enviar pregunta
             enviarPregunta();
             
-            this.showVoiceIndicator(`🔄 Procesando consulta...`, 'processing');
+            this.showVoiceIndicator(`Procesando consulta...`, 'processing');
             return;
         }
         
@@ -545,20 +425,20 @@ class VoiceCommandsIA {
         .then(data => {
             console.log('Respuesta recibida:', data);
             if (data.success) {
-                this.showVoiceIndicator(`✅ Respuesta recibida`, 'success');
+                this.showVoiceIndicator(`Respuesta recibida`, 'success');
                 
                 // Generar respuesta de voz
                 const respuestaVoz = this.limpiarParaVoz(data.respuesta || data.mensaje);
                 this.speakResponse(respuestaVoz);
                 
             } else {
-                this.showVoiceIndicator(`❌ ${data.error || 'Error procesando comando'}`, 'error');
+                this.showVoiceIndicator(`${data.error || 'Error procesando comando'}`, 'error');
                 this.speakResponse('No pude procesar tu consulta');
             }
         })
         .catch(error => {
             console.error('Error completo:', error);
-            this.showVoiceIndicator('❌ Error de conexión: ' + error.message, 'error');
+            this.showVoiceIndicator('Error de conexión: ' + error.message, 'error');
             this.speakResponse('Error de conexión');
         });
     }
@@ -587,7 +467,7 @@ class VoiceCommandsIA {
                                 const respuestaTexto = node.textContent.replace(/🤖/g, '').trim();
                                 
                                 if (respuestaTexto && respuestaTexto.length > 10) {
-                                    self.showVoiceIndicator(`✅ Respuesta recibida`, 'success');
+                                    self.showVoiceIndicator(`Respuesta recibida`, 'success');
                                     self.speakResponse(respuestaTexto);
                                 }
                                 
@@ -655,10 +535,10 @@ class VoiceCommandsIA {
         }
 
         const colores = {
-            info: '#17a2b8',
-            processing: '#ffc107',
-            success: '#28a745',
-            error: '#dc3545'
+            info: '#1b5f8c',
+            processing: '#0f2a47',
+            success: '#1f7a4d',
+            error: '#a3333d'
         };
 
         indicator.style.backgroundColor = colores[tipo] || colores.info;
