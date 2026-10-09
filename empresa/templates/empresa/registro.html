@@ -11,8 +11,10 @@
 
     <main class="auth-main">
         <div class="auth-card auth-card-wide">
-            <h2>{% if modo_demo %}Crear cuenta demo{% else %}Registrar mi empresa{% endif %}</h2>
-            <p class="auth-sub">¿Ya tiene cuenta? <a href="{% url 'empresa:login' %}" style="color: var(--cf-green-700);">Inicia sesión</a></p>
+            <div class="auth-card-head">
+                <h2>{% if modo_demo %}Crear cuenta demo{% else %}Registrar mi empresa{% endif %}</h2>
+                <p class="auth-sub">¿Ya tiene cuenta? <a href="{% url 'empresa:login' %}">Inicie sesión</a></p>
+            </div>
 
             {% include 'empresa/_components/messages.html' %}
 

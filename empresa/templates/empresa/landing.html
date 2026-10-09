@@ -3,7 +3,7 @@
 {% block title %}Contafy — Contabilidad para empresas ecuatorianas{% endblock %}
 
 {% block extra_css %}
-<link href="{% static 'empresa/css/landing.css' %}?v=3" rel="stylesheet">
+<link href="{% static 'empresa/css/landing.css' %}?v=4" rel="stylesheet">
 {% endblock %}
 
 {% block content %}
@@ -162,8 +162,10 @@
       {% for plan in planes %}
       <div class="col-md-4">
         <div class="lp-plan {% if plan.slug == 'pro' %}destacado{% endif %}">
-          {% if plan.slug == 'pro' %}<span class="lp-plan-tag">Recomendado</span>{% endif %}
-          <h3>{{ plan.nombre }}</h3>
+          <div class="lp-plan-head">
+            {% if plan.slug == 'pro' %}<span class="lp-plan-tag">Recomendado</span>{% endif %}
+            <h3>{{ plan.nombre }}</h3>
+          </div>
           <div class="lp-plan-precio">${{ plan.precio_mensual|floatformat:0 }}<span> / mes</span></div>
           <p>{{ plan.descripcion }}</p>
           <ul>

@@ -273,3 +273,18 @@
     .auth-main { padding: 24px 12px; }
     .auth-card { padding: 26px 20px 20px; }
 }
+
+/* Cabecera del formulario con el degradado del logo y línea azul marino */
+.auth-card { border-top: 1px solid var(--cf-line-card, #d3dbe4); border-radius: var(--cf-radius-lg); overflow: hidden; }
+.auth-card-head {
+    margin: -36px -36px 26px;
+    padding: 22px 36px 18px;
+    background: linear-gradient(90deg, #1b8a7c, var(--cf-logo-blue, #1070a0));
+    border-bottom: 3px solid var(--cf-navy-800);
+}
+.auth-card .auth-card-head h2 { color: #fff; margin-bottom: 4px; }
+.auth-card .auth-card-head .auth-sub { color: rgba(255, 255, 255, .85); margin-bottom: 0; }
+.auth-card .auth-card-head a { color: #fff; text-decoration: underline; text-underline-offset: 2px; font-weight: 600; }
+@media (max-width: 575.98px) {
+    .auth-card-head { margin: -26px -20px 22px; padding: 18px 20px 16px; }
+}
