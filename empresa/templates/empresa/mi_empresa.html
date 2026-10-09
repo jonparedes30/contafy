@@ -223,10 +223,9 @@
                 </div>
                 <div class="card-body">
                     {% for empleado in empleados %}
-                    <div class="d-flex align-items-center mb-3 p-2 rounded" style="background-color: #f8f9fa;">
+                    <div class="d-flex align-items-center mb-3 p-2 rounded cf-fila-suave">
                         <div class="position-relative me-3">
-                            <div class="bg-gradient rounded-circle d-flex align-items-center justify-content-center"
-                                 style="width: 45px; height: 45px; background: var(--grad-brand);">
+                            <div class="cf-avatar rounded-circle d-flex align-items-center justify-content-center">
                                 <i class="bi bi-person text-white fs-5"></i>
                             </div>
                             {% if forloop.first %}
@@ -261,7 +260,7 @@
 
             <!-- Asistente de ayuda -->
             <div class="card shadow-sm">
-                <div class="card-header bg-gradient text-white" style="background: var(--grad-brand);">
+                <div class="card-header">
                     <h5 class="mb-0"><i class="bi bi-headset me-2"></i>Asistente de Ayuda</h5>
                 </div>
                 <div class="card-body text-center">
@@ -688,20 +687,4 @@ function guardarUsuario() {
 }
 </script>
 
-<style>
-.info-item {
-    padding: 1rem;
-    border-left: 3px solid #007bff;
-    background-color: #f8f9fa;
-    border-radius: 0 8px 8px 0;
-}
-
-.stat-card {
-    transition: transform 0.2s;
-}
-
-.stat-card:hover {
-    transform: translateY(-2px);
-}
-</style>
 {% endblock %}

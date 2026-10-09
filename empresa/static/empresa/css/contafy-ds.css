@@ -437,3 +437,29 @@ table, .kpi-value, .num, .fs-4, .fs-3, .display-6 { font-variant-numeric: tabula
 .positive-flow { color: var(--cf-pos); background-color: var(--cf-pos-bg); }
 .negative-flow { color: var(--cf-neg); background-color: var(--cf-neg-bg); }
 .chart-container { position: relative; min-height: 400px; }
+
+/* Centro de la empresa: ficha de la empresa en azul marino, sobria */
+.empresa-card { background: var(--cf-navy-900) !important; color: #fff; border: none; border-bottom: 3px solid var(--cf-green-600); border-radius: var(--cf-radius-lg); overflow: hidden; position: relative; }
+.empresa-card h2 { font-family: var(--cf-serif); font-weight: 600; color: #fff; }
+.empresa-card .empresa-icon { width: 72px; height: 72px; border-radius: var(--cf-radius-lg); background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.16); display: flex; align-items: center; justify-content: center; color: #6fc2b0; }
+.empresa-card .info-chip { background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.14); border-radius: var(--cf-radius); padding: .7rem .9rem; }
+.empresa-card .info-chip-label { font-size: .7rem; color: rgba(255,255,255,.7); text-transform: uppercase; letter-spacing: .06em; }
+.empresa-card .info-chip-value { font-weight: 600; font-size: 1rem; font-variant-numeric: tabular-nums; }
+.empresa-card .btn-light { background: #fff; color: var(--cf-navy-900); border-color: #fff; }
+.empleado-row { transition: background .15s; }
+.empleado-row:hover { background: var(--cf-navy-50); }
+.empleado-avatar, .cf-avatar { width: 38px; height: 38px; border-radius: 50%; background: var(--cf-navy-800); color: #fff; display: inline-flex; align-items: center; justify-content: center; font-weight: 600; flex-shrink: 0; }
+.cf-avatar { width: 45px; height: 45px; }
+
+/* Icono cuadrado de una métrica (fondo tenue según significado) */
+.cf-metrica-ico { width: 48px; height: 48px; border-radius: var(--cf-radius-lg); display: flex; align-items: center; justify-content: center; flex-shrink: 0; background: var(--cf-navy-50); color: var(--cf-navy-800); }
+.cf-metrica-ico.is-pos  { background: var(--cf-green-100); color: var(--cf-green-700); }
+.cf-metrica-ico.is-warn { background: var(--cf-warn-bg); color: var(--cf-warn); }
+.cf-metrica-ico.is-neg  { background: var(--cf-neg-bg); color: var(--cf-neg); }
+
+/* Paneles y filas suaves */
+.cf-panel-filtros { background: var(--cf-paper); border: 1px solid var(--cf-line-2); border-radius: var(--cf-radius-lg); }
+.cf-fila-suave { background: var(--cf-paper); }
+
+/* Mi empresa */
+.info-item { padding: 1rem; border-left: 3px solid var(--cf-navy-800); background: var(--cf-paper); border-radius: 0 var(--cf-radius) var(--cf-radius) 0; }

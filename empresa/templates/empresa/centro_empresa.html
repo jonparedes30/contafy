@@ -4,65 +4,6 @@
 {% block title %}Mi Empresa — {{ empresa.nombre }}{% endblock %}
 
 {% block extra_css %}
-<style>
-  /* Tarjeta destacada de empresa */
-  .empresa-card {
-    background: var(--grad-brand);
-    color: #fff;
-    border: none;
-    border-radius: var(--radius-2xl, 22px);
-    overflow: hidden;
-    position: relative;
-  }
-  .empresa-card::after {
-    content: '';
-    position: absolute;
-    top: -50%; right: -10%;
-    width: 400px; height: 400px;
-    background: radial-gradient(circle, rgba(255,255,255,0.15), transparent 70%);
-    pointer-events: none;
-  }
-  .empresa-card .empresa-icon {
-    width: 84px; height: 84px;
-    background: rgba(255,255,255,0.2);
-    border-radius: 50%;
-    display: flex; align-items: center; justify-content: center;
-    backdrop-filter: blur(10px);
-  }
-  .empresa-card .info-chip {
-    background: rgba(255,255,255,0.15);
-    backdrop-filter: blur(10px);
-    border: 1px solid rgba(255,255,255,0.2);
-    border-radius: 10px;
-    padding: 0.75rem 1rem;
-  }
-  .empresa-card .info-chip-label {
-    font-size: 0.7rem;
-    opacity: 0.8;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-  }
-  .empresa-card .info-chip-value {
-    font-weight: 600;
-    font-size: 1rem;
-  }
-  /* Empleado en lista */
-  .empleado-row {
-    transition: background 0.15s;
-  }
-  .empleado-row:hover {
-    background: rgba(16, 185, 129, 0.04);
-  }
-  .empleado-avatar {
-    width: 38px; height: 38px;
-    border-radius: 50%;
-    background: var(--grad-brand);
-    color: #fff;
-    display: inline-flex; align-items: center; justify-content: center;
-    font-weight: 600;
-    flex-shrink: 0;
-  }
-</style>
 {% endblock %}
 
 {% block content %}
@@ -71,7 +12,7 @@
     <!-- ╔════════════════════════════════════════════════════════════╗
          ║  HEADER: Tarjeta destacada con datos de la empresa         ║
          ╚════════════════════════════════════════════════════════════╝ -->
-    <div class="card empresa-card mb-4 shadow-lg">
+    <div class="card empresa-card mb-4">
         <div class="card-body p-4 position-relative">
             <div class="row align-items-center g-3">
                 <div class="col-auto">
@@ -158,8 +99,8 @@
         <div class="col-md-4">
             <div class="card border-0 shadow-sm h-100">
                 <div class="card-body d-flex align-items-center">
-                    <div class="me-3" style="width:48px;height:48px;background:rgba(16,185,129,.1);border-radius:12px;display:flex;align-items:center;justify-content:center;">
-                        <i class="bi bi-people text-success fs-4"></i>
+                    <div class="me-3 cf-metrica-ico is-pos">
+                        <i class="bi bi-people fs-4"></i>
                     </div>
                     <div>
                         <div class="text-muted small">Total empleados</div>
@@ -171,8 +112,8 @@
         <div class="col-md-4">
             <div class="card border-0 shadow-sm h-100">
                 <div class="card-body d-flex align-items-center">
-                    <div class="me-3" style="width:48px;height:48px;background:rgba(59,130,246,.1);border-radius:12px;display:flex;align-items:center;justify-content:center;">
-                        <i class="bi bi-activity text-primary fs-4"></i>
+                    <div class="me-3 cf-metrica-ico">
+                        <i class="bi bi-activity fs-4"></i>
                     </div>
                     <div>
                         <div class="text-muted small">Actividades ({{ historial.dias }} días)</div>
@@ -184,8 +125,8 @@
         <div class="col-md-4">
             <div class="card border-0 shadow-sm h-100">
                 <div class="card-body d-flex align-items-center">
-                    <div class="me-3" style="width:48px;height:48px;background:rgba(245,158,11,.1);border-radius:12px;display:flex;align-items:center;justify-content:center;">
-                        <i class="bi bi-person-check text-warning fs-4"></i>
+                    <div class="me-3 cf-metrica-ico is-warn">
+                        <i class="bi bi-person-check fs-4"></i>
                     </div>
                     <div>
                         <div class="text-muted small">Usuarios activos</div>
@@ -289,7 +230,7 @@
         <div class="card-body">
 
             <!-- Filtros compactos -->
-            <form method="GET" class="row g-2 align-items-end mb-3 p-3" style="background:#f8fafc;border-radius:10px;">
+            <form method="GET" class="row g-2 align-items-end mb-3 p-3 cf-panel-filtros">
                 <input type="hidden" name="tab" value="equipo">
                 <div class="col-md-3">
                     <label class="form-label small mb-1">Período</label>
