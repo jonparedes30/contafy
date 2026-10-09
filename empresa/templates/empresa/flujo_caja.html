@@ -4,32 +4,12 @@
 {% block title %}Flujo de Caja{% endblock %}
 
 {% block content %}
-<style>
-    .cashflow-card {
-        transition: transform 0.2s ease-in-out;
-    }
-    .cashflow-card:hover {
-        transform: translateY(-2px);
-    }
-    .positive-flow {
-        color: var(--c-green-d);
-        background-color: rgba(16, 185, 129, 0.1);
-    }
-    .negative-flow {
-        color: #dc3545;
-        background-color: rgba(239, 68, 68, 0.1);
-    }
-    .chart-container {
-        position: relative;
-        min-height: 400px;
-    }
-</style>
 
 <div class="container-fluid mt-4">
     <div class="animated-header mb-4 d-flex flex-wrap align-items-center justify-content-between">
         <div>
             <h1 class="h2 mb-1">
-                <i class="bi bi-cash-flow"></i> Flujo de Caja Estimado
+                <i class="bi bi-arrow-left-right"></i> Flujo de Caja Estimado
             </h1>
             <p class="mb-0">Proyección de entradas y salidas de efectivo.</p>
         </div>
@@ -39,7 +19,7 @@
     <!-- Resumen de KPIs -->
     <div class="row mb-4">
         <div class="col-xl-3 col-md-6 mb-3">
-            <div class="card border-0 shadow-sm h-100 cashflow-card">
+            <div class="card border-0 shadow-sm h-100">
                 <div class="card-body">
                     <div class="d-flex align-items-center">
                         <div class="flex-shrink-0">
@@ -60,7 +40,7 @@
         </div>
 
         <div class="col-xl-3 col-md-6 mb-3">
-            <div class="card border-0 shadow-sm h-100 cashflow-card">
+            <div class="card border-0 shadow-sm h-100">
                 <div class="card-body">
                     <div class="d-flex align-items-center">
                         <div class="flex-shrink-0">
@@ -81,7 +61,7 @@
         </div>
 
         <div class="col-xl-3 col-md-6 mb-3">
-            <div class="card border-0 shadow-sm h-100 cashflow-card">
+            <div class="card border-0 shadow-sm h-100">
                 <div class="card-body">
                     <div class="d-flex align-items-center">
                         <div class="flex-shrink-0">
@@ -105,7 +85,7 @@
         </div>
 
         <div class="col-xl-3 col-md-6 mb-3">
-            <div class="card border-0 shadow-sm h-100 cashflow-card">
+            <div class="card border-0 shadow-sm h-100">
                 <div class="card-body">
                     <div class="d-flex align-items-center">
                         <div class="flex-shrink-0">
@@ -240,16 +220,16 @@
                 {
                     label: 'Entradas',
                     data: entradas,
-                    backgroundColor: 'rgba(25, 135, 84, 0.8)',
-                    borderColor: 'rgba(25, 135, 84, 1)',
+                    backgroundColor: 'rgba(31, 122, 77, 0.85)',
+                    borderColor: 'rgba(31, 122, 77, 1)',
                     borderWidth: 1,
                     order: 2
                 },
                 {
                     label: 'Salidas',
                     data: salidas,
-                    backgroundColor: 'rgba(239, 68, 68, 0.8)',
-                    borderColor: 'rgba(239, 68, 68, 1)',
+                    backgroundColor: 'rgba(163, 51, 61, 0.85)',
+                    borderColor: 'rgba(163, 51, 61, 1)',
                     borderWidth: 1,
                     order: 2
                 },
@@ -257,8 +237,8 @@
                     label: 'Flujo Neto',
                     data: neto,
                     type: 'line',
-                    borderColor: 'rgba(59, 130, 246, 1)',
-                    backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                    borderColor: 'rgba(15, 42, 71, 1)',
+                    backgroundColor: 'rgba(15, 42, 71, 0.08)',
                     borderWidth: 3,
                     fill: true,
                     tension: 0.4,

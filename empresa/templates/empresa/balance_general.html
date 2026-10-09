@@ -4,174 +4,161 @@
 
 {% block content %}
 <div class="container-fluid mt-4">
-    <div class="animated-header mb-4 d-flex flex-wrap align-items-center justify-content-between">
+    <div class="page-header mb-4 d-flex flex-wrap align-items-center justify-content-between gap-3">
         <div>
-            <h1 class="h2 mb-1">
-                <i class="bi bi-pie-chart"></i> Balance General
-            </h1>
-            <p class="mb-0">Tu fotografía financiera: recursos, deudas y patrimonio.</p>
+            <h1 class="h2 mb-1"><i class="bi bi-pie-chart"></i> Balance General</h1>
+            <p class="mb-0 text-muted">Recursos, deudas y patrimonio de la empresa.</p>
         </div>
-        
-        <!-- Filtro de fechas -->
-        <div class="card border-0 shadow-sm" style="border-radius:0.8rem;">
-            <div class="card-body p-3">
-                <form method="GET" class="d-flex align-items-center gap-2">
-                    <label class="form-label mb-0 text-muted" style="font-size:0.9rem;">📅 Período:</label>
-                    <input type="date" name="fecha_inicio" value="{{ fecha_inicio|date:'Y-m-d' }}" class="form-control form-control-sm" style="width:140px;">
-                    <span class="text-muted">a</span>
-                    <input type="date" name="fecha_fin" value="{{ fecha_fin|date:'Y-m-d' }}" class="form-control form-control-sm" style="width:140px;">
-                    <button type="submit" class="btn btn-primary btn-sm">
-                        <i class="bi bi-funnel"></i> Filtrar
-                    </button>
 
-                    <div class="btn-group ml-2" role="group">
-                        <a href="?{% if request.GET.fecha_inicio %}fecha_inicio={{ request.GET.fecha_inicio }}&fecha_fin={{ request.GET.fecha_fin }}&{% endif %}niif=false" 
-                           class="btn btn-sm {% if not formato_niif %}btn-primary{% else %}btn-outline-primary{% endif %}">
-                            Tradicional
-                        </a>
-                        <a href="?{% if request.GET.fecha_inicio %}fecha_inicio={{ request.GET.fecha_inicio }}&fecha_fin={{ request.GET.fecha_fin }}&{% endif %}niif=true" 
-                           class="btn btn-sm {% if formato_niif %}btn-success{% else %}btn-outline-success{% endif %}">
-                            NIIF
-                        </a>
-                    </div>
-                </form>
+        <!-- Filtro de fechas -->
+        <form method="GET" class="cf-filtro-periodo d-flex flex-wrap align-items-center gap-2">
+            <label class="form-label"><i class="bi bi-calendar3 me-1"></i>Período</label>
+            <input type="date" name="fecha_inicio" value="{{ fecha_inicio|date:'Y-m-d' }}" class="form-control form-control-sm">
+            <span class="text-muted">a</span>
+            <input type="date" name="fecha_fin" value="{{ fecha_fin|date:'Y-m-d' }}" class="form-control form-control-sm">
+            <button type="submit" class="btn btn-primary btn-sm">
+                <i class="bi bi-funnel"></i> Filtrar
+            </button>
+
+            <div class="btn-group ms-1" role="group" aria-label="Formato del balance">
+                <a href="?{% if request.GET.fecha_inicio %}fecha_inicio={{ request.GET.fecha_inicio }}&fecha_fin={{ request.GET.fecha_fin }}&{% endif %}niif=false"
+                   class="btn btn-sm {% if not formato_niif %}btn-primary{% else %}btn-outline-primary{% endif %}">
+                    Tradicional
+                </a>
+                <a href="?{% if request.GET.fecha_inicio %}fecha_inicio={{ request.GET.fecha_inicio }}&fecha_fin={{ request.GET.fecha_fin }}&{% endif %}niif=true"
+                   class="btn btn-sm {% if formato_niif %}btn-primary{% else %}btn-outline-primary{% endif %}">
+                    NIIF
+                </a>
             </div>
-        </div>
+        </form>
     </div>
-    
+
     <!-- Información del período -->
-    <div class="alert alert-info mb-4" style="border-radius:0.8rem;">
-        <i class="bi bi-calendar-range"></i> 
+    <div class="alert alert-info mb-4">
+        <i class="bi bi-calendar-range"></i>
         <strong>Período analizado:</strong> {{ fecha_inicio|date:'d/m/Y' }} - {{ fecha_fin|date:'d/m/Y' }}
     </div>
 
     <!-- Cards resumen -->
     <div class="row g-3 mb-4">
         <div class="col-md-4">
-            <div class="card shadow-sm border-0 text-center" style="border-radius:1rem;">
-                <div class="card-body">
-                    <div class="mb-2" style="font-size:2rem; color:#0d6efd;"><i class="bi bi-wallet2"></i></div>
-                    <div class="fw-bold" style="font-size:1.2rem; color:#0d6efd;">Activos</div>
-                    <div class="fw-bold" style="font-size:1.4rem;">${{ total_activos|floatformat:2 }}</div>
-                    <div class="text-muted" style="font-size:0.97rem;">Recursos y bienes de tu empresa</div>
-                </div>
+            <div class="cf-cifra">
+                <span class="cf-cifra-ico"><i class="bi bi-wallet2"></i></span>
+                <div class="cf-cifra-label">Activos</div>
+                <div class="cf-cifra-valor">${{ total_activos|floatformat:2 }}</div>
+                <div class="cf-cifra-nota">Recursos y bienes de la empresa</div>
             </div>
         </div>
         <div class="col-md-4">
-            <div class="card shadow-sm border-0 text-center" style="border-radius:1rem;">
-                <div class="card-body">
-                    <div class="mb-2" style="font-size:2rem; color:#fd7e14;"><i class="bi bi-credit-card-2-back"></i></div>
-                    <div class="fw-bold" style="font-size:1.2rem; color:#fd7e14;">Pasivos</div>
-                    <div class="fw-bold" style="font-size:1.4rem;">${{ total_pasivos|floatformat:2 }}</div>
-                    <div class="text-muted" style="font-size:0.97rem;">Deudas y obligaciones por pagar</div>
-                </div>
+            <div class="cf-cifra is-pasivo">
+                <span class="cf-cifra-ico"><i class="bi bi-credit-card-2-back"></i></span>
+                <div class="cf-cifra-label">Pasivos</div>
+                <div class="cf-cifra-valor">${{ total_pasivos|floatformat:2 }}</div>
+                <div class="cf-cifra-nota">Deudas y obligaciones por pagar</div>
             </div>
         </div>
         <div class="col-md-4">
-            <div class="card shadow-sm border-0 text-center" style="border-radius:1rem;">
-                <div class="card-body">
-                    <div class="mb-2" style="font-size:2rem; color:{% if total_patrimonio >= 0 %}#198754{% else %}#dc3545{% endif %};"><i class="bi bi-piggy-bank"></i></div>
-                    <div class="fw-bold" style="font-size:1.2rem; color:{% if total_patrimonio >= 0 %}#198754{% else %}#dc3545{% endif %};">Patrimonio</div>
-                    <div class="fw-bold" style="font-size:1.4rem;">${{ total_patrimonio|floatformat:2 }}</div>
-                    <div class="text-muted" style="font-size:0.97rem;">Aportes y utilidades acumuladas</div>
-                </div>
+            <div class="cf-cifra {% if total_patrimonio >= 0 %}is-pos{% else %}is-neg{% endif %}">
+                <span class="cf-cifra-ico"><i class="bi bi-piggy-bank"></i></span>
+                <div class="cf-cifra-label">Patrimonio</div>
+                <div class="cf-cifra-valor">${{ total_patrimonio|floatformat:2 }}</div>
+                <div class="cf-cifra-nota">Aportes y utilidades acumuladas</div>
             </div>
         </div>
     </div>
     {% if cuadra is not None %}
-    <div class="small mt-2 mb-3 {% if cuadra %}text-success{% else %}alert alert-danger{% endif %}" role="status">
+    <div class="small mt-2 mb-3 {% if cuadra %}text-pos{% else %}alert alert-danger{% endif %}" role="status">
         {% if cuadra %}
             <i class="bi bi-check-circle me-1"></i>Activos = Pasivos + Patrimonio: el balance cuadra.
         {% else %}
-            <i class="bi bi-exclamation-triangle me-1"></i>El balance no cuadra (diferencia ${{ diferencia_cuadre|floatformat:2 }}). Revisa los asientos con <code>python manage.py verificar_cuadre</code>.
+            <i class="bi bi-exclamation-triangle me-1"></i>El balance no cuadra (diferencia ${{ diferencia_cuadre|floatformat:2 }}). Revise los asientos con <code>python manage.py verificar_cuadre</code>.
         {% endif %}
     </div>
     {% endif %}
 
     <!-- Tabla con desglose y totales al final -->
-    <div class="card shadow-sm border-0" style="border-radius:1rem;">
+    <div class="card">
         <div class="card-body p-0">
             {% if formato_niif %}
                 <!-- Vista NIIF -->
-                <div class="row">
-                    <div class="col-md-6">
-                        <h4 class="text-primary p-3">ACTIVOS</h4>
-                        <table class="table table-sm">
+                <div class="row g-0">
+                    <div class="col-md-6 border-end">
+                        <h2 class="cf-estado-titulo">Activos</h2>
+                        <table class="table table-sm cf-estado">
                             <tbody>
-                                <tr class="table-light"><td colspan="2"><strong>Activos Corrientes</strong></td></tr>
+                                <tr class="cf-seccion"><td colspan="2">Activos corrientes</td></tr>
                                 {% for cuenta, valor in reporte_niif.activos_corrientes.items %}
                                 <tr>
                                     <td>{{ cuenta }}</td>
-                                    <td class="text-right">${{ valor|floatformat:2 }}</td>
+                                    <td class="cf-monto">${{ valor|floatformat:2 }}</td>
                                 </tr>
                                 {% endfor %}
-                                <tr class="table-info"><td><strong>Total Activos Corrientes</strong></td><td class="text-right"><strong>${{ reporte_niif.totales.activos_corrientes|floatformat:2 }}</strong></td></tr>
-                                
-                                <tr class="table-light"><td colspan="2"><strong>Activos No Corrientes</strong></td></tr>
+                                <tr class="cf-subtotal"><td>Total activos corrientes</td><td class="cf-monto">${{ reporte_niif.totales.activos_corrientes|floatformat:2 }}</td></tr>
+
+                                <tr class="cf-seccion"><td colspan="2">Activos no corrientes</td></tr>
                                 {% for cuenta, valor in reporte_niif.activos_no_corrientes.items %}
                                 <tr>
                                     <td>{{ cuenta }}</td>
-                                    <td class="text-right">${{ valor|floatformat:2 }}</td>
+                                    <td class="cf-monto">${{ valor|floatformat:2 }}</td>
                                 </tr>
                                 {% empty %}
                                 <tr><td colspan="2" class="text-center text-muted">No hay activos no corrientes</td></tr>
                                 {% endfor %}
-                                <tr class="table-info"><td><strong>Total Activos No Corrientes</strong></td><td class="text-right"><strong>${{ reporte_niif.totales.activos_no_corrientes|floatformat:2 }}</strong></td></tr>
-                                
-                                <tr class="table-primary"><td><strong>TOTAL ACTIVOS</strong></td><td class="text-right"><strong>${{ reporte_niif.totales.total_activos|floatformat:2 }}</strong></td></tr>
+                                <tr class="cf-subtotal"><td>Total activos no corrientes</td><td class="cf-monto">${{ reporte_niif.totales.activos_no_corrientes|floatformat:2 }}</td></tr>
+
+                                <tr class="cf-total"><td>TOTAL ACTIVOS</td><td class="cf-monto">${{ reporte_niif.totales.total_activos|floatformat:2 }}</td></tr>
                             </tbody>
                         </table>
                     </div>
-                    
+
                     <div class="col-md-6">
-                        <h4 class="text-danger p-3">PASIVOS</h4>
-                        <table class="table table-sm">
+                        <h2 class="cf-estado-titulo">Pasivos y patrimonio</h2>
+                        <table class="table table-sm cf-estado">
                             <tbody>
-                                <tr class="table-light"><td colspan="2"><strong>Pasivos Corrientes</strong></td></tr>
+                                <tr class="cf-seccion"><td colspan="2">Pasivos corrientes</td></tr>
                                 {% for cuenta, valor in reporte_niif.pasivos_corrientes.items %}
                                 <tr>
                                     <td>{{ cuenta }}</td>
-                                    <td class="text-right">${{ valor|floatformat:2 }}</td>
+                                    <td class="cf-monto">${{ valor|floatformat:2 }}</td>
                                 </tr>
                                 {% empty %}
                                 <tr><td colspan="2" class="text-center text-muted">No hay pasivos corrientes</td></tr>
                                 {% endfor %}
-                                <tr class="table-warning"><td><strong>Total Pasivos Corrientes</strong></td><td class="text-right"><strong>${{ reporte_niif.totales.pasivos_corrientes|floatformat:2 }}</strong></td></tr>
-                                
-                                <tr class="table-light"><td colspan="2"><strong>Pasivos No Corrientes</strong></td></tr>
+                                <tr class="cf-subtotal"><td>Total pasivos corrientes</td><td class="cf-monto">${{ reporte_niif.totales.pasivos_corrientes|floatformat:2 }}</td></tr>
+
+                                <tr class="cf-seccion"><td colspan="2">Pasivos no corrientes</td></tr>
                                 {% for cuenta, valor in reporte_niif.pasivos_no_corrientes.items %}
                                 <tr>
                                     <td>{{ cuenta }}</td>
-                                    <td class="text-right">${{ valor|floatformat:2 }}</td>
+                                    <td class="cf-monto">${{ valor|floatformat:2 }}</td>
                                 </tr>
                                 {% empty %}
                                 <tr><td colspan="2" class="text-center text-muted">No hay pasivos no corrientes</td></tr>
                                 {% endfor %}
-                                <tr class="table-warning"><td><strong>Total Pasivos No Corrientes</strong></td><td class="text-right"><strong>${{ reporte_niif.totales.pasivos_no_corrientes|floatformat:2 }}</strong></td></tr>
-                                
-                                <h4 class="text-success p-3 mt-4">PATRIMONIO</h4>
+                                <tr class="cf-subtotal"><td>Total pasivos no corrientes</td><td class="cf-monto">${{ reporte_niif.totales.pasivos_no_corrientes|floatformat:2 }}</td></tr>
+
+                                <tr class="cf-seccion"><td colspan="2">Patrimonio</td></tr>
                                 {% for cuenta, valor in reporte_niif.patrimonio.items %}
                                 <tr>
                                     <td>{{ cuenta }}</td>
-                                    <td class="text-right">${{ valor|floatformat:2 }}</td>
+                                    <td class="cf-monto">${{ valor|floatformat:2 }}</td>
                                 </tr>
                                 {% empty %}
                                 <tr><td colspan="2" class="text-center text-muted">No hay cuentas de patrimonio</td></tr>
                                 {% endfor %}
-                                <tr class="table-success"><td><strong>Total Patrimonio</strong></td><td class="text-right"><strong>${{ reporte_niif.totales.total_patrimonio|floatformat:2 }}</strong></td></tr>
-                                
-                                <tr class="table-success"><td><strong>TOTAL PASIVOS + PATRIMONIO</strong></td><td class="text-right"><strong>${{ reporte_niif.totales.total_pasivos_y_patrimonio|floatformat:2 }}</strong></td></tr>
+                                <tr class="cf-subtotal"><td>Total patrimonio</td><td class="cf-monto">${{ reporte_niif.totales.total_patrimonio|floatformat:2 }}</td></tr>
+
+                                <tr class="cf-total"><td>TOTAL PASIVOS + PATRIMONIO</td><td class="cf-monto">${{ reporte_niif.totales.total_pasivos_y_patrimonio|floatformat:2 }}</td></tr>
                             </tbody>
                         </table>
 
                         <!-- Verificación de Balance — usa flag `cuadra` calculado en backend con tolerancia 0.01 -->
-                        <div class="alert {% if reporte_niif.totales.cuadra %}alert-success{% else %}alert-danger{% endif %} mt-3">
+                        <div class="alert {% if reporte_niif.totales.cuadra %}alert-success{% else %}alert-danger{% endif %} m-3">
                             <small>
-                                <i class="fas fa-{% if reporte_niif.totales.cuadra %}check{% else %}exclamation-triangle{% endif %}"></i>
                                 {% if reporte_niif.totales.cuadra %}
-                                    ✅ Balance cuadrado según NIIF
+                                    <i class="bi bi-check-circle me-1"></i>Balance cuadrado según NIIF
                                 {% else %}
-                                    ❌ Balance no cuadrado · Diferencia: ${{ reporte_niif.totales.diferencia_cuadre|floatformat:2 }}
+                                    <i class="bi bi-exclamation-triangle me-1"></i>Balance no cuadrado · Diferencia: ${{ reporte_niif.totales.diferencia_cuadre|floatformat:2 }}
                                 {% endif %}
                             </small>
                         </div>
@@ -179,51 +166,51 @@
                 </div>
             {% else %}
                 <!-- Vista tradicional -->
-                <table class="table mb-0" style="font-size:1.13rem;">
+                <table class="table cf-estado">
                     <tbody>
                     <!-- Activos -->
-                    <tr><td colspan="2" class="fw-bold text-primary" style="background:#f8f9fa;">Activos - Recursos y bienes de tu empresa</td></tr>
+                    <tr class="cf-seccion"><td colspan="2">Activos · Recursos y bienes de la empresa</td></tr>
                     {% for cuenta in activos %}
                     <tr>
-                        <td class="align-middle">{{ cuenta.cuenta_fk__nombre }}</td>
-                        <td class="align-middle text-end" style="color:#0d6efd;">${{ cuenta.valor|floatformat:2 }}</td>
+                        <td>{{ cuenta.cuenta_fk__nombre }}</td>
+                        <td class="cf-monto">${{ cuenta.valor|floatformat:2 }}</td>
                     </tr>
                     {% empty %}
                     <tr><td colspan="2" class="text-center text-muted">No hay cuentas de activos registradas</td></tr>
                     {% endfor %}
-                    <tr>
-                        <td class="align-middle fw-bold">Total Activos</td>
-                        <td class="align-middle text-end fw-bold text-primary">${{ total_activos|floatformat:2 }}</td>
+                    <tr class="cf-subtotal">
+                        <td>Total Activos</td>
+                        <td class="cf-monto">${{ total_activos|floatformat:2 }}</td>
                     </tr>
 
                     <!-- Pasivos -->
-                    <tr><td colspan="2" class="fw-bold" style="color:#fd7e14; background:#f8f9fa;">Pasivos - Deudas y obligaciones por pagar</td></tr>
+                    <tr class="cf-seccion"><td colspan="2">Pasivos · Deudas y obligaciones por pagar</td></tr>
                     {% for cuenta in pasivos %}
                     <tr>
-                        <td class="align-middle">{{ cuenta.cuenta_fk__nombre }}</td>
-                        <td class="align-middle text-end" style="color:#fd7e14;">${{ cuenta.valor|floatformat:2 }}</td>
+                        <td>{{ cuenta.cuenta_fk__nombre }}</td>
+                        <td class="cf-monto">${{ cuenta.valor|floatformat:2 }}</td>
                     </tr>
                     {% empty %}
                     <tr><td colspan="2" class="text-center text-muted">No hay cuentas de pasivos registradas</td></tr>
                     {% endfor %}
-                    <tr>
-                        <td class="align-middle fw-bold">Total Pasivos</td>
-                        <td class="align-middle text-end fw-bold" style="color:#fd7e14;">${{ total_pasivos|floatformat:2 }}</td>
+                    <tr class="cf-subtotal">
+                        <td>Total Pasivos</td>
+                        <td class="cf-monto">${{ total_pasivos|floatformat:2 }}</td>
                     </tr>
 
                     <!-- Patrimonio -->
-                    <tr><td colspan="2" class="fw-bold" style="color:#198754; background:#f8f9fa;">Patrimonio - Aportes y utilidades acumuladas</td></tr>
+                    <tr class="cf-seccion"><td colspan="2">Patrimonio · Aportes y utilidades acumuladas</td></tr>
                     {% for cuenta in capital %}
                     <tr>
-                        <td class="align-middle">{{ cuenta.cuenta_fk__nombre }}</td>
-                        <td class="align-middle text-end" style="color:#198754;">${{ cuenta.valor|floatformat:2 }}</td>
+                        <td>{{ cuenta.cuenta_fk__nombre }}</td>
+                        <td class="cf-monto">${{ cuenta.valor|floatformat:2 }}</td>
                     </tr>
                     {% empty %}
                     <tr><td colspan="2" class="text-center text-muted">No hay cuentas de patrimonio registradas</td></tr>
                     {% endfor %}
-                    <tr>
-                        <td class="align-middle fw-bold">Total Patrimonio</td>
-                        <td class="align-middle text-end fw-bold" style="color:#198754;">${{ total_patrimonio|floatformat:2 }}</td>
+                    <tr class="cf-subtotal">
+                        <td>Total Patrimonio</td>
+                        <td class="cf-monto {% if total_patrimonio < 0 %}text-neg{% endif %}">${{ total_patrimonio|floatformat:2 }}</td>
                     </tr>
                     </tbody>
                 </table>
@@ -231,66 +218,9 @@
         </div>
     </div>
 
-    <div class="text-center mt-4 text-muted" style="font-size:1.05rem;">
-        <i class="bi bi-lightbulb"></i> El balance general muestra la ecuación contable: Activos = Pasivos + Patrimonio<br>
-        <small>Datos calculados con movimientos del período seleccionado</small>
-    </div>
+    <p class="cf-nota-pie">
+        <i class="bi bi-info-circle me-1"></i>El balance general muestra la ecuación contable: Activos = Pasivos + Patrimonio.<br>
+        <small>Datos calculados con los movimientos del período seleccionado.</small>
+    </p>
 </div>
-
-<style>
-@media print {
-    /* Ocultar elementos innecesarios en impresión */
-    .btn, .navbar, .sidebar {
-        display: none !important;
-    }
-    
-    /* Estilos para cards en impresión */
-    .card {
-        border: 1px solid #ddd !important;
-        box-shadow: none !important;
-        margin-bottom: 15px !important;
-    }
-    
-    /* Ajustar contenedor principal */
-    .container {
-        max-width: 100% !important;
-        padding: 10px !important;
-    }
-    
-    /* Ajustar tamaños de texto */
-    h2 {
-        font-size: 1.5em !important;
-        margin-bottom: 10px !important;
-    }
-    
-    /* Ajustar tabla */
-    .table {
-        font-size: 0.9em !important;
-    }
-    
-    .table td {
-        padding: 8px !important;
-    }
-    
-    /* Ajustar cards de resumen */
-    .card-body {
-        padding: 15px !important;
-    }
-    
-    /* Asegurar que los colores se vean bien en impresión */
-    .text-primary {
-        color: #000 !important;
-        font-weight: bold !important;
-    }
-    
-    .text-muted {
-        color: #666 !important;
-    }
-    
-    /* Ajustar iconos */
-    .bi {
-        font-size: 1.2em !important;
-    }
-}
-</style>
 {% endblock %}

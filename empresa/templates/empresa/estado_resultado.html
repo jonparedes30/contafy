@@ -4,152 +4,143 @@
 
 {% block content %}
 <div class="container-fluid mt-4">
-    <div class="animated-header mb-4 d-flex flex-wrap align-items-center justify-content-between">
+    <div class="page-header mb-4 d-flex flex-wrap align-items-center justify-content-between gap-3">
         <div>
-            <h1 class="h2 mb-1">
-                <i class="bi bi-cash-stack"></i> Estado de Resultados
-            </h1>
-            <p class="mb-0">Tu resumen de ingresos, costos, gastos y utilidad neta.</p>
+            <h1 class="h2 mb-1"><i class="bi bi-cash-stack"></i> Estado de Resultados</h1>
+            <p class="mb-0 text-muted">Ingresos, costos, gastos y utilidad neta del período.</p>
         </div>
-        
-        <!-- Filtro de fechas -->
-        <div class="card border-0 shadow-sm" style="border-radius:0.8rem;">
-            <div class="card-body p-3">
-                <form method="GET" class="d-flex align-items-center gap-2">
-                    <label class="form-label mb-0 text-muted" style="font-size:0.9rem;">📅 Período:</label>
-                    <input type="date" name="fecha_inicio" value="{{ fecha_inicio|date:'Y-m-d' }}" class="form-control form-control-sm" style="width:140px;">
-                    <span class="text-muted">a</span>
-                    <input type="date" name="fecha_fin" value="{{ fecha_fin|date:'Y-m-d' }}" class="form-control form-control-sm" style="width:140px;">
-                    <button type="submit" class="btn btn-primary btn-sm">
-                        <i class="bi bi-funnel"></i> Filtrar
-                    </button>
 
-                    <div class="btn-group ml-2" role="group">
-                        <a href="?{% if request.GET.fecha_inicio %}fecha_inicio={{ request.GET.fecha_inicio }}&fecha_fin={{ request.GET.fecha_fin }}&{% endif %}niif=false" 
-                           class="btn btn-sm {% if not formato_niif %}btn-primary{% else %}btn-outline-primary{% endif %}">
-                            Tradicional
-                        </a>
-                        <a href="?{% if request.GET.fecha_inicio %}fecha_inicio={{ request.GET.fecha_inicio }}&fecha_fin={{ request.GET.fecha_fin }}&{% endif %}niif=true" 
-                           class="btn btn-sm {% if formato_niif %}btn-success{% else %}btn-outline-success{% endif %}">
-                            NIIF 15
-                        </a>
-                    </div>
-                </form>
+        <!-- Filtro de fechas -->
+        <form method="GET" class="cf-filtro-periodo d-flex flex-wrap align-items-center gap-2">
+            <label class="form-label"><i class="bi bi-calendar3 me-1"></i>Período</label>
+            <input type="date" name="fecha_inicio" value="{{ fecha_inicio|date:'Y-m-d' }}" class="form-control form-control-sm">
+            <span class="text-muted">a</span>
+            <input type="date" name="fecha_fin" value="{{ fecha_fin|date:'Y-m-d' }}" class="form-control form-control-sm">
+            <button type="submit" class="btn btn-primary btn-sm">
+                <i class="bi bi-funnel"></i> Filtrar
+            </button>
+
+            <div class="btn-group ms-1" role="group" aria-label="Formato del estado">
+                <a href="?{% if request.GET.fecha_inicio %}fecha_inicio={{ request.GET.fecha_inicio }}&fecha_fin={{ request.GET.fecha_fin }}&{% endif %}niif=false"
+                   class="btn btn-sm {% if not formato_niif %}btn-primary{% else %}btn-outline-primary{% endif %}">
+                    Tradicional
+                </a>
+                <a href="?{% if request.GET.fecha_inicio %}fecha_inicio={{ request.GET.fecha_inicio }}&fecha_fin={{ request.GET.fecha_fin }}&{% endif %}niif=true"
+                   class="btn btn-sm {% if formato_niif %}btn-primary{% else %}btn-outline-primary{% endif %}">
+                    NIIF 15
+                </a>
             </div>
-        </div>
+        </form>
     </div>
-    
+
     <!-- Información del período -->
-    <div class="alert alert-info mb-4" style="border-radius:0.8rem;">
-        <i class="bi bi-calendar-range"></i> 
+    <div class="alert alert-info mb-4">
+        <i class="bi bi-calendar-range"></i>
         <strong>Período analizado:</strong> {{ fecha_inicio|date:'d/m/Y' }} - {{ fecha_fin|date:'d/m/Y' }}
         ({{ fecha_inicio|timesince:fecha_fin|cut:' ago' }})
     </div>
 
     <!-- Bloque destacado de utilidad neta -->
-    <div class="card shadow-sm mb-4 border-0" style="border-radius:1rem;">
-        <div class="card-body text-center">
-            <div class="mb-2" style="font-size:1.1rem;">Utilidad Neta</div>
-            <div class="fw-bold" style="font-size:2.2rem; color: {% if utilidad_neta >= 0 %}#198754{% else %}#dc3545{% endif %};">
-                ${{ utilidad_neta|floatformat:2 }}
-            </div>
-            <div class="mt-2">
-                {% if utilidad_neta >= 0 %}
-                    <span class="badge bg-success px-3 py-2" style="font-size:1rem;"><i class="bi bi-emoji-smile"></i> ¡Vas bien!</span>
-                {% else %}
-                    <span class="badge bg-danger px-3 py-2" style="font-size:1rem;"><i class="bi bi-emoji-frown"></i> Atención: revisa tus gastos</span>
-                {% endif %}
-            </div>
-            <div class="text-muted mt-2" style="font-size:0.97rem;">
-                La utilidad neta es lo que realmente ganas después de todos los gastos en el período seleccionado.
-            </div>
+    <div class="cf-cifra {% if utilidad_neta >= 0 %}is-pos{% else %}is-neg{% endif %} text-center mb-4">
+        <div class="cf-cifra-label">Utilidad neta</div>
+        <div class="cf-cifra-valor fs-2 {% if utilidad_neta < 0 %}text-neg{% endif %}">${{ utilidad_neta|floatformat:2 }}</div>
+        <div class="mb-2">
+            {% if utilidad_neta >= 0 %}
+                <span class="badge bg-success"><i class="bi bi-graph-up-arrow me-1"></i>Resultado positivo</span>
+            {% else %}
+                <span class="badge bg-danger"><i class="bi bi-graph-down-arrow me-1"></i>Pérdida: revise costos y gastos</span>
+            {% endif %}
+        </div>
+        <div class="cf-cifra-nota">
+            Lo que la empresa gana después de costos, gastos e impuestos en el período seleccionado.
         </div>
     </div>
 
-    <!-- Tabla visual mejorada -->
-    <div class="card shadow-sm border-0" style="border-radius:1rem;">
+    <!-- Estado de resultados -->
+    <div class="card">
         <div class="card-body p-0">
             {% if formato_niif %}
                 <!-- Vista NIIF 15 -->
                 <div class="alert alert-info m-3">
-                    <i class="fas fa-info-circle"></i> <strong>Estado de Resultados según NIIF 15</strong><br>
+                    <i class="bi bi-info-circle"></i> <strong>Estado de Resultados según NIIF 15</strong><br>
                     <small>Incluye reconocimiento de ingresos por contratos y deterioro NIIF 9</small>
                 </div>
-                
-                <table class="table mb-0" style="font-size:1.13rem;">
+
+                <table class="table cf-estado">
                     <tbody>
                         <!-- Ingresos Ordinarios -->
-                        <tr class="table-success"><td colspan="2"><strong>INGRESOS ORDINARIOS</strong></td></tr>
+                        <tr class="cf-seccion"><td colspan="2">Ingresos ordinarios</td></tr>
                         {% for concepto, valor in reporte_niif.ingresos_ordinarios.items %}
                         <tr>
-                            <td class="align-middle">{{ concepto }}</td>
-                            <td class="align-middle text-end fw-bold text-success">${{ valor|floatformat:2 }}</td>
+                            <td>{{ concepto }}</td>
+                            <td class="cf-monto">${{ valor|floatformat:2 }}</td>
                         </tr>
                         {% endfor %}
-                        <tr class="table-success">
-                            <td class="align-middle"><strong>Total Ingresos Ordinarios</strong></td>
-                            <td class="align-middle text-end fw-bold">${{ reporte_niif.totales.ingresos_ordinarios|floatformat:2 }}</td>
+                        <tr class="cf-subtotal">
+                            <td>Total ingresos ordinarios</td>
+                            <td class="cf-monto">${{ reporte_niif.totales.ingresos_ordinarios|floatformat:2 }}</td>
                         </tr>
-                        
+
                         <!-- Costos de Ventas -->
-                        <tr class="table-warning"><td colspan="2"><strong>COSTOS DE VENTAS</strong></td></tr>
+                        <tr class="cf-seccion"><td colspan="2">Costos de ventas</td></tr>
                         {% for concepto, valor in reporte_niif.costos_ventas.items %}
                         <tr>
-                            <td class="align-middle">{{ concepto }}</td>
-                            <td class="align-middle text-end fw-bold text-warning">(${{ valor|floatformat:2 }})</td>
+                            <td>{{ concepto }}</td>
+                            <td class="cf-monto">(${{ valor|floatformat:2 }})</td>
                         </tr>
                         {% empty %}
                         <tr><td colspan="2" class="text-center text-muted">No hay costos de ventas registrados</td></tr>
                         {% endfor %}
-                        
+
                         <!-- Utilidad Bruta -->
-                        <tr class="table-primary">
-                            <td class="align-middle"><strong>UTILIDAD BRUTA</strong></td>
-                            <td class="align-middle text-end fw-bold">${{ reporte_niif.totales.utilidad_bruta|floatformat:2 }}</td>
+                        <tr class="cf-subtotal">
+                            <td>UTILIDAD BRUTA</td>
+                            <td class="cf-monto">${{ reporte_niif.totales.utilidad_bruta|floatformat:2 }}</td>
                         </tr>
-                        
+
                         <!-- Gastos Operativos -->
-                        <tr class="table-danger"><td colspan="2"><strong>GASTOS OPERATIVOS</strong></td></tr>
+                        <tr class="cf-seccion"><td colspan="2">Gastos operativos</td></tr>
                         {% for concepto, valor in reporte_niif.gastos_operativos.items %}
                         <tr>
-                            <td class="align-middle">{{ concepto }}</td>
-                            <td class="align-middle text-end fw-bold text-danger">(${{ valor|floatformat:2 }})</td>
+                            <td>{{ concepto }}</td>
+                            <td class="cf-monto">(${{ valor|floatformat:2 }})</td>
                         </tr>
                         {% empty %}
                         <tr><td colspan="2" class="text-center text-muted">No hay gastos operativos registrados</td></tr>
                         {% endfor %}
-                        <tr class="table-danger">
-                            <td class="align-middle"><strong>Total Gastos Operativos</strong></td>
-                            <td class="align-middle text-end fw-bold">(${{ reporte_niif.totales.gastos_operativos|floatformat:2 }})</td>
+                        <tr class="cf-subtotal">
+                            <td>Total gastos operativos</td>
+                            <td class="cf-monto">(${{ reporte_niif.totales.gastos_operativos|floatformat:2 }})</td>
                         </tr>
 
                         <!-- Utilidad Operativa -->
-                        <tr class="table-primary">
-                            <td class="align-middle"><strong>UTILIDAD OPERATIVA</strong></td>
-                            <td class="align-middle text-end fw-bold">${{ reporte_niif.totales.utilidad_operativa|floatformat:2 }}</td>
+                        <tr class="cf-subtotal">
+                            <td>UTILIDAD OPERATIVA</td>
+                            <td class="cf-monto">${{ reporte_niif.totales.utilidad_operativa|floatformat:2 }}</td>
                         </tr>
 
                         <!-- Impuestos (solo si hay utilidad positiva) -->
                         {% if reporte_niif.impuestos %}
-                        <tr class="table-warning"><td colspan="2"><strong>IMPUESTOS</strong></td></tr>
+                        <tr class="cf-seccion"><td colspan="2">Impuestos</td></tr>
                         {% for concepto, valor in reporte_niif.impuestos.items %}
                         <tr>
-                            <td class="align-middle">{{ concepto }}</td>
-                            <td class="align-middle text-end fw-bold text-warning">(${{ valor|floatformat:2 }})</td>
+                            <td>{{ concepto }}</td>
+                            <td class="cf-monto">(${{ valor|floatformat:2 }})</td>
                         </tr>
                         {% endfor %}
                         {% endif %}
 
                         <!-- Utilidad Neta -->
-                        <tr class="{% if reporte_niif.totales.utilidad_neta >= 0 %}table-success{% else %}table-danger{% endif %}">
-                            <td class="align-middle"><strong>UTILIDAD NETA</strong></td>
-                            <td class="align-middle text-end fw-bold" style="font-size:1.3rem;">${{ reporte_niif.totales.utilidad_neta|floatformat:2 }}</td>
+                        <tr class="cf-total">
+                            <td>UTILIDAD NETA</td>
+                            <td class="cf-monto {% if reporte_niif.totales.utilidad_neta < 0 %}text-neg{% else %}text-pos{% endif %}">${{ reporte_niif.totales.utilidad_neta|floatformat:2 }}</td>
                         </tr>
-                        
+
                         <!-- Indicadores -->
-                        <tr class="table-light">
-                            <td class="align-middle">Margen Bruto</td>
-                            <td class="align-middle text-end">
+                        <tr class="cf-seccion"><td colspan="2">Indicadores</td></tr>
+                        <tr>
+                            <td>Margen bruto</td>
+                            <td class="cf-monto">
                                 {% if reporte_niif.totales.ingresos_ordinarios > 0 %}
                                     {% widthratio reporte_niif.totales.utilidad_bruta reporte_niif.totales.ingresos_ordinarios 100 %}%
                                 {% else %}
@@ -157,9 +148,9 @@
                                 {% endif %}
                             </td>
                         </tr>
-                        <tr class="table-light">
-                            <td class="align-middle">Margen Neto</td>
-                            <td class="align-middle text-end">
+                        <tr>
+                            <td>Margen neto</td>
+                            <td class="cf-monto">
                                 {% if reporte_niif.totales.ingresos_ordinarios > 0 %}
                                     {% widthratio reporte_niif.totales.utilidad_neta reporte_niif.totales.ingresos_ordinarios 100 %}%
                                 {% else %}
@@ -171,148 +162,57 @@
                 </table>
             {% else %}
                 <!-- Vista tradicional -->
-                <table class="table mb-0" style="font-size:1.13rem;">
+                <table class="table cf-estado">
                     <tbody>
                     <tr>
-                        <td class="align-middle text-muted">Ingresos por Ventas (sin IVA)</td>
-                        <td class="align-middle text-end fw-bold text-primary">
-                            ${{ ventas|floatformat:2 }}
-                            <span class="badge bg-success ms-2">Ingreso</span>
-                        </td>
-                    </tr>
-                    <tr style="border-top:1.5px solid #e9ecef;">
-                        <td class="align-middle text-muted">
-                            (–) {% if user.empresa.categoria == 'manufactura' %}Costos de Producción{% else %}Costo de Ventas (Compras){% endif %}
-                        </td>
-                        <td class="align-middle text-end fw-bold" style="color:#0dcaf0;">
-                            ${{ costos|floatformat:2 }}
-                            <span class="badge bg-info ms-2">Costo</span>
-                        </td>
-                    </tr>
-                    <tr class="table-info">
-                        <td class="align-middle"><strong>= Utilidad Bruta</strong></td>
-                        <td class="align-middle text-end fw-bold" style="font-size:1.15rem;">
-                            ${{ utilidad_bruta|floatformat:2 }}
-                        </td>
+                        <td>Ingresos por ventas (sin IVA)</td>
+                        <td class="cf-monto">${{ ventas|floatformat:2 }}</td>
                     </tr>
                     <tr>
-                        <td class="align-middle text-muted">(–) Gastos Operativos</td>
-                        <td class="align-middle text-end fw-bold" style="color:#dc3545;">
-                            ${{ gastos|floatformat:2 }}
-                            <span class="badge bg-danger ms-2">Gasto</span>
+                        <td>
+                            (–) {% if user.empresa.categoria == 'manufactura' %}Costos de producción{% else %}Costo de ventas (compras){% endif %}
                         </td>
+                        <td class="cf-monto">(${{ costos|floatformat:2 }})</td>
                     </tr>
-                    <tr class="table-light">
-                        <td class="align-middle"><strong>= Utilidad Operativa</strong></td>
-                        <td class="align-middle text-end fw-bold" style="font-size:1.18rem;">
-                            ${{ utilidad_operativa|floatformat:2 }}
-                            <span class="badge bg-primary ms-2">Resultado</span>
-                        </td>
+                    <tr class="cf-subtotal">
+                        <td>= Utilidad bruta</td>
+                        <td class="cf-monto">${{ utilidad_bruta|floatformat:2 }}</td>
+                    </tr>
+                    <tr>
+                        <td>(–) Gastos operativos</td>
+                        <td class="cf-monto">(${{ gastos|floatformat:2 }})</td>
+                    </tr>
+                    <tr class="cf-subtotal">
+                        <td>= Utilidad operativa</td>
+                        <td class="cf-monto">${{ utilidad_operativa|floatformat:2 }}</td>
                     </tr>
                     {% if participacion_trabajadores and participacion_trabajadores > 0 %}
                     <tr>
-                        <td class="align-middle text-muted">(–) Participación Trabajadores (15%)</td>
-                        <td class="align-middle text-end fw-bold" style="color:#fd7e14;">
-                            ${{ participacion_trabajadores|floatformat:2 }}
-                            <span class="badge bg-warning ms-2">Impuesto</span>
-                        </td>
+                        <td>(–) Participación trabajadores (15%)</td>
+                        <td class="cf-monto">(${{ participacion_trabajadores|floatformat:2 }})</td>
                     </tr>
                     {% endif %}
                     {% if impuesto_renta and impuesto_renta > 0 %}
                     <tr>
-                        <td class="align-middle text-muted">(–) Impuesto a la Renta (25%)</td>
-                        <td class="align-middle text-end fw-bold" style="color:#fd7e14;">
-                            ${{ impuesto_renta|floatformat:2 }}
-                            <span class="badge bg-warning ms-2">Impuesto</span>
-                        </td>
+                        <td>(–) Impuesto a la renta (25%)</td>
+                        <td class="cf-monto">(${{ impuesto_renta|floatformat:2 }})</td>
                     </tr>
                     {% endif %}
-                    <tr class="{% if utilidad_neta >= 0 %}table-success{% else %}table-danger{% endif %}" style="border-top:2px solid #198754;">
-                        <td class="align-middle"><strong>= Utilidad Neta</strong></td>
-                        <td class="align-middle text-end fw-bold" style="font-size:1.3rem;">
-                            ${{ utilidad_neta|floatformat:2 }}
-                            <span class="badge bg-{% if utilidad_neta >= 0 %}success{% else %}danger{% endif %} ms-2">Final</span>
-                        </td>
+                    <tr class="cf-total">
+                        <td>= Utilidad neta</td>
+                        <td class="cf-monto {% if utilidad_neta < 0 %}text-neg{% else %}text-pos{% endif %}">${{ utilidad_neta|floatformat:2 }}</td>
                     </tr>
                     </tbody>
                 </table>
 
                 {% if cuadra is False %}
-                <div class="alert alert-warning m-3" style="border-radius:0.8rem;">
+                <div class="alert alert-warning m-3">
                     <i class="bi bi-exclamation-triangle"></i>
-                    <strong>Atención:</strong> Hay una diferencia de redondeo. Revisa los datos del período.
+                    <strong>Atención:</strong> Hay una diferencia de redondeo. Revise los datos del período.
                 </div>
                 {% endif %}
             {% endif %}
         </div>
     </div>
 </div>
-
-<style>
-@media print {
-    /* Ocultar elementos innecesarios en impresión */
-    .btn, .navbar, .sidebar {
-        display: none !important;
-    }
-    
-    /* Estilos para cards en impresión */
-    .card {
-        border: 1px solid #ddd !important;
-        box-shadow: none !important;
-        margin-bottom: 15px !important;
-    }
-    
-    /* Ajustar contenedor principal */
-    .container {
-        max-width: 100% !important;
-        padding: 10px !important;
-    }
-    
-    /* Ajustar tamaños de texto */
-    h2 {
-        font-size: 1.5em !important;
-        margin-bottom: 10px !important;
-    }
-    
-    /* Ajustar tabla */
-    .table {
-        font-size: 0.9em !important;
-    }
-    
-    .table td {
-        padding: 8px !important;
-    }
-    
-    /* Ajustar cards de resumen */
-    .card-body {
-        padding: 15px !important;
-    }
-    
-    /* Asegurar que los colores se vean bien en impresión */
-    .text-primary {
-        color: #000 !important;
-        font-weight: bold !important;
-    }
-    
-    .text-muted {
-        color: #666 !important;
-    }
-    
-    /* Ajustar badges */
-    .badge {
-        font-size: 0.8em !important;
-        padding: 4px 8px !important;
-    }
-    
-    /* Ajustar utilidad neta destacada */
-    .fw-bold {
-        font-weight: bold !important;
-    }
-    
-    /* Ajustar iconos */
-    .bi {
-        font-size: 1.2em !important;
-    }
-}
-</style>
 {% endblock %}

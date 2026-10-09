@@ -363,10 +363,12 @@ table, .kpi-value, .num, .fs-4, .fs-3, .display-6 { font-variant-numeric: tabula
 
 .topbar, .navbar.bg-white, header.navbar { background: var(--cf-surface) !important; border-bottom: 1px solid var(--cf-line); box-shadow: none !important; }
 
-/* Encabezado de página estándar */
-.page-header h1, .page-header .h3, .page-header h2 { font-family: var(--cf-serif); font-weight: 600; color: var(--cf-ink); }
-.page-header p, .page-header .text-muted { color: var(--cf-muted) !important; }
-.page-header h1 i, .page-header .h3 i { color: var(--cf-green-600); font-size: .85em; }
+/* Encabezado de página estándar (.animated-header es el nombre antiguo, sin estilos propios) */
+.page-header h1, .page-header .h3, .page-header h2,
+.animated-header h1, .animated-header .h2, .animated-header h2 { font-family: var(--cf-serif); font-weight: 600; color: var(--cf-ink); }
+.page-header p, .page-header .text-muted, .animated-header p { color: var(--cf-muted) !important; }
+.page-header h1 i, .page-header .h3 i, .animated-header h1 i { color: var(--cf-green-600); font-size: .85em; }
+.animated-header { gap: 1rem; }
 
 /* Escáner y estados vacíos */
 .btn-scanner-unified { background: var(--cf-navy-800) !important; border-color: var(--cf-navy-800) !important; background-image: none !important; box-shadow: none !important; }
@@ -382,3 +384,56 @@ table, .kpi-value, .num, .fs-4, .fs-3, .display-6 { font-variant-numeric: tabula
 /* Contenedores flex que no se encogían: en celular las tablas empujaban toda la
    página hacia los lados en lugar de desplazarse dentro de .table-responsive. */
 .main-content, .main-content > main { min-width: 0; max-width: 100%; }
+
+/* ===================================================================
+   Entrega 2 — componentes compartidos por estados financieros,
+   compras/productos, metas, exportaciones y el agente IA
+   =================================================================== */
+
+/* Filtro de período en la cabecera de los reportes */
+.cf-filtro-periodo { background: var(--cf-surface); border: 1px solid var(--cf-line); border-radius: var(--cf-radius-lg); padding: .65rem .85rem; }
+.cf-filtro-periodo .form-label { font-size: .82rem; color: var(--cf-muted); margin: 0; }
+.cf-filtro-periodo input[type="date"] { width: 9rem; }
+
+/* Tarjeta de cifra: etiqueta, valor y nota, con barra superior según el rubro */
+.cf-cifra { background: var(--cf-surface); border: 1px solid var(--cf-line); border-top: 3px solid var(--cf-navy-800); border-radius: var(--cf-radius-lg); padding: 1rem 1.15rem; height: 100%; }
+.cf-cifra-ico { width: 2.25rem; height: 2.25rem; border-radius: var(--cf-radius); display: inline-flex; align-items: center; justify-content: center; background: var(--cf-navy-50); color: var(--cf-navy-800); font-size: 1.1rem; margin-bottom: .6rem; }
+.cf-cifra-label { font-size: .8rem; font-weight: 600; color: var(--cf-muted); text-transform: uppercase; letter-spacing: .05em; }
+.cf-cifra-valor { font-size: 1.5rem; font-weight: 600; color: var(--cf-ink); font-variant-numeric: tabular-nums; letter-spacing: -.01em; margin: .15rem 0; }
+.cf-cifra-nota { font-size: .85rem; color: var(--cf-muted); }
+.cf-cifra.is-pasivo { border-top-color: var(--cf-warn); }
+.cf-cifra.is-pasivo .cf-cifra-ico { background: var(--cf-warn-bg); color: var(--cf-warn); }
+.cf-cifra.is-pos { border-top-color: var(--cf-green-600); }
+.cf-cifra.is-pos .cf-cifra-ico { background: var(--cf-green-100); color: var(--cf-green-700); }
+.cf-cifra.is-neg { border-top-color: var(--cf-neg); }
+.cf-cifra.is-neg .cf-cifra-ico { background: var(--cf-neg-bg); color: var(--cf-neg); }
+.cf-cifra.is-info { border-top-color: var(--cf-info); }
+.cf-cifra.is-info .cf-cifra-ico { background: var(--cf-info-bg); color: var(--cf-info); }
+
+/* Tabla de estado financiero: filas de sección, montos alineados y totales */
+.cf-estado { margin: 0; }
+.cf-estado td { vertical-align: middle; }
+.cf-estado .cf-monto, .cf-monto { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.cf-estado tr.cf-seccion td { background: var(--cf-paper) !important; color: var(--cf-ink); font-weight: 600; font-size: .8rem; text-transform: uppercase; letter-spacing: .05em; border-top: 1px solid var(--cf-line); }
+.cf-estado tr.cf-subtotal td { font-weight: 600; background: var(--cf-navy-50) !important; }
+.cf-estado tr.cf-total td { font-weight: 700; color: var(--cf-ink); border-top: 2px solid var(--cf-ink); background: var(--cf-surface) !important; }
+.cf-estado-titulo { font-family: var(--cf-serif); font-weight: 600; font-size: 1.05rem; color: var(--cf-ink); padding: 1rem 1rem .5rem; margin: 0; }
+.text-pos { color: var(--cf-pos) !important; }
+.text-neg { color: var(--cf-neg) !important; }
+.text-warn { color: var(--cf-warn) !important; }
+
+/* Nota al pie de los reportes */
+.cf-nota-pie { text-align: center; color: var(--cf-muted); font-size: .9rem; margin-top: 1.5rem; }
+
+/* Impresión de reportes: solo el documento, en blanco y negro sobrio */
+@media print {
+    .btn, .navbar, .sidebar, .cf-filtro-periodo, .top-navbar { display: none !important; }
+    .card, .cf-cifra { border: 1px solid #bbb !important; box-shadow: none !important; break-inside: avoid; }
+    .container, .container-fluid { max-width: 100% !important; padding: 0 !important; }
+    .table { font-size: .9em !important; }
+}
+
+/* Flujo de caja */
+.positive-flow { color: var(--cf-pos); background-color: var(--cf-pos-bg); }
+.negative-flow { color: var(--cf-neg); background-color: var(--cf-neg-bg); }
+.chart-container { position: relative; min-height: 400px; }
