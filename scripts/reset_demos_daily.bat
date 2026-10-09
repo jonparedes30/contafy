@@ -12,7 +12,7 @@ echo. >> logs\reset_demos.log
 echo ===== %DATE% %TIME% ===== >> logs\reset_demos.log
 
 REM Activar entorno virtual y correr el reset
-call .venv\Scripts\activate.bat
+call venv\Scripts\activate.bat
 python manage.py reset_demos >> logs\reset_demos.log 2>&1
 
 REM Salir limpiamente

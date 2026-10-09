@@ -17,9 +17,14 @@ listas para el siguiente visitante:
 Se identifica lo creado por visitantes con `creado_en` (fecha real de alta) y
 no con `fecha`, porque `fecha` se desplaza en el paso 2.
 
+Desde la migración 0035 cada demo tiene una foto (DemoSnapshot): si existe, la
+demo se restaura completa desde ella. La primera ejecución en un entorno toma la
+foto automáticamente.
+
 Uso:
     python manage.py reset_demos
     python manage.py reset_demos --dry-run
+    python manage.py reset_demos --nueva-foto   # tras cambiar a propósito los datos originales
 """
 from datetime import datetime, timedelta
 from decimal import Decimal
@@ -209,6 +214,9 @@ class Command(BaseCommand):
     def add_arguments(self, parser):
         parser.add_argument('--dry-run', action='store_true',
                             help='Muestra lo que se haría sin modificar nada')
+        parser.add_argument('--nueva-foto', action='store_true', default=False,
+                            help='Limpia con el método anterior y vuelve a tomar la foto '
+                                 '(usar después de cambiar a propósito los datos originales de una demo)')
 
     def handle(self, *args, **options):
         from empresa.management.commands.regularizar_inventario import regularizar
@@ -217,7 +225,17 @@ class Command(BaseCommand):
         dry_run = options['dry_run']
         prefijo = '[DRY RUN] ' if dry_run else ''
 
+        from empresa.models import DemoSnapshot
+        from empresa.services.demo_snapshot import guardar_foto, restaurar
+
         for username in DEMO_USERNAMES:
+            # Con foto: la demo vuelve exactamente a su estado original
+            # (revierte lo creado, lo editado y lo borrado por visitantes).
+            if not dry_run and options['nueva_foto'] is False and DemoSnapshot.objects.filter(username=username).exists():
+                restaurar(username)
+                self.stdout.write(self.style.SUCCESS(f'{username}: restaurada desde su foto'))
+                continue
+
             usuario = Usuario.objects.filter(username=username).select_related('empresa').first()
             if not usuario or not usuario.empresa:
                 self.stdout.write(self.style.WARNING(f'  {username}: no existe o no tiene empresa, omitiendo'))
@@ -237,8 +255,11 @@ class Command(BaseCommand):
                 dias = rejuvenecer(empresa)
                 _, _, ajuste = regularizar(empresa)
 
+            # Sin foto todavía (primera ejecución en este entorno): se toma ahora,
+            # con la demo ya limpia, y desde mañana se restaura desde ella.
+            foto = guardar_foto(username)
             self.stdout.write(self.style.SUCCESS(
                 f'{empresa.nombre}: {borrados} registros de visitantes eliminados, '
                 f'{enlazados} asientos enlazados, fechas desplazadas {dias} dias, '
-                f'ajuste de inventario ${ajuste:,.2f}'
+                f'ajuste de inventario ${ajuste:,.2f}; foto guardada ({foto.total_objetos} objetos)'
             ))

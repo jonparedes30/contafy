@@ -17,6 +17,12 @@ def acceso_rapido_demo(request, username):
         messages.error(request, 'Demo no encontrada.')
         return redirect('empresa:landing')
 
+    # Regla de las demos: lo que hacen los visitantes no se conserva. Si pasaron
+    # 24 h desde la última restauración, la demo vuelve a su foto original ahora
+    # (no depende de que un cron o un equipo estén encendidos a medianoche).
+    from empresa.services.demo_snapshot import restaurar_si_vencida
+    restaurar_si_vencida(username)
+
     # Si ya hay sesión activa con esta misma cuenta demo, ir directo
     if request.user.is_authenticated and request.user.username == username:
         return redirect('empresa:home')

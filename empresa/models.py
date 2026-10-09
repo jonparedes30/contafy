@@ -2764,3 +2764,24 @@ class RegistroAuditoria(models.Model):
 
     def __str__(self):
         return f"[{self.get_tipo_operacion_display()}] {self.modelo} #{self.objeto_id or '?'} — {self.fecha:%Y-%m-%d %H:%M}"
+
+
+class DemoSnapshot(models.Model):
+    """Foto de una empresa demo oficial para restaurarla tal cual cada 24 h.
+
+    Se guarda en la base de datos (no en un archivo del repositorio) porque
+    contiene las claves primarias de ESTA base: cargar la foto de otro entorno
+    podría sobrescribir registros de clientes con el mismo id.
+    """
+    username = models.CharField(max_length=150, unique=True, help_text="Usuario dueño de la demo (p. ej. demo_comercio)")
+    datos = models.TextField(help_text="Objetos de la empresa serializados en JSON (django.core.serializers)")
+    total_objetos = models.PositiveIntegerField(default=0)
+    creado_en = models.DateTimeField(auto_now_add=True)
+    ultimo_reset = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        verbose_name = 'Foto de demo'
+        verbose_name_plural = 'Fotos de demos'
+
+    def __str__(self):
+        return f'Foto de {self.username} ({self.total_objetos} objetos)'

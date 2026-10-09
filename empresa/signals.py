@@ -124,6 +124,9 @@ def conectar_signals_auditoria():
 
     def _make_save_handler():
         def handler(sender, instance, created, **kwargs):
+            if kwargs.get('raw'):
+                # Carga de datos (restaurar una demo, loaddata): no es una acción de usuario.
+                return
             tipo = 'crear' if created else 'editar'
             _registrar_evento_auditoria(sender, instance, tipo)
         return handler

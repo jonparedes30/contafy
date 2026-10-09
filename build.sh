@@ -57,6 +57,11 @@ while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
     fi
 done
 
+echo "🧹 Restaurando demos (la primera vez toma su foto original)..."
+# Regla de las demos: lo de los visitantes no se conserva. Luego cada demo se
+# restaura sola al entrar si pasaron 24 h (empresa/services/demo_snapshot.py).
+python manage.py reset_demos || echo "⚠️ No se pudieron restaurar las demos (el deploy continúa)"
+
 echo "📦 Recolectando archivos estáticos..."
 python manage.py collectstatic --noinput --clear
 
