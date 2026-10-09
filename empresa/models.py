@@ -12,11 +12,16 @@ from django.core.validators import RegexValidator
 
 # Modelo Base para Auditoría
 class AuditModel(models.Model):
-    """Modelo base que agrega campos de auditoría automáticamente"""
+    """Modelo base que agrega campos de auditoría automáticamente.
+
+    RESTRICT (no PROTECT): no se puede borrar a un usuario que creó registros,
+    salvo que esos registros se borren en la misma operación (p. ej. al eliminar
+    la empresa completa). PROTECT bloqueaba incluso ese caso.
+    """
     creado_por = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         related_name='%(class)s_creadas',
-        on_delete=models.PROTECT,
+        on_delete=models.RESTRICT,
         verbose_name='Creado por',
         null=True,
         blank=True
@@ -26,7 +31,7 @@ class AuditModel(models.Model):
         related_name='%(class)s_modificadas',
         null=True, 
         blank=True,
-        on_delete=models.PROTECT,
+        on_delete=models.RESTRICT,
         verbose_name='Modificado por'
     )
     creado_en = models.DateTimeField(auto_now_add=True, verbose_name='Fecha de creación')

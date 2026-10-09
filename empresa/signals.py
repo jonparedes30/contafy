@@ -1,6 +1,10 @@
 from decimal import Decimal
 
-from django.db.models.signals import post_save, post_delete
+import threading
+
+from django.core.exceptions import ObjectDoesNotExist
+
+from django.db.models.signals import post_save, post_delete, pre_delete
 from django.dispatch import receiver
 from empresa.models import CuentaContable
 from empresa.services.accounting_setup import ensure_contrapartidas_for_account
@@ -43,9 +47,11 @@ def _get_empresa(instance):
     """Empresa de auditoría (para el modelo Empresa: la empresa ES el instance)."""
     if instance.__class__.__name__ == 'Empresa':
         return instance
-    if hasattr(instance, 'empresa') and instance.empresa:
-        return instance.empresa
-    return None
+    try:
+        return getattr(instance, 'empresa', None) or None
+    except ObjectDoesNotExist:
+        # La empresa ya fue borrada (último paso de una cascada): no hay dónde auditar.
+        return None
 
 
 def _get_monto(instance):
@@ -61,10 +67,25 @@ def _get_monto(instance):
         return None
 
 
+# Empresas cuyo borrado está en curso (por hilo). Mientras se borra una empresa, la
+# cascada elimina sus ventas, usuarios, etc.; auditar esas eliminaciones crearía filas
+# que apuntan a la empresa que desaparece y la base rechazaría todo el borrado.
+_borrado_en_curso = threading.local()
+
+
+def _empresas_borrandose():
+    if not hasattr(_borrado_en_curso, 'ids'):
+        _borrado_en_curso.ids = set()
+    return _borrado_en_curso.ids
+
+
 def _registrar_evento_auditoria(sender, instance, tipo):
     """Lógica común para registrar un evento de auditoría."""
     try:
         from empresa.services.auditoria_service import AuditoriaService
+        empresa_id = getattr(instance, 'empresa_id', None) or (instance.pk if sender.__name__ == 'Empresa' else None)
+        if tipo == 'eliminar' and empresa_id in _empresas_borrandose():
+            return
         empresa = _get_empresa(instance)
         if not empresa:
             return
@@ -112,6 +133,15 @@ def conectar_signals_auditoria():
             _registrar_evento_auditoria(sender, instance, 'eliminar')
         return handler
 
+    def _empresa_pre_delete(sender, instance, **kwargs):
+        _empresas_borrandose().add(instance.pk)
+
+    def _empresa_post_delete(sender, instance, **kwargs):
+        _empresas_borrandose().discard(instance.pk)
+
+    # pre_delete de la empresa se emite antes de borrar cualquier objeto de la cascada.
+    pre_delete.connect(_empresa_pre_delete, sender=Empresa, weak=False, dispatch_uid='audit_empresa_pre_delete')
+
     for Modelo in MODELOS_AUDITADOS:
         post_save.connect(
             _make_save_handler(),
@@ -125,5 +155,8 @@ def conectar_signals_auditoria():
             weak=False,
             dispatch_uid=f'audit_delete_{Modelo.__name__}',
         )
+
+    # Se conecta después del handler de auditoría para limpiar la marca al final.
+    post_delete.connect(_empresa_post_delete, sender=Empresa, weak=False, dispatch_uid='audit_empresa_post_delete')
 
     logger.info(f'Auditoría conectada para {len(MODELOS_AUDITADOS)} modelos.')

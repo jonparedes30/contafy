@@ -492,8 +492,8 @@ class RegistroForm(UserCreationForm):
                     logger.info(f'Usuario {user.username} asociado a empresa {empresa.nombre}')
                     
             except Exception as e:
-                logger.error(f'Error en save del formulario: {str(e)}')
-                raise forms.ValidationError(f'Error al crear la cuenta: {str(e)}')
+                logger.exception('Error en save del formulario de registro: %s', e)
+                raise forms.ValidationError('No se pudo crear la cuenta. Inténtalo de nuevo o contacta a soporte.')
                 
         return user
 
