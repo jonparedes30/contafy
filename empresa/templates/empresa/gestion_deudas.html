@@ -20,7 +20,7 @@
                 <div class="card-body">
                     <h5 class="card-title text-success">Por Cobrar</h5>
                     <h3 class="text-success">${{ total_por_cobrar|floatformat:2 }}</h3>
-                    <small class="text-muted">{{ cuentas_cobrar.count }} cuentas</small>
+                    <small class="text-muted">{{ total_cobrar_count }} cuentas</small>
                 </div>
             </div>
         </div>
@@ -29,7 +29,7 @@
                 <div class="card-body">
                     <h5 class="card-title text-danger">Por Pagar</h5>
                     <h3 class="text-danger">${{ total_por_pagar|floatformat:2 }}</h3>
-                    <small class="text-muted">{{ cuentas_pagar.count }} cuentas</small>
+                    <small class="text-muted">{{ total_pagar_count }} cuentas</small>
                 </div>
             </div>
         </div>
@@ -58,12 +58,12 @@
     <!-- Tabs para cuentas -->
     <ul class="nav nav-tabs" id="deudasTabs" role="tablist">
         <li class="nav-item" role="presentation">
-            <button class="nav-link active" id="cobrar-tab" data-bs-toggle="tab" data-bs-target="#cobrar" type="button">
+            <button class="nav-link{% if tab_activa == 'cobrar' %} active{% endif %}" id="cobrar-tab" data-bs-toggle="tab" data-bs-target="#cobrar" type="button">
                 <i class="bi bi-arrow-down-circle text-success"></i> Cuentas por Cobrar
             </button>
         </li>
         <li class="nav-item" role="presentation">
-            <button class="nav-link" id="pagar-tab" data-bs-toggle="tab" data-bs-target="#pagar" type="button">
+            <button class="nav-link{% if tab_activa == 'pagar' %} active{% endif %}" id="pagar-tab" data-bs-toggle="tab" data-bs-target="#pagar" type="button">
                 <i class="bi bi-arrow-up-circle text-danger"></i> Cuentas por Pagar
             </button>
         </li>
@@ -71,7 +71,7 @@
 
     <div class="tab-content" id="deudasTabsContent">
         <!-- Tab Cuentas por Cobrar -->
-        <div class="tab-pane fade show active" id="cobrar" role="tabpanel">
+        <div class="tab-pane fade{% if tab_activa == 'cobrar' %} show active{% endif %}" id="cobrar" role="tabpanel">
             <div class="card mt-3">
                 <div class="card-header bg-success text-white">
                     <h5 class="mb-0"><i class="bi bi-people"></i> Clientes que me deben</h5>
@@ -137,12 +137,26 @@
                             </tbody>
                         </table>
                     </div>
+                    {% if cuentas_cobrar.has_other_pages %}
+                    <nav class="d-flex justify-content-between align-items-center px-3 py-2 border-top" aria-label="Paginación">
+                        <small class="text-muted">{{ cuentas_cobrar.start_index }}–{{ cuentas_cobrar.end_index }} de {{ cuentas_cobrar.paginator.count }}</small>
+                        <ul class="pagination pagination-sm mb-0">
+                            {% if cuentas_cobrar.has_previous %}
+                            <li class="page-item"><a class="page-link" href="?tab=cobrar&page_cobrar={{ cuentas_cobrar.previous_page_number }}&page_pagar={{ request.GET.page_pagar|default:1 }}" aria-label="Anterior"><i class="bi bi-chevron-left"></i></a></li>
+                            {% endif %}
+                            <li class="page-item active"><span class="page-link">{{ cuentas_cobrar.number }} / {{ cuentas_cobrar.paginator.num_pages }}</span></li>
+                            {% if cuentas_cobrar.has_next %}
+                            <li class="page-item"><a class="page-link" href="?tab=cobrar&page_cobrar={{ cuentas_cobrar.next_page_number }}&page_pagar={{ request.GET.page_pagar|default:1 }}" aria-label="Siguiente"><i class="bi bi-chevron-right"></i></a></li>
+                            {% endif %}
+                        </ul>
+                    </nav>
+                    {% endif %}
                 </div>
             </div>
         </div>
 
         <!-- Tab Cuentas por Pagar -->
-        <div class="tab-pane fade" id="pagar" role="tabpanel">
+        <div class="tab-pane fade{% if tab_activa == 'pagar' %} show active{% endif %}" id="pagar" role="tabpanel">
             <div class="card mt-3">
                 <div class="card-header bg-danger text-white">
                     <h5 class="mb-0"><i class="bi bi-building"></i> Proveedores que debo pagar</h5>
@@ -208,6 +222,20 @@
                             </tbody>
                         </table>
                     </div>
+                    {% if cuentas_pagar.has_other_pages %}
+                    <nav class="d-flex justify-content-between align-items-center px-3 py-2 border-top" aria-label="Paginación">
+                        <small class="text-muted">{{ cuentas_pagar.start_index }}–{{ cuentas_pagar.end_index }} de {{ cuentas_pagar.paginator.count }}</small>
+                        <ul class="pagination pagination-sm mb-0">
+                            {% if cuentas_pagar.has_previous %}
+                            <li class="page-item"><a class="page-link" href="?tab=pagar&page_pagar={{ cuentas_pagar.previous_page_number }}&page_cobrar={{ request.GET.page_cobrar|default:1 }}" aria-label="Anterior"><i class="bi bi-chevron-left"></i></a></li>
+                            {% endif %}
+                            <li class="page-item active"><span class="page-link">{{ cuentas_pagar.number }} / {{ cuentas_pagar.paginator.num_pages }}</span></li>
+                            {% if cuentas_pagar.has_next %}
+                            <li class="page-item"><a class="page-link" href="?tab=pagar&page_pagar={{ cuentas_pagar.next_page_number }}&page_cobrar={{ request.GET.page_cobrar|default:1 }}" aria-label="Siguiente"><i class="bi bi-chevron-right"></i></a></li>
+                            {% endif %}
+                        </ul>
+                    </nav>
+                    {% endif %}
                 </div>
             </div>
         </div>

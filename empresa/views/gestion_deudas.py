@@ -4,6 +4,7 @@ from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
 from django.contrib import messages
 from django.db.models import Sum, Q
+from django.core.paginator import Paginator
 from django.db import transaction
 from decimal import Decimal
 from datetime import date, timedelta
@@ -43,9 +44,17 @@ def gestion_deudas(request):
         cobrar_vencidas = cuentas_cobrar.filter(fecha_vencimiento__lt=hoy).count()
         pagar_vencidas = cuentas_pagar.filter(fecha_vencimiento__lt=hoy).count()
         
+        # Cada tabla pagina por separado (15 filas) para que una no mueva a la otra
+        page_cobrar = Paginator(cuentas_cobrar, 15).get_page(request.GET.get('page_cobrar'))
+        page_pagar = Paginator(cuentas_pagar, 15).get_page(request.GET.get('page_pagar'))
+        tab_activa = 'pagar' if request.GET.get('tab') == 'pagar' else 'cobrar'
+
         context = {
-            'cuentas_cobrar': cuentas_cobrar,
-            'cuentas_pagar': cuentas_pagar,
+            'cuentas_cobrar': page_cobrar,
+            'cuentas_pagar': page_pagar,
+            'total_cobrar_count': page_cobrar.paginator.count,
+            'total_pagar_count': page_pagar.paginator.count,
+            'tab_activa': tab_activa,
             'total_por_cobrar': total_por_cobrar,
             'total_por_pagar': total_por_pagar,
             'cobrar_vencidas': cobrar_vencidas,

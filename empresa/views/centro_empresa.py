@@ -60,7 +60,7 @@ def centro_empresa(request):
             tipo=request.GET.get('tipo') or None,
             usuario_filtro=request.GET.get('usuario') or None,
             page=page,
-            per_page=25,
+            per_page=15,
         )
 
     elif tab == 'config':
