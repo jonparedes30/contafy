@@ -24,7 +24,7 @@
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
   <link href="{% static 'empresa/css/clean_enterprise.css' %}" rel="stylesheet">
   <link href="{% static 'empresa/css/mobile-optimized.css' %}" rel="stylesheet">
-  <link href="{% static 'empresa/css/contafy-ds.css' %}?v=13" rel="stylesheet">
+  <link href="{% static 'empresa/css/contafy-ds.css' %}?v=15" rel="stylesheet">
   {% block extra_css %}{% endblock %}
   <!-- CSRF token meta for JS fetch calls and generic access -->
   <meta name="csrf-token" content="{{ csrf_token }}">
@@ -196,7 +196,7 @@
   </style>
 </head>
 
-<body>
+<body class="{% if embebido %}embebido{% endif %}">
 
   <!-- MOBILE BACKDROP -->
   <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
@@ -315,7 +315,7 @@
        Nota: Chart.js + contafy_charts.js ya se cargan en <head> -->
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
   <script src="{% static 'js/contafy_swal.js' %}?v=2"></script>
-  <script src="{% static 'js/contafy_scanner.js' %}"></script>
+  <script src="{% static 'js/contafy_scanner.js' %}?v=2"></script>
   <script>
     // Inicializar tooltips de Bootstrap (Design System sección 20)
     document.addEventListener('DOMContentLoaded', function () {
@@ -343,8 +343,11 @@
     })();
   </script>
   <script>
-    // Endpoint del escáner único (ver static/js/contafy_scanner.js)
+    // Escáner único (ver static/js/contafy_scanner.js)
     window.CONTAFY_SCANNER_ENDPOINT = "{% url 'empresa:vision_search_api' %}";
+    window.CONTAFY_SCANNER_FOTO = {% if escaner_foto_activa %}true{% else %}false{% endif %};
+    window.CONTAFY_URL_CREAR_PRODUCTO = "{% url 'empresa:crear_producto' %}";
+    window.CONTAFY_PUEDE_CREAR_PRODUCTOS = {% if is_owner or user_powers.puede_editar_productos %}true{% else %}false{% endif %};
   </script>
   <script>
     // Mobile touch improvements

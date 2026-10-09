@@ -93,6 +93,10 @@
                                 class="bi bi-search text-muted"></i></span>
                         <input type="text" name="buscar" class="form-control border-start-0 ps-0 bg-light"
                             value="{{ request.GET.buscar }}" placeholder="Código, nombre o descripción...">
+                        <button type="button" class="btn btn-outline-primary" id="btn-escanear-inventario"
+                            title="Buscar con la cámara" aria-label="Escanear código de barras">
+                            <i class="bi bi-upc-scan"></i>
+                        </button>
                     </div>
                 </div>
                 <div class="col-md-3">
@@ -446,5 +450,29 @@
                 document.getElementById('proveedoresDeudas').innerHTML = '<p class="text-danger mb-0 p-2">Error cargando datos</p>';
             });
     });
+</script>
+<script>
+// Escáner del inventario (static/js/contafy_scanner.js): muestra el producto leído;
+// si no existe ofrece registrarlo sin salir de la lista.
+(function () {
+    const urlLista = "{% url 'empresa:listar_productos' %}";
+    function verProducto(codigo) {
+        window.location.href = urlLista + '?buscar=' + encodeURIComponent(codigo || '');
+    }
+    document.getElementById('btn-escanear-inventario')?.addEventListener('click', function () {
+        ContafyScanner.abrir({
+            contexto: 'inventario',
+            endpoint: window.CONTAFY_SCANNER_ENDPOINT,
+            onResultado: (data) => verProducto(data.codigo_detectado || ((data.productos || [])[0] || {}).codigo),
+            acciones: (data, ui) => (data.motivo === 'no_existe' && ui.codigo && ContafyRegistroRapido.disponible())
+                ? [{ texto: 'Registrar este producto', icono: 'bi-plus-circle', clase: 'btn-primary',
+                     alHacerClic: (u) => u.cerrar().then(async () => {
+                         const producto = await ContafyRegistroRapido.abrir({ codigo: u.codigo });
+                         if (producto) verProducto(producto.codigo_barras || producto.codigo);
+                     }) }]
+                : [],
+        });
+    });
+})();
 </script>
 {% endblock %}

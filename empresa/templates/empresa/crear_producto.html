@@ -10,6 +10,7 @@
 
             <form method="post" id="form-crear-producto">
         {% csrf_token %}
+        {% if embebido %}<input type="hidden" name="embebido" value="1">{% endif %}
         {% if form.errors %}
             <div class="alert alert-danger"><ul class="mb-0">
                 {% for field in form %}
@@ -38,7 +39,7 @@
                     <div class="col-md-6">
                         <label for="id_codigo_barras" class="form-label"><i class="bi bi-upc me-2"></i>Código de barras</label>
                         {{ form.codigo_barras }}
-                        <div class="form-text">Escanéalo con la cámara o un lector, o escríbelo</div>
+                        <div class="form-text">Escanéelo con la cámara o un lector, o escríbalo</div>
                         <div id="scan-actions-producto" class="mt-2 text-center" style="display:none;"></div>
                     </div>
                 </div>
@@ -297,129 +298,85 @@ document.addEventListener('DOMContentLoaded', function () {
         inputPvp.addEventListener('input', calcularMargen);
     }
 
-    // Función para buscar información del producto
-    function buscarInfoProducto(codigo, esCodBarras = false) {
-        if (!codigo) return;
-        
-        sugerenciaInfo.textContent = "Buscando información del código...";
-        sugerenciaInfo.style.color = 'var(--cf-muted)';
-
-        fetch('{% url "empresa:producto_info_api" %}?codigo=' + encodeURIComponent(codigo))
-            .then(response => response.json())
-            .then(data => {
-                if (data.nombre) {
-                    if (inputNombre && !inputNombre.value) inputNombre.value = data.nombre;
-                    if (inputDescripcion && !inputDescripcion.value) inputDescripcion.value = data.descripcion || '';
-                    if (inputPrecio && !inputPrecio.value && data.precio_unitario) inputPrecio.value = data.precio_unitario;
-                    
-                    const fuente = esCodBarras ? 'código de barras' : (data.fuente === 'api_global' ? 'API global' : 'local');
-                    sugerenciaInfo.textContent = `Sugerido: ${data.nombre} (${fuente})`;
-                    sugerenciaInfo.style.color = 'var(--cf-pos)';
-                    
-                    if (data.mensaje_precio) {
-                        sugerenciaInfo.textContent += `\n${data.mensaje_precio}`;
-                        sugerenciaInfo.style.color = 'var(--cf-warn)';
-                    }
-                } else {
-                    sugerenciaInfo.textContent = 'No se encontró información. Puede ingresar los datos manualmente.';
-                    sugerenciaInfo.style.color = 'var(--cf-muted)';
-                    // Ofrecer crear desde escaneo si no existe
-                    prefillFromScanProducto(codigo);
-                }
-            })
-            .catch(() => {
-                sugerenciaInfo.textContent = 'Código no encontrado. Puede ingresar los datos manualmente.';
-                sugerenciaInfo.style.color = 'var(--cf-muted)';
-            });
-    }
-    
-    // Búsqueda por código interno
-    if (inputCodigo) {
-        inputCodigo.addEventListener('blur', function () {
-            buscarInfoProducto(inputCodigo.value.trim());
-        });
-    }
-    
-    // Búsqueda por código de barras
+    // Verificación única del código (escáner, lector USB o escrito a mano):
+    // si ya pertenece a otro producto lo avisa; si es nuevo sugiere el nombre
+    // desde el catálogo público (Open Food Facts).
+    const productoEnEdicion = "{{ producto.id|default:'' }}";
+    const esEmbebido = {% if embebido %}true{% else %}false{% endif %};
     const inputCodigoBarras = document.getElementById('id_codigo_barras');
-    if (inputCodigoBarras) {
-        inputCodigoBarras.addEventListener('blur', function () {
-            buscarInfoProducto(inputCodigoBarras.value.trim(), true);
-        });
+    const scanActions = document.getElementById('scan-actions-producto');
+    let ultimoVerificado = '';
+
+    function escaparTexto(texto) {
+        const div = document.createElement('div');
+        div.textContent = texto == null ? '' : String(texto);
+        return div.innerHTML;
     }
-    
+
+    function avisarCodigo(html) {
+        scanActions.innerHTML = html || '';
+        scanActions.style.display = html ? 'block' : 'none';
+    }
+
+    function informar(texto, color) {
+        sugerenciaInfo.textContent = texto || '';
+        sugerenciaInfo.style.color = color || 'var(--cf-muted)';
+    }
+
+    async function verificarCodigo(codigo, esCodBarras) {
+        codigo = (codigo || '').trim();
+        if (!codigo || codigo === ultimoVerificado) return;
+        ultimoVerificado = codigo;
+        avisarCodigo('');
+        informar('Verificando el código…');
+        try {
+            const url = new URL('{% url "empresa:producto_info_api" %}', window.location.origin);
+            url.searchParams.set('codigo', codigo);
+            if (productoEnEdicion) url.searchParams.set('excluir', productoEnEdicion);
+            const data = await (await fetch(url)).json();
+            if (data.encontrado) {
+                informar('');
+                const enlace = esEmbebido ? '' : ` <a href="${data.url_editar}" class="alert-link">Abrir ese producto</a>`;
+                avisarCodigo(`<div class="alert alert-warning text-start mb-0 small">` +
+                    `<i class="bi bi-exclamation-triangle me-1"></i>El código ${escaparTexto(codigo)} ya pertenece a ` +
+                    `<strong>${escaparTexto(data.nombre)}</strong> (stock ${escaparTexto(data.stock)}).${enlace}</div>`);
+                return;
+            }
+            const sugerencia = data.sugerencia;
+            if (esCodBarras && sugerencia && sugerencia.nombre) {
+                if (inputNombre && !inputNombre.value) { inputNombre.value = sugerencia.nombre; flashField(inputNombre); }
+                const detalle = [sugerencia.marca, sugerencia.presentacion].filter(Boolean).join(' · ');
+                if (inputDescripcion && !inputDescripcion.value && detalle) inputDescripcion.value = detalle;
+                informar(`Nombre sugerido por ${sugerencia.fuente}: revíselo antes de guardar.`, 'var(--cf-pos)');
+            } else {
+                informar(esCodBarras ? 'Código nuevo: complete el nombre y los precios.' : '');
+            }
+        } catch (e) {
+            informar('');
+        }
+    }
+    // El escáner de esta página usa la misma verificación.
+    window.cfVerificarCodigoProducto = verificarCodigo;
+
+    if (inputCodigo) {
+        inputCodigo.addEventListener('blur', () => verificarCodigo(inputCodigo.value, false));
+    }
+    if (inputCodigoBarras) {
+        inputCodigoBarras.addEventListener('blur', () => verificarCodigo(inputCodigoBarras.value, true));
+        // Lector USB: escribe el código y presiona Enter; no enviar el formulario por eso.
+        inputCodigoBarras.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') { e.preventDefault(); verificarCodigo(inputCodigoBarras.value, true); inputNombre && inputNombre.focus(); }
+        });
+        // Llega con código desde el POS, compras o inventario: verificar y sugerir al abrir.
+        if (!productoEnEdicion && inputCodigoBarras.value) verificarCodigo(inputCodigoBarras.value, true);
+    }
+
     // Evento de envío del formulario
     if (form && btnGuardar) {
         form.addEventListener('submit', function () {
             btnGuardar.disabled = true;
             btnGuardar.innerHTML = '<i class="bi bi-hourglass-split me-2"></i>Guardando...';
         });
-    }
-
-    // Prefill / crear desde scan - para la página de crear producto
-    async function prefillFromScanProducto(codigo) {
-        const actions = document.getElementById('scan-actions-producto');
-        actions.style.display = 'none';
-        try {
-            const resp = await fetch('{% url "empresa:producto_prefill_from_scan" %}', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
-                },
-                body: JSON.stringify({ barcode: codigo })
-            });
-            const json = await resp.json();
-            const found = (json && ((json.success && json.found) || json.encontrado));
-            const prod = (json && (json.product || json));
-            if (found) {
-                // Si existe en inventario, sugerir usar la edición existente
-                actions.innerHTML = `<div class="alert alert-info">Producto ya registrado: <strong>${prod.nombre}</strong></div>` +
-                    `<a href="/app-beta-2024/producto/${prod.id}/editar/" class="btn btn-outline-secondary">Abrir producto</a>`;
-                actions.style.display = 'block';
-                return;
-            }
-
-            // No existe: ofrecer crear producto rápido en inventario con el barcode
-            actions.innerHTML = `<div class="alert alert-warning">No se encontró info. ¿Crear producto automáticamente?</div>` +
-                `<button type="button" id="btn-create-from-scan-producto" class="btn btn-outline-primary">Crear producto con este código</button>`;
-            actions.style.display = 'block';
-            document.getElementById('btn-create-from-scan-producto').addEventListener('click', () => createProductFromScanProducto(codigo));
-        } catch (err) {
-            console.error('Prefill producto error:', err);
-        }
-    }
-
-    async function createProductFromScanProducto(codigo) {
-        const actions = document.getElementById('scan-actions-producto');
-        actions.innerHTML = '<div class="form-text">Preparando datos para el formulario...</div>';
-        try {
-            // Do NOT create on behalf of the user. Instead prefill the form fields
-            // with the barcode and prompt the user to confirm/save. This preserves
-            // existing backend logic and avoids automatic writes.
-            if (inputCodigoBarras) inputCodigoBarras.value = codigo;
-            sugerenciaInfo.textContent = `Código aplicado: ${codigo}. Revise los campos y presione Guardar Producto.`;
-            sugerenciaInfo.style.color = 'var(--cf-pos)';
-
-            // Solo botón "Aplicar y mostrar" — el usuario completa y guarda el formulario manualmente.
-            // (Eliminado "Crear automáticamente": el endpoint inventario_create_from_scan ya no existe
-            // tras la limpieza del sistema de escáner. La creación se hace al enviar este formulario.)
-            actions.innerHTML = `<div class="d-flex justify-content-center gap-2">` +
-                `<button type="button" id="btn-apply-fill" class="btn btn-primary">` +
-                `<i class="bi bi-check-lg me-1"></i> Aplicar al formulario</button>` +
-                `</div>`;
-            actions.style.display = 'block';
-
-            document.getElementById('btn-apply-fill').addEventListener('click', function(){
-                // Focus the first editable field so user can verify
-                if (inputNombre) { inputNombre.focus(); flashField(inputNombre); }
-                actions.style.display = 'none';
-            });
-
-        } catch (err) {
-            console.error('Prepare create product error:', err);
-            actions.innerHTML = '<div class="alert alert-danger">Error preparando datos</div>';
-        }
     }
 
     function flashField(el){ if(!el) return; el.style.transition='box-shadow 0.25s ease'; el.style.boxShadow='0 0 0 4px rgba(16,185,129,0.18)'; setTimeout(()=>el.style.boxShadow='',1200); }
@@ -429,26 +386,35 @@ document.addEventListener('DOMContentLoaded', function () {
 
 <script>
 // Escáner único (static/js/contafy_scanner.js): si el código ya existe avisa;
-// si es nuevo, deja el código (y lo que reconozca la foto) listo en el formulario.
+// si es nuevo lo deja en el formulario y sugiere el nombre.
 (function () {
+  const esEmbebido = {% if embebido %}true{% else %}false{% endif %};
+  const urlEditar = "{% url 'empresa:editar_producto' 0 %}";
+
   function rellenar(id, valor) {
     const el = document.getElementById(id);
     if (el && valor && !el.value) { el.value = valor; el.dispatchEvent(new Event('input', { bubbles: true })); }
   }
 
-  function procesarResultadoProducto(data) {
+  function productoExistente(data) {
     const existente = (data.productos || [])[0];
-    if (existente) {
-      Swal.fire({
-        icon: 'warning',
-        title: 'Este producto ya está registrado',
-        text: `${existente.nombre} — stock actual: ${existente.stock}. Para sumar unidades registra una compra.`,
-        showCancelButton: true,
-        confirmButtonText: 'Ir a Registrar Compra',
-        cancelButtonText: 'Seguir aquí',
-      }).then((r) => { if (r.isConfirmed) window.location.href = "{% url 'empresa:crear_compra' %}"; });
-      return;
-    }
+    if (!existente) return;
+    const opciones = {
+      icon: 'warning',
+      title: 'Este producto ya está registrado',
+      text: `${existente.nombre} — stock actual: ${existente.stock}. Para sumar unidades registre una compra.`,
+    };
+    if (esEmbebido) { Swal.fire(opciones); return; }
+    Swal.fire(Object.assign(opciones, {
+      showCancelButton: true, showDenyButton: true,
+      confirmButtonText: 'Registrar compra', denyButtonText: 'Abrir producto', cancelButtonText: 'Seguir aquí',
+    })).then((r) => {
+      if (r.isConfirmed) window.location.href = "{% url 'empresa:crear_compra' %}";
+      else if (r.isDenied) window.location.href = urlEditar.replace('/0/', `/${existente.id}/`);
+    });
+  }
+
+  function codigoNuevo(data) {
     const codigoInput = document.getElementById('id_codigo_barras');
     if (codigoInput && data.codigo_detectado) codigoInput.value = data.codigo_detectado;
     if (data.origen === 'foto') {
@@ -456,9 +422,9 @@ document.addEventListener('DOMContentLoaded', function () {
       rellenar('id_nombre', (debug.logos || [])[0] || (debug.textos || [])[0]);
       rellenar('id_descripcion', (debug.labels || []).slice(0, 3).join(', '));
     }
-    Swal.fire({ toast: true, position: 'top-end', icon: 'success', showConfirmButton: false, timer: 3500,
-                title: data.codigo_detectado ? `Código ${data.codigo_detectado} listo` : 'Foto analizada',
-                text: 'Completa los datos del producto nuevo.' });
+    if (data.codigo_detectado && window.cfVerificarCodigoProducto) {
+      window.cfVerificarCodigoProducto(data.codigo_detectado, true);
+    }
     document.getElementById('id_nombre')?.focus();
   }
 
@@ -466,7 +432,8 @@ document.addEventListener('DOMContentLoaded', function () {
     ContafyScanner.abrir({
       contexto: 'inventario',
       endpoint: window.CONTAFY_SCANNER_ENDPOINT,
-      onResultado: procesarResultadoProducto,
+      onResultado: productoExistente,
+      onNoEncontrado: (data, ui) => ui.cerrar().then(() => codigoNuevo(data)),
     });
   });
 })();

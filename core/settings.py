@@ -118,6 +118,7 @@ TEMPLATES = [
                 'empresa.context_processors.breadcrumbs',  # Breadcrumbs processor
                 'empresa.context_processors.user_permissions',  # User permissions processor
                 'empresa.context_processors.alertas_navbar',  # Campana de notificaciones
+                'empresa.context_processors.escaner',  # Foto IA del escáner activa o no
             ],
         },
     },
@@ -250,6 +251,10 @@ STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
 # Google Vision API key — configurar en variable de entorno GOOGLE_VISION_API_KEY
 GOOGLE_VISION_API_KEY = env('GOOGLE_VISION_API_KEY', default='')
+
+# Sugerencia de nombre al registrar productos nuevos desde el catálogo público
+# Open Food Facts (gratuito, sin clave; solo se envía el código de barras).
+CATALOGO_PUBLICO_ACTIVO = env.bool('CATALOGO_PUBLICO_ACTIVO', default=True)
 
 # Stripe — configurar en variables de entorno
 STRIPE_PUBLIC_KEY     = env('STRIPE_PUBLIC_KEY',     default='')

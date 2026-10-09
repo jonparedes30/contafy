@@ -622,3 +622,11 @@ body { background-color: var(--cf-canvas); }
     border-top: 0;
     border-bottom: 3px solid var(--cf-navy-800) !important;
 }
+
+/* Registro rápido embebido (formulario de producto dentro de una ventana del POS,
+   compras o inventario): sin menú, barra superior ni pie. */
+body.embebido .sidebar, body.embebido .sidebar-backdrop, body.embebido .main-content > .navbar,
+body.embebido .main-content > footer, body.embebido .main-content > .alert-warning { display: none !important; }
+body.embebido .main-content { margin-left: 0 !important; }
+body.embebido main.container-fluid { padding: 1rem !important; }
+body.embebido .page-header-module { display: none; }  /* la ventana ya tiene su título */

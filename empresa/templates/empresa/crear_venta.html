@@ -1463,18 +1463,16 @@
                 return;
             }
             const msg = `No hay ningún producto con el código "${codigo}".`;
-            if (window.Swal) {
-                const r = await Swal.fire({ icon: 'info', title: 'Producto no encontrado', text: msg,
-                    showCancelButton: true, confirmButtonText: 'Crear producto', cancelButtonText: 'Cerrar' });
-                if (r.isConfirmed) {
-                    window.location.href = '{% url "empresa:crear_producto" %}?codigo_barras=' + encodeURIComponent(codigo);
-                }
-            } else {
-                alert(msg);
+            const puedeRegistrar = window.ContafyRegistroRapido && ContafyRegistroRapido.disponible();
+            const r = await Swal.fire({ icon: 'info', title: 'Producto no encontrado', text: msg,
+                showCancelButton: true, showConfirmButton: puedeRegistrar,
+                confirmButtonText: 'Registrar producto', cancelButtonText: 'Cerrar' });
+            if (r.isConfirmed && window.cfPosRegistrarYAgregar) {
+                window.cfPosRegistrarYAgregar(codigo);
             }
         } catch (error) {
             console.error('Error buscando producto:', error);
-            alert('No se pudo buscar el producto. Revisa tu conexión.');
+            alert('No se pudo buscar el producto. Revise su conexión.');
         }
     }
 
@@ -1675,16 +1673,19 @@
             const id = String(prodData.id);
             const nombre = prodData.nombre || prodData.nombre_comercial || prodData.codigo || ('Prod ' + id);
 
-            // stock check if available
+            // El stock disponible se compara con lo que ya hay en el carrito más lo nuevo.
             const stock = parseInt((productos[id] && productos[id].stock) || prodData.stock || 0);
-            if (stock !== null && stock !== undefined && !String(id).startsWith('serv_')) {
-                if ((qty || 1) > stock) {
-                    alert(`Stock insuficiente. Disponible: ${stock}`);
-                    return;
+            const existente = productosMultiple.find(p => String(p.id) === id);
+            const enCarrito = existente ? existente.cantidad : 0;
+            if (!String(id).startsWith('serv_') && !prodData.es_servicio) {
+                if (enCarrito + (qty || 1) > stock) {
+                    alert(stock > enCarrito
+                        ? `Stock insuficiente para "${nombre}". Disponible: ${stock}, en el carrito: ${enCarrito}.`
+                        : `"${nombre}" no tiene más stock disponible (${stock} en total).`);
+                    return false;
                 }
             }
 
-            const existente = productosMultiple.find(p => String(p.id) === id);
             if (existente) {
                 existente.cantidad = existente.cantidad + (qty || 1);
                 existente.subtotal = existente.cantidad * existente.precio;
@@ -1696,8 +1697,10 @@
             calcularTotalMultiple();
             // visual feedback
             try { window.playBeep && window.playBeep(60,600,0.06); } catch(e) {}
+            return true;
         } catch (e) {
             console.error('Error adding product to pos cart', e);
+            return false;
         }
     }
     // monto recibido input handling (POS)
@@ -1901,7 +1904,9 @@
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
 
 <script>
-// Escáner de cámara del POS: lee el código de barras en vivo (ver static/js/contafy_scanner.js)
+// Escáner de cámara del POS (static/js/contafy_scanner.js): modo continuo, como un lector
+// de supermercado. Si el producto no existe se registra en una ventana sobre el POS y
+// pasa directo al carrito; si no tiene stock se ofrece registrar una compra.
 (function () {
     function escaparHtml(texto) {
         const div = document.createElement('div');
@@ -1909,15 +1914,21 @@
         return div.innerHTML;
     }
 
-    function agregarProductoAlCarritoPOS(producto) {
-        if (typeof addProductToPosCart !== 'function') return;
-        addProductToPosCart(producto, 1);
-        Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: 'Agregado al carrito',
-                    text: producto.nombre, showConfirmButton: false, timer: 1800 });
+    function agregar(producto) {
+        if (typeof addProductToPosCart !== 'function') return false;
+        if (typeof productos === 'object' && producto && producto.id && !productos[producto.id]) {
+            productos[producto.id] = producto;
+        }
+        return addProductToPosCart(producto, 1) !== false;
     }
 
-    function elegirProducto(productos) {
-        const html = productos.map((p, i) => `
+    function cantidadEnCarrito(id) {
+        const item = (typeof productosMultiple !== 'undefined' ? productosMultiple : []).find(p => String(p.id) === String(id));
+        return item ? item.cantidad : 0;
+    }
+
+    function elegirProducto(productosLista) {
+        const html = productosLista.map((p, i) => `
             <button type="button" class="list-group-item list-group-item-action d-flex justify-content-between" data-idx="${i}">
                 <span>${escaparHtml(p.nombre)}</span>
                 <span class="text-muted small">Stock ${escaparHtml(p.stock)} · $${Number(p.precio_venta || 0).toFixed(2)}</span>
@@ -1928,28 +1939,58 @@
             showConfirmButton: false, showCancelButton: true, cancelButtonText: 'Cancelar',
             didOpen: (popup) => popup.querySelectorAll('[data-idx]').forEach(btn => btn.addEventListener('click', () => {
                 Swal.close();
-                agregarProductoAlCarritoPOS(productos[Number(btn.dataset.idx)]);
+                agregar(productosLista[Number(btn.dataset.idx)]);
             })),
         });
     }
 
-    function procesarResultadosVentas(data) {
-        const productos = data.productos || [];
-        if (productos.length === 1) {
-            agregarProductoAlCarritoPOS(productos[0]);
-        } else if (productos.length > 1) {
-            elegirProducto(productos);
-        } else {
-            Swal.fire({ icon: 'info', title: 'Producto no encontrado', text: data.mensaje || 'No está en tu inventario.' });
+    // Registro rápido: se usa desde la cámara y desde el lector USB / búsqueda escrita.
+    async function registrarYAgregar(codigo, reabrirEscaner) {
+        const producto = await ContafyRegistroRapido.abrir({ codigo });
+        if (producto) {
+            if (Number(producto.stock) > 0) {
+                agregar(producto);
+                Swal.fire({ toast: true, position: 'top-end', icon: 'success', showConfirmButton: false, timer: 2500,
+                            title: 'Producto registrado y agregado', text: producto.nombre });
+            } else {
+                await Swal.fire({ icon: 'info', title: 'Producto registrado sin stock',
+                    text: `"${producto.nombre}" quedó registrado con stock 0. Registre una compra para poder venderlo.` });
+            }
         }
+        if (reabrirEscaner) abrirEscaner();
+    }
+    window.cfPosRegistrarYAgregar = (codigo) => registrarYAgregar(codigo, false);
+
+    function procesarEncontrado(data, ui) {
+        const lista = data.productos || [];
+        if (lista.length > 1) {
+            ui.cerrar().then(() => elegirProducto(lista));
+            return 'Hay varios productos con ese código: elija uno.';
+        }
+        const producto = lista[0];
+        if (!agregar(producto)) return `No se agregó "${producto.nombre}": revise el stock.`;
+        return `Agregado: ${producto.nombre} (${cantidadEnCarrito(producto.id)} en el carrito)`;
+    }
+
+    function accionesSinResultado(data, ui) {
+        if (data.motivo === 'sin_stock') {
+            return [{ texto: 'Registrar compra', icono: 'bi-cart-plus', clase: 'btn-outline-primary',
+                      alHacerClic: () => window.open("{% url 'empresa:crear_compra' %}", '_blank') }];
+        }
+        if (data.motivo === 'no_existe' && ui.codigo && ContafyRegistroRapido.disponible()) {
+            return [{ texto: 'Registrar este producto', icono: 'bi-plus-circle', clase: 'btn-primary',
+                      alHacerClic: (u) => u.cerrar().then(() => registrarYAgregar(u.codigo, true)) }];
+        }
+        return [];
     }
 
     function abrirEscaner() {
         ContafyScanner.abrir({
             contexto: 'venta',
             endpoint: window.CONTAFY_SCANNER_ENDPOINT,
-            seguirSiNoEncontrado: true,
-            onResultado: procesarResultadosVentas,
+            continuo: true,
+            onResultado: procesarEncontrado,
+            acciones: accionesSinResultado,
         });
     }
 

@@ -111,8 +111,8 @@ def analizar_imagen(imagen_b64):
     api_key = getattr(settings, 'GOOGLE_VISION_API_KEY', '')
     if not api_key:
         raise EscanerError(
-            'La identificación por foto no está activada. Escanea el código de barras '
-            'o búscalo por nombre.'
+            'La identificación por foto no está activada. Escanee el código de barras '
+            'o búsquelo por nombre.'
         )
     cuerpo = {'requests': [{
         'image': {'content': imagen_b64},
@@ -128,16 +128,16 @@ def analizar_imagen(imagen_b64):
         resp.raise_for_status()
         datos = resp.json()
     except requests.exceptions.Timeout:
-        raise EscanerError('El servicio de reconocimiento tardó demasiado. Inténtalo de nuevo.')
+        raise EscanerError('El servicio de reconocimiento tardó demasiado. Inténtelo de nuevo.')
     except requests.exceptions.RequestException as e:
         estado = getattr(getattr(e, 'response', None), 'status_code', None)
         logger.error('Google Vision falló (HTTP %s)', estado)
-        raise EscanerError('No se pudo analizar la foto en este momento. Escanea el código de barras.')
+        raise EscanerError('No se pudo analizar la foto en este momento. Escanee el código de barras.')
 
     respuesta = (datos.get('responses') or [{}])[0]
     if respuesta.get('error'):
         logger.error('Google Vision devolvió error: %s', respuesta['error'].get('message'))
-        raise EscanerError('No se pudo analizar la foto. Prueba con más luz o escanea el código.')
+        raise EscanerError('No se pudo analizar la foto. Pruebe con más luz o escanee el código.')
 
     logos = [a.get('description', '') for a in respuesta.get('logoAnnotations', []) if a.get('description')]
     texto = (respuesta.get('fullTextAnnotation') or {}).get('text', '')
@@ -165,6 +165,63 @@ def serializar(producto, contexto):
     return item
 
 
+# --- Catálogo público de productos (Open Food Facts) ---------------------------
+# Base de datos abierta y gratuita, sin clave. Solo se envía el número del código.
+# Sirve para sugerir nombre y marca al registrar un producto nuevo.
+CATALOGO_URL = 'https://world.openfoodfacts.org/api/v2/product/{codigo}.json'
+CATALOGO_CAMPOS = 'product_name_es,product_name,generic_name_es,brands,quantity,categories'
+
+
+def buscar_en_catalogo_publico(codigo):
+    """Sugerencia {nombre, marca, presentacion, categoria, fuente} o None.
+
+    Nunca lanza excepciones: si el servicio no responde, simplemente no hay sugerencia.
+    El resultado (también el "no encontrado") se guarda 1 día en caché.
+    """
+    from django.core.cache import cache
+
+    codigo = (codigo or '').strip()
+    if not getattr(settings, 'CATALOGO_PUBLICO_ACTIVO', True) or not codigo_gtin_valido(codigo):
+        return None
+    clave = f'catalogo_publico:{codigo}'
+    en_cache = cache.get(clave)
+    if en_cache is not None:
+        return en_cache or None
+
+    sugerencia = {}
+    try:
+        resp = requests.get(CATALOGO_URL.format(codigo=codigo), params={'fields': CATALOGO_CAMPOS},
+                            headers={'User-Agent': 'Contafy/1.0 (contabilidad para PYMES; Ecuador)'},
+                            timeout=4)
+        if resp.status_code == 200:
+            datos = resp.json()
+            producto = datos.get('product') or {}
+            nombre = (producto.get('product_name_es') or producto.get('product_name')
+                      or producto.get('generic_name_es') or '').strip()
+            if datos.get('status') == 1 and nombre:
+                # La "marca" suele venir como razón social (p. ej. "COCA-COLA SERVICES SA/NV"):
+                # se sugiere aparte, sin pegarla al nombre.
+                marca = (producto.get('brands') or '').split(',')[0].strip()
+                presentacion = re.sub(r'\s*[℮e]$', '', (producto.get('quantity') or '').strip())
+                if presentacion and presentacion.lower() not in nombre.lower():
+                    nombre = f'{nombre} {presentacion}'
+                categorias = [c.strip() for c in (producto.get('categories') or '').split(',')
+                              if c.strip() and ':' not in c]
+                sugerencia = {
+                    'nombre': nombre[:100],
+                    'marca': marca[:60],
+                    'presentacion': presentacion[:40],
+                    'categoria': categorias[-1][:60] if categorias else '',
+                    'fuente': 'Open Food Facts',
+                }
+    except (requests.exceptions.RequestException, ValueError):
+        logger.info('Catálogo público sin respuesta para %s', codigo)
+        return None  # sin caché: puede ser un corte momentáneo
+
+    cache.set(clave, sugerencia, 60 * 60 * 24)
+    return sugerencia or None
+
+
 def identificar(empresa, contexto='compra', codigo=None, imagen_b64=None):
     """Punto de entrada único. Devuelve el dict de respuesta del escáner."""
     logos, texto, etiquetas, origen = [], '', [], 'codigo'
@@ -186,17 +243,19 @@ def identificar(empresa, contexto='compra', codigo=None, imagen_b64=None):
     if not productos and origen == 'foto':
         productos = buscar_por_texto(empresa, logos, texto)
 
-    mensaje = ''
+    mensaje, motivo, sin_stock = '', '', None
     if contexto == 'venta' and productos:
         con_stock = [p for p in productos if p.es_servicio or p.stock > 0]
         if not con_stock:
             mensaje = f'"{productos[0].nombre}" no tiene stock disponible.'
+            motivo, sin_stock = 'sin_stock', serializar(productos[0], contexto)
         productos = con_stock
 
     lista = [serializar(p, contexto) for p in productos]
     if not lista and not mensaje:
+        motivo = 'no_existe'
         mensaje = (f'No hay ningún producto con el código {codigo_detectado}.' if codigo_detectado
-                   else 'No se reconoció el producto. Prueba escaneando el código de barras.')
+                   else 'No se reconoció el producto. Pruebe escaneando el código de barras.')
     return {
         'success': True, 'ok': True,
         'found': bool(lista),
@@ -204,6 +263,9 @@ def identificar(empresa, contexto='compra', codigo=None, imagen_b64=None):
         'codigo_detectado': codigo_detectado,
         'origen': origen,
         'mensaje': mensaje,
+        # Por qué no hay resultado: 'no_existe' (ofrecer registrarlo) o 'sin_stock' (ofrecer una compra)
+        'motivo': motivo,
+        'producto_sin_stock': sin_stock,
         'meta': {'total': len(lista), 'contexto': contexto, 'api_version': '3.0'},
         'debug': {'logos': logos, 'textos': [l for l in texto.splitlines() if l.strip()][:5],
                   'labels': etiquetas[:5], 'search_terms': palabras_utiles(' '.join(logos))[:3]},

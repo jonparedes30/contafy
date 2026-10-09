@@ -525,16 +525,29 @@ class ProductoForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         self.empresa = kwargs.pop('empresa', None)
         super().__init__(*args, **kwargs)
+        # Al registrar desde el escáner basta con el código de barras: si el código
+        # interno queda vacío se asigna uno correlativo (P-0001, P-0002…).
+        self.fields['codigo'].required = False
+        self.fields['codigo'].widget.attrs.setdefault('placeholder', 'Se asigna automáticamente si lo deja vacío')
 
     def _otros_productos(self):
         qs = Producto.objects.filter(empresa=self.empresa or getattr(self.instance, 'empresa', None))
         return qs.exclude(pk=self.instance.pk) if self.instance.pk else qs
 
+    def _codigo_automatico(self):
+        existentes = set(c.upper() for c in self._otros_productos().values_list('codigo', flat=True))
+        numero = len(existentes) + 1
+        while f'P-{numero:04d}' in existentes:
+            numero += 1
+        return f'P-{numero:04d}'
+
     def clean_codigo(self):
         # Único por empresa (no global): dos negocios pueden usar el mismo código.
         codigo = (self.cleaned_data.get('codigo') or '').strip()
-        if codigo and self._otros_productos().filter(codigo__iexact=codigo).exists():
-            raise forms.ValidationError('Ya tienes un producto con este código.')
+        if not codigo:
+            return self.instance.codigo if self.instance.pk and self.instance.codigo else self._codigo_automatico()
+        if self._otros_productos().filter(codigo__iexact=codigo).exists():
+            raise forms.ValidationError('Ya tiene un producto con este código.')
         return codigo
 
     def clean_codigo_barras(self):

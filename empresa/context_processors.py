@@ -79,3 +79,9 @@ def alertas_navbar(request):
         return {}
     return {'alertas_navbar': {'stock_bajo': stock_bajo, 'cxc_vencidas': cxc_vencidas,
                                'total': stock_bajo + cxc_vencidas}}
+
+
+def escaner(request):
+    """Opciones del escáner que dependen de la configuración del servidor."""
+    from django.conf import settings
+    return {'escaner_foto_activa': bool(getattr(settings, 'GOOGLE_VISION_API_KEY', ''))}

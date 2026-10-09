@@ -1,0 +1,22 @@
+{% extends 'empresa/base.html' %}
+{% block title %}Producto guardado{% endblock %}
+
+{% block content %}
+{# Respuesta del registro rápido: avisa a la pantalla que abrió el formulario (POS, compra, inventario). #}
+<div class="text-center py-5">
+    <i class="bi bi-check-circle text-pos" style="font-size: 3rem;"></i>
+    <h2 class="h4 mt-3">Producto guardado</h2>
+    <p class="text-muted mb-0">{{ producto_json.nombre }}</p>
+</div>
+{{ producto_json|json_script:"producto-guardado" }}
+<script>
+(function () {
+    const producto = JSON.parse(document.getElementById('producto-guardado').textContent);
+    if (window.parent && window.parent !== window) {
+        window.parent.postMessage({ tipo: 'contafy:producto-guardado', producto: producto }, window.location.origin);
+    } else {
+        window.location.href = "{% url 'empresa:listar_productos' %}";
+    }
+})();
+</script>
+{% endblock %}

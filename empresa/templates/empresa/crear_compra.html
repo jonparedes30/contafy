@@ -413,6 +413,11 @@
       contexto: 'compra',
       endpoint: window.CONTAFY_SCANNER_ENDPOINT,
       onResultado: procesarResultados,
+      // Código desconocido: registrarlo sin salir de la compra (el formulario no se pierde).
+      acciones: (data, ui) => (data.motivo === 'no_existe' && ui.codigo && ContafyRegistroRapido.disponible())
+        ? [{ texto: 'Registrar este producto', icono: 'bi-plus-circle', clase: 'btn-primary',
+             alHacerClic: (u) => u.cerrar().then(() => registrarYSeleccionar(u.codigo)) }]
+        : [],
     });
   });
 
@@ -423,33 +428,26 @@
     console.log(`Productos encontrados: ${productos.length}`);
 
     if (productos.length === 0) {
-      Swal.fire({
-        icon: 'question',
-        title: 'Producto no encontrado',
-        html: `
-          <div class="text-center">
-            <p>Este producto no existe en tu inventario.</p>
-            <p class="text-muted">Debes registrarlo primero en <strong>"Crear Producto"</strong></p>
-            <hr>
-            <p class="small"><i class="bi bi-lightbulb me-1"></i>El sistema prellenará los datos detectados</p>
-          </div>
-        `,
-        showCancelButton: true,
-        confirmButtonText: '<i class="bi bi-plus-circle me-1"></i>Ir a Crear Producto',
-        cancelButtonText: 'Cancelar',
-        confirmButtonColor: '#10b981',
-        cancelButtonColor: '#94a3b8'
-      }).then((result) => {
-        if (result.isConfirmed) {
-          const codigo = encodeURIComponent(data.codigo_detectado || '');
-          window.location.href = "{% url 'empresa:crear_producto' %}" + (codigo ? '?codigo_barras=' + codigo : '');
-        }
-      });
+      // Solo llega aquí con la foto (la búsqueda por código muestra sus opciones en el escáner).
+      Swal.fire({ icon: 'info', title: 'Producto no encontrado', text: data.mensaje || 'No está en su inventario.' });
     } else if (productos.length === 1) {
       seleccionarProductoConConfirmacion(productos[0]);
     } else {
       mostrarOpcionesProductos(productos);
     }
+  }
+
+  function escaparCompra(t) { const d = document.createElement('div'); d.textContent = t == null ? '' : String(t); return d.innerHTML; }
+
+  // Registro rápido desde la compra: el producto nuevo queda seleccionado en el formulario.
+  async function registrarYSeleccionar(codigo) {
+    const producto = await ContafyRegistroRapido.abrir({ codigo });
+    if (!producto) return;
+    const selectProd = document.getElementById('id_producto');
+    if (selectProd && !Array.from(selectProd.options).some(o => String(o.value) === String(producto.id))) {
+      selectProd.add(new Option(producto.nombre, producto.id));
+    }
+    autoRellenarFormulario(producto);
   }
 
   function seleccionarProductoConConfirmacion(producto) {
@@ -458,11 +456,11 @@
       title: 'Producto encontrado',
       html: `
         <div class="text-start p-2">
-          <h4>${producto.nombre}</h4>
-          <p><strong>Código:</strong> ${producto.codigo_barras || producto.codigo || 'N/A'}</p>
+          <h4>${escaparCompra(producto.nombre)}</h4>
+          <p><strong>Código:</strong> ${escaparCompra(producto.codigo_barras || producto.codigo || 'N/A')}</p>
           <p><strong>Stock actual:</strong> ${producto.stock} unidades</p>
-          <p><strong>Último precio:</strong> $${producto.precio_unitario.toFixed(2)}</p>
-          <p><strong>PVP:</strong> $${producto.pvp.toFixed(2)}</p>
+          <p><strong>Último precio:</strong> $${Number(producto.precio_unitario || 0).toFixed(2)}</p>
+          <p><strong>PVP:</strong> $${Number(producto.pvp || 0).toFixed(2)}</p>
         </div>
       `,
       showCancelButton: true,
@@ -488,8 +486,8 @@
     }
 
     const inputPvp = document.getElementById('id_pvp');
-    if (inputPvp && producto.pvp > 0) {
-      inputPvp.value = producto.pvp.toFixed(2);
+    if (inputPvp && Number(producto.pvp) > 0) {
+      inputPvp.value = Number(producto.pvp).toFixed(2);
     }
 
     const inputStockMin = document.getElementById('id_stock_minimo');

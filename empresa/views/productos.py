@@ -1,5 +1,7 @@
 from empresa.utils.errores import mensaje_error
 from django.shortcuts import render, redirect
+from django.urls import reverse
+from django.views.decorators.clickjacking import xframe_options_sameorigin
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
 from django.db.models import Q, F
@@ -27,10 +29,17 @@ except ImportError:
     TrigramSimilarity = None
 
 
+def _es_embebido(request):
+    """Registro rápido dentro de una ventana del POS, compras o inventario (iframe)."""
+    return (request.GET.get('embebido') or request.POST.get('embebido')) == '1'
+
+
 @login_required
 @require_power('puede_editar_productos')
+@xframe_options_sameorigin  # solo para el registro rápido embebido; mismo dominio
 def crear_producto(request):
     empresa = request.user.empresa
+    embebido = _es_embebido(request)
 
     if request.method == 'POST':
         # Support JSON POST (scanner integration) as well as form POST
@@ -116,16 +125,29 @@ def crear_producto(request):
                             messages.success(request, 'Producto creado correctamente')
                             
                 except Exception as e:
-                    messages.error(request, f'Error creando producto: {e}')
-                    return render(request, 'empresa/crear_producto.html', {'form': form})
-                    
+                    logger.exception('Error creando producto')
+                    messages.error(request, mensaje_error(e))
+                    return render(request, 'empresa/crear_producto.html', {'form': form, 'embebido': embebido})
+
+                if embebido:
+                    # La ventana que lo abrió (POS, compra, inventario) recibe el producto y sigue.
+                    return render(request, 'empresa/producto_guardado_embebido.html', {
+                        'embebido': True,
+                        'producto_json': {
+                            'id': producto.id, 'nombre': producto.nombre, 'codigo': producto.codigo,
+                            'codigo_barras': producto.codigo_barras or '', 'stock': producto.stock,
+                            'precio_unitario': float(producto.precio_unitario or 0),
+                            'pvp': float(producto.pvp or 0),
+                            'precio_venta': float(producto.pvp or producto.precio_unitario or 0),
+                        },
+                    })
                 return redirect('empresa:home')
     else:
         # El POS y el escáner envían aquí el código no encontrado para crear el producto.
         inicial = {'codigo_barras': request.GET.get('codigo_barras', '').strip()[:50]}
         form = ProductoForm(empresa=empresa, initial=inicial)
 
-    return render(request, 'empresa/crear_producto.html', {'form': form})
+    return render(request, 'empresa/crear_producto.html', {'form': form, 'embebido': embebido})
 
 
 @login_required
@@ -289,45 +311,45 @@ def editar_producto(request, producto_id):
 
 @login_required
 def producto_info_api(request):
-    """API endpoint para obtener información de producto por código o código de barras"""
-    codigo = request.GET.get('codigo', '').strip()
-    
+    """Verifica un código al registrar o editar un producto.
+
+    GET ?codigo=<código interno o de barras>&excluir=<id del producto en edición>
+    - Ya existe en la empresa -> {"encontrado": true, id, nombre, ..., "url_editar"}
+    - No existe -> {"encontrado": false, "sugerencia": {...} | null}
+      La sugerencia (nombre, marca, presentación) viene del catálogo público
+      Open Food Facts y solo se busca para códigos de barras válidos.
+    """
+    from empresa.services.escaner_service import buscar_en_catalogo_publico
+
+    codigo = request.GET.get('codigo', '').strip()[:50]
     if not codigo:
         return JsonResponse({'error': 'Código requerido'}, status=400)
-    
-    empresa = request.user.empresa
-    
-    try:
-        # Buscar por código o código de barras
-        producto = Producto.objects.filter(
-            empresa=empresa
-        ).filter(
-            Q(codigo=codigo) | Q(codigo_barras=codigo)
-        ).first()
-        
-        if producto:
-            return JsonResponse({
-                'id': producto.id,
-                'nombre': producto.nombre,
-                'descripcion': producto.descripcion or '',
-                'codigo': producto.codigo,
-                'codigo_barras': producto.codigo_barras or '',
-                'precio_unitario': float(producto.precio_unitario) if producto.precio_unitario else 0,
-                'stock': producto.stock,
-                'fuente': 'local',
-                'encontrado': True
-            })
-        else:
-            # Aquí podrías agregar búsqueda en API global si existe
-            return JsonResponse({
-                'encontrado': False,
-                'nombre': '',
-                'descripcion': '',
-                'precio_unitario': 0
-            })
-    except Exception as e:
-        tb = traceback.format_exc()
-        return JsonResponse({'error': mensaje_error(e), 'traceback': tb}, status=500)
+
+    productos = Producto.objects.filter(empresa=request.user.empresa).filter(
+        Q(codigo__iexact=codigo) | Q(codigo_barras=codigo))
+    excluir = request.GET.get('excluir', '')
+    if excluir.isdigit():
+        productos = productos.exclude(pk=int(excluir))
+    producto = productos.first()
+
+    if producto:
+        return JsonResponse({
+            'encontrado': True,
+            'id': producto.id,
+            'nombre': producto.nombre,
+            'descripcion': producto.descripcion or '',
+            'codigo': producto.codigo,
+            'codigo_barras': producto.codigo_barras or '',
+            'precio_unitario': float(producto.precio_unitario or 0),
+            'stock': producto.stock,
+            'fuente': 'local',
+            'url_editar': reverse('empresa:editar_producto', args=[producto.id]),
+        })
+    return JsonResponse({
+        'encontrado': False,
+        'nombre': '', 'descripcion': '', 'precio_unitario': 0,
+        'sugerencia': buscar_en_catalogo_publico(codigo),
+    })
 
 
 @login_required
